@@ -49,3 +49,69 @@ export default function Navbar() {
 
           {/* Mobile Menu Button */}
           <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+            aria-label="Toggle menu"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              {isOpen ? (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              ) : (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              )}
+            </svg>
+          </button>
+        </div>
+
+        {/* Mobile Navigation */}
+        {isOpen && (
+          <div className="md:hidden pb-4 space-y-2">
+            <Link
+              href="#features"
+              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+              onClick={() => setIsOpen(false)}
+            >
+              Features
+            </Link>
+            <Link
+              href="#about"
+              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+              onClick={() => setIsOpen(false)}
+            >
+              About
+            </Link>
+            <Link
+              href="#contact"
+              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+              onClick={() => setIsOpen(false)}
+            >
+              Contact
+            </Link>
+            <Link
+              href="/login"
+              className="block px-4 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800"
+              onClick={() => setIsOpen(false)}
+            >
+              Sign In
+            </Link>
+          </div>
+        )}
+      </div>
+    </nav>
+  );
+}

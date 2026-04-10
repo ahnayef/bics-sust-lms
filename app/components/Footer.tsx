@@ -41,3 +41,79 @@ export default function Footer() {
                   className="hover:text-white transition-colors"
                 >
                   Sign In
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Resources */}
+          <div>
+            <h4 className="text-white font-semibold mb-4">Resources</h4>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link
+                  href="#"
+                  className="hover:text-white transition-colors"
+                >
+                  Documentation
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="#"
+                  className="hover:text-white transition-colors"
+                >
+                  FAQ
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="#"
+                  className="hover:text-white transition-colors"
+                >
+                  Support
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <h4 className="text-white font-semibold mb-4">Contact</h4>
+            <ul className="space-y-2 text-sm text-gray-400">
+              <li>Email: info@sustlms.com</li>
+              <li>Phone: +1 (555) 000-0000</li>
+              <li>
+                <Link href="#" className="hover:text-white transition-colors">
+                  Contact Form
+                </Link>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-gray-800"></div>
+
+        {/* Bottom Section */}
+        <div className="mt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-400">
+          <p>&copy; {currentYear} SUST LMS. All rights reserved.</p>
+          <div className="flex space-x-6 mt-4 md:mt-0">
+            <Link
+              href="#"
+              className="hover:text-white transition-colors"
+            >
+              Privacy Policy
+            </Link>
+            <Link
+              href="#"
+              className="hover:text-white transition-colors"
+            >
+              Terms of Service
+            </Link>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
