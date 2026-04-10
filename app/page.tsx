@@ -1,5 +1,8 @@
+'use client';
+
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import { FaBook, FaUsers, FaSync, FaChartBar, FaBell, FaLock } from 'react-icons/fa';
 
 export default function Home() {
   return (
@@ -50,7 +53,7 @@ export default function Home() {
             {/* Feature 1 */}
             <div className="p-6 border border-gray-200 rounded-lg hover:shadow-lg transition-shadow">
               <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-white font-bold text-xl">📚</span>
+                <FaBook className="text-white text-xl" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 Book Management
@@ -63,7 +66,7 @@ export default function Home() {
             {/* Feature 2 */}
             <div className="p-6 border border-gray-200 rounded-lg hover:shadow-lg transition-shadow">
               <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-white font-bold text-xl">👥</span>
+                <FaUsers className="text-white text-xl" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 Member Tracking
@@ -76,7 +79,7 @@ export default function Home() {
             {/* Feature 3 */}
             <div className="p-6 border border-gray-200 rounded-lg hover:shadow-lg transition-shadow">
               <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-white font-bold text-xl">🔄</span>
+                <FaSync className="text-white text-xl" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 Borrow & Return
@@ -89,7 +92,7 @@ export default function Home() {
             {/* Feature 4 */}
             <div className="p-6 border border-gray-200 rounded-lg hover:shadow-lg transition-shadow">
               <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-white font-bold text-xl">📊</span>
+                <FaChartBar className="text-white text-xl" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 Analytics & Reports
@@ -102,7 +105,7 @@ export default function Home() {
             {/* Feature 5 */}
             <div className="p-6 border border-gray-200 rounded-lg hover:shadow-lg transition-shadow">
               <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-white font-bold text-xl">🔔</span>
+                <FaBell className="text-white text-xl" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 Smart Notifications
@@ -115,7 +118,7 @@ export default function Home() {
             {/* Feature 6 */}
             <div className="p-6 border border-gray-200 rounded-lg hover:shadow-lg transition-shadow">
               <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-white font-bold text-xl">🔐</span>
+                <FaLock className="text-white text-xl" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 Role-Based Access
