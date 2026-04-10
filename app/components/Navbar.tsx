@@ -41,7 +41,7 @@ export default function Navbar() {
           <div className="hidden md:block">
             <Link
               href="/login"
-              className="bg-gray-900 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-800 transition-colors"
+              className="bg-gray-900 text-white px-6 py-2 rounded font-medium hover:bg-gray-800 transition-colors"
             >
               Sign In
             </Link>
@@ -50,7 +50,7 @@ export default function Navbar() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+            className="md:hidden p-2 rounded hover:bg-gray-100"
             aria-label="Toggle menu"
           >
             <svg
@@ -83,28 +83,28 @@ export default function Navbar() {
           <div className="md:hidden pb-4 space-y-2">
             <Link
               href="#features"
-              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
               onClick={() => setIsOpen(false)}
             >
               Features
             </Link>
             <Link
               href="#about"
-              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
               onClick={() => setIsOpen(false)}
             >
               About
             </Link>
             <Link
               href="#contact"
-              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
               onClick={() => setIsOpen(false)}
             >
               Contact
             </Link>
             <Link
               href="/login"
-              className="block px-4 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800"
+              className="block px-4 py-2 bg-gray-900 text-white rounded font-medium hover:bg-gray-800"
               onClick={() => setIsOpen(false)}
             >
               Sign In

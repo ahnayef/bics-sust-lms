@@ -23,13 +23,13 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href="/login"
-              className="bg-gray-900 text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
+              className="bg-gray-900 text-white px-8 py-3 rounded font-semibold hover:bg-gray-800 transition-colors"
             >
               Get Started
             </a>
             <a
               href="#features"
-              className="border-2 border-gray-900 text-gray-900 px-8 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+              className="border-2 border-gray-900 text-gray-900 px-8 py-3 rounded font-semibold hover:bg-gray-50 transition-colors"
             >
               Learn More
             </a>
@@ -51,8 +51,8 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Feature 1 */}
-            <div className="p-6 border border-gray-200 rounded-lg hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center mb-4">
+            <div className="p-6 border border-gray-200 rounded hover:shadow-lg transition-shadow">
+              <div className="w-12 h-12 bg-gray-900 rounded flex items-center justify-center mb-4">
                 <FaBook className="text-white text-xl" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -64,8 +64,8 @@ export default function Home() {
             </div>
 
             {/* Feature 2 */}
-            <div className="p-6 border border-gray-200 rounded-lg hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center mb-4">
+            <div className="p-6 border border-gray-200 rounded hover:shadow-lg transition-shadow">
+              <div className="w-12 h-12 bg-gray-900 rounded flex items-center justify-center mb-4">
                 <FaUsers className="text-white text-xl" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -77,8 +77,8 @@ export default function Home() {
             </div>
 
             {/* Feature 3 */}
-            <div className="p-6 border border-gray-200 rounded-lg hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center mb-4">
+            <div className="p-6 border border-gray-200 rounded hover:shadow-lg transition-shadow">
+              <div className="w-12 h-12 bg-gray-900 rounded flex items-center justify-center mb-4">
                 <FaSync className="text-white text-xl" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -90,8 +90,8 @@ export default function Home() {
             </div>
 
             {/* Feature 4 */}
-            <div className="p-6 border border-gray-200 rounded-lg hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center mb-4">
+            <div className="p-6 border border-gray-200 rounded hover:shadow-lg transition-shadow">
+              <div className="w-12 h-12 bg-gray-900 rounded flex items-center justify-center mb-4">
                 <FaChartBar className="text-white text-xl" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -103,8 +103,8 @@ export default function Home() {
             </div>
 
             {/* Feature 5 */}
-            <div className="p-6 border border-gray-200 rounded-lg hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center mb-4">
+            <div className="p-6 border border-gray-200 rounded hover:shadow-lg transition-shadow">
+              <div className="w-12 h-12 bg-gray-900 rounded flex items-center justify-center mb-4">
                 <FaBell className="text-white text-xl" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -116,8 +116,8 @@ export default function Home() {
             </div>
 
             {/* Feature 6 */}
-            <div className="p-6 border border-gray-200 rounded-lg hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center mb-4">
+            <div className="p-6 border border-gray-200 rounded hover:shadow-lg transition-shadow">
+              <div className="w-12 h-12 bg-gray-900 rounded flex items-center justify-center mb-4">
                 <FaLock className="text-white text-xl" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -142,7 +142,7 @@ export default function Home() {
           </p>
           <a
             href="/login"
-            className="inline-block bg-white text-gray-900 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+            className="inline-block bg-white text-gray-900 px-8 py-3 rounded font-semibold hover:bg-gray-100 transition-colors"
           >
             Get Started Now
           </a>
