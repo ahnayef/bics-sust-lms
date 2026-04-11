@@ -174,24 +174,28 @@ export default function TransactionsManagement() {
     isOverdue: (date: string) => boolean;
   }) => (
     <div
-      className={`border rounded-lg p-3 sm:p-4 transition-colors ${
-        tx.status === "overdue" ? "bg-gray-100" : "bg-white"
-      } border-gray-200 hover:border-gray-300`}
+      className={`border rounded-lg p-3 sm:p-4 transition-all ${
+        tx.status === "overdue"
+          ? "bg-gray-50 border-gray-300 shadow-sm"
+          : "bg-white border-gray-200 shadow-xs hover:shadow-sm"
+      } hover:border-gray-300`}
     >
       <div className="flex flex-col gap-3">
         <div className="flex-1 w-full">
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-gray-200 text-gray-900 flex-shrink-0">
+            <span className="inline-block px-2.5 py-1 text-xs font-semibold rounded-full bg-gray-200 text-gray-900 flex-shrink-0">
               {tx.type === "borrow" ? "Borrow" : "Return"}
             </span>
             {tx.status === "overdue" && (
-              <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-gray-400 text-gray-900 flex-shrink-0">
+              <span className="inline-block px-2.5 py-1 text-xs font-semibold rounded-full bg-gray-400 text-white flex-shrink-0">
                 Overdue
               </span>
             )}
           </div>
-          <p className="font-medium text-gray-900 truncate">{tx.member}</p>
-          <p className="text-xs sm:text-sm text-gray-600 truncate">
+          <p className="font-semibold text-gray-900 truncate text-sm">
+            {tx.member}
+          </p>
+          <p className="text-xs sm:text-sm text-gray-500 truncate mt-0.5">
             {tx.book}{" "}
             <span className="font-mono text-xs text-gray-500">
               ({tx.bookId})
@@ -217,24 +221,26 @@ export default function TransactionsManagement() {
 
         {/* Actions */}
         {tx.status === "pending" ? (
-          <div className="flex gap-2 sm:gap-1">
+          <div className="flex gap-2 sm:gap-1 pt-2 border-t border-gray-100">
             <button
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-0 px-3 sm:px-2 py-2 sm:py-1.5 text-xs sm:text-base sm:text-gray-600 text-gray-900 bg-gray-100 sm:bg-transparent sm:hover:bg-gray-200 rounded transition-colors font-medium sm:font-normal border-none sm:border-0 cursor-pointer"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-0 px-3 sm:px-2.5 py-2 sm:py-1.5 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 sm:bg-gray-50 hover:bg-gray-200 sm:hover:bg-gray-100 rounded transition-colors border-none cursor-pointer active:bg-gray-300 sm:active:bg-gray-200"
               title="Approve"
             >
-              <FaCheck className="w-4 h-4 sm:w-4 sm:h-4" />
+              <FaCheck className="w-4 h-4" />
               <span className="sm:hidden">Approve</span>
             </button>
             <button
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-0 px-3 sm:px-2 py-2 sm:py-1.5 text-xs sm:text-base sm:text-gray-600 text-gray-900 bg-gray-100 sm:bg-transparent sm:hover:bg-gray-200 rounded transition-colors font-medium sm:font-normal border-none sm:border-0 cursor-pointer"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-0 px-3 sm:px-2.5 py-2 sm:py-1.5 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 sm:bg-gray-50 hover:bg-gray-200 sm:hover:bg-gray-100 rounded transition-colors border-none cursor-pointer active:bg-gray-300 sm:active:bg-gray-200"
               title="Reject"
             >
-              <FaTimes className="w-4 h-4 sm:w-4 sm:h-4" />
+              <FaTimes className="w-4 h-4" />
               <span className="sm:hidden">Reject</span>
             </button>
           </div>
         ) : (
-          <span className="text-gray-400 text-xs">—</span>
+          <span className="text-gray-300 text-xs pt-2 border-t border-gray-100 inline-block">
+            —
+          </span>
         )}
       </div>
     </div>
@@ -253,8 +259,8 @@ export default function TransactionsManagement() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-lg border border-gray-200">
-        <div className="flex flex-col sm:flex-row border-b border-gray-200">
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="flex flex-col sm:flex-row border-b border-gray-100">
           <button
             onClick={() => {
               setActiveTab("pending");
@@ -309,17 +315,21 @@ export default function TransactionsManagement() {
         </div>
 
         {/* Tab Content */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {activeTab === "pending" ? (
             /* Pending Approvals - 2 Column Layout */
-            <div className="space-y-4 sm:space-y-6">
+            <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 {/* Borrow Requests Column */}
-                <div className="border-2 border-gray-200 rounded-lg p-3 sm:p-4 bg-gray-50">
-                  <h3 className="text-xs sm:text-sm font-semibold text-gray-900 mb-1 sm:mb-2">
-                    📤 Borrow Requests ({pendingBorrows.length})
+                <div className="border border-gray-200 rounded-lg p-3 sm:p-4 bg-white shadow-sm">
+                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-1">
+                    Borrow Requests
                   </h3>
-                  <p className="text-xs text-gray-500 mb-3">
+                  <p className="text-xs text-gray-500 mb-3 font-medium">
+                    {pendingBorrows.length} request
+                    {pendingBorrows.length !== 1 ? "s" : ""}
+                  </p>
+                  <p className="text-xs text-gray-600 mb-4">
                     Approving marks the book as borrowed by the member
                   </p>
                   <div className="space-y-2 sm:space-y-3">
@@ -340,11 +350,15 @@ export default function TransactionsManagement() {
                 </div>
 
                 {/* Return Requests Column */}
-                <div className="border-2 border-gray-200 rounded-lg p-3 sm:p-4 bg-gray-50">
-                  <h3 className="text-xs sm:text-sm font-semibold text-gray-900 mb-1 sm:mb-2">
-                    📥 Return Requests ({pendingReturns.length})
+                <div className="border border-gray-200 rounded-lg p-3 sm:p-4 bg-white shadow-sm">
+                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-1">
+                    Return Requests
                   </h3>
-                  <p className="text-xs text-gray-500 mb-3">
+                  <p className="text-xs text-gray-500 mb-3 font-medium">
+                    {pendingReturns.length} request
+                    {pendingReturns.length !== 1 ? "s" : ""}
+                  </p>
+                  <p className="text-xs text-gray-600 mb-4">
                     Approving marks the book as available again
                   </p>
                   <div className="space-y-2 sm:space-y-3">
@@ -429,7 +443,7 @@ export default function TransactionsManagement() {
                 </div>
               ) : (
                 /* History - Table Layout */
-                <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
                   <table className="w-full text-xs sm:text-sm">
                     <thead>
                       <tr className="bg-gray-50 border-b border-gray-200">
@@ -499,25 +513,27 @@ export default function TransactionsManagement() {
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-        <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200">
-          <p className="text-xs sm:text-sm text-gray-600 mb-1">
+        <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+          <p className="text-xs sm:text-sm text-gray-600 mb-2 font-medium">
             Awaiting Approval
           </p>
-          <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+          <p className="text-3xl sm:text-4xl font-bold text-gray-900">
             {pendingTransactions.length}
           </p>
         </div>
-        <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200">
-          <p className="text-xs sm:text-sm text-gray-600 mb-1">
+        <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+          <p className="text-xs sm:text-sm text-gray-600 mb-2 font-medium">
             Active Borrows
           </p>
-          <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+          <p className="text-3xl sm:text-4xl font-bold text-gray-900">
             {activeTransactions.filter((tx) => tx.status === "active").length}
           </p>
         </div>
-        <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200">
-          <p className="text-xs sm:text-sm text-gray-600 mb-1">Overdue</p>
-          <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+        <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+          <p className="text-xs sm:text-sm text-gray-600 mb-2 font-medium">
+            Overdue
+          </p>
+          <p className="text-3xl sm:text-4xl font-bold text-gray-900">
             {activeTransactions.filter((tx) => tx.status === "overdue").length}
           </p>
         </div>
