@@ -4,91 +4,160 @@ import { useState } from "react";
 import { FaCheck, FaSearch, FaTimes } from "react-icons/fa";
 
 export default function TransactionsManagement() {
+  const [activeTab, setActiveTab] = useState<"pending" | "active" | "history">(
+    "pending",
+  );
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("all");
-  const [selectedType, setSelectedType] = useState("all");
+  const [sortBy, setSortBy] = useState<"date" | "member">("date");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "active" | "overdue"
+  >("all");
 
   const mockTransactions = [
+    // Pending Borrow Requests
     {
       id: 1,
       member: "John Doe",
       type: "borrow",
       book: "The Great Gatsby",
-      copyId: "QR001",
-      date: "2026-04-11",
+      bookId: "BOOK-001",
+      requestDate: "2026-04-11",
       dueDate: "2026-04-18",
-      status: "active",
+      status: "pending",
     },
+    {
+      id: 13,
+      member: "Jane Smith",
+      type: "borrow",
+      book: "To Kill a Mockingbird",
+      bookId: "BOOK-004",
+      requestDate: "2026-04-10",
+      dueDate: "2026-04-18",
+      status: "pending",
+    },
+
+    // Pending Return Requests
     {
       id: 2,
       member: "Jane Smith",
       type: "return",
       book: "To Kill a Mockingbird",
-      copyId: "QR002",
-      date: "2026-04-10",
-      dueDate: "2026-04-10",
+      bookId: "BOOK-004",
+      requestDate: "2026-04-10",
+      borrowedDate: "2026-04-03",
       status: "pending",
     },
+    {
+      id: 14,
+      member: "Mike Johnson",
+      type: "return",
+      book: "1984",
+      bookId: "BOOK-007",
+      requestDate: "2026-04-10",
+      borrowedDate: "2026-04-03",
+      status: "pending",
+    },
+    // Active Borrows
     {
       id: 3,
       member: "Mike Johnson",
       type: "borrow",
       book: "1984",
-      copyId: "QR003",
-      date: "2026-04-09",
+      bookId: "BOOK-007",
+      requestDate: "2026-04-09",
       dueDate: "2026-04-16",
       status: "active",
     },
     {
       id: 4,
       member: "Sarah Williams",
-      type: "return",
+      type: "borrow",
       book: "Pride and Prejudice",
-      copyId: "QR004",
-      date: "2026-04-08",
-      dueDate: "2026-04-08",
-      status: "approved",
+      bookId: "BOOK-010",
+      requestDate: "2026-04-08",
+      dueDate: "2026-04-15",
+      status: "active",
     },
+    // Overdue Active Borrow
     {
       id: 5,
       member: "John Doe",
       type: "borrow",
       book: "The Hobbit",
-      copyId: "QR005",
-      date: "2026-04-05",
+      bookId: "BOOK-002",
+      requestDate: "2026-04-05",
       dueDate: "2026-04-12",
       status: "overdue",
     },
+    // Completed Return
     {
       id: 6,
       member: "Emma Davis",
       type: "return",
       book: "Wuthering Heights",
-      copyId: "QR006",
-      date: "2026-04-03",
-      dueDate: "2026-04-03",
-      status: "pending",
+      bookId: "BOOK-009",
+      requestDate: "2026-04-03",
+      borrowedDate: "2026-03-27",
+      status: "approved",
     },
   ];
 
-  const filteredTransactions = mockTransactions.filter((tx) => {
-    const matchesSearch =
-      tx.member.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tx.book.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tx.copyId.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      selectedStatus === "all" || tx.status === selectedStatus;
-    const matchesType = selectedType === "all" || tx.type === selectedType;
-    return matchesSearch && matchesStatus && matchesType;
-  });
+  const pendingBorrows = mockTransactions.filter(
+    (tx) => tx.status === "pending" && tx.type === "borrow",
+  );
+  const pendingReturns = mockTransactions.filter(
+    (tx) => tx.status === "pending" && tx.type === "return",
+  );
+  const pendingTransactions = [...pendingBorrows, ...pendingReturns];
 
-  const getStatusColor = (status: string) => {
-    return "bg-gray-100 text-gray-900";
-  };
+  let activeTransactions = mockTransactions.filter(
+    (tx) => tx.status === "active" || tx.status === "overdue",
+  );
 
-  const getTypeIcon = (type: string) => {
-    return type === "borrow" ? "📤" : "📥";
-  };
+  let historyTransactions = mockTransactions.filter(
+    (tx) => tx.status === "approved",
+  );
+
+  // Filter and sort for active and history tabs
+  if (activeTab === "active" || activeTab === "history") {
+    const txList =
+      activeTab === "active" ? activeTransactions : historyTransactions;
+
+    let filtered = txList.filter((tx) => {
+      const matchesSearch =
+        tx.member.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tx.book.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tx.bookId.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesStatus =
+        activeTab === "history"
+          ? true
+          : statusFilter === "all" || tx.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+
+    if (sortBy === "member") {
+      filtered.sort((a, b) => a.member.localeCompare(b.member));
+    } else {
+      filtered.sort(
+        (a, b) =>
+          new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime(),
+      );
+    }
+
+    if (activeTab === "active") {
+      activeTransactions = filtered;
+    } else {
+      historyTransactions = filtered;
+    }
+  }
+
+  const displayedTransactions = {
+    pending: pendingTransactions,
+    active: activeTransactions,
+    history: historyTransactions,
+  }[activeTab];
 
   const isOverdue = (dueDate: string) => {
     return (
@@ -97,186 +166,359 @@ export default function TransactionsManagement() {
     );
   };
 
+  const TransactionCard = ({
+    tx,
+    isOverdue,
+  }: {
+    tx: (typeof mockTransactions)[0];
+    isOverdue: (date: string) => boolean;
+  }) => (
+    <div
+      className={`border rounded-lg p-3 sm:p-4 transition-colors ${
+        tx.status === "overdue" ? "bg-gray-100" : "bg-white"
+      } border-gray-200 hover:border-gray-300`}
+    >
+      <div className="flex flex-col gap-3">
+        <div className="flex-1 w-full">
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-gray-200 text-gray-900 flex-shrink-0">
+              {tx.type === "borrow" ? "Borrow" : "Return"}
+            </span>
+            {tx.status === "overdue" && (
+              <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-gray-400 text-gray-900 flex-shrink-0">
+                Overdue
+              </span>
+            )}
+          </div>
+          <p className="font-medium text-gray-900 truncate">{tx.member}</p>
+          <p className="text-xs sm:text-sm text-gray-600 truncate">
+            {tx.book}{" "}
+            <span className="font-mono text-xs text-gray-500">
+              ({tx.bookId})
+            </span>
+          </p>
+          <div className="mt-2 flex flex-col xs:flex-row gap-2 xs:gap-4 sm:gap-6 text-xs text-gray-600">
+            <span className="flex-shrink-0">
+              Req: {new Date(tx.requestDate).toLocaleDateString()}
+            </span>
+            {tx.type === "borrow" && tx.dueDate && (
+              <span
+                className={
+                  isOverdue(tx.dueDate) && tx.status !== "approved"
+                    ? "text-gray-900 font-medium flex-shrink-0"
+                    : "flex-shrink-0"
+                }
+              >
+                Due: {new Date(tx.dueDate).toLocaleDateString()}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Actions */}
+        {tx.status === "pending" ? (
+          <div className="flex gap-2 sm:gap-1">
+            <button
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-0 px-3 sm:px-2 py-2 sm:py-1.5 text-xs sm:text-base sm:text-gray-600 text-gray-900 bg-gray-100 sm:bg-transparent sm:hover:bg-gray-200 rounded transition-colors font-medium sm:font-normal border-none sm:border-0 cursor-pointer"
+              title="Approve"
+            >
+              <FaCheck className="w-4 h-4 sm:w-4 sm:h-4" />
+              <span className="sm:hidden">Approve</span>
+            </button>
+            <button
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-0 px-3 sm:px-2 py-2 sm:py-1.5 text-xs sm:text-base sm:text-gray-600 text-gray-900 bg-gray-100 sm:bg-transparent sm:hover:bg-gray-200 rounded transition-colors font-medium sm:font-normal border-none sm:border-0 cursor-pointer"
+              title="Reject"
+            >
+              <FaTimes className="w-4 h-4 sm:w-4 sm:h-4" />
+              <span className="sm:hidden">Reject</span>
+            </button>
+          </div>
+        ) : (
+          <span className="text-gray-400 text-xs">—</span>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Transactions</h1>
-        <p className="text-gray-600 mt-1">
-          Track and manage all borrow and return operations
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          Transactions
+        </h1>
+        <p className="text-xs sm:text-sm text-gray-600 mt-1">
+          Manage borrow and return requests
         </p>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-lg p-4 border border-gray-200 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Search */}
-          <div className="relative md:col-span-1">
-            <FaSearch className="absolute left-3 top-3 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by member, book, or copy ID..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-            />
-          </div>
-
-          {/* Type Filter */}
-          <select
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+      {/* Tabs */}
+      <div className="bg-white rounded-lg border border-gray-200">
+        <div className="flex flex-col sm:flex-row border-b border-gray-200">
+          <button
+            onClick={() => {
+              setActiveTab("pending");
+              setSearchTerm("");
+            }}
+            className={`flex-1 px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-medium transition-colors ${
+              activeTab === "pending"
+                ? "text-gray-900 border-b-2 sm:border-b-2 border-gray-900"
+                : "text-gray-600 hover:text-gray-900 border-b border-gray-200 sm:border-b-0"
+            }`}
           >
-            <option value="all">All Types</option>
-            <option value="borrow">Borrow</option>
-            <option value="return">Return</option>
-          </select>
-
-          {/* Status Filter */}
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            Pending
+            <span className="hidden sm:inline-block sm:ml-1">Approvals</span>
+            <span className="ml-1 text-xs text-gray-500">
+              ({pendingTransactions.length})
+            </span>
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab("active");
+              setSearchTerm("");
+              setStatusFilter("all");
+            }}
+            className={`flex-1 px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-medium transition-colors ${
+              activeTab === "active"
+                ? "text-gray-900 border-b-2 border-gray-900"
+                : "text-gray-600 hover:text-gray-900 border-b border-gray-200 sm:border-b-0"
+            }`}
           >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="overdue">Overdue</option>
-          </select>
+            Active
+            <span className="hidden sm:inline-block sm:ml-1">Borrows</span>
+            <span className="ml-1 text-xs text-gray-500">
+              ({activeTransactions.length})
+            </span>
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab("history");
+              setSearchTerm("");
+            }}
+            className={`flex-1 px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-medium transition-colors ${
+              activeTab === "history"
+                ? "text-gray-900 border-b-2 border-gray-900"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            History
+            <span className="ml-1 text-xs text-gray-500">
+              ({historyTransactions.length})
+            </span>
+          </button>
         </div>
-      </div>
 
-      {/* Transactions Table */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-6 py-3 text-left text-gray-700 font-semibold">
-                  Type
-                </th>
-                <th className="px-6 py-3 text-left text-gray-700 font-semibold">
-                  Member
-                </th>
-                <th className="px-6 py-3 text-left text-gray-700 font-semibold">
-                  Book
-                </th>
-                <th className="px-6 py-3 text-left text-gray-700 font-semibold">
-                  Copy ID
-                </th>
-                <th className="px-6 py-3 text-left text-gray-700 font-semibold">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-gray-700 font-semibold">
-                  Due Date
-                </th>
-                <th className="px-6 py-3 text-left text-gray-700 font-semibold">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-gray-700 font-semibold">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredTransactions.map((tx) => (
-                <tr
-                  key={tx.id}
-                  className={`border-b border-gray-200 ${isOverdue(tx.dueDate) && tx.type === "borrow" ? "bg-red-50" : "hover:bg-gray-50"} transition-colors`}
-                >
-                  <td className="px-6 py-3 text-center text-lg">
-                    {getTypeIcon(tx.type)}
-                  </td>
-                  <td className="px-6 py-3 font-medium text-gray-900">
-                    {tx.member}
-                  </td>
-                  <td className="px-6 py-3 text-gray-600">{tx.book}</td>
-                  <td className="px-6 py-3 text-gray-600">
-                    <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
-                      {tx.copyId}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3 text-gray-600">
-                    {new Date(tx.date).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-3 text-gray-600">
-                    <span
-                      className={
-                        isOverdue(tx.dueDate) && tx.type === "borrow"
-                          ? "text-red-600 font-medium"
-                          : ""
+        {/* Tab Content */}
+        <div className="p-6">
+          {activeTab === "pending" ? (
+            /* Pending Approvals - 2 Column Layout */
+            <div className="space-y-4 sm:space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                {/* Borrow Requests Column */}
+                <div className="border-2 border-gray-200 rounded-lg p-3 sm:p-4 bg-gray-50">
+                  <h3 className="text-xs sm:text-sm font-semibold text-gray-900 mb-1 sm:mb-2">
+                    📤 Borrow Requests ({pendingBorrows.length})
+                  </h3>
+                  <p className="text-xs text-gray-500 mb-3">
+                    Approving marks the book as borrowed by the member
+                  </p>
+                  <div className="space-y-2 sm:space-y-3">
+                    {pendingBorrows.length === 0 ? (
+                      <p className="text-sm text-gray-500 text-center py-6">
+                        No pending borrow requests
+                      </p>
+                    ) : (
+                      pendingBorrows.map((tx) => (
+                        <TransactionCard
+                          key={tx.id}
+                          tx={tx}
+                          isOverdue={isOverdue}
+                        />
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Return Requests Column */}
+                <div className="border-2 border-gray-200 rounded-lg p-3 sm:p-4 bg-gray-50">
+                  <h3 className="text-xs sm:text-sm font-semibold text-gray-900 mb-1 sm:mb-2">
+                    📥 Return Requests ({pendingReturns.length})
+                  </h3>
+                  <p className="text-xs text-gray-500 mb-3">
+                    Approving marks the book as available again
+                  </p>
+                  <div className="space-y-2 sm:space-y-3">
+                    {pendingReturns.length === 0 ? (
+                      <p className="text-sm text-gray-500 text-center py-6">
+                        No pending return requests
+                      </p>
+                    ) : (
+                      pendingReturns.map((tx) => (
+                        <TransactionCard
+                          key={tx.id}
+                          tx={tx}
+                          isOverdue={isOverdue}
+                        />
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Active Borrows and History - with Search/Sort */
+            <div className="space-y-3 sm:space-y-4">
+              <div className="flex flex-col gap-2 sm:gap-3">
+                <div className="flex-1 relative">
+                  <FaSearch className="absolute left-3 top-2.5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search member, book, or ID..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                  />
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                  {activeTab === "active" && (
+                    <select
+                      value={statusFilter}
+                      onChange={(e) =>
+                        setStatusFilter(
+                          e.target.value as "all" | "active" | "overdue",
+                        )
                       }
+                      className="px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
                     >
-                      {new Date(tx.dueDate).toLocaleDateString()}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3">
-                    <span
-                      className={`inline-block px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(tx.status)}`}
-                    >
-                      {tx.status.charAt(0).toUpperCase() + tx.status.slice(1)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3">
-                    {tx.status === "pending" && tx.type === "return" && (
-                      <div className="flex items-center gap-2">
-                        <button
-                          className="p-2 text-green-600 hover:bg-green-50 rounded transition-colors"
-                          title="Approve"
-                        >
-                          <FaCheck className="w-4 h-4" />
-                        </button>
-                        <button
-                          className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
-                          title="Reject"
-                        >
-                          <FaTimes className="w-4 h-4" />
-                        </button>
-                      </div>
-                    )}
-                    {tx.status !== "pending" && (
-                      <span className="text-gray-400 text-xs">-</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                      <option value="all">All Status</option>
+                      <option value="active">Active</option>
+                      <option value="overdue">Overdue</option>
+                    </select>
+                  )}
 
-        {filteredTransactions.length === 0 && (
-          <div className="text-center py-12 text-gray-500">
-            <p>No transactions found matching your filters.</p>
-          </div>
-        )}
+                  <select
+                    value={sortBy}
+                    onChange={(e) =>
+                      setSortBy(e.target.value as "date" | "member")
+                    }
+                    className="px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                  >
+                    <option value="date">Newest</option>
+                    <option value="member">Member</option>
+                  </select>
+                </div>
+              </div>
+
+              {activeTab === "active" ? (
+                /* Active Borrows - Card Layout */
+                <div className="space-y-2 sm:space-y-3">
+                  {activeTransactions.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                      <p>No active borrows.</p>
+                    </div>
+                  ) : (
+                    activeTransactions.map((tx) => (
+                      <TransactionCard
+                        key={tx.id}
+                        tx={tx}
+                        isOverdue={isOverdue}
+                      />
+                    ))
+                  )}
+                </div>
+              ) : (
+                /* History - Table Layout */
+                <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                  <table className="w-full text-xs sm:text-sm">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-200">
+                        <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-gray-700 font-semibold">
+                          Member
+                        </th>
+                        <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-gray-700 font-semibold">
+                          Book
+                        </th>
+                        <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-gray-700 font-semibold">
+                          ID
+                        </th>
+                        <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-gray-700 font-semibold">
+                          Type
+                        </th>
+                        <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-gray-700 font-semibold">
+                          Date
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {historyTransactions.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            className="px-3 sm:px-6 py-6 sm:py-8 text-center text-gray-500 text-xs sm:text-sm"
+                          >
+                            No completed transactions.
+                          </td>
+                        </tr>
+                      ) : (
+                        historyTransactions.map((tx) => (
+                          <tr
+                            key={tx.id}
+                            className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
+                          >
+                            <td className="px-3 sm:px-6 py-2 sm:py-3 font-medium text-gray-900 truncate">
+                              {tx.member}
+                            </td>
+                            <td className="px-3 sm:px-6 py-2 sm:py-3 text-gray-600 truncate">
+                              {tx.book}
+                            </td>
+                            <td className="px-3 sm:px-6 py-2 sm:py-3 text-gray-600">
+                              <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                                {tx.bookId}
+                              </span>
+                            </td>
+                            <td className="px-3 sm:px-6 py-2 sm:py-3">
+                              <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-gray-200 text-gray-900 whitespace-nowrap">
+                                {tx.type === "borrow" ? "Borrow" : "Return"}
+                              </span>
+                            </td>
+                            <td className="px-3 sm:px-6 py-2 sm:py-3 text-gray-600 text-xs sm:text-sm whitespace-nowrap">
+                              {new Date(tx.requestDate).toLocaleDateString()}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Active Borrows</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {mockTransactions.filter((tx) => tx.status === "active").length}
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200">
+          <p className="text-xs sm:text-sm text-gray-600 mb-1">
+            Awaiting Approval
+          </p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+            {pendingTransactions.length}
           </p>
         </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Pending Approvals</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {mockTransactions.filter((tx) => tx.status === "pending").length}
+        <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200">
+          <p className="text-xs sm:text-sm text-gray-600 mb-1">
+            Active Borrows
+          </p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+            {activeTransactions.filter((tx) => tx.status === "active").length}
           </p>
         </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Overdue</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {mockTransactions.filter((tx) => tx.status === "overdue").length}
-          </p>
-        </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Approved Returns</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {mockTransactions.filter((tx) => tx.status === "approved").length}
+        <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200">
+          <p className="text-xs sm:text-sm text-gray-600 mb-1">Overdue</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+            {activeTransactions.filter((tx) => tx.status === "overdue").length}
           </p>
         </div>
       </div>
