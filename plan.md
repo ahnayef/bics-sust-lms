@@ -32,7 +32,7 @@ Build a Next.js + MongoDB library system for a fixed syllabus of 80 books where 
 - Book
   - One syllabus title entry
 - BookCopy
-  - Physical copy record with unique copy ID and QR info
+  - Physical copy record with unique copy ID and QR info, availability status, and condition
 - BorrowTransaction
   - Borrow lifecycle, due date, return date, and status
 - ReturnApproval
