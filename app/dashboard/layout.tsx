@@ -135,7 +135,7 @@ export default function DashboardLayout({
                 <div className="text-sm text-gray-600">
                   Welcome back, <span className="font-medium">Admin User</span>
                 </div>
-                <button className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm">
+                <button className="cursor-pointer px-4 py-2 bg-red-50 text-red-700 border border-red-300 rounded-lg hover:bg-red-100 transition-colors font-medium text-sm">
                   Logout
                 </button>
               </div>

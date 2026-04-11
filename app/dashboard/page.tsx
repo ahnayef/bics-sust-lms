@@ -126,21 +126,23 @@ export default function DashboardOverview() {
             Overdue Items
           </h2>
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-gray-100 border-l-4 border-gray-900 rounded-lg">
               <div>
-                <p className="text-sm text-gray-600">Critical</p>
-                <p className="text-2xl font-bold text-red-600">3</p>
+                <p className="text-sm font-semibold text-gray-900">Past Due</p>
+                <p className="text-2xl font-bold text-gray-900">3</p>
               </div>
-              <span className="text-xs font-medium px-2 py-1 bg-red-100 text-red-700 rounded">
-                Past Due
+              <span className="text-xs font-semibold px-2 py-1 bg-gray-900 text-white rounded">
+                CRITICAL
               </span>
             </div>
-            <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-gray-50 border-l-4 border-gray-400 rounded-lg">
               <div>
-                <p className="text-sm text-gray-600">Expiring Soon</p>
-                <p className="text-2xl font-bold text-yellow-600">7</p>
+                <p className="text-sm font-semibold text-gray-700">
+                  Expiring Soon
+                </p>
+                <p className="text-2xl font-bold text-gray-700">7</p>
               </div>
-              <span className="text-xs font-medium px-2 py-1 bg-yellow-100 text-yellow-700 rounded">
+              <span className="text-xs font-medium px-2 py-1 bg-gray-300 text-gray-900 rounded">
                 This Week
               </span>
             </div>
