@@ -29,7 +29,7 @@ export default function DashboardLayout({
       requiresRole: ["admin", "moderator", "member"],
     },
     {
-      label: "Members",
+      label: "Users",
       href: "/dashboard/users",
       icon: FaUsers,
       requiresRole: ["admin", "moderator"],
