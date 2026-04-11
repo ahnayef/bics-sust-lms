@@ -220,7 +220,7 @@ export default function DashboardOverview() {
           </h2>
           <Link
             href="/dashboard/transactions"
-            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium text-sm"
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-700 font-medium text-sm"
           >
             View All <FaArrowRight className="w-4 h-4" />
           </Link>

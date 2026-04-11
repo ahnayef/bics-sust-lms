@@ -65,7 +65,7 @@ export default function DashboardLayout({
           className="flex items-center gap-2 font-bold text-gray-900"
         >
           <FaBook className="w-5 h-5" />
-          Library LMS
+          BICS SUST LMS
         </Link>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -89,7 +89,7 @@ export default function DashboardLayout({
           {/* Logo */}
           <div className="hidden lg:flex items-center gap-2 px-6 py-6 font-bold text-lg mb-4 border-b border-gray-700">
             <FaBook className="w-6 h-6" />
-            Library LMS
+            BICS SUST LMS
           </div>
 
           {/* Mobile Close Button */}
