@@ -6,8 +6,13 @@ import { FaEdit, FaPlus, FaSearch, FaTrash } from "react-icons/fa";
 export default function MembersManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
-
-  const mockMembers = [
+  const [editingMemberId, setEditingMemberId] = useState<number | null>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    rank: "Member",
+  });
+  const [members, setMembers] = useState([
     {
       id: 1,
       name: "John Doe",
@@ -38,14 +43,58 @@ export default function MembersManagement() {
       email: "emma@example.com",
       rank: "Activist",
     },
-  ];
+  ]);
 
-  const filteredMembers = mockMembers.filter((member) => {
+  const filteredMembers = members.filter((member) => {
     const matchesSearch =
       member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.email.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
+
+  const handleAddClick = () => {
+    setEditingMemberId(null);
+    setFormData({ name: "", email: "", rank: "Member" });
+    setShowAddModal(true);
+  };
+
+  const handleEditClick = (member: (typeof members)[0]) => {
+    setEditingMemberId(member.id);
+    setFormData({ name: member.name, email: member.email, rank: member.rank });
+    setShowAddModal(true);
+  };
+
+  const handleDeleteClick = (memberId: number) => {
+    if (confirm("Are you sure you want to delete this member?")) {
+      setMembers(members.filter((m) => m.id !== memberId));
+    }
+  };
+
+  const handleSave = () => {
+    if (!formData.name || !formData.email) {
+      alert("Please fill in all fields");
+      return;
+    }
+
+    if (editingMemberId) {
+      // Update existing member
+      setMembers(
+        members.map((m) =>
+          m.id === editingMemberId ? { ...m, ...formData } : m,
+        ),
+      );
+    } else {
+      // Add new member
+      const newMember = {
+        id: Math.max(...members.map((m) => m.id), 0) + 1,
+        ...formData,
+      };
+      setMembers([...members, newMember]);
+    }
+
+    setShowAddModal(false);
+    setFormData({ name: "", email: "", rank: "Member" });
+  };
 
   const getRankColor = (rank: string) => {
     return "bg-gray-100 text-gray-900";
@@ -56,17 +105,15 @@ export default function MembersManagement() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Members</h1>
-          <p className="text-gray-600 mt-1">
-            Manage library members and their ranks
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">Users</h1>
+          <p className="text-gray-600 mt-1">Manage library users</p>
         </div>
         <button
-          onClick={() => setShowAddModal(true)}
+          onClick={handleAddClick}
           className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
         >
           <FaPlus className="w-4 h-4" />
-          Add Member
+          Add User
         </button>
       </div>
 
@@ -123,10 +170,16 @@ export default function MembersManagement() {
                   </td>
                   <td className="px-6 py-3">
                     <div className="flex items-center gap-2">
-                      <button className="p-2 text-gray-600 hover:bg-gray-100 rounded transition-colors">
+                      <button
+                        onClick={() => handleEditClick(member)}
+                        className="p-2 text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                      >
                         <FaEdit className="w-4 h-4" />
                       </button>
-                      <button className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors">
+                      <button
+                        onClick={() => handleDeleteClick(member.id)}
+                        className="p-2 text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                      >
                         <FaTrash className="w-4 h-4" />
                       </button>
                     </div>
@@ -149,7 +202,7 @@ export default function MembersManagement() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">
-              Add New Member
+              {editingMemberId ? "Edit Member" : "Add New Member"}
             </h2>
 
             <div className="space-y-4">
@@ -160,6 +213,10 @@ export default function MembersManagement() {
                 <input
                   type="text"
                   placeholder="Enter full name"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
                 />
               </div>
@@ -171,6 +228,10 @@ export default function MembersManagement() {
                 <input
                   type="email"
                   placeholder="Enter email address"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
                 />
               </div>
@@ -179,8 +240,13 @@ export default function MembersManagement() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Rank
                 </label>
-                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none">
-                  <option>Select a rank</option>
+                <select
+                  value={formData.rank}
+                  onChange={(e) =>
+                    setFormData({ ...formData, rank: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                >
                   <option>Activist</option>
                   <option>Associate</option>
                   <option>Member</option>
@@ -196,10 +262,10 @@ export default function MembersManagement() {
                 Cancel
               </button>
               <button
-                onClick={() => setShowAddModal(false)}
+                onClick={handleSave}
                 className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
               >
-                Add Member
+                {editingMemberId ? "Update Member" : "Add Member"}
               </button>
             </div>
           </div>
