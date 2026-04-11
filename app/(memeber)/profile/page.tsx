@@ -1,16 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import {
+  FaArrowRight,
   FaBook,
+  FaBookOpen,
   FaCheckCircle,
   FaClock,
   FaExclamationTriangle,
-  FaArrowRight,
   FaQrcode,
-  FaBookOpen,
 } from "react-icons/fa";
-import { useState } from "react";
 
 export default function MemberProfile() {
   // Pagination state
@@ -109,7 +109,9 @@ export default function MemberProfile() {
 
   // Pagination logic
   const itemsPerPage = 4;
-  const totalBorrowPages = Math.ceil(stats.currentBorrows.length / itemsPerPage);
+  const totalBorrowPages = Math.ceil(
+    stats.currentBorrows.length / itemsPerPage,
+  );
   const paginatedBorrows = stats.currentBorrows.slice(
     borrowPage * itemsPerPage,
     (borrowPage + 1) * itemsPerPage,
@@ -145,18 +147,58 @@ export default function MemberProfile() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Floating Borrow Button */}
+      {/* Navbar */}
+      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo/Home */}
+            <Link
+              href="/profile"
+              className="flex items-center gap-2 font-semibold text-gray-900 hover:text-gray-700 transition-colors"
+            >
+              <FaBook className="w-5 h-5" />
+              <span className="hidden sm:inline">BICS SUST LMS</span>
+            </Link>
+
+            {/* Navigation Links */}
+            <div className="hidden sm:flex items-center gap-6">
+              <Link
+                href="/profile"
+                className="text-sm font-medium text-gray-900 hover:text-gray-700 transition-colors"
+              >
+                Profile
+              </Link>
+              <Link
+                href="/history"
+                className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                History
+              </Link>
+            </div>
+
+            {/* Borrow Button (Desktop) */}
+            <div className="hidden sm:block">
+              <Link
+                href="/borrow"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+              >
+                <FaQrcode className="w-4 h-4" />
+                Borrow Book
+              </Link>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Floating Borrow Button (Mobile) */}
       <Link
         href="/borrow"
-        className="fixed bottom-8 right-8 bg-gray-900 text-white p-4 rounded-full shadow-lg hover:bg-gray-800 transition-all hover:shadow-xl z-40 flex items-center gap-2 group"
+        className="sm:hidden fixed bottom-8 right-8 bg-gray-900 text-white p-4 rounded-full shadow-lg hover:bg-gray-800 transition-all hover:shadow-xl z-40 flex items-center gap-2"
       >
         <FaQrcode className="w-5 h-5" />
-        <span className="hidden group-hover:inline text-sm font-medium">
-          Borrow Book
-        </span>
       </Link>
 
-      {/* Header Section */}
+      {/* Profile Header Section */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           <div>
@@ -291,7 +333,9 @@ export default function MemberProfile() {
                   </span>
                   <button
                     onClick={() =>
-                      setBorrowPage((p) => Math.min(totalBorrowPages - 1, p + 1))
+                      setBorrowPage((p) =>
+                        Math.min(totalBorrowPages - 1, p + 1),
+                      )
                     }
                     disabled={borrowPage === totalBorrowPages - 1}
                     className="px-3 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
