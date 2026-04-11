@@ -147,7 +147,7 @@ export default function MemberProfile() {
     <div className="min-h-screen bg-gray-50">
       {/* Floating Borrow Button */}
       <Link
-        href="/scan"
+        href="/borrow"
         className="fixed bottom-8 right-8 bg-gray-900 text-white p-4 rounded-full shadow-lg hover:bg-gray-800 transition-all hover:shadow-xl z-40 flex items-center gap-2 group"
       >
         <FaQrcode className="w-5 h-5" />
