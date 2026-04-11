@@ -221,20 +221,20 @@ export default function TransactionsManagement() {
 
         {/* Actions */}
         {tx.status === "pending" ? (
-          <div className="flex gap-2 sm:gap-1 pt-2 border-t border-gray-100">
+          <div className="flex gap-2 pt-2 border-t border-gray-100">
             <button
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-0 px-3 sm:px-2.5 py-2 sm:py-1.5 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 sm:bg-gray-50 hover:bg-gray-200 sm:hover:bg-gray-100 rounded transition-colors border-none cursor-pointer active:bg-gray-300 sm:active:bg-gray-200"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors border-none cursor-pointer active:bg-gray-300"
               title="Approve"
             >
               <FaCheck className="w-4 h-4" />
-              <span className="sm:hidden">Approve</span>
+              <span>Approve</span>
             </button>
             <button
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-0 px-3 sm:px-2.5 py-2 sm:py-1.5 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 sm:bg-gray-50 hover:bg-gray-200 sm:hover:bg-gray-100 rounded transition-colors border-none cursor-pointer active:bg-gray-300 sm:active:bg-gray-200"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors border-none cursor-pointer active:bg-gray-300"
               title="Reject"
             >
               <FaTimes className="w-4 h-4" />
-              <span className="sm:hidden">Reject</span>
+              <span>Reject</span>
             </button>
           </div>
         ) : (
