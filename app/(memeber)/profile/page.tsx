@@ -25,8 +25,8 @@ export default function MemberProfile() {
   });
 
   const [stats] = useState({
-    totalBooks: 80,
-    completed: 12,
+    syllabusBooks: 80, // Fixed syllabus size (can be updated by admin)
+    completedSyllabus: 12,
     active: 4,
     currentBorrows: [
       {
@@ -35,6 +35,7 @@ export default function MemberProfile() {
         author: "Harper Lee",
         borrowedDate: "2025-04-05",
         dueDate: "2025-04-12",
+        isSyllabus: true,
       },
       {
         id: 2,
@@ -42,6 +43,7 @@ export default function MemberProfile() {
         author: "J.R.R. Tolkien",
         borrowedDate: "2025-04-02",
         dueDate: "2025-04-15",
+        isSyllabus: false,
       },
       {
         id: 3,
@@ -49,6 +51,7 @@ export default function MemberProfile() {
         author: "Jane Austen",
         borrowedDate: "2025-03-28",
         dueDate: "2025-04-10",
+        isSyllabus: true,
       },
       {
         id: 4,
@@ -56,6 +59,7 @@ export default function MemberProfile() {
         author: "F. Scott Fitzgerald",
         borrowedDate: "2025-04-08",
         dueDate: "2025-04-18",
+        isSyllabus: true,
       },
       {
         id: 5,
@@ -64,6 +68,7 @@ export default function MemberProfile() {
         borrowedDate: "2025-04-10",
         dueDate: "2025-04-17",
         status: "active",
+        isSyllabus: false,
       },
     ],
     history: [
@@ -74,6 +79,7 @@ export default function MemberProfile() {
         borrowedDate: "2025-01-20",
         returnDate: "2025-01-27",
         status: "completed",
+        isSyllabus: true,
       },
       {
         id: 2,
@@ -82,6 +88,7 @@ export default function MemberProfile() {
         borrowedDate: "2025-03-20",
         returnDate: "2025-03-27",
         status: "completed",
+        isSyllabus: true,
       },
       {
         id: 3,
@@ -90,6 +97,7 @@ export default function MemberProfile() {
         borrowedDate: "2025-02-15",
         dueDate: "2025-02-22",
         status: "overdue",
+        isSyllabus: true,
       },
       {
         id: 4,
@@ -98,13 +106,14 @@ export default function MemberProfile() {
         borrowedDate: "2025-04-05",
         dueDate: "2025-04-12",
         status: "active",
+        isSyllabus: false,
       },
     ],
   });
 
-  const remaining = stats.totalBooks - stats.completed;
+  const remaining = stats.syllabusBooks - stats.completedSyllabus;
   const completionPercentage = Math.round(
-    (stats.completed / stats.totalBooks) * 100,
+    (stats.completedSyllabus / stats.syllabusBooks) * 100,
   );
 
   // Pagination logic
@@ -218,14 +227,15 @@ export default function MemberProfile() {
         {/* Progress Overview Card */}
         <div className="bg-white border border-gray-200 rounded-lg p-6 sm:p-8 mb-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-6">
-            Your Reading Journey
+            Syllabus Reading Progress
           </h2>
 
           {/* Progress Bar */}
           <div className="mb-8">
             <div className="flex items-baseline justify-between mb-3">
               <span className="text-sm font-medium text-gray-700">
-                {stats.completed} of {stats.totalBooks} books completed
+                {stats.completedSyllabus} of {stats.syllabusBooks} syllabus
+                books completed
               </span>
               <span className="text-2xl font-bold text-gray-900">
                 {completionPercentage}%
@@ -245,7 +255,7 @@ export default function MemberProfile() {
             <div className="bg-white border border-gray-200 p-4 rounded-lg text-center hover:shadow-sm transition-shadow">
               <FaCheckCircle className="w-5 h-5 text-gray-700 mx-auto mb-2" />
               <p className="text-2xl font-bold text-gray-900">
-                {stats.completed}
+                {stats.completedSyllabus}
               </p>
               <p className="text-xs text-gray-600 mt-1">Completed</p>
             </div>
@@ -268,9 +278,9 @@ export default function MemberProfile() {
             <div className="bg-white border border-gray-200 p-4 rounded-lg text-center hover:shadow-sm transition-shadow">
               <FaBookOpen className="w-5 h-5 text-gray-700 mx-auto mb-2" />
               <p className="text-2xl font-bold text-gray-900">
-                {stats.totalBooks}
+                {stats.syllabusBooks}
               </p>
-              <p className="text-xs text-gray-600 mt-1">Total Books</p>
+              <p className="text-xs text-gray-600 mt-1">Syllabus</p>
             </div>
           </div>
         </div>
