@@ -80,7 +80,7 @@ export default function BorrowPage() {
   const handleCopyIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     processCopyId(e.target.value);
   };
-
+  //eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleScan = (detectedCodes: any[]) => {
     if (detectedCodes.length > 0) {
       const scannedValue = detectedCodes[0].rawValue;
@@ -252,33 +252,64 @@ export default function BorrowPage() {
                     Start QR Scanner
                   </button>
                 ) : null}
-                <Scanner
-                  formats={["qr_code"]}
-                  constraints={{
-                    deviceId: deviceId,
-                  }}
-                  onScan={handleScan}
-                  onError={(error) => {
-                    console.error("Scanner error:", error);
-                  }}
-                  styles={{
-                    container: {
-                      height: "400px",
-                      width: "100%",
-                      borderRadius: "0.5rem",
-                      overflow: "hidden",
-                    },
-                  }}
-                  components={{
-                    onOff: true,
-                    torch: true,
-                    zoom: true,
-                    finder: true,
-                  }}
-                  allowMultiple={false}
-                  scanDelay={2000}
-                  paused={scanPaused}
-                />
+                <div className="relative max-w-md mx-auto">
+                  <div className="relative bg-black rounded-sm shadow-lg aspect-square overflow-clip">
+                    <Scanner
+                      formats={["qr_code"]}
+                      constraints={{
+                        deviceId: deviceId,
+                      }}
+                      onScan={handleScan}
+                      onError={(error) => {
+                        console.error("Scanner error:", error);
+                      }}
+                      styles={{
+                        container: {
+                          width: "100%",
+                          aspectRatio: "1",
+                        },
+                        video: {
+                          objectFit: "cover",
+                        },
+                      }}
+                      components={{
+                        onOff: false,
+                        torch: true,
+                        zoom: true,
+                        finder: false,
+                      }}
+                      allowMultiple={false}
+                      scanDelay={2000}
+                      paused={scanPaused}
+                    />
+                    {/* Minimal Scanner Overlay */}
+                    <div className="absolute inset-0 pointer-events-none">
+                      {/* Blinking scanning line - CENTER */}
+                      <div
+                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-0.5 bg-red-500 opacity-75"
+                        style={{ animation: "qrScannerBlink 1.2s infinite" }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* Corner brackets - outside frame */}
+                  <div className="absolute -top-1 -left-1 w-6 h-1.5 bg-black pointer-events-none"></div>
+                  <div className="absolute -top-1 -left-1 w-1.5 h-6 bg-black pointer-events-none"></div>
+
+                  <div className="absolute -top-1 -right-1 w-6 h-1.5 bg-black pointer-events-none"></div>
+                  <div className="absolute -top-1 -right-1 w-1.5 h-6 bg-black pointer-events-none"></div>
+
+                  <div className="absolute -bottom-1 -left-1 w-6 h-1.5 bg-black pointer-events-none"></div>
+                  <div className="absolute -bottom-1 -left-1 w-1.5 h-6 bg-black pointer-events-none"></div>
+
+                  <div className="absolute -bottom-1 -right-1 w-6 h-1.5 bg-black pointer-events-none"></div>
+                  <div className="absolute -bottom-1 -right-1 w-1.5 h-6 bg-black pointer-events-none"></div>
+                </div>
+
+                <p className="text-xs text-gray-600 text-center">
+                  Position QR code within the frame
+                </p>
+
                 {scanPaused && (
                   <button
                     type="button"
