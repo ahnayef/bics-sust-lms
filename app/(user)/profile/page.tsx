@@ -130,22 +130,22 @@ export default function MemberProfile() {
     switch (status) {
       case "completed":
         return (
-          <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-50 text-green-600 text-xs font-medium rounded">
-            <FaCheckCircle className="w-3 h-3" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c] text-xs font-semibold rounded-sm ink-text">
+            <FaCheckCircle className="w-3 h-3 text-[#4e4033]" />
             Completed
           </span>
         );
       case "active":
         return (
-          <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-600 text-xs font-medium rounded">
-            <FaClock className="w-3 h-3" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c] text-xs font-semibold rounded-sm ink-text">
+            <FaClock className="w-3 h-3 text-[#6b5a4a]" />
             Active
           </span>
         );
       case "overdue":
         return (
-          <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-50 text-red-600 text-xs font-medium rounded">
-            <FaExclamationTriangle className="w-3 h-3" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c] text-xs font-semibold rounded-sm ink-text">
+            <FaExclamationTriangle className="w-3 h-3 text-[#7a4c37]" />
             Overdue
           </span>
         );
@@ -155,18 +155,63 @@ export default function MemberProfile() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#e5d9c4] profile-paper">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Courier+Prime:wght@400;700&display=swap');
+
+        .profile-paper {
+          background-image:
+            linear-gradient(180deg, #eee4d3 0%, #e5d8c1 52%, #dcccb2 100%),
+            linear-gradient(92deg, rgba(88, 66, 46, 0.05), transparent 24%),
+            linear-gradient(268deg, rgba(88, 66, 46, 0.04), transparent 18%),
+            repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.008) 2px, rgba(0,0,0,.008) 4px),
+            repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,.008) 2px, rgba(0,0,0,.008) 4px),
+            url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220"><filter id="p"><feTurbulence type="fractalNoise" baseFrequency="0.78" numOctaves="4" seed="6"/></filter><rect width="220" height="220" fill="%23e5d9c4"/><rect width="220" height="220" filter="url(%23p)" opacity="0.028"/></svg>');
+        }
+
+        .ink-text {
+          font-family: 'Courier Prime', monospace;
+        }
+
+        .ink-title {
+          font-family: 'Playfair Display', serif;
+        }
+
+        .profile-surface {
+          background-color: #f1e7d8;
+          border: 1px solid #46372b;
+          box-shadow: inset 0 0 0 1px rgba(244, 235, 219, 0.55), 0 0 0 1px rgba(69, 55, 43, 0.2);
+        }
+
+        .tron-border {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .tron-border::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          background:
+            repeating-linear-gradient(90deg, rgba(77, 59, 43, 0.24) 0 3px, transparent 3px 20px) top / 100% 1px no-repeat,
+            repeating-linear-gradient(90deg, rgba(77, 59, 43, 0.18) 0 2px, transparent 2px 18px) bottom / 100% 1px no-repeat,
+            repeating-linear-gradient(180deg, rgba(77, 59, 43, 0.18) 0 2px, transparent 2px 16px) left / 1px 100% no-repeat,
+            repeating-linear-gradient(180deg, rgba(77, 59, 43, 0.14) 0 2px, transparent 2px 20px) right / 1px 100% no-repeat;
+          opacity: 0.78;
+        }
+      `}</style>
       {/* Navbar */}
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <nav className="profile-surface border-b border-[#5a4a3b] sticky top-0 z-50">
         <div className="w-full px-3 sm:px-4 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16">
             {/* Logo/Home */}
             <Link
               href="/profile"
-              className="flex items-center gap-1 sm:gap-2 font-bold text-gray-900 hover:text-gray-700 transition-colors shrink-0 min-w-0"
+              className="flex items-center gap-1 sm:gap-2 font-bold text-[#221910] hover:text-[#3d3024] transition-colors shrink-0 min-w-0"
             >
               <FaBook className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" />
-              <span className="text-sm sm:text-lg font-bold truncate">
+              <span className="text-sm sm:text-lg font-bold truncate ink-title">
                 BICS SUST LMS
               </span>
             </Link>
@@ -175,13 +220,13 @@ export default function MemberProfile() {
             <div className="flex items-center gap-2 sm:gap-4 lg:gap-6 ml-2 sm:ml-4">
               <Link
                 href="/profile"
-                className="text-xs sm:text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors px-2 sm:px-3 py-2 rounded-md hover:bg-gray-50"
+                className="text-xs sm:text-sm font-medium text-[#3b2f24] hover:text-[#201710] transition-colors px-2 sm:px-3 py-2 rounded-md hover:bg-[#e9dcc9] ink-text"
               >
                 Profile
               </Link>
               <Link
                 href="/history"
-                className="text-xs sm:text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors px-2 sm:px-3 py-2 rounded-md hover:bg-gray-50"
+                className="text-xs sm:text-sm font-medium text-[#4e4033] hover:text-[#201710] transition-colors px-2 sm:px-3 py-2 rounded-md hover:bg-[#e9dcc9] ink-text"
               >
                 History
               </Link>
@@ -189,7 +234,7 @@ export default function MemberProfile() {
               {/* Borrow Button - Visible on all screens */}
               <Link
                 href="/borrow"
-                className="inline-flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-2 bg-gray-900 text-white rounded-lg font-semibold text-xs sm:text-sm hover:bg-gray-800 active:bg-gray-950 transition-colors whitespace-nowrap shrink-0 h-10 sm:h-auto"
+                className="inline-flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-2 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-semibold text-xs sm:text-sm hover:bg-[#4c4035] transition-colors whitespace-nowrap shrink-0 h-10 sm:h-auto ink-text"
               >
                 <FaQrcode className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                 <span className="hidden sm:inline">Borrow</span>
@@ -201,13 +246,13 @@ export default function MemberProfile() {
       </nav>
 
       {/* Profile Header Section */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="profile-surface border-b border-[#5a4a3b]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
               {member.name}
             </h1>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-[#5c4f42] mt-1 ink-text">
               {member.email} • Member since{" "}
               {new Date(member.joinedDate).toLocaleDateString()}
             </p>
@@ -218,7 +263,7 @@ export default function MemberProfile() {
       {/* Floating Borrow Button (Mobile) */}
       <Link
         href="/borrow"
-        className="sm:hidden fixed bottom-6 right-6 bg-gray-900 text-white p-2.5 rounded-full shadow-md hover:shadow-lg hover:bg-gray-800 transition-all z-40 flex items-center justify-center w-12 h-12  hover:opacity-100"
+        className="sm:hidden fixed bottom-6 right-6 bg-[#5a4d40] text-[#f6ede1] p-2.5 rounded-full shadow-md hover:shadow-lg hover:bg-[#4c4035] transition-all z-40 flex items-center justify-center w-12 h-12"
       >
         <FaQrcode className="w-5 h-5" />
       </Link>
@@ -226,25 +271,25 @@ export default function MemberProfile() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Progress Overview Card */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">
+        <div className="profile-surface tron-border rounded-lg p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8">
+          <h2 className="text-lg font-semibold text-[#221910] mb-6 ink-title">
             Syllabus Reading Progress
           </h2>
 
           {/* Progress Bar */}
           <div className="mb-6 sm:mb-8">
             <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between mb-3 gap-2">
-              <span className="text-xs sm:text-sm font-medium text-gray-700">
+              <span className="text-xs sm:text-sm font-medium text-[#4e4033] ink-text">
                 {stats.completedSyllabus} of {stats.syllabusBooks} syllabus
                 books
               </span>
-              <span className="text-xl sm:text-2xl font-bold text-gray-900">
+              <span className="text-xl sm:text-2xl font-bold text-[#221910] ink-title">
                 {completionPercentage}%
               </span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-4">
+            <div className="w-full bg-[#d7c7b0] rounded-full h-4">
               <div
-                className="bg-linear-to-r from-gray-900 to-gray-700 h-4 rounded-full transition-all duration-500"
+                className="bg-linear-to-r from-[#5a4d40] to-[#3d3126] h-4 rounded-full transition-all duration-500"
                 style={{ width: `${completionPercentage}%` }}
               ></div>
             </div>
@@ -253,51 +298,51 @@ export default function MemberProfile() {
           {/* Stats Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
             {/* Completed */}
-            <div className="bg-white border border-gray-200 p-3 sm:p-4 rounded-lg text-center hover:shadow-sm transition-shadow">
-              <FaCheckCircle className="w-4 sm:w-5 h-4 sm:h-5 text-gray-700 mx-auto mb-2" />
-              <p className="text-lg sm:text-2xl font-bold text-gray-900">
+            <div className="bg-[#f6ecdd] border border-[#786a5c] p-3 sm:p-4 rounded-lg text-center">
+              <FaCheckCircle className="w-4 sm:w-5 h-4 sm:h-5 text-[#4e4033] mx-auto mb-2" />
+              <p className="text-lg sm:text-2xl font-bold text-[#221910] ink-title">
                 {stats.completedSyllabus}
               </p>
-              <p className="text-xs text-gray-600 mt-1">Completed</p>
+              <p className="text-xs text-[#5c4f42] mt-1 ink-text">Completed</p>
             </div>
 
             {/* Active */}
-            <div className="bg-white border border-gray-200 p-3 sm:p-4 rounded-lg text-center hover:shadow-sm transition-shadow">
-              <FaClock className="w-4 sm:w-5 h-4 sm:h-5 text-gray-700 mx-auto mb-2" />
-              <p className="text-lg sm:text-2xl font-bold text-gray-900">
+            <div className="bg-[#f6ecdd] border border-[#786a5c] p-3 sm:p-4 rounded-lg text-center">
+              <FaClock className="w-4 sm:w-5 h-4 sm:h-5 text-[#4e4033] mx-auto mb-2" />
+              <p className="text-lg sm:text-2xl font-bold text-[#221910] ink-title">
                 {stats.active}
               </p>
-              <p className="text-xs text-gray-600 mt-1">Active</p>
+              <p className="text-xs text-[#5c4f42] mt-1 ink-text">Active</p>
             </div>
 
             {/* Remaining */}
-            <div className="bg-white border border-gray-200 p-3 sm:p-4 rounded-lg text-center hover:shadow-sm transition-shadow">
-              <FaBook className="w-4 sm:w-5 h-4 sm:h-5 text-gray-700 mx-auto mb-2" />
-              <p className="text-lg sm:text-2xl font-bold text-gray-900">
+            <div className="bg-[#f6ecdd] border border-[#786a5c] p-3 sm:p-4 rounded-lg text-center">
+              <FaBook className="w-4 sm:w-5 h-4 sm:h-5 text-[#4e4033] mx-auto mb-2" />
+              <p className="text-lg sm:text-2xl font-bold text-[#221910] ink-title">
                 {remaining}
               </p>
-              <p className="text-xs text-gray-600 mt-1">Remaining</p>
+              <p className="text-xs text-[#5c4f42] mt-1 ink-text">Remaining</p>
             </div>
 
             {/* Total */}
-            <div className="bg-white border border-gray-200 p-3 sm:p-4 rounded-lg text-center hover:shadow-sm transition-shadow">
-              <FaBookOpen className="w-4 sm:w-5 h-4 sm:h-5 text-gray-700 mx-auto mb-2" />
-              <p className="text-lg sm:text-2xl font-bold text-gray-900">
+            <div className="bg-[#f6ecdd] border border-[#786a5c] p-3 sm:p-4 rounded-lg text-center">
+              <FaBookOpen className="w-4 sm:w-5 h-4 sm:h-5 text-[#4e4033] mx-auto mb-2" />
+              <p className="text-lg sm:text-2xl font-bold text-[#221910] ink-title">
                 {stats.syllabusBooks}
               </p>
-              <p className="text-xs text-gray-600 mt-1">Syllabus</p>
+              <p className="text-xs text-[#5c4f42] mt-1 ink-text">Syllabus</p>
             </div>
           </div>
         </div>
 
         {/* Currently Borrowing - Full Width Grid */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8">
+        <div className="profile-surface tron-border rounded-lg p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <FaClock className="w-5 h-5 text-gray-700" />
+            <h2 className="text-lg font-semibold text-[#221910] flex items-center gap-2 ink-title">
+              <FaClock className="w-5 h-5 text-[#4e4033]" />
               Currently Borrowing
             </h2>
-            <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded">
+            <span className="text-sm text-[#5c4f42] bg-[#ebdfcd] px-3 py-1 rounded ink-text">
               {stats.currentBorrows.length} active
             </span>
           </div>
@@ -308,23 +353,25 @@ export default function MemberProfile() {
                 {paginatedBorrows.map((item) => (
                   <div
                     key={item.id}
-                    className="p-3 sm:p-4 border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:border-gray-300 transition-all bg-linear-to-br from-white to-gray-50"
+                    className="p-3 sm:p-4 border border-[#7b6d5f] rounded-lg shadow-sm transition-all bg-[#f6ecdd]"
                   >
                     <div className="flex flex-col h-full">
                       <div className="flex-1 mb-3 sm:mb-4">
-                        <p className="font-semibold text-gray-900 line-clamp-2 text-xs sm:text-sm">
+                        <p className="font-semibold text-[#221910] line-clamp-2 text-xs sm:text-sm ink-title">
                           {item.title}
                         </p>
-                        <p className="text-xs text-gray-600 mt-1 line-clamp-1">
+                        <p className="text-xs text-[#5c4f42] mt-1 line-clamp-1 ink-text">
                           {item.author}
                         </p>
                       </div>
-                      <div className="pt-3 sm:pt-4 border-t border-gray-200">
-                        <p className="text-xs text-gray-600 mb-1">Due</p>
-                        <p className="text-xs sm:text-sm font-semibold text-gray-900">
+                      <div className="pt-3 sm:pt-4 border-t border-[#b9a992]">
+                        <p className="text-xs text-[#5c4f42] mb-1 ink-text">
+                          Due
+                        </p>
+                        <p className="text-xs sm:text-sm font-semibold text-[#221910] ink-text">
                           {new Date(item.dueDate).toLocaleDateString()}
                         </p>
-                        <p className="text-xs text-gray-500 mt-2">
+                        <p className="text-xs text-[#6f6256] mt-2 ink-text">
                           Borrowed{" "}
                           {new Date(item.borrowedDate).toLocaleDateString()}
                         </p>
@@ -335,15 +382,15 @@ export default function MemberProfile() {
               </div>
 
               {totalBorrowPages > 1 && (
-                <div className="flex items-center justify-between gap-2 pt-4 border-t border-gray-200">
+                <div className="flex items-center justify-between gap-2 pt-4 border-t border-[#b9a992]">
                   <button
                     onClick={() => setBorrowPage((p) => Math.max(0, p - 1))}
                     disabled={borrowPage === 0}
-                    className="px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-gray-700 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+                    className="px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-[#4e4033] border border-[#7b6d5f] rounded hover:bg-[#eadcca] disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap ink-text"
                   >
                     ← Prev
                   </button>
-                  <span className="text-xs text-gray-600">
+                  <span className="text-xs text-[#5c4f42] ink-text">
                     {borrowPage + 1}/{totalBorrowPages}
                   </span>
                   <button
@@ -353,7 +400,7 @@ export default function MemberProfile() {
                       )
                     }
                     disabled={borrowPage === totalBorrowPages - 1}
-                    className="px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-gray-700 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+                    className="px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-[#4e4033] border border-[#7b6d5f] rounded hover:bg-[#eadcca] disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap ink-text"
                   >
                     Next →
                   </button>
@@ -361,7 +408,7 @@ export default function MemberProfile() {
               )}
             </div>
           ) : (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-[#5c4f42] ink-text">
               <FaBook className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p className="text-sm">No active borrows</p>
             </div>
@@ -369,14 +416,14 @@ export default function MemberProfile() {
         </div>
 
         {/* Borrow History - Full Width Table */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 lg:p-8">
+        <div className="profile-surface tron-border rounded-lg p-4 sm:p-6 lg:p-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-[#221910] ink-title">
               Recent History
             </h2>
             <Link
               href="/history"
-              className="text-sm text-gray-900 font-medium hover:underline flex items-center gap-1 group"
+              className="text-sm text-[#3b2f24] font-medium hover:underline flex items-center gap-1 group ink-text"
             >
               View All
               <FaArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
@@ -387,17 +434,17 @@ export default function MemberProfile() {
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                <tr className="border-b border-[#b9a992] bg-[#eadcca]">
+                  <th className="text-left py-3 px-4 font-semibold text-[#4e4033] ink-text">
                     Book
                   </th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 font-semibold text-[#4e4033] ink-text">
                     Borrowed
                   </th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 font-semibold text-[#4e4033] ink-text">
                     Returned
                   </th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 font-semibold text-[#4e4033] ink-text">
                     Status
                   </th>
                 </tr>
@@ -406,20 +453,22 @@ export default function MemberProfile() {
                 {stats.history.slice(0, 5).map((item) => (
                   <tr
                     key={item.id}
-                    className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
+                    className="border-b border-[#c5b59d] hover:bg-[#f0e4d2] transition-colors"
                   >
                     <td className="py-3 px-4">
                       <div>
-                        <p className="font-medium text-gray-900 line-clamp-1">
+                        <p className="font-medium text-[#221910] line-clamp-1 ink-title">
                           {item.title}
                         </p>
-                        <p className="text-xs text-gray-500">{item.author}</p>
+                        <p className="text-xs text-[#6f6256] ink-text">
+                          {item.author}
+                        </p>
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-gray-600 text-xs">
+                    <td className="py-3 px-4 text-[#5c4f42] text-xs ink-text">
                       {new Date(item.borrowedDate).toLocaleDateString()}
                     </td>
-                    <td className="py-3 px-4 text-gray-600 text-xs">
+                    <td className="py-3 px-4 text-[#5c4f42] text-xs ink-text">
                       {item.returnDate
                         ? new Date(item.returnDate).toLocaleDateString()
                         : item.dueDate
@@ -438,14 +487,14 @@ export default function MemberProfile() {
             {stats.history.slice(0, 5).map((item) => (
               <div
                 key={item.id}
-                className="p-4 border border-gray-200 rounded-lg bg-linear-to-br from-white to-gray-50 hover:shadow-sm transition-all"
+                className="p-4 border border-[#7b6d5f] rounded-lg bg-[#f6ecdd] transition-all"
               >
                 <div className="flex justify-between items-start gap-2 mb-3">
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 line-clamp-2 text-sm">
+                    <p className="font-medium text-[#221910] line-clamp-2 text-sm ink-title">
                       {item.title}
                     </p>
-                    <p className="text-xs text-gray-500 line-clamp-1">
+                    <p className="text-xs text-[#6f6256] line-clamp-1 ink-text">
                       {item.author}
                     </p>
                   </div>
@@ -453,8 +502,8 @@ export default function MemberProfile() {
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-xs ">
                   <div>
-                    <p className="text-gray-600 mb-1">Borrowed</p>
-                    <p className="font-semibold text-gray-900">
+                    <p className="text-[#5c4f42] mb-1 ink-text">Borrowed</p>
+                    <p className="font-semibold text-[#221910] ink-text">
                       {new Date(item.borrowedDate).toLocaleDateString(
                         undefined,
                         { month: "short", day: "numeric" },
@@ -462,8 +511,8 @@ export default function MemberProfile() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-600 mb-1">Returned</p>
-                    <p className="font-semibold text-gray-900">
+                    <p className="text-[#5c4f42] mb-1 ink-text">Returned</p>
+                    <p className="font-semibold text-[#221910] ink-text">
                       {item.returnDate
                         ? new Date(item.returnDate).toLocaleDateString(
                             undefined,
