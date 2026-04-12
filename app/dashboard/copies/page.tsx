@@ -3,13 +3,34 @@
 import { useState } from "react";
 import { FaEdit, FaPlus, FaSearch, FaTimes, FaTrash } from "react-icons/fa";
 
+type CopyStatus = "available" | "borrowed" | "damaged";
+type StatusFilter = "all" | CopyStatus;
+
+interface BookRef {
+  id: number;
+  title: string;
+  author: string;
+}
+
+interface BookCopy {
+  bookId: string;
+  book: number;
+  status: CopyStatus;
+  borrowerName: string | null;
+}
+
+interface CopyForm {
+  bookId: string;
+  book: string;
+}
+
 export default function BookCopiesManagement() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // Available books from the system
-  const availableBooks = [
+  const availableBooks: BookRef[] = [
     { id: 1, title: "The Great Gatsby", author: "F. Scott Fitzgerald" },
     { id: 2, title: "To Kill a Mockingbird", author: "Harper Lee" },
     { id: 3, title: "1984", author: "George Orwell" },
@@ -18,8 +39,7 @@ export default function BookCopiesManagement() {
     { id: 6, title: "The Hobbit", author: "J.R.R. Tolkien" },
   ];
 
-  // Book copies with individual IDs
-  const [bookCopies, setBookCopies] = useState([
+  const [bookCopies, setBookCopies] = useState<BookCopy[]>([
     {
       bookId: "BOOK-001",
       book: 1,
@@ -76,7 +96,7 @@ export default function BookCopiesManagement() {
     },
   ]);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CopyForm>({
     bookId: "",
     book: "",
   });
@@ -89,25 +109,33 @@ export default function BookCopiesManagement() {
     return `BOOK-${String(maxId + 1).padStart(3, "0")}`;
   };
 
+  const getBookById = (bookId: number) => {
+    return availableBooks.find((book) => book.id === bookId);
+  };
+
+  const query = searchTerm.toLowerCase().trim();
+
   const filteredCopies = bookCopies.filter((copy) => {
-    const book = availableBooks.find((b) => b.id === copy.book);
+    const book = getBookById(copy.book);
     const matchesSearch =
-      (book?.title.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
-      (book?.author.toLowerCase().includes(searchTerm.toLowerCase()) ??
-        false) ||
-      copy.bookId.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
+      (book?.title.toLowerCase().includes(query) ?? false) ||
+      (book?.author.toLowerCase().includes(query) ?? false) ||
+      copy.bookId.toLowerCase().includes(query) ||
+      (copy.borrowerName?.toLowerCase().includes(query) ?? false);
+
+    const matchesStatus =
+      statusFilter === "all" || copy.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
   });
 
-  const getBookTitle = (bookId: number) => {
-    return availableBooks.find((b) => b.id === bookId)?.title || "Unknown";
+  const counts = {
+    total: bookCopies.length,
+    available: bookCopies.filter((copy) => copy.status === "available").length,
+    borrowed: bookCopies.filter((copy) => copy.status === "borrowed").length,
   };
 
-  const getBookAuthor = (bookId: number) => {
-    return availableBooks.find((b) => b.id === bookId)?.author || "Unknown";
-  };
-
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: CopyStatus) => {
     switch (status) {
       case "available":
         return "bg-[#efe4d1] text-[#3f3328] border border-[#8f7f6c]";
@@ -120,51 +148,63 @@ export default function BookCopiesManagement() {
     }
   };
 
+  const openAddModal = () => {
+    setEditingId(null);
+    setFormData({ bookId: getNextBookId(), book: "" });
+    setShowAddModal(true);
+  };
+
   const handleAdd = () => {
-    if (formData.bookId && formData.book) {
-      const newCopy = {
-        bookId: formData.bookId,
-        book: parseInt(formData.book, 10),
-        status: "available",
-        borrowerName: null,
-      };
-      setBookCopies([...bookCopies, newCopy]);
-      setFormData({ bookId: "", book: "" });
-      setShowAddModal(false);
+    if (!formData.bookId.trim() || !formData.book) {
+      return;
     }
+
+    const newCopy: BookCopy = {
+      bookId: formData.bookId.trim(),
+      book: parseInt(formData.book, 10),
+      status: "available",
+      borrowerName: null,
+    };
+
+    setBookCopies((prev) => [...prev, newCopy]);
+    setFormData({ bookId: "", book: "" });
+    setShowAddModal(false);
   };
 
   const handleEdit = (bookId: string) => {
-    const copy = bookCopies.find((c) => c.bookId === bookId);
-    if (copy) {
-      setFormData({ bookId: copy.bookId, book: copy.book.toString() });
-      setEditingId(bookId);
-      setShowAddModal(true);
-    }
+    const copy = bookCopies.find((item) => item.bookId === bookId);
+    if (!copy) return;
+
+    setFormData({ bookId: copy.bookId, book: copy.book.toString() });
+    setEditingId(bookId);
+    setShowAddModal(true);
   };
 
   const handleUpdate = () => {
-    if (editingId && formData.bookId && formData.book) {
-      setBookCopies(
-        bookCopies.map((c) =>
-          c.bookId === editingId
-            ? {
-                ...c,
-                bookId: formData.bookId,
-                book: parseInt(formData.book, 10),
-              }
-            : c,
-        ),
-      );
-      setFormData({ bookId: "", book: "" });
-      setEditingId(null);
-      setShowAddModal(false);
+    if (!editingId || !formData.bookId.trim() || !formData.book) {
+      return;
     }
+
+    setBookCopies((prev) =>
+      prev.map((copy) =>
+        copy.bookId === editingId
+          ? {
+              ...copy,
+              bookId: formData.bookId.trim(),
+              book: parseInt(formData.book, 10),
+            }
+          : copy,
+      ),
+    );
+
+    setFormData({ bookId: "", book: "" });
+    setEditingId(null);
+    setShowAddModal(false);
   };
 
   const handleDelete = (bookId: string) => {
     if (confirm("Are you sure you want to remove this copy?")) {
-      setBookCopies(bookCopies.filter((c) => c.bookId !== bookId));
+      setBookCopies((prev) => prev.filter((copy) => copy.bookId !== bookId));
     }
   };
 
@@ -174,88 +214,93 @@ export default function BookCopiesManagement() {
     setFormData({ bookId: "", book: "" });
   };
 
-  const countByStatus = (status: string) => {
-    return bookCopies.filter((c) => c.status === status).length;
-  };
-
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="dashboard-surface tron-border rounded-sm p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
-            Book Copies
-          </h1>
-          <p className="text-[#5a4b3f] mt-1 ink-text">
-            Manage individual physical copies of books with unique IDs
-          </p>
-        </div>
-        <button
-          onClick={() => {
-            setEditingId(null);
-            setFormData({ bookId: getNextBookId(), book: "" });
-            setShowAddModal(true);
-          }}
-          className="flex items-center gap-2 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] transition-colors font-medium ink-text"
-        >
-          <FaPlus className="w-4 h-4" />
-          Add Copy
-        </button>
-      </div>
+      <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
+              Copies Control Room
+            </h1>
+            <p className="text-[#5a4b3f] mt-1 ink-text">
+              Track every physical copy clearly by ID, status, and borrower at a
+              glance.
+            </p>
+          </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
-          <p className="text-xs text-[#5c4f42] tracking-[0.08em] uppercase mb-1 ink-text">
-            Total Copies
-          </p>
-          <p className="text-3xl font-bold text-[#221910] ink-title">
-            {bookCopies.length}
-          </p>
+          <button
+            onClick={openAddModal}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] transition-colors font-medium ink-text"
+          >
+            <FaPlus className="w-4 h-4" />
+            Add Copy
+          </button>
         </div>
-        <div className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
-          <p className="text-xs text-[#5c4f42] tracking-[0.08em] uppercase mb-1 ink-text">
-            Available
-          </p>
-          <p className="text-3xl font-bold text-[#221910] ink-title">
-            {countByStatus("available")}
-          </p>
-        </div>
-        <div className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
-          <p className="text-xs text-[#5c4f42] tracking-[0.08em] uppercase mb-1 ink-text">
-            Borrowed
-          </p>
-          <p className="text-3xl font-bold text-[#221910] ink-title">
-            {countByStatus("borrowed")}
-          </p>
-        </div>
-      </div>
 
-      {/* Search */}
-      <div className="dashboard-surface tron-border rounded-sm p-4 border border-[#5f4f40]">
-        <div className="relative">
-          <FaSearch className="absolute left-3 top-3 text-[#7a6a5a]" />
-          <input
-            type="text"
-            placeholder="Search by book title, author, or Book ID..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none ink-text"
-          />
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-4 sm:mt-5">
+          <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-2 sm:p-3">
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight">
+              Total
+            </p>
+            <p className="text-xl sm:text-2xl font-bold text-[#221910] ink-title leading-none mt-1">
+              {counts.total}
+            </p>
+          </div>
+          <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-2 sm:p-3">
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight">
+              Available
+            </p>
+            <p className="text-xl sm:text-2xl font-bold text-[#221910] ink-title leading-none mt-1">
+              {counts.available}
+            </p>
+          </div>
+          <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-2 sm:p-3">
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight">
+              Borrowed
+            </p>
+            <p className="text-xl sm:text-2xl font-bold text-[#221910] ink-title leading-none mt-1">
+              {counts.borrowed}
+            </p>
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* Book Copies Table */}
-      <div className="dashboard-surface tron-border rounded-sm overflow-hidden">
+      <section className="dashboard-surface tron-border rounded-sm p-4 sm:p-5 border border-[#5f4f40]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          <div className="relative lg:col-span-2">
+            <FaSearch className="absolute left-3 top-3 text-[#7a6a5a]" />
+            <input
+              type="text"
+              placeholder="Search title, author, copy ID, or borrower..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none ink-text"
+            />
+          </div>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+            className="px-3 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none ink-text"
+          >
+            <option value="all">All Status</option>
+            <option value="available">Available</option>
+            <option value="borrowed">Borrowed</option>
+            <option value="damaged">Damaged</option>
+          </select>
+        </div>
+      </section>
+
+      <section className="dashboard-surface tron-border rounded-sm overflow-hidden border border-[#5f4f40]">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm ink-text min-w-max">
+          <table className="w-full text-sm ink-text min-w-160">
             <thead>
               <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
                 <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
-                  Book ID
+                  Copy ID
                 </th>
                 <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
-                  Book Title
+                  Book
                 </th>
                 <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
                   Author
@@ -264,7 +309,7 @@ export default function BookCopiesManagement() {
                   Status
                 </th>
                 <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
-                  Borrower Name
+                  Borrower
                 </th>
                 <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
                   Actions
@@ -272,61 +317,67 @@ export default function BookCopiesManagement() {
               </tr>
             </thead>
             <tbody>
-              {filteredCopies.map((copy) => (
-                <tr
-                  key={copy.bookId}
-                  className="border-b border-[#d2bfa5] hover:bg-[#f4ebdc] transition-colors"
-                >
-                  <td className="px-4 sm:px-6 py-3 font-mono font-medium text-[#2b2119]">
-                    {copy.bookId}
-                  </td>
-                  <td className="px-4 sm:px-6 py-3 font-medium text-[#2b2119]">
-                    {getBookTitle(copy.book)}
-                  </td>
-                  <td className="px-4 sm:px-6 py-3 text-[#5a4b3f]">
-                    {getBookAuthor(copy.book)}
-                  </td>
-                  <td className="px-4 sm:px-6 py-3">
-                    <span
-                      className={`inline-block px-3 py-1 text-xs font-semibold rounded-sm ${getStatusBadge(copy.status)}`}
-                    >
-                      {copy.status.charAt(0).toUpperCase() +
-                        copy.status.slice(1)}
-                    </span>
-                  </td>
-                  <td className="px-4 sm:px-6 py-3 text-[#5a4b3f]">
-                    {copy.borrowerName || "-"}
-                  </td>
-                  <td className="px-4 sm:px-6 py-3">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleEdit(copy.bookId)}
-                        className="p-2 text-[#5b4c3f] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors"
+              {filteredCopies.map((copy) => {
+                const book = getBookById(copy.book);
+                return (
+                  <tr
+                    key={copy.bookId}
+                    className="border-b border-[#d2bfa5] hover:bg-[#f4ebdc] transition-colors"
+                  >
+                    <td className="px-4 sm:px-6 py-3 font-mono font-medium text-[#2b2119]">
+                      {copy.bookId}
+                    </td>
+                    <td className="px-4 sm:px-6 py-3 font-medium text-[#2b2119]">
+                      {book?.title || "Unknown"}
+                    </td>
+                    <td className="px-4 sm:px-6 py-3 text-[#5a4b3f]">
+                      {book?.author || "Unknown"}
+                    </td>
+                    <td className="px-4 sm:px-6 py-3">
+                      <span
+                        className={`inline-block px-3 py-1 text-xs font-semibold rounded-sm ${getStatusBadge(
+                          copy.status,
+                        )}`}
                       >
-                        <FaEdit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(copy.bookId)}
-                        className="p-2 text-[#6a4e3d] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors"
-                      >
-                        <FaTrash className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {copy.status.charAt(0).toUpperCase() +
+                          copy.status.slice(1)}
+                      </span>
+                    </td>
+                    <td className="px-4 sm:px-6 py-3 text-[#5a4b3f]">
+                      {copy.borrowerName || "-"}
+                    </td>
+                    <td className="px-4 sm:px-6 py-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleEdit(copy.bookId)}
+                          className="p-2 text-[#5b4c3f] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors"
+                          aria-label={`Edit ${copy.bookId}`}
+                        >
+                          <FaEdit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(copy.bookId)}
+                          className="p-2 text-[#6a4e3d] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors"
+                          aria-label={`Delete ${copy.bookId}`}
+                        >
+                          <FaTrash className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
 
         {filteredCopies.length === 0 && (
           <div className="text-center py-12 text-[#6a5a4c] ink-text">
-            <p>No copies found matching your search criteria.</p>
+            <p>No copies match the current search/filter.</p>
           </div>
         )}
-      </div>
+      </section>
 
-      {/* Add Copy Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-4 z-80">
           <div className="dashboard-surface tron-border rounded-sm max-w-md w-full p-6">
@@ -366,7 +417,7 @@ export default function BookCopiesManagement() {
 
               <div>
                 <label className="block text-sm font-medium text-[#4f4134] mb-1">
-                  Book ID *
+                  Copy ID *
                 </label>
                 <input
                   type="text"
@@ -392,7 +443,8 @@ export default function BookCopiesManagement() {
               </button>
               <button
                 onClick={editingId ? handleUpdate : handleAdd}
-                className="flex-1 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] transition-colors font-medium ink-text"
+                disabled={!formData.bookId.trim() || !formData.book}
+                className="flex-1 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 disabled:cursor-not-allowed transition-colors font-medium ink-text"
               >
                 {editingId ? "Update" : "Add"} Copy
               </button>
