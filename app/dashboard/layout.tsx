@@ -9,6 +9,7 @@ import {
   FaChartLine,
   FaExchangeAlt,
   FaGraduationCap,
+  FaShieldAlt,
   FaTimes,
   FaUsers,
 } from "react-icons/fa";
@@ -27,6 +28,12 @@ export default function DashboardLayout({
       href: "/dashboard",
       icon: FaChartLine,
       requiresRole: ["admin", "moderator", "member"],
+    },
+    {
+      label: "Moderators",
+      href: "/dashboard/moderators",
+      icon: FaShieldAlt,
+      requiresRole: ["admin"],
     },
     {
       label: "Users",
