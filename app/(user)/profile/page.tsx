@@ -158,54 +158,47 @@ export default function MemberProfile() {
     <div className="min-h-screen bg-gray-50">
       {/* Navbar */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+        <div className="w-full px-3 sm:px-4 lg:px-8">
+          <div className="flex items-center justify-between h-14 sm:h-16">
             {/* Logo/Home */}
             <Link
               href="/profile"
-              className="flex items-center gap-2 font-semibold text-gray-900 hover:text-gray-700 transition-colors"
+              className="flex items-center gap-1 sm:gap-2 font-bold text-gray-900 hover:text-gray-700 transition-colors shrink-0 min-w-0"
             >
-              <FaBook className="w-5 h-5" />
-              <span className="hidden sm:inline">BICS SUST LMS</span>
+              <FaBook className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" />
+              <span className="text-sm sm:text-lg font-bold truncate">
+                BICS SUST LMS
+              </span>
             </Link>
 
-            {/* Navigation Links */}
-            <div className="hidden sm:flex items-center gap-6">
+            {/* Navigation Links - Responsive */}
+            <div className="flex items-center gap-2 sm:gap-4 lg:gap-6 ml-2 sm:ml-4">
               <Link
                 href="/profile"
-                className="text-sm font-medium text-gray-900 hover:text-gray-700 transition-colors"
+                className="text-xs sm:text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors px-2 sm:px-3 py-2 rounded-md hover:bg-gray-50"
               >
                 Profile
               </Link>
               <Link
                 href="/history"
-                className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                className="text-xs sm:text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors px-2 sm:px-3 py-2 rounded-md hover:bg-gray-50"
               >
                 History
               </Link>
-            </div>
 
-            {/* Borrow Button (Desktop) */}
-            <div className="hidden sm:block">
+              {/* Borrow Button - Visible on all screens */}
               <Link
                 href="/borrow"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+                className="inline-flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-2 bg-gray-900 text-white rounded-lg font-semibold text-xs sm:text-sm hover:bg-gray-800 active:bg-gray-950 transition-colors whitespace-nowrap shrink-0 h-10 sm:h-auto"
               >
-                <FaQrcode className="w-4 h-4" />
-                Borrow Book
+                <FaQrcode className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                <span className="hidden sm:inline">Borrow</span>
+                <span className="sm:hidden text-xs font-bold">QR</span>
               </Link>
             </div>
           </div>
         </div>
       </nav>
-
-      {/* Floating Borrow Button (Mobile) */}
-      <Link
-        href="/borrow"
-        className="sm:hidden fixed bottom-8 right-8 bg-gray-900 text-white p-4 rounded-full shadow-lg hover:bg-gray-800 transition-all hover:shadow-xl z-40 flex items-center gap-2"
-      >
-        <FaQrcode className="w-5 h-5" />
-      </Link>
 
       {/* Profile Header Section */}
       <div className="bg-white border-b border-gray-200">
@@ -222,62 +215,74 @@ export default function MemberProfile() {
         </div>
       </div>
 
+      {/* Floating Borrow Button (Mobile) */}
+      <Link
+        href="/borrow"
+        className="sm:hidden fixed bottom-6 right-6 bg-gray-900 text-white p-2.5 rounded-full shadow-md hover:shadow-lg hover:bg-gray-800 transition-all z-40 flex items-center justify-center w-12 h-12  hover:opacity-100"
+      >
+        <FaQrcode className="w-5 h-5" />
+      </Link>
+
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Progress Overview Card */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6 sm:p-8 mb-8">
+        <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-6">
             Syllabus Reading Progress
           </h2>
 
           {/* Progress Bar */}
-          <div className="mb-8">
-            <div className="flex items-baseline justify-between mb-3">
-              <span className="text-sm font-medium text-gray-700">
+          <div className="mb-6 sm:mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between mb-3 gap-2">
+              <span className="text-xs sm:text-sm font-medium text-gray-700">
                 {stats.completedSyllabus} of {stats.syllabusBooks} syllabus
-                books completed
+                books
               </span>
-              <span className="text-2xl font-bold text-gray-900">
+              <span className="text-xl sm:text-2xl font-bold text-gray-900">
                 {completionPercentage}%
               </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-4">
               <div
-                className="bg-gradient-to-r from-gray-900 to-gray-700 h-4 rounded-full transition-all duration-500"
+                className="bg-linear-to-r from-gray-900 to-gray-700 h-4 rounded-full transition-all duration-500"
                 style={{ width: `${completionPercentage}%` }}
               ></div>
             </div>
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
             {/* Completed */}
-            <div className="bg-white border border-gray-200 p-4 rounded-lg text-center hover:shadow-sm transition-shadow">
-              <FaCheckCircle className="w-5 h-5 text-gray-700 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-gray-900">
+            <div className="bg-white border border-gray-200 p-3 sm:p-4 rounded-lg text-center hover:shadow-sm transition-shadow">
+              <FaCheckCircle className="w-4 sm:w-5 h-4 sm:h-5 text-gray-700 mx-auto mb-2" />
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">
                 {stats.completedSyllabus}
               </p>
               <p className="text-xs text-gray-600 mt-1">Completed</p>
             </div>
 
             {/* Active */}
-            <div className="bg-white border border-gray-200 p-4 rounded-lg text-center hover:shadow-sm transition-shadow">
-              <FaClock className="w-5 h-5 text-gray-700 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-gray-900">{stats.active}</p>
+            <div className="bg-white border border-gray-200 p-3 sm:p-4 rounded-lg text-center hover:shadow-sm transition-shadow">
+              <FaClock className="w-4 sm:w-5 h-4 sm:h-5 text-gray-700 mx-auto mb-2" />
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">
+                {stats.active}
+              </p>
               <p className="text-xs text-gray-600 mt-1">Active</p>
             </div>
 
             {/* Remaining */}
-            <div className="bg-white border border-gray-200 p-4 rounded-lg text-center hover:shadow-sm transition-shadow">
-              <FaBook className="w-5 h-5 text-gray-700 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-gray-900">{remaining}</p>
+            <div className="bg-white border border-gray-200 p-3 sm:p-4 rounded-lg text-center hover:shadow-sm transition-shadow">
+              <FaBook className="w-4 sm:w-5 h-4 sm:h-5 text-gray-700 mx-auto mb-2" />
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">
+                {remaining}
+              </p>
               <p className="text-xs text-gray-600 mt-1">Remaining</p>
             </div>
 
             {/* Total */}
-            <div className="bg-white border border-gray-200 p-4 rounded-lg text-center hover:shadow-sm transition-shadow">
-              <FaBookOpen className="w-5 h-5 text-gray-700 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-gray-900">
+            <div className="bg-white border border-gray-200 p-3 sm:p-4 rounded-lg text-center hover:shadow-sm transition-shadow">
+              <FaBookOpen className="w-4 sm:w-5 h-4 sm:h-5 text-gray-700 mx-auto mb-2" />
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">
                 {stats.syllabusBooks}
               </p>
               <p className="text-xs text-gray-600 mt-1">Syllabus</p>
@@ -286,7 +291,7 @@ export default function MemberProfile() {
         </div>
 
         {/* Currently Borrowing - Full Width Grid */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6 sm:p-8 mb-8">
+        <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <FaClock className="w-5 h-5 text-gray-700" />
@@ -299,24 +304,24 @@ export default function MemberProfile() {
 
           {stats.currentBorrows.length > 0 ? (
             <div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
                 {paginatedBorrows.map((item) => (
                   <div
                     key={item.id}
-                    className="p-4 border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:border-gray-300 transition-all bg-gradient-to-br from-white to-gray-50"
+                    className="p-3 sm:p-4 border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:border-gray-300 transition-all bg-linear-to-br from-white to-gray-50"
                   >
                     <div className="flex flex-col h-full">
-                      <div className="flex-1 mb-4">
-                        <p className="font-semibold text-gray-900 line-clamp-2 text-sm">
+                      <div className="flex-1 mb-3 sm:mb-4">
+                        <p className="font-semibold text-gray-900 line-clamp-2 text-xs sm:text-sm">
                           {item.title}
                         </p>
                         <p className="text-xs text-gray-600 mt-1 line-clamp-1">
                           {item.author}
                         </p>
                       </div>
-                      <div className="pt-4 border-t border-gray-200">
+                      <div className="pt-3 sm:pt-4 border-t border-gray-200">
                         <p className="text-xs text-gray-600 mb-1">Due</p>
-                        <p className="text-sm font-semibold text-gray-900">
+                        <p className="text-xs sm:text-sm font-semibold text-gray-900">
                           {new Date(item.dueDate).toLocaleDateString()}
                         </p>
                         <p className="text-xs text-gray-500 mt-2">
@@ -330,16 +335,16 @@ export default function MemberProfile() {
               </div>
 
               {totalBorrowPages > 1 && (
-                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                <div className="flex items-center justify-between gap-2 pt-4 border-t border-gray-200">
                   <button
                     onClick={() => setBorrowPage((p) => Math.max(0, p - 1))}
                     disabled={borrowPage === 0}
-                    className="px-3 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-gray-700 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
                   >
-                    ← Previous
+                    ← Prev
                   </button>
                   <span className="text-xs text-gray-600">
-                    Page {borrowPage + 1} of {totalBorrowPages}
+                    {borrowPage + 1}/{totalBorrowPages}
                   </span>
                   <button
                     onClick={() =>
@@ -348,7 +353,7 @@ export default function MemberProfile() {
                       )
                     }
                     disabled={borrowPage === totalBorrowPages - 1}
-                    className="px-3 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-gray-700 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
                   >
                     Next →
                   </button>
@@ -364,7 +369,7 @@ export default function MemberProfile() {
         </div>
 
         {/* Borrow History - Full Width Table */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6 sm:p-8">
+        <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 lg:p-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-gray-900">
               Recent History
@@ -378,7 +383,8 @@ export default function MemberProfile() {
             </Link>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Table on desktop, cards on mobile */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
@@ -425,6 +431,55 @@ export default function MemberProfile() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Cards on mobile */}
+          <div className="sm:hidden space-y-3">
+            {stats.history.slice(0, 5).map((item) => (
+              <div
+                key={item.id}
+                className="p-4 border border-gray-200 rounded-lg bg-linear-to-br from-white to-gray-50 hover:shadow-sm transition-all"
+              >
+                <div className="flex justify-between items-start gap-2 mb-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 line-clamp-2 text-sm">
+                      {item.title}
+                    </p>
+                    <p className="text-xs text-gray-500 line-clamp-1">
+                      {item.author}
+                    </p>
+                  </div>
+                  <div className="shrink-0">{getStatusBadge(item.status)}</div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs ">
+                  <div>
+                    <p className="text-gray-600 mb-1">Borrowed</p>
+                    <p className="font-semibold text-gray-900">
+                      {new Date(item.borrowedDate).toLocaleDateString(
+                        undefined,
+                        { month: "short", day: "numeric" },
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600 mb-1">Returned</p>
+                    <p className="font-semibold text-gray-900">
+                      {item.returnDate
+                        ? new Date(item.returnDate).toLocaleDateString(
+                            undefined,
+                            { month: "short", day: "numeric" },
+                          )
+                        : item.dueDate
+                          ? new Date(item.dueDate).toLocaleDateString(
+                              undefined,
+                              { month: "short", day: "numeric" },
+                            )
+                          : "-"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
