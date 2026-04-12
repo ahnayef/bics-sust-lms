@@ -1,39 +1,60 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useState } from 'react';
+import Link from "next/link";
+import { useState } from "react";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <nav className="fixed top-0 w-full bg-white border-b border-gray-200 shadow-sm z-50">
+    <nav
+      className="fixed top-0 w-full z-50 border-b-2 border-[#3c342d]"
+      style={{
+        backgroundColor: "#e8dcc8",
+        backgroundImage:
+          "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.01) 2px, rgba(0,0,0,.01) 4px), repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,.01) 2px, rgba(0,0,0,.01) 4px)",
+      }}
+    >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center">
-            <span className="text-xl font-bold text-gray-900">SUST LMS</span>
+          <Link href="/" className="flex flex-col items-start leading-none">
+            <span
+              className="text-2xl font-bold tracking-tight text-[#1f1a17]"
+              style={{ fontFamily: "Playfair Display, serif" }}
+            >
+              SUST LMS
+            </span>
+            <span
+              className="text-xs tracking-[0.14em] text-[#4a4038]"
+              style={{ fontFamily: "Courier Prime, monospace" }}
+            >
+              Weekly Edition
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             <Link
               href="#features"
-              className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
+              className="text-[#2c2520] hover:text-black font-semibold tracking-wide text-sm transition-colors"
+              style={{ fontFamily: "Courier Prime, monospace" }}
             >
               Features
             </Link>
             <Link
-              href="#about"
-              className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
-            >
-              About
-            </Link>
-            <Link
               href="#contact"
-              className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
+              className="text-[#2c2520] hover:text-black font-semibold tracking-wide text-sm transition-colors"
+              style={{ fontFamily: "Courier Prime, monospace" }}
             >
               Contact
+            </Link>
+            <Link
+              href="/login"
+              className="text-[#2c2520] hover:text-black font-semibold tracking-wide text-sm transition-colors"
+              style={{ fontFamily: "Courier Prime, monospace" }}
+            >
+              Archive
             </Link>
           </div>
 
@@ -41,7 +62,8 @@ export default function Navbar() {
           <div className="hidden md:block">
             <Link
               href="/login"
-              className="bg-gray-900 text-white px-6 py-2 rounded font-medium hover:bg-gray-800 transition-colors"
+              className="px-5 py-2 font-semibold text-sm transition-colors border border-[#6d6053] bg-[#6d6053] text-[#f3ebdd] hover:bg-[#5b5045]"
+              style={{ fontFamily: "Courier Prime, monospace" }}
             >
               Sign In
             </Link>
@@ -50,7 +72,7 @@ export default function Navbar() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 rounded hover:bg-gray-100"
+            className="md:hidden p-2 border border-[#6d6053] text-[#1f1a17] hover:bg-[#d9cbb7]"
             aria-label="Toggle menu"
           >
             <svg
@@ -80,31 +102,35 @@ export default function Navbar() {
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <div className="md:hidden pb-4 space-y-2">
+          <div className="md:hidden pb-4 pt-2 space-y-2 border-t border-[#3c342d]">
             <Link
               href="#features"
-              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
+              className="block px-4 py-2 text-[#2c2520] hover:bg-[#d9cbb7] tracking-wide font-semibold"
+              style={{ fontFamily: "Courier Prime, monospace" }}
               onClick={() => setIsOpen(false)}
             >
               Features
             </Link>
             <Link
-              href="#about"
-              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
-              onClick={() => setIsOpen(false)}
-            >
-              About
-            </Link>
-            <Link
               href="#contact"
-              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
+              className="block px-4 py-2 text-[#2c2520] hover:bg-[#d9cbb7] tracking-wide font-semibold"
+              style={{ fontFamily: "Courier Prime, monospace" }}
               onClick={() => setIsOpen(false)}
             >
               Contact
             </Link>
             <Link
               href="/login"
-              className="block px-4 py-2 bg-gray-900 text-white rounded font-medium hover:bg-gray-800"
+              className="block px-4 py-2 text-[#2c2520] hover:bg-[#d9cbb7] tracking-wide font-semibold"
+              style={{ fontFamily: "Courier Prime, monospace" }}
+              onClick={() => setIsOpen(false)}
+            >
+              Archive
+            </Link>
+            <Link
+              href="/login"
+              className="block px-4 py-2 bg-[#6d6053] text-[#f3ebdd] font-semibold tracking-wide hover:bg-[#5b5045]"
+              style={{ fontFamily: "Courier Prime, monospace" }}
               onClick={() => setIsOpen(false)}
             >
               Sign In
