@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FaEdit, FaPlus, FaSearch, FaTrash } from "react-icons/fa";
+import { FaEdit, FaPlus, FaSearch, FaTimes, FaTrash } from "react-icons/fa";
 
 export default function BookCopiesManagement() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -83,7 +83,7 @@ export default function BookCopiesManagement() {
 
   const getNextBookId = () => {
     const bookIds = bookCopies.map((copy) =>
-      parseInt(copy.bookId.split("-")[1]),
+      parseInt(copy.bookId.split("-")[1], 10),
     );
     const maxId = bookIds.length > 0 ? Math.max(...bookIds) : 0;
     return `BOOK-${String(maxId + 1).padStart(3, "0")}`;
@@ -110,13 +110,13 @@ export default function BookCopiesManagement() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "available":
-        return "bg-gray-200 text-gray-900";
+        return "bg-[#efe4d1] text-[#3f3328] border border-[#8f7f6c]";
       case "borrowed":
-        return "bg-gray-300 text-gray-900";
+        return "bg-[#f0e3cf] text-[#47392d] border border-[#9a8975]";
       case "damaged":
-        return "bg-gray-400 text-gray-900";
+        return "bg-[#eadac3] text-[#5a3d2c] border border-[#9b856d]";
       default:
-        return "bg-gray-100 text-gray-700";
+        return "bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c]";
     }
   };
 
@@ -124,7 +124,7 @@ export default function BookCopiesManagement() {
     if (formData.bookId && formData.book) {
       const newCopy = {
         bookId: formData.bookId,
-        book: parseInt(formData.book),
+        book: parseInt(formData.book, 10),
         status: "available",
         borrowerName: null,
       };
@@ -148,7 +148,11 @@ export default function BookCopiesManagement() {
       setBookCopies(
         bookCopies.map((c) =>
           c.bookId === editingId
-            ? { ...c, bookId: formData.bookId, book: parseInt(formData.book) }
+            ? {
+                ...c,
+                bookId: formData.bookId,
+                book: parseInt(formData.book, 10),
+              }
             : c,
         ),
       );
@@ -177,16 +181,22 @@ export default function BookCopiesManagement() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="dashboard-surface tron-border rounded-sm p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Book Copies</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
+            Book Copies
+          </h1>
+          <p className="text-[#5a4b3f] mt-1 ink-text">
             Manage individual physical copies of books with unique IDs
           </p>
         </div>
         <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+          onClick={() => {
+            setEditingId(null);
+            setFormData({ bookId: getNextBookId(), book: "" });
+            setShowAddModal(true);
+          }}
+          className="flex items-center gap-2 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] transition-colors font-medium ink-text"
         >
           <FaPlus className="w-4 h-4" />
           Add Copy
@@ -195,62 +205,68 @@ export default function BookCopiesManagement() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-lg p-6 border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Total Copies</p>
-          <p className="text-3xl font-bold text-gray-900">
+        <div className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
+          <p className="text-xs text-[#5c4f42] tracking-[0.08em] uppercase mb-1 ink-text">
+            Total Copies
+          </p>
+          <p className="text-3xl font-bold text-[#221910] ink-title">
             {bookCopies.length}
           </p>
         </div>
-        <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-          <p className="text-sm text-gray-700 mb-1">Available</p>
-          <p className="text-3xl font-bold text-gray-900">
+        <div className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
+          <p className="text-xs text-[#5c4f42] tracking-[0.08em] uppercase mb-1 ink-text">
+            Available
+          </p>
+          <p className="text-3xl font-bold text-[#221910] ink-title">
             {countByStatus("available")}
           </p>
         </div>
-        <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-          <p className="text-sm text-gray-700 mb-1">Borrowed</p>
-          <p className="text-3xl font-bold text-gray-900">
+        <div className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
+          <p className="text-xs text-[#5c4f42] tracking-[0.08em] uppercase mb-1 ink-text">
+            Borrowed
+          </p>
+          <p className="text-3xl font-bold text-[#221910] ink-title">
             {countByStatus("borrowed")}
           </p>
         </div>
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-lg p-4 border border-gray-200">
+      <div className="dashboard-surface tron-border rounded-sm p-4 border border-[#5f4f40]">
         <div className="relative">
-          <FaSearch className="absolute left-3 top-3 text-gray-400" />
+          <FaSearch className="absolute left-3 top-3 text-[#7a6a5a]" />
           <input
             type="text"
             placeholder="Search by book title, author, or Book ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+            className="w-full pl-10 pr-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none ink-text"
           />
         </div>
       </div>
 
       {/* Book Copies Table */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="dashboard-surface tron-border rounded-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm ink-text min-w-max">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-6 py-3 text-left text-gray-700 font-semibold">
+              <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
+                <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
                   Book ID
                 </th>
-                <th className="px-6 py-3 text-left text-gray-700 font-semibold">
+                <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
                   Book Title
                 </th>
-                <th className="px-6 py-3 text-left text-gray-700 font-semibold">
+                <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
                   Author
                 </th>
-                <th className="px-6 py-3 text-left text-gray-700 font-semibold">
+                <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-gray-700 font-semibold">
+                <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
                   Borrower Name
                 </th>
-                <th className="px-6 py-3 text-left text-gray-700 font-semibold">
+                <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
                   Actions
                 </th>
               </tr>
@@ -259,39 +275,39 @@ export default function BookCopiesManagement() {
               {filteredCopies.map((copy) => (
                 <tr
                   key={copy.bookId}
-                  className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
+                  className="border-b border-[#d2bfa5] hover:bg-[#f4ebdc] transition-colors"
                 >
-                  <td className="px-6 py-3 font-mono font-medium text-gray-900">
+                  <td className="px-4 sm:px-6 py-3 font-mono font-medium text-[#2b2119]">
                     {copy.bookId}
                   </td>
-                  <td className="px-6 py-3 font-medium text-gray-900">
+                  <td className="px-4 sm:px-6 py-3 font-medium text-[#2b2119]">
                     {getBookTitle(copy.book)}
                   </td>
-                  <td className="px-6 py-3 text-gray-600">
+                  <td className="px-4 sm:px-6 py-3 text-[#5a4b3f]">
                     {getBookAuthor(copy.book)}
                   </td>
-                  <td className="px-6 py-3">
+                  <td className="px-4 sm:px-6 py-3">
                     <span
-                      className={`inline-block px-3 py-1 text-xs font-medium rounded-full ${getStatusBadge(copy.status)}`}
+                      className={`inline-block px-3 py-1 text-xs font-semibold rounded-sm ${getStatusBadge(copy.status)}`}
                     >
                       {copy.status.charAt(0).toUpperCase() +
                         copy.status.slice(1)}
                     </span>
                   </td>
-                  <td className="px-6 py-3 text-gray-600">
-                    {copy.borrowerName || "—"}
+                  <td className="px-4 sm:px-6 py-3 text-[#5a4b3f]">
+                    {copy.borrowerName || "-"}
                   </td>
-                  <td className="px-6 py-3">
+                  <td className="px-4 sm:px-6 py-3">
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleEdit(copy.bookId)}
-                        className="p-2 text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                        className="p-2 text-[#5b4c3f] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors"
                       >
                         <FaEdit className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(copy.bookId)}
-                        className="p-2 text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                        className="p-2 text-[#6a4e3d] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors"
                       >
                         <FaTrash className="w-4 h-4" />
                       </button>
@@ -304,7 +320,7 @@ export default function BookCopiesManagement() {
         </div>
 
         {filteredCopies.length === 0 && (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 text-[#6a5a4c] ink-text">
             <p>No copies found matching your search criteria.</p>
           </div>
         )}
@@ -312,15 +328,24 @@ export default function BookCopiesManagement() {
 
       {/* Add Copy Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">
-              {editingId ? "Edit Copy" : "Add New Copy"}
-            </h2>
+        <div className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-4 z-80">
+          <div className="dashboard-surface tron-border rounded-sm max-w-md w-full p-6">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <h2 className="text-xl font-bold text-[#221910] ink-title">
+                {editingId ? "Edit Copy" : "Add New Copy"}
+              </h2>
+              <button
+                onClick={closeModal}
+                className="p-2 text-[#655648] hover:bg-[#e7d8c3] rounded-sm transition-colors"
+                aria-label="Close copy modal"
+              >
+                <FaTimes className="w-4 h-4" />
+              </button>
+            </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 ink-text">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[#4f4134] mb-1">
                   Select Book *
                 </label>
                 <select
@@ -328,7 +353,7 @@ export default function BookCopiesManagement() {
                   onChange={(e) =>
                     setFormData({ ...formData, book: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
                 >
                   <option value="">Choose a book</option>
                   {availableBooks.map((book) => (
@@ -340,7 +365,7 @@ export default function BookCopiesManagement() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[#4f4134] mb-1">
                   Book ID *
                 </label>
                 <input
@@ -350,9 +375,9 @@ export default function BookCopiesManagement() {
                     setFormData({ ...formData, bookId: e.target.value })
                   }
                   placeholder={getNextBookId()}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-[#6a5a4c] mt-1">
                   e.g., BOOK-001, BOOK-002
                 </p>
               </div>
@@ -361,13 +386,13 @@ export default function BookCopiesManagement() {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={closeModal}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                className="flex-1 px-4 py-2.5 border border-[#8a7966] text-[#4f4134] rounded-sm hover:bg-[#eadcc8] transition-colors font-medium ink-text"
               >
                 Cancel
               </button>
               <button
                 onClick={editingId ? handleUpdate : handleAdd}
-                className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                className="flex-1 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] transition-colors font-medium ink-text"
               >
                 {editingId ? "Update" : "Add"} Copy
               </button>
