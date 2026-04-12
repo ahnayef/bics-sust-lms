@@ -6,42 +6,41 @@ import {
   FaBook,
   FaCheckCircle,
   FaClock,
-  FaCopy,
   FaExchangeAlt,
   FaHourglassHalf,
   FaShieldAlt,
   FaUsers,
 } from "react-icons/fa";
 
-interface StatCardProps {
+interface MainMetricProps {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: number;
-  href?: string;
+  href: string;
 }
 
-function StatCard({ icon: Icon, label, value, href }: StatCardProps) {
-  const card = (
-    <div className="dashboard-surface tron-border rounded-sm p-4 sm:p-5 transition-colors hover:bg-[#f4ebdc]">
-      <div className="flex items-start justify-between gap-3">
+function MainMetric({ icon: Icon, label, value, href }: MainMetricProps) {
+  return (
+    <Link
+      href={href}
+      className="dashboard-surface tron-border rounded-sm p-2 sm:p-3 hover:bg-[#f4ebdc] transition-colors"
+    >
+      <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-[11px] sm:text-xs text-[#5c4f42] tracking-[0.08em] uppercase ink-text">
+          <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight">
             {label}
           </p>
-          <p className="text-2xl sm:text-3xl font-bold text-[#221910] mt-1 ink-title">
+          <p className="text-xl sm:text-2xl font-bold text-[#221910] ink-title mt-1 leading-none">
             {value}
           </p>
         </div>
-        <Icon className="w-7 h-7 sm:w-8 sm:h-8 text-[#6f5e4d]" />
+        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-[#6f5e4d]" />
       </div>
-    </div>
+    </Link>
   );
-
-  return href ? <Link href={href}>{card}</Link> : card;
 }
 
 export default function DashboardOverview() {
-  // Mock stats data
   const stats = {
     totalBooks: 80,
     totalMembers: 24,
@@ -114,7 +113,7 @@ export default function DashboardOverview() {
   };
 
   return (
-    <div className="min-h-screen bg-[#e5d9c4] dashboard-paper pb-8">
+    <div className="min-h-full bg-[#e5d9c4] dashboard-paper pb-8">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Courier+Prime:wght@400;700&display=swap');
 
@@ -161,71 +160,97 @@ export default function DashboardOverview() {
         }
       `}</style>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
-        {/* Header */}
-        <div className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
-          <div className="flex items-start justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-5 sm:space-y-6">
+        <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
                 Dashboard Bulletin
               </h1>
-              <p className="text-sm sm:text-base text-[#5c4f42] mt-2 ink-text">
-                Daily circulation snapshot for the library desk.
+              <p className="text-sm sm:text-base text-[#5c4f42] mt-1.5 ink-text">
+                Fast daily overview with clear priorities and quick action
+                links.
               </p>
             </div>
-            <div className="hidden sm:flex items-center gap-2 px-3 py-2 border border-[#7c6b59] bg-[#f6ecdd] text-[#4b3d31] text-xs uppercase tracking-[0.08em] ink-text">
-              <FaShieldAlt className="w-3.5 h-3.5" />
-              Records Verified
+
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-2 px-3 py-2 border border-[#7c6b59] bg-[#f6ecdd] text-[#4b3d31] text-xs uppercase tracking-[0.08em] ink-text">
+                <FaShieldAlt className="w-3.5 h-3.5" />
+                Records Verified
+              </span>
+              <Link
+                href="/dashboard/transactions"
+                className="inline-flex items-center gap-2 px-3 py-2 border border-[#4e4033] bg-[#3f3328] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors text-xs font-medium rounded-sm ink-text"
+              >
+                Review Queue <FaArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
           </div>
-        </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
-          <StatCard
-            icon={FaBook}
-            label="Total Books"
-            value={stats.totalBooks}
-            href="/dashboard/books"
-          />
-          <StatCard
-            icon={FaCopy}
-            label="Total Copies"
-            value={stats.totalCopies}
-            href="/dashboard/copies"
-          />
-          <StatCard
-            icon={FaUsers}
-            label="Members"
-            value={stats.totalMembers}
-            href="/dashboard/users"
-          />
-          <StatCard
-            icon={FaExchangeAlt}
-            label="Active Borrows"
-            value={stats.activeBorrows}
-            href="/dashboard/transactions"
-          />
-          <StatCard
-            icon={FaClock}
-            label="Awaiting Approval"
-            value={stats.awaitingApproval}
-            href="/dashboard/transactions"
-          />
-          <StatCard
-            icon={FaArrowRight}
-            label="Overdue Records"
-            value={stats.overdue}
-            href="/dashboard/transactions"
-          />
-        </div>
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-4 sm:mt-5">
+            <MainMetric
+              icon={FaBook}
+              label="Books"
+              value={stats.totalBooks}
+              href="/dashboard/books"
+            />
+            <MainMetric
+              icon={FaUsers}
+              label="Members"
+              value={stats.totalMembers}
+              href="/dashboard/users"
+            />
+            <MainMetric
+              icon={FaExchangeAlt}
+              label="Active"
+              value={stats.activeBorrows}
+              href="/dashboard/transactions"
+            />
+          </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-5">
-          {/* Overdue Items Alert */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-2.5 sm:mt-3">
+            <Link
+              href="/dashboard/copies"
+              className="dashboard-surface rounded-sm p-2 sm:p-3 border border-[#b9a58b] hover:bg-[#f4ebdc] transition-colors"
+            >
+              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight">
+                Copies
+              </p>
+              <p className="text-lg sm:text-xl font-bold text-[#221910] ink-title mt-1 leading-none">
+                {stats.totalCopies}
+              </p>
+            </Link>
+            <Link
+              href="/dashboard/transactions"
+              className="dashboard-surface rounded-sm p-2 sm:p-3 border border-[#b9a58b] hover:bg-[#f4ebdc] transition-colors"
+            >
+              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight">
+                Pending
+              </p>
+              <p className="text-lg sm:text-xl font-bold text-[#221910] ink-title mt-1 leading-none">
+                {stats.awaitingApproval}
+              </p>
+            </Link>
+            <Link
+              href="/dashboard/transactions"
+              className="dashboard-surface rounded-sm p-2 sm:p-3 border border-[#b9a58b] hover:bg-[#f4ebdc] transition-colors"
+            >
+              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight">
+                Overdue
+              </p>
+              <p className="text-lg sm:text-xl font-bold text-[#221910] ink-title mt-1 leading-none">
+                {stats.overdue}
+              </p>
+            </Link>
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-5">
           <div className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
             <h2 className="text-lg font-bold text-[#221910] mb-4 ink-title">
-              Overdue Watch
+              Action Required Today
             </h2>
+
             <div className="space-y-3 ink-text text-sm">
               <div className="flex items-center justify-between p-3 bg-[#f6ecdd] border border-[#8a7966] rounded-sm">
                 <div>
@@ -240,90 +265,100 @@ export default function DashboardOverview() {
                   Priority
                 </span>
               </div>
+
               <div className="flex items-center justify-between p-3 bg-[#f6ecdd] border border-[#8a7966] rounded-sm">
                 <div>
                   <p className="text-xs uppercase tracking-[0.08em] text-[#5c4f42]">
-                    Expiring Soon
+                    Awaiting Approval
                   </p>
                   <p className="text-2xl font-bold text-[#221910] ink-title mt-1">
-                    7
+                    {stats.awaitingApproval}
                   </p>
                 </div>
                 <span className="text-[11px] font-semibold px-2.5 py-1 border border-[#7e6a55] bg-[#ebddc9] text-[#3f3328] uppercase tracking-[0.08em]">
-                  This Week
+                  Queue
                 </span>
               </div>
             </div>
-            <Link
-              href="/dashboard/transactions"
-              className="mt-4 inline-flex items-center gap-2 px-4 py-2 border border-[#4e4033] bg-[#3f3328] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors text-sm font-medium rounded-sm ink-text"
-            >
-              Review Queue <FaArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
 
-          {/* Most Active Members */}
-          <div className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
-            <h2 className="text-lg font-bold text-[#221910] mb-4 ink-title">
-              Most Active Members
-            </h2>
-            <div className="space-y-2.5 ink-text">
-              {[
-                { name: "John Doe", books: 12 },
-                { name: "Sarah Williams", books: 10 },
-                { name: "Jane Smith", books: 8 },
-                { name: "Mike Johnson", books: 6 },
-                { name: "Emma Davis", books: 5 },
-              ].map((member) => (
-                <div
-                  key={member.name}
-                  className="flex items-center justify-between border-b border-[#ccb99f] pb-2"
-                >
-                  <span className="text-sm text-[#46392d] font-medium">
-                    {member.name}
-                  </span>
-                  <span className="text-sm font-bold text-[#221910]">
-                    {member.books} books
-                  </span>
-                </div>
-              ))}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link
+                href="/dashboard/transactions"
+                className="inline-flex items-center gap-2 px-4 py-2 border border-[#4e4033] bg-[#3f3328] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors text-sm font-medium rounded-sm ink-text"
+              >
+                Open Transactions <FaArrowRight className="w-3.5 h-3.5" />
+              </Link>
+              <Link
+                href="/dashboard/copies"
+                className="inline-flex items-center gap-2 px-4 py-2 border border-[#8a7966] text-[#4f4134] hover:bg-[#eadcc8] transition-colors text-sm font-medium rounded-sm ink-text"
+              >
+                Inspect Copies
+              </Link>
             </div>
           </div>
 
-          {/* Popular Books */}
           <div className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
             <h2 className="text-lg font-bold text-[#221910] mb-4 ink-title">
-              Popular Books
+              Top Activity
             </h2>
-            <div className="space-y-2.5 ink-text">
-              {[
-                { title: "The Great Gatsby", borrows: 24 },
-                { title: "To Kill a Mockingbird", borrows: 19 },
-                { title: "1984", borrows: 18 },
-                { title: "Pride and Prejudice", borrows: 16 },
-                { title: "Jane Eyre", borrows: 14 },
-              ].map((book) => (
-                <div
-                  key={book.title}
-                  className="flex items-center justify-between border-b border-[#ccb99f] pb-2"
-                >
-                  <span className="text-sm text-[#46392d] truncate pr-3">
-                    {book.title}
-                  </span>
-                  <span className="text-sm font-bold text-[#221910] whitespace-nowrap">
-                    {book.borrows}x
-                  </span>
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.08em] text-[#5c4f42] mb-2 ink-text">
+                  Most Active Members
+                </p>
+                <div className="space-y-2.5 ink-text">
+                  {[
+                    { name: "John Doe", books: 12 },
+                    { name: "Sarah Williams", books: 10 },
+                    { name: "Jane Smith", books: 8 },
+                  ].map((member) => (
+                    <div
+                      key={member.name}
+                      className="flex items-center justify-between border-b border-[#ccb99f] pb-2"
+                    >
+                      <span className="text-sm text-[#46392d] font-medium">
+                        {member.name}
+                      </span>
+                      <span className="text-sm font-bold text-[#221910]">
+                        {member.books} books
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              <div>
+                <p className="text-xs uppercase tracking-[0.08em] text-[#5c4f42] mb-2 ink-text">
+                  Popular Books
+                </p>
+                <div className="space-y-2.5 ink-text">
+                  {[
+                    { title: "The Great Gatsby", borrows: 24 },
+                    { title: "To Kill a Mockingbird", borrows: 19 },
+                    { title: "1984", borrows: 18 },
+                  ].map((book) => (
+                    <div
+                      key={book.title}
+                      className="flex items-center justify-between border-b border-[#ccb99f] pb-2"
+                    >
+                      <span className="text-sm text-[#46392d] truncate pr-3">
+                        {book.title}
+                      </span>
+                      <span className="text-sm font-bold text-[#221910] whitespace-nowrap">
+                        {book.borrows}x
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Recent Transactions */}
-        <div className="dashboard-surface tron-border rounded-sm overflow-hidden">
+        <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
           <div className="p-5 sm:p-6 border-b border-[#7d6d5a] flex items-center justify-between gap-3">
             <h2 className="text-lg sm:text-xl font-bold text-[#221910] ink-title">
-              Recent Transactions
+              Latest Transactions
             </h2>
             <Link
               href="/dashboard/transactions"
@@ -380,7 +415,7 @@ export default function DashboardOverview() {
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );
