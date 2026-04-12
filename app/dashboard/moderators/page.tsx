@@ -156,43 +156,45 @@ export default function ModeratorsManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-full p-4 sm:p-6 lg:p-8">
+      <div className="max-w-6xl mx-auto space-y-5">
         {/* Header */}
-        <div className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div className="dashboard-surface tron-border rounded-sm p-5 sm:p-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] mb-2 ink-title">
               Manage Moderators
             </h1>
-            <p className="text-gray-600">
+            <p className="text-[#5a4b3f] ink-text">
               Add and manage moderators who can access the dashboard
             </p>
           </div>
-          <div className="text-sm text-gray-600">
-            <span className="font-medium">{moderators.length}</span> total
-            moderators
+          <div className="text-sm text-[#5a4b3f] ink-text">
+            <span className="font-semibold text-[#2b2119]">
+              {moderators.length}
+            </span>{" "}
+            total moderators
           </div>
         </div>
 
         {/* Success Message */}
         {success && (
-          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
-            <FaCheck className="w-5 h-5 text-green-600" />
-            <span className="text-green-700">{success}</span>
+          <div className="p-4 bg-[#efe4d1] border border-[#8d7a66] rounded-sm flex items-center gap-3 dashboard-surface ink-text text-[#3f3328]">
+            <FaCheck className="w-5 h-5 text-[#5b4a3b]" />
+            <span>{success}</span>
           </div>
         )}
 
         {/* Search and Add Button Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 dashboard-surface tron-border rounded-sm p-4 sm:p-5">
           {/* Search Bar */}
           <div className="relative">
-            <FaSearch className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+            <FaSearch className="absolute left-3 top-3 w-5 h-5 text-[#7a6a5a]" />
             <input
               type="text"
               placeholder="Search by name or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+              className="w-full pl-10 pr-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:outline-none focus:ring-2 focus:ring-[#6e5d4a] ink-text"
             />
           </div>
 
@@ -202,7 +204,7 @@ export default function ModeratorsManagement() {
               setShowAddModal(true);
               setError("");
             }}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition-colors font-medium"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] transition-colors font-medium ink-text"
           >
             <FaPlus className="w-4 h-4" />
             <span>Add Moderator</span>
@@ -211,25 +213,41 @@ export default function ModeratorsManagement() {
 
         {/* Add Moderator Modal */}
         {showAddModal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-lg max-w-md w-full">
+          <div className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-4 z-80">
+            <div className="dashboard-surface tron-border rounded-sm shadow-lg max-w-md w-full">
               <div className="p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                  Add New Moderator
-                </h2>
+                <div className="flex items-start justify-between gap-3 mb-4">
+                  <h2 className="text-xl sm:text-2xl font-bold text-[#221910] ink-title">
+                    Add New Moderator
+                  </h2>
+                  <button
+                    onClick={() => {
+                      setShowAddModal(false);
+                      setError("");
+                      setFormData({ name: "", email: "" });
+                    }}
+                    className="p-2 text-[#655648] hover:bg-[#e7d8c3] rounded-sm transition-colors"
+                    aria-label="Close add moderator modal"
+                  >
+                    <FaTimes className="w-4 h-4" />
+                  </button>
+                </div>
 
                 {error && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-                    <FaTimes className="w-4 h-4 text-red-600" />
-                    <span className="text-red-700 text-sm">{error}</span>
+                  <div className="mb-4 p-3 bg-[#efe4d1] border border-[#8d7a66] rounded-sm flex items-center gap-2 ink-text">
+                    <FaTimes className="w-4 h-4 text-[#664a38]" />
+                    <span className="text-[#4a3b2f] text-sm">{error}</span>
                   </div>
                 )}
 
-                <form onSubmit={handleAddModerator} className="space-y-4">
+                <form
+                  onSubmit={handleAddModerator}
+                  className="space-y-4 ink-text"
+                >
                   {/* Name Field */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Full Name <span className="text-red-500">*</span>
+                    <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                      Full Name <span className="text-[#7a4c37]">*</span>
                     </label>
                     <input
                       type="text"
@@ -238,14 +256,14 @@ export default function ModeratorsManagement() {
                         setFormData({ ...formData, name: e.target.value })
                       }
                       placeholder="Enter moderator's full name"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                      className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:outline-none focus:ring-2 focus:ring-[#6e5d4a]"
                     />
                   </div>
 
                   {/* Email Field */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Email <span className="text-red-500">*</span>
+                    <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                      Email <span className="text-[#7a4c37]">*</span>
                     </label>
                     <input
                       type="email"
@@ -254,12 +272,12 @@ export default function ModeratorsManagement() {
                         setFormData({ ...formData, email: e.target.value })
                       }
                       placeholder="Enter moderator's email"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                      className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:outline-none focus:ring-2 focus:ring-[#6e5d4a]"
                     />
                   </div>
 
                   {/* Buttons */}
-                  <div className="flex gap-3 pt-4">
+                  <div className="flex gap-3 pt-3">
                     <button
                       type="button"
                       onClick={() => {
@@ -267,13 +285,13 @@ export default function ModeratorsManagement() {
                         setError("");
                         setFormData({ name: "", email: "" });
                       }}
-                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                      className="flex-1 px-4 py-2.5 border border-[#8a7966] text-[#4f4134] rounded-sm hover:bg-[#eadcc8] transition-colors font-medium"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition-colors font-medium"
+                      className="flex-1 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] transition-colors font-medium"
                     >
                       Add Moderator
                     </button>
@@ -286,25 +304,42 @@ export default function ModeratorsManagement() {
 
         {/* Edit Moderator Modal */}
         {showEditModal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-lg max-w-md w-full">
+          <div className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-4 z-80">
+            <div className="dashboard-surface tron-border rounded-sm shadow-lg max-w-md w-full">
               <div className="p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                  Edit Moderator
-                </h2>
+                <div className="flex items-start justify-between gap-3 mb-4">
+                  <h2 className="text-xl sm:text-2xl font-bold text-[#221910] ink-title">
+                    Edit Moderator
+                  </h2>
+                  <button
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setError("");
+                      setEditingId(null);
+                      setFormData({ name: "", email: "" });
+                    }}
+                    className="p-2 text-[#655648] hover:bg-[#e7d8c3] rounded-sm transition-colors"
+                    aria-label="Close edit moderator modal"
+                  >
+                    <FaTimes className="w-4 h-4" />
+                  </button>
+                </div>
 
                 {error && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-                    <FaTimes className="w-4 h-4 text-red-600" />
-                    <span className="text-red-700 text-sm">{error}</span>
+                  <div className="mb-4 p-3 bg-[#efe4d1] border border-[#8d7a66] rounded-sm flex items-center gap-2 ink-text">
+                    <FaTimes className="w-4 h-4 text-[#664a38]" />
+                    <span className="text-[#4a3b2f] text-sm">{error}</span>
                   </div>
                 )}
 
-                <form onSubmit={handleUpdateModerator} className="space-y-4">
+                <form
+                  onSubmit={handleUpdateModerator}
+                  className="space-y-4 ink-text"
+                >
                   {/* Name Field */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Full Name <span className="text-red-500">*</span>
+                    <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                      Full Name <span className="text-[#7a4c37]">*</span>
                     </label>
                     <input
                       type="text"
@@ -313,14 +348,14 @@ export default function ModeratorsManagement() {
                         setFormData({ ...formData, name: e.target.value })
                       }
                       placeholder="Enter moderator's full name"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                      className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:outline-none focus:ring-2 focus:ring-[#6e5d4a]"
                     />
                   </div>
 
                   {/* Email Field */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Email <span className="text-red-500">*</span>
+                    <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                      Email <span className="text-[#7a4c37]">*</span>
                     </label>
                     <input
                       type="email"
@@ -329,12 +364,12 @@ export default function ModeratorsManagement() {
                         setFormData({ ...formData, email: e.target.value })
                       }
                       placeholder="Enter moderator's email"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                      className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:outline-none focus:ring-2 focus:ring-[#6e5d4a]"
                     />
                   </div>
 
                   {/* Buttons */}
-                  <div className="flex gap-3 pt-4">
+                  <div className="flex gap-3 pt-3">
                     <button
                       type="button"
                       onClick={() => {
@@ -343,13 +378,13 @@ export default function ModeratorsManagement() {
                         setEditingId(null);
                         setFormData({ name: "", email: "" });
                       }}
-                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                      className="flex-1 px-4 py-2.5 border border-[#8a7966] text-[#4f4134] rounded-sm hover:bg-[#eadcc8] transition-colors font-medium"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition-colors font-medium"
+                      className="flex-1 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] transition-colors font-medium"
                     >
                       Update
                     </button>
@@ -361,20 +396,20 @@ export default function ModeratorsManagement() {
         )}
 
         {/* Moderators Table - Desktop */}
-        <div className="hidden sm:block bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+        <div className="hidden sm:block dashboard-surface tron-border rounded-sm overflow-hidden">
+          <table className="w-full text-sm ink-text">
+            <thead className="bg-[#eadcc8] border-b border-[#7d6d5a]">
               <tr>
-                <th className="text-left py-3 px-6 font-semibold text-gray-900">
+                <th className="text-left py-3 px-6 font-semibold text-[#3b3026] uppercase tracking-[0.08em] text-xs">
                   Name
                 </th>
-                <th className="text-left py-3 px-6 font-semibold text-gray-900">
+                <th className="text-left py-3 px-6 font-semibold text-[#3b3026] uppercase tracking-[0.08em] text-xs">
                   Email
                 </th>
-                <th className="text-left py-3 px-6 font-semibold text-gray-900">
+                <th className="text-left py-3 px-6 font-semibold text-[#3b3026] uppercase tracking-[0.08em] text-xs">
                   Added Date
                 </th>
-                <th className="text-center py-3 px-6 font-semibold text-gray-900">
+                <th className="text-center py-3 px-6 font-semibold text-[#3b3026] uppercase tracking-[0.08em] text-xs">
                   Action
                 </th>
               </tr>
@@ -384,29 +419,29 @@ export default function ModeratorsManagement() {
                 filteredModerators.map((moderator) => (
                   <tr
                     key={moderator.id}
-                    className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
+                    className="border-b border-[#d2bfa5] hover:bg-[#f4ebdc] transition-colors"
                   >
-                    <td className="py-3 px-6 font-medium text-gray-900">
+                    <td className="py-3 px-6 font-medium text-[#2b2119]">
                       {moderator.name}
                     </td>
-                    <td className="py-3 px-6 text-gray-600">
+                    <td className="py-3 px-6 text-[#5a4b3f]">
                       {moderator.email}
                     </td>
-                    <td className="py-3 px-6 text-gray-600">
+                    <td className="py-3 px-6 text-[#5a4b3f]">
                       {new Date(moderator.createdDate).toLocaleDateString()}
                     </td>
                     <td className="py-3 px-6 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => handleEditClick(moderator)}
-                          className="inline-flex items-center justify-center w-8 h-8 text-gray-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="inline-flex items-center justify-center w-8 h-8 text-[#5b4c3f] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors"
                           title="Edit moderator"
                         >
                           <FaEdit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteModerator(moderator.id)}
-                          className="inline-flex items-center justify-center w-8 h-8 text-gray-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="inline-flex items-center justify-center w-8 h-8 text-[#6a4e3d] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors"
                           title="Delete moderator"
                         >
                           <FaTrash className="w-4 h-4" />
@@ -417,7 +452,10 @@ export default function ModeratorsManagement() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="py-8 text-center text-gray-500">
+                  <td
+                    colSpan={4}
+                    className="py-8 text-center text-[#6a5a4c] ink-text"
+                  >
                     No moderators found
                   </td>
                 </tr>
@@ -432,39 +470,39 @@ export default function ModeratorsManagement() {
             filteredModerators.map((moderator) => (
               <div
                 key={moderator.id}
-                className="bg-white border border-gray-200 rounded-lg p-4"
+                className="dashboard-surface tron-border rounded-sm p-4"
               >
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 truncate">
+                    <h3 className="font-semibold text-[#2b2119] truncate ink-title">
                       {moderator.name}
                     </h3>
-                    <p className="text-sm text-gray-600 truncate">
+                    <p className="text-sm text-[#5a4b3f] truncate ink-text">
                       {moderator.email}
                     </p>
                   </div>
                   <div className="ml-2 flex gap-1">
                     <button
                       onClick={() => handleEditClick(moderator)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      className="p-2 text-[#5b4c3f] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors"
                     >
                       <FaEdit className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDeleteModerator(moderator.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      className="p-2 text-[#6a4e3d] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors"
                     >
                       <FaTrash className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-[#6a5a4c] ink-text">
                   Added: {new Date(moderator.createdDate).toLocaleDateString()}
                 </p>
               </div>
             ))
           ) : (
-            <div className="text-center py-8 text-gray-500">
+            <div className="dashboard-surface rounded-sm p-8 text-center text-[#6a5a4c] ink-text">
               No moderators found
             </div>
           )}
@@ -472,10 +510,16 @@ export default function ModeratorsManagement() {
 
         {/* Small Stats Footer */}
         {searchTerm && (
-          <div className="mt-4 text-xs text-gray-500">
+          <div className="text-xs text-[#6a5a4c] ink-text">
             Showing{" "}
-            <span className="font-medium">{filteredModerators.length}</span> of{" "}
-            <span className="font-medium">{moderators.length}</span> moderators
+            <span className="font-semibold text-[#3f3328]">
+              {filteredModerators.length}
+            </span>{" "}
+            of{" "}
+            <span className="font-semibold text-[#3f3328]">
+              {moderators.length}
+            </span>{" "}
+            moderators
           </div>
         )}
       </div>
