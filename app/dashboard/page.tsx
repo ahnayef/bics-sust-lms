@@ -9,6 +9,29 @@ import {
   FaUsers,
 } from "react-icons/fa";
 
+interface StatCardProps {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: number;
+  href?: string;
+}
+
+function StatCard({ icon: Icon, label, value, href }: StatCardProps) {
+  const card = (
+    <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-gray-600 mb-1">{label}</p>
+          <p className="text-3xl font-bold text-gray-900">{value}</p>
+        </div>
+        <Icon className="w-12 h-12 text-gray-300" />
+      </div>
+    </div>
+  );
+
+  return href ? <Link href={href}>{card}</Link> : card;
+}
+
 export default function DashboardOverview() {
   // Mock stats data
   const stats = {
@@ -54,32 +77,6 @@ export default function DashboardOverview() {
       status: "approved",
     },
   ];
-
-  const StatCard = ({
-    icon: Icon,
-    label,
-    value,
-    href,
-  }: {
-    icon: any;
-    label: string;
-    value: number;
-    href?: string;
-  }) => {
-    const card = (
-      <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-600 mb-1">{label}</p>
-            <p className="text-3xl font-bold text-gray-900">{value}</p>
-          </div>
-          <Icon className="w-12 h-12 text-gray-300" />
-        </div>
-      </div>
-    );
-
-    return href ? <Link href={href}>{card}</Link> : card;
-  };
 
   return (
     <div className="space-y-8">
