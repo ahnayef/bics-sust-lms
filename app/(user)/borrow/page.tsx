@@ -1,8 +1,8 @@
 "use client";
 
-import { Html5QrcodeScanner } from "html5-qrcode";
+import { Scanner, useDevices } from "@yudiel/react-qr-scanner";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { FaArrowLeft, FaCheck, FaKeyboard, FaQrcode } from "react-icons/fa";
 
 export default function BorrowPage() {
@@ -18,11 +18,11 @@ export default function BorrowPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [inputMode, setInputMode] = useState<"qr" | "manual">("qr");
-  const [cameraError, setCameraError] = useState("");
-  const [cameraReady, setCameraReady] = useState(false);
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
-  const qrReaderRef = useRef<HTMLDivElement>(null);
-  const hasInitializedRef = useRef(false);
+  const [deviceId, setDeviceId] = useState<string | undefined>(undefined);
+  const [scanPaused, setScanPaused] = useState(false);
+  const [scannerInitialized, setScannerInitialized] = useState(true);
+
+  const devices = useDevices();
 
   // Mock available copies
   const availableCopies: Record<
@@ -62,93 +62,40 @@ export default function BorrowPage() {
         const defaultReturn = new Date();
         defaultReturn.setDate(defaultReturn.getDate() + 7);
         setReturnDate(defaultReturn.toISOString().split("T")[0]);
+        console.log("📚 Book Found:", {
+          id: upperValue,
+          title: copy.title,
+          author: copy.author,
+          copyNumber: copy.copyNumber,
+        });
+        return true; // Valid book found
       } else {
-        setError("Copy ID not found or unavailable");
+        console.log("❌ Invalid QR code (book not found):", upperValue);
+        return false; // Invalid book
       }
     }
+    return false; // Invalid format
   };
 
   const handleCopyIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     processCopyId(e.target.value);
   };
 
-  const initScanner = () => {
-    if (!qrReaderRef.current) return;
-    if (scannerRef.current) return;
-    if (hasInitializedRef.current) return;
-
-    try {
-      hasInitializedRef.current = true;
-      setCameraError("");
-      setCameraReady(false);
-
-      const scanner = new Html5QrcodeScanner(
-        "qr-reader",
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1,
-          showTorchButtonIfSupported: true,
-          disableFlip: false,
-        },
-        false,
-      );
-
-      scannerRef.current = scanner;
-
-      scanner.render(
-        (decodedText) => {
-          processCopyId(decodedText.trim());
-        },
-        (errorMessage) => {
-          // Ignore scanning errors
-        },
-      );
-
-      // Camera is ready after render is called
-      setCameraReady(true);
-    } catch (err: any) {
-      hasInitializedRef.current = false;
-      scannerRef.current = null;
-      const errorMsg =
-        err?.message ||
-        "Unable to access camera. Please check permissions or try the manual entry method.";
-      setCameraError(errorMsg);
-      console.error("Scanner initialization error:", err);
+  const handleScan = (detectedCodes: any[]) => {
+    if (detectedCodes.length > 0) {
+      const scannedValue = detectedCodes[0].rawValue;
+      console.log("✅ QR Code Scanned:", scannedValue);
+      const isValid = processCopyId(scannedValue.trim());
+      // Only pause if valid book found
+      if (isValid) {
+        setScanPaused(true);
+      }
     }
   };
 
-  const stopScanner = () => {
-    if (scannerRef.current) {
-      try {
-        scannerRef.current.clear().catch(() => {});
-      } catch (err) {
-        // Ignore
-      }
-      scannerRef.current = null;
-    }
-    hasInitializedRef.current = false;
+  const initializeScanner = () => {
+    setScannerInitialized(true);
   };
-
-  useEffect(() => {
-    if (inputMode === "qr") {
-      // Small delay to ensure DOM is ready
-      const timer = setTimeout(() => {
-        initScanner();
-      }, 200);
-      return () => clearTimeout(timer);
-    } else {
-      stopScanner();
-    }
-  }, [inputMode]);
-
-  useEffect(() => {
-    return () => {
-      if (scannerRef.current) {
-        stopScanner();
-      }
-    };
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -276,27 +223,80 @@ export default function BorrowPage() {
           <div className="bg-white rounded-lg p-6 border border-gray-200">
             {inputMode === "qr" ? (
               <div className="space-y-4">
-                <div className="p-8 bg-yellow-50 border-2 border-yellow-300 rounded-lg text-center">
-                  <div className="mb-4">
-                    <div className="inline-flex items-center justify-center w-12 h-12 bg-yellow-200 rounded-full">
-                      <FaQrcode className="w-6 h-6 text-yellow-700" />
-                    </div>
-                  </div>
-                  <h3 className="text-lg font-semibold text-yellow-900 mb-2">
-                    QR Scanning - Under Construction
-                  </h3>
-                  <p className="text-sm text-yellow-800 mb-4">
-                    We're working on the QR code scanner feature. For now,
-                    please use the manual entry method below.
-                  </p>
+                <div className="space-y-3 mb-4">
+                  <label className="block">
+                    <p className="text-sm font-medium text-gray-700 mb-2">
+                      Select Camera
+                    </p>
+                    <select
+                      value={deviceId || ""}
+                      onChange={(e) => setDeviceId(e.target.value || undefined)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                      disabled={scannerInitialized}
+                    >
+                      <option value="">Default Camera</option>
+                      {devices.map((device, index) => (
+                        <option key={index} value={device.deviceId}>
+                          {device.label || `Camera ${index + 1}`}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                {!scannerInitialized ? (
                   <button
                     type="button"
-                    onClick={() => setInputMode("manual")}
-                    className="inline-block px-6 py-2 bg-yellow-700 text-white rounded-lg font-medium hover:bg-yellow-800 transition-colors"
+                    onClick={initializeScanner}
+                    className="w-full px-4 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
                   >
-                    Use Manual Entry
+                    Start QR Scanner
                   </button>
-                </div>
+                ) : null}
+                <Scanner
+                  formats={["qr_code"]}
+                  constraints={{
+                    deviceId: deviceId,
+                  }}
+                  onScan={handleScan}
+                  onError={(error) => {
+                    console.error("Scanner error:", error);
+                  }}
+                  styles={{
+                    container: {
+                      height: "400px",
+                      width: "100%",
+                      borderRadius: "0.5rem",
+                      overflow: "hidden",
+                    },
+                  }}
+                  components={{
+                    onOff: true,
+                    torch: true,
+                    zoom: true,
+                    finder: true,
+                  }}
+                  allowMultiple={false}
+                  scanDelay={2000}
+                  paused={scanPaused}
+                />
+                {scanPaused && (
+                  <button
+                    type="button"
+                    onClick={() => setScanPaused(false)}
+                    className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+                  >
+                    Resume Scanning
+                  </button>
+                )}
+                {!scanPaused && (
+                  <button
+                    type="button"
+                    onClick={() => setScannerInitialized(false)}
+                    className="w-full px-4 py-2 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors"
+                  >
+                    Stop Scanner
+                  </button>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
