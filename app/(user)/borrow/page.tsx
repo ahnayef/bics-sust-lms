@@ -21,6 +21,7 @@ export default function BorrowPage() {
   const [deviceId, setDeviceId] = useState<string | undefined>(undefined);
   const [scanPaused, setScanPaused] = useState(false);
   const [scannerInitialized, setScannerInitialized] = useState(true);
+  const [cameraPermissionDenied, setCameraPermissionDenied] = useState(false);
 
   const devices = useDevices();
 
@@ -93,8 +94,19 @@ export default function BorrowPage() {
     }
   };
 
-  const initializeScanner = () => {
-    setScannerInitialized(true);
+  const requestCameraPermission = async () => {
+    try {
+      setCameraPermissionDenied(false);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+      });
+      // Stop the stream once we have permission
+      stream.getTracks().forEach((track) => track.stop());
+      setScannerInitialized(true);
+    } catch (error) {
+      console.error("Camera permission error:", error);
+      setCameraPermissionDenied(true);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -116,7 +128,8 @@ export default function BorrowPage() {
       await new Promise((resolve) => setTimeout(resolve, 800));
       setSuccess(true);
       setLoading(false);
-    } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_error) {
       setError("Failed to process borrow request. Please try again.");
       setLoading(false);
     }
@@ -342,10 +355,12 @@ export default function BorrowPage() {
                   {!scannerInitialized ? (
                     <button
                       type="button"
-                      onClick={initializeScanner}
+                      onClick={requestCameraPermission}
                       className="w-full px-4 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
                     >
-                      Start QR Scanner
+                      {cameraPermissionDenied
+                        ? "Camera Permission Denied - Try Again"
+                        : "Start QR Scanner"}
                     </button>
                   ) : null}
                   <div className="relative max-w-md mx-auto">
@@ -358,6 +373,14 @@ export default function BorrowPage() {
                         onScan={handleScan}
                         onError={(error) => {
                           console.error("Scanner error:", error);
+                          const errorStr = JSON.stringify(error).toLowerCase();
+                          if (
+                            errorStr.includes("permission") ||
+                            errorStr.includes("notallowed")
+                          ) {
+                            setCameraPermissionDenied(true);
+                            setScannerInitialized(false);
+                          }
                         }}
                         styles={{
                           container: {
@@ -453,6 +476,15 @@ export default function BorrowPage() {
           {error && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
+          {cameraPermissionDenied && (
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                <strong>Camera permission denied.</strong> Please enable camera
+                access in your browser settings and try again.
+              </p>
             </div>
           )}
 
