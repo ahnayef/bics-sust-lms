@@ -219,156 +219,22 @@ export default function BorrowPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Input Area */}
-          <div className="bg-white rounded-lg p-6 border border-gray-200">
-            {inputMode === "qr" ? (
-              <div className="space-y-4">
-                <div className="space-y-3 mb-4">
-                  <label className="block">
-                    <p className="text-sm font-medium text-gray-700 mb-2">
-                      Select Camera
-                    </p>
-                    <select
-                      value={deviceId || ""}
-                      onChange={(e) => setDeviceId(e.target.value || undefined)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
-                      disabled={scannerInitialized}
-                    >
-                      <option value="">Default Camera</option>
-                      {devices.map((device, index) => (
-                        <option key={index} value={device.deviceId}>
-                          {device.label || `Camera ${index + 1}`}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                {!scannerInitialized ? (
-                  <button
-                    type="button"
-                    onClick={initializeScanner}
-                    className="w-full px-4 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
-                  >
-                    Start QR Scanner
-                  </button>
-                ) : null}
-                <div className="relative max-w-md mx-auto">
-                  <div className="relative bg-black rounded-sm shadow-lg aspect-square overflow-clip">
-                    <Scanner
-                      formats={["qr_code"]}
-                      constraints={{
-                        deviceId: deviceId,
-                      }}
-                      onScan={handleScan}
-                      onError={(error) => {
-                        console.error("Scanner error:", error);
-                      }}
-                      styles={{
-                        container: {
-                          width: "100%",
-                          aspectRatio: "1",
-                        },
-                        video: {
-                          objectFit: "cover",
-                        },
-                      }}
-                      components={{
-                        onOff: false,
-                        torch: true,
-                        zoom: true,
-                        finder: false,
-                      }}
-                      allowMultiple={false}
-                      scanDelay={2000}
-                      paused={scanPaused}
-                    />
-                    {/* Minimal Scanner Overlay */}
-                    <div className="absolute inset-0 pointer-events-none">
-                      {/* Blinking scanning line - CENTER */}
-                      <div
-                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-0.5 bg-red-500 opacity-75"
-                        style={{ animation: "qrScannerBlink 1.2s infinite" }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  {/* Corner brackets - outside frame */}
-                  <div className="absolute -top-1 -left-1 w-6 h-1.5 bg-black pointer-events-none"></div>
-                  <div className="absolute -top-1 -left-1 w-1.5 h-6 bg-black pointer-events-none"></div>
-
-                  <div className="absolute -top-1 -right-1 w-6 h-1.5 bg-black pointer-events-none"></div>
-                  <div className="absolute -top-1 -right-1 w-1.5 h-6 bg-black pointer-events-none"></div>
-
-                  <div className="absolute -bottom-1 -left-1 w-6 h-1.5 bg-black pointer-events-none"></div>
-                  <div className="absolute -bottom-1 -left-1 w-1.5 h-6 bg-black pointer-events-none"></div>
-
-                  <div className="absolute -bottom-1 -right-1 w-6 h-1.5 bg-black pointer-events-none"></div>
-                  <div className="absolute -bottom-1 -right-1 w-1.5 h-6 bg-black pointer-events-none"></div>
-                </div>
-
-                <p className="text-xs text-gray-600 text-center">
-                  Position QR code within the frame
-                </p>
-
-                {scanPaused && (
-                  <button
-                    type="button"
-                    onClick={() => setScanPaused(false)}
-                    className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
-                  >
-                    Resume Scanning
-                  </button>
-                )}
-                {!scanPaused && (
-                  <button
-                    type="button"
-                    onClick={() => setScannerInitialized(false)}
-                    className="w-full px-4 py-2 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors"
-                  >
-                    Stop Scanner
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <label className="block">
-                  <p className="text-sm font-medium text-gray-700 mb-2">
-                    Copy ID
-                  </p>
-                  <input
-                    type="text"
-                    value={copyId}
-                    onChange={handleCopyIdChange}
-                    placeholder="e.g., QR001"
-                    maxLength={5}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none text-lg font-mono tracking-widest"
-                    autoFocus
-                  />
-                </label>
-                <p className="text-xs text-gray-500">
-                  Valid IDs: QR001, QR002, QR003, QR004
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Error or Success Messages */}
-          {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
-          )}
-
-          {/* Book Card */}
+          {/* When book is selected, show it prominently at top */}
           {selectedCopy && (
             <div className="space-y-4">
-              <div className="bg-white rounded-lg p-6 border-2 border-green-200 border-l-4 border-l-green-600">
+              <div className="bg-white rounded-lg p-6 border-2 border-green-200 border-l-4 border-l-green-600 shadow-lg">
                 <div className="space-y-3">
+                  <div className="flex items-center gap-2 mb-4">
+                    <FaCheck className="w-5 h-5 text-green-600" />
+                    <p className="text-sm font-semibold text-green-600">
+                      Book Scanned Successfully
+                    </p>
+                  </div>
                   <div>
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
                       Book Title
                     </p>
-                    <p className="text-lg font-semibold text-gray-900">
+                    <p className="text-2xl font-bold text-gray-900">
                       {selectedCopy.title}
                     </p>
                   </div>
@@ -376,7 +242,9 @@ export default function BorrowPage() {
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
                       Author
                     </p>
-                    <p className="text-gray-700">{selectedCopy.author}</p>
+                    <p className="text-lg text-gray-700">
+                      {selectedCopy.author}
+                    </p>
                   </div>
                   <div className="grid grid-cols-2 gap-4 pt-2">
                     <div>
@@ -418,25 +286,187 @@ export default function BorrowPage() {
                   Select when you plan to return the book
                 </p>
               </div>
+
+              {/* Action Buttons for Book Card */}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCopy(null);
+                    setCopyId("");
+                    setReturnDate("");
+                    setScanPaused(false);
+                  }}
+                  className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Scan Another
+                </button>
+                <button
+                  type="submit"
+                  disabled={!returnDate || loading}
+                  className="flex-1 px-4 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {loading ? "Processing..." : "Confirm Borrow"}
+                </button>
+              </div>
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 sticky bottom-0 bg-gradient-to-t from-gray-50 pt-4">
-            <Link
-              href="/profile"
-              className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-center"
-            >
-              Cancel
-            </Link>
-            <button
-              type="submit"
-              disabled={!selectedCopy || !returnDate || loading}
-              className="flex-1 px-4 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? "Processing..." : "Confirm Borrow"}
-            </button>
-          </div>
+          {/* Scanner - only show when no book selected */}
+          {!selectedCopy && (
+            <div className="bg-white rounded-lg p-6 border border-gray-200">
+              {inputMode === "qr" ? (
+                <div className="space-y-4">
+                  <div className="space-y-3 mb-4">
+                    <label className="block">
+                      <p className="text-sm font-medium text-gray-700 mb-2">
+                        Select Camera
+                      </p>
+                      <select
+                        value={deviceId || ""}
+                        onChange={(e) =>
+                          setDeviceId(e.target.value || undefined)
+                        }
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                        disabled={scannerInitialized}
+                      >
+                        <option value="">Default Camera</option>
+                        {devices.map((device, index) => (
+                          <option key={index} value={device.deviceId}>
+                            {device.label || `Camera ${index + 1}`}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  {!scannerInitialized ? (
+                    <button
+                      type="button"
+                      onClick={initializeScanner}
+                      className="w-full px-4 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+                    >
+                      Start QR Scanner
+                    </button>
+                  ) : null}
+                  <div className="relative max-w-md mx-auto">
+                    <div className="relative bg-black rounded-sm shadow-lg aspect-square overflow-clip">
+                      <Scanner
+                        formats={["qr_code"]}
+                        constraints={{
+                          deviceId: deviceId,
+                        }}
+                        onScan={handleScan}
+                        onError={(error) => {
+                          console.error("Scanner error:", error);
+                        }}
+                        styles={{
+                          container: {
+                            width: "100%",
+                            aspectRatio: "1",
+                          },
+                          video: {
+                            objectFit: "cover",
+                          },
+                        }}
+                        components={{
+                          onOff: false,
+                          torch: true,
+                          zoom: true,
+                          finder: false,
+                        }}
+                        allowMultiple={false}
+                        scanDelay={2000}
+                        paused={scanPaused}
+                      />
+                      {/* Minimal Scanner Overlay */}
+                      <div className="absolute inset-0 pointer-events-none">
+                        {/* Moving scanning line - CENTER */}
+                        <div
+                          className="absolute left-1/2 top-1/2 -translate-x-1/2 w-full h-0.5 bg-red-500 opacity-75"
+                          style={{ animation: "qrScannerMove 2s infinite" }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {/* Corner brackets - outside frame */}
+                    <div className="absolute -top-1 -left-1 w-6 h-1.5 bg-black pointer-events-none"></div>
+                    <div className="absolute -top-1 -left-1 w-1.5 h-6 bg-black pointer-events-none"></div>
+
+                    <div className="absolute -top-1 -right-1 w-6 h-1.5 bg-black pointer-events-none"></div>
+                    <div className="absolute -top-1 -right-1 w-1.5 h-6 bg-black pointer-events-none"></div>
+
+                    <div className="absolute -bottom-1 -left-1 w-6 h-1.5 bg-black pointer-events-none"></div>
+                    <div className="absolute -bottom-1 -left-1 w-1.5 h-6 bg-black pointer-events-none"></div>
+
+                    <div className="absolute -bottom-1 -right-1 w-6 h-1.5 bg-black pointer-events-none"></div>
+                    <div className="absolute -bottom-1 -right-1 w-1.5 h-6 bg-black pointer-events-none"></div>
+                  </div>
+
+                  <p className="text-xs text-gray-600 text-center">
+                    Position QR code within the frame
+                  </p>
+
+                  {scanPaused && (
+                    <button
+                      type="button"
+                      onClick={() => setScanPaused(false)}
+                      className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+                    >
+                      Resume Scanning
+                    </button>
+                  )}
+                  {!scanPaused && (
+                    <button
+                      type="button"
+                      onClick={() => setScannerInitialized(false)}
+                      className="w-full px-4 py-2 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors"
+                    >
+                      Stop Scanner
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <label className="block">
+                    <p className="text-sm font-medium text-gray-700 mb-2">
+                      Copy ID
+                    </p>
+                    <input
+                      type="text"
+                      value={copyId}
+                      onChange={handleCopyIdChange}
+                      placeholder="e.g., QR001"
+                      maxLength={5}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none text-lg font-mono tracking-widest"
+                      autoFocus
+                    />
+                  </label>
+                  <p className="text-xs text-gray-500">
+                    Valid IDs: QR001, QR002, QR003, QR004
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Error or Success Messages */}
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
+          {/* Action Buttons - Only for scanner/manual entry mode */}
+          {!selectedCopy && (
+            <div className="flex gap-3">
+              <Link
+                href="/profile"
+                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-center"
+              >
+                Cancel
+              </Link>
+            </div>
+          )}
         </form>
       </div>
     </div>

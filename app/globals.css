@@ -30,17 +30,17 @@ body {
   font-family: var(--font-noto-sans-bengali), sans-serif;
 }
 
-/* QR Scanner Blinking Line */
-@keyframes qrScannerBlink {
+/* QR Scanner Moving Line */
+@keyframes qrScannerMove {
   0% {
-    opacity: 0;
+    transform: translateY(-80px);
   }
 
   50% {
-    opacity: 1;
+    transform: translateY(80px);
   }
 
   100% {
-    opacity: 0;
+    transform: translateY(-80px);
   }
 }
