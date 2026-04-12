@@ -145,32 +145,72 @@ export default function BorrowPage() {
     });
 
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="bg-white rounded-lg p-8 text-center max-w-sm w-full">
+      <div className="min-h-screen bg-[#e5d9c4] borrow-paper flex items-center justify-center px-4">
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Courier+Prime:wght@400;700&display=swap');
+
+          .borrow-paper {
+            background-image:
+              linear-gradient(180deg, #eee4d3 0%, #e5d8c1 52%, #dcccb2 100%),
+              linear-gradient(92deg, rgba(88, 66, 46, 0.05), transparent 24%),
+              linear-gradient(268deg, rgba(88, 66, 46, 0.04), transparent 18%),
+              repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.008) 2px, rgba(0,0,0,.008) 4px),
+              repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,.008) 2px, rgba(0,0,0,.008) 4px),
+              url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220"><filter id="p"><feTurbulence type="fractalNoise" baseFrequency="0.78" numOctaves="4" seed="6"/></filter><rect width="220" height="220" fill="%23e5d9c4"/><rect width="220" height="220" filter="url(%23p)" opacity="0.028"/></svg>');
+          }
+
+          .ink-text { font-family: 'Courier Prime', monospace; }
+          .ink-title { font-family: 'Playfair Display', serif; }
+
+          .borrow-surface {
+            background-color: #f1e7d8;
+            border: 1px solid #46372b;
+            box-shadow: inset 0 0 0 1px rgba(244, 235, 219, 0.55), 0 0 0 1px rgba(69, 55, 43, 0.2);
+          }
+
+          .tron-border {
+            position: relative;
+            overflow: hidden;
+          }
+
+          .tron-border::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+              repeating-linear-gradient(90deg, rgba(77, 59, 43, 0.24) 0 3px, transparent 3px 20px) top / 100% 1px no-repeat,
+              repeating-linear-gradient(90deg, rgba(77, 59, 43, 0.18) 0 2px, transparent 2px 18px) bottom / 100% 1px no-repeat,
+              repeating-linear-gradient(180deg, rgba(77, 59, 43, 0.18) 0 2px, transparent 2px 16px) left / 1px 100% no-repeat,
+              repeating-linear-gradient(180deg, rgba(77, 59, 43, 0.14) 0 2px, transparent 2px 20px) right / 1px 100% no-repeat;
+            opacity: 0.78;
+          }
+        `}</style>
+        <div className="borrow-surface tron-border rounded-lg p-8 text-center max-w-sm w-full">
           <div className="flex justify-center mb-6">
-            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-green-50">
-              <FaCheck className="w-8 h-8 text-green-600" />
+            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-[#e8f1e7] border border-[#8faa8f]">
+              <FaCheck className="w-8 h-8 text-[#4e4033]" />
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-bold text-[#221910] mb-2 ink-title">
             Borrow Successful!
           </h2>
-          <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <p className="text-gray-600 mb-3">
-              <span className="font-semibold text-gray-900">
+          <div className="bg-[#f6ecdd] border border-[#786a5c] rounded-lg p-4 mb-6">
+            <p className="text-[#5c4f42] mb-3 ink-text">
+              <span className="font-semibold text-[#221910] ink-title">
                 {selectedCopy?.title}
               </span>
             </p>
-            <div className="space-y-2 text-sm">
-              <p className="text-gray-600">
-                <span className="text-gray-500">Due:</span>{" "}
-                <span className="font-medium text-gray-900">
+            <div className="space-y-2 text-sm ink-text">
+              <p className="text-[#5c4f42]">
+                <span className="text-[#6f6256]">Due:</span>{" "}
+                <span className="font-medium text-[#221910]">
                   {formattedDate}
                 </span>
               </p>
-              <p className="text-gray-600">
-                <span className="text-gray-500">Copy ID:</span>{" "}
-                <span className="font-mono font-medium text-gray-900">
+              <p className="text-[#5c4f42]">
+                <span className="text-[#6f6256]">Copy ID:</span>{" "}
+                <span className="font-mono font-medium text-[#221910]">
                   {selectedCopy?.id}
                 </span>
               </p>
@@ -178,7 +218,7 @@ export default function BorrowPage() {
           </div>
           <Link
             href="/profile"
-            className="inline-block px-6 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+            className="inline-block px-6 py-2 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] transition-colors ink-text"
           >
             Go to Profile
           </Link>
@@ -188,32 +228,74 @@ export default function BorrowPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#e5d9c4] borrow-paper">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Courier+Prime:wght@400;700&display=swap');
+
+        .borrow-paper {
+          background-image:
+            linear-gradient(180deg, #eee4d3 0%, #e5d8c1 52%, #dcccb2 100%),
+            linear-gradient(92deg, rgba(88, 66, 46, 0.05), transparent 24%),
+            linear-gradient(268deg, rgba(88, 66, 46, 0.04), transparent 18%),
+            repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.008) 2px, rgba(0,0,0,.008) 4px),
+            repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,.008) 2px, rgba(0,0,0,.008) 4px),
+            url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220"><filter id="p"><feTurbulence type="fractalNoise" baseFrequency="0.78" numOctaves="4" seed="6"/></filter><rect width="220" height="220" fill="%23e5d9c4"/><rect width="220" height="220" filter="url(%23p)" opacity="0.028"/></svg>');
+        }
+
+        .ink-text { font-family: 'Courier Prime', monospace; }
+        .ink-title { font-family: 'Playfair Display', serif; }
+
+        .borrow-surface {
+          background-color: #f1e7d8;
+          border: 1px solid #46372b;
+          box-shadow: inset 0 0 0 1px rgba(244, 235, 219, 0.55), 0 0 0 1px rgba(69, 55, 43, 0.2);
+        }
+
+        .tron-border {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .tron-border::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          background:
+            repeating-linear-gradient(90deg, rgba(77, 59, 43, 0.24) 0 3px, transparent 3px 20px) top / 100% 1px no-repeat,
+            repeating-linear-gradient(90deg, rgba(77, 59, 43, 0.18) 0 2px, transparent 2px 18px) bottom / 100% 1px no-repeat,
+            repeating-linear-gradient(180deg, rgba(77, 59, 43, 0.18) 0 2px, transparent 2px 16px) left / 1px 100% no-repeat,
+            repeating-linear-gradient(180deg, rgba(77, 59, 43, 0.14) 0 2px, transparent 2px 20px) right / 1px 100% no-repeat;
+          opacity: 0.78;
+        }
+      `}</style>
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="borrow-surface border-b border-[#5a4a3b]">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <Link
             href="/profile"
-            className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 mb-4"
+            className="inline-flex items-center gap-2 text-sm font-medium text-[#4e4033] hover:text-[#201710] mb-4 ink-text"
           >
             <FaArrowLeft className="w-4 h-4" />
             Back
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900">Borrow a Book</h1>
+          <h1 className="text-2xl font-bold text-[#221910] ink-title">
+            Borrow a Book
+          </h1>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Mode Selector */}
-        <div className="flex gap-2 mb-6 bg-white rounded-lg p-1 border border-gray-200">
+        <div className="flex gap-2 mb-6 borrow-surface tron-border rounded-lg p-1">
           <button
             onClick={() => setInputMode("qr")}
             className={`flex-1 px-4 py-2 rounded font-medium transition-colors ${
               inputMode === "qr"
-                ? "bg-gray-900 text-white"
-                : "text-gray-700 hover:bg-gray-100"
-            }`}
+                ? "bg-[#5a4d40] text-[#f6ede1]"
+                : "text-[#4e4033] hover:bg-[#eadcca]"
+            } ink-text`}
           >
             <FaQrcode className="inline w-4 h-4 mr-2" />
             Scan QR
@@ -222,9 +304,9 @@ export default function BorrowPage() {
             onClick={() => setInputMode("manual")}
             className={`flex-1 px-4 py-2 rounded font-medium transition-colors ${
               inputMode === "manual"
-                ? "bg-gray-900 text-white"
-                : "text-gray-700 hover:bg-gray-100"
-            }`}
+                ? "bg-[#5a4d40] text-[#f6ede1]"
+                : "text-[#4e4033] hover:bg-[#eadcca]"
+            } ink-text`}
           >
             <FaKeyboard className="inline w-4 h-4 mr-2" />
             Enter ID
@@ -235,44 +317,44 @@ export default function BorrowPage() {
           {/* When book is selected, show it prominently at top */}
           {selectedCopy && (
             <div className="space-y-4">
-              <div className="bg-white rounded-lg p-6 border-2 border-green-200 border-l-4 border-l-green-600 shadow-lg">
+              <div className="borrow-surface tron-border rounded-lg p-6 border-2 border-[#8faa8f] border-l-4 border-l-[#5e7b60] shadow-lg">
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 mb-4">
-                    <FaCheck className="w-5 h-5 text-green-600" />
-                    <p className="text-sm font-semibold text-green-600">
+                    <FaCheck className="w-5 h-5 text-[#4e4033]" />
+                    <p className="text-sm font-semibold text-[#4e4033] ink-text">
                       Book Scanned Successfully
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+                    <p className="text-xs text-[#6f6256] uppercase tracking-wide mb-1 ink-text">
                       Book Title
                     </p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-2xl font-bold text-[#221910] ink-title">
                       {selectedCopy.title}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+                    <p className="text-xs text-[#6f6256] uppercase tracking-wide mb-1 ink-text">
                       Author
                     </p>
-                    <p className="text-lg text-gray-700">
+                    <p className="text-lg text-[#4e4033] ink-text">
                       {selectedCopy.author}
                     </p>
                   </div>
                   <div className="grid grid-cols-2 gap-4 pt-2">
                     <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+                      <p className="text-xs text-[#6f6256] uppercase tracking-wide mb-1 ink-text">
                         Copy #
                       </p>
-                      <p className="font-medium text-gray-900">
+                      <p className="font-medium text-[#221910] ink-text">
                         {selectedCopy.copyNumber}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+                      <p className="text-xs text-[#6f6256] uppercase tracking-wide mb-1 ink-text">
                         ID
                       </p>
-                      <p className="font-mono text-sm font-bold text-gray-900">
+                      <p className="font-mono text-sm font-bold text-[#221910]">
                         {selectedCopy.id}
                       </p>
                     </div>
@@ -281,9 +363,9 @@ export default function BorrowPage() {
               </div>
 
               {/* Return Date Input */}
-              <div className="bg-white rounded-lg p-6 border border-gray-200">
+              <div className="borrow-surface tron-border rounded-lg p-6">
                 <label className="block">
-                  <p className="text-sm font-medium text-gray-700 mb-2">
+                  <p className="text-sm font-medium text-[#4e4033] mb-2 ink-text">
                     Return Date
                   </p>
                   <input
@@ -291,11 +373,11 @@ export default function BorrowPage() {
                     value={returnDate}
                     onChange={(e) => setReturnDate(e.target.value)}
                     min={new Date().toISOString().split("T")[0]}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                    className="w-full px-4 py-3 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-lg focus:ring-2 focus:ring-[#5a4d40] focus:border-transparent outline-none ink-text"
                     required
                   />
                 </label>
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-[#6f6256] mt-2 ink-text">
                   Select when you plan to return the book
                 </p>
               </div>
@@ -310,14 +392,14 @@ export default function BorrowPage() {
                     setReturnDate("");
                     setScanPaused(false);
                   }}
-                  className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-3 border border-[#7b6d5f] text-[#4e4033] rounded-lg font-medium hover:bg-[#eadcca] transition-colors ink-text"
                 >
                   Scan Another
                 </button>
                 <button
                   type="submit"
                   disabled={!returnDate || loading}
-                  className="flex-1 px-4 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="flex-1 px-4 py-3 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text"
                 >
                   {loading ? "Processing..." : "Confirm Borrow"}
                 </button>
@@ -327,12 +409,12 @@ export default function BorrowPage() {
 
           {/* Scanner - only show when no book selected */}
           {!selectedCopy && (
-            <div className="bg-white rounded-lg p-6 border border-gray-200">
+            <div className="borrow-surface tron-border rounded-lg p-6">
               {inputMode === "qr" ? (
                 <div className="space-y-4">
                   <div className="space-y-3 mb-4">
                     <label className="block">
-                      <p className="text-sm font-medium text-gray-700 mb-2">
+                      <p className="text-sm font-medium text-[#4e4033] mb-2 ink-text">
                         Select Camera
                       </p>
                       <select
@@ -340,7 +422,7 @@ export default function BorrowPage() {
                         onChange={(e) =>
                           setDeviceId(e.target.value || undefined)
                         }
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                        className="w-full px-4 py-2 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-lg focus:ring-2 focus:ring-[#5a4d40] focus:border-transparent outline-none ink-text"
                         disabled={scannerInitialized}
                       >
                         <option value="">Default Camera</option>
@@ -356,7 +438,7 @@ export default function BorrowPage() {
                     <button
                       type="button"
                       onClick={requestCameraPermission}
-                      className="w-full px-4 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+                      className="w-full px-4 py-3 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] transition-colors ink-text"
                     >
                       {cameraPermissionDenied
                         ? "Camera Permission Denied - Try Again"
@@ -364,7 +446,7 @@ export default function BorrowPage() {
                     </button>
                   ) : null}
                   <div className="relative max-w-md mx-auto">
-                    <div className="relative bg-black rounded-sm shadow-lg aspect-square overflow-clip">
+                    <div className="relative bg-[#1f1812] rounded-sm shadow-lg aspect-square overflow-clip">
                       <Scanner
                         formats={["qr_code"]}
                         constraints={{
@@ -412,20 +494,20 @@ export default function BorrowPage() {
                     </div>
 
                     {/* Corner brackets - outside frame */}
-                    <div className="absolute -top-1 -left-1 w-6 h-1.5 bg-black pointer-events-none"></div>
-                    <div className="absolute -top-1 -left-1 w-1.5 h-6 bg-black pointer-events-none"></div>
+                    <div className="absolute -top-1 -left-1 w-6 h-1.5 bg-[#3d3024] pointer-events-none"></div>
+                    <div className="absolute -top-1 -left-1 w-1.5 h-6 bg-[#3d3024] pointer-events-none"></div>
 
-                    <div className="absolute -top-1 -right-1 w-6 h-1.5 bg-black pointer-events-none"></div>
-                    <div className="absolute -top-1 -right-1 w-1.5 h-6 bg-black pointer-events-none"></div>
+                    <div className="absolute -top-1 -right-1 w-6 h-1.5 bg-[#3d3024] pointer-events-none"></div>
+                    <div className="absolute -top-1 -right-1 w-1.5 h-6 bg-[#3d3024] pointer-events-none"></div>
 
-                    <div className="absolute -bottom-1 -left-1 w-6 h-1.5 bg-black pointer-events-none"></div>
-                    <div className="absolute -bottom-1 -left-1 w-1.5 h-6 bg-black pointer-events-none"></div>
+                    <div className="absolute -bottom-1 -left-1 w-6 h-1.5 bg-[#3d3024] pointer-events-none"></div>
+                    <div className="absolute -bottom-1 -left-1 w-1.5 h-6 bg-[#3d3024] pointer-events-none"></div>
 
-                    <div className="absolute -bottom-1 -right-1 w-6 h-1.5 bg-black pointer-events-none"></div>
-                    <div className="absolute -bottom-1 -right-1 w-1.5 h-6 bg-black pointer-events-none"></div>
+                    <div className="absolute -bottom-1 -right-1 w-6 h-1.5 bg-[#3d3024] pointer-events-none"></div>
+                    <div className="absolute -bottom-1 -right-1 w-1.5 h-6 bg-[#3d3024] pointer-events-none"></div>
                   </div>
 
-                  <p className="text-xs text-gray-600 text-center">
+                  <p className="text-xs text-[#5c4f42] text-center ink-text">
                     Position QR code within the frame
                   </p>
 
@@ -433,7 +515,7 @@ export default function BorrowPage() {
                     <button
                       type="button"
                       onClick={() => setScanPaused(false)}
-                      className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+                      className="w-full px-4 py-2 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] transition-colors ink-text"
                     >
                       Resume Scanning
                     </button>
@@ -442,7 +524,7 @@ export default function BorrowPage() {
                     <button
                       type="button"
                       onClick={() => setScannerInitialized(false)}
-                      className="w-full px-4 py-2 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors"
+                      className="w-full px-4 py-2 bg-[#7b6d5f] text-[#f6ede1] rounded-lg font-medium hover:bg-[#6a5d50] transition-colors ink-text"
                     >
                       Stop Scanner
                     </button>
@@ -451,7 +533,7 @@ export default function BorrowPage() {
               ) : (
                 <div className="space-y-4">
                   <label className="block">
-                    <p className="text-sm font-medium text-gray-700 mb-2">
+                    <p className="text-sm font-medium text-[#4e4033] mb-2 ink-text">
                       Copy ID
                     </p>
                     <input
@@ -460,11 +542,11 @@ export default function BorrowPage() {
                       onChange={handleCopyIdChange}
                       placeholder="e.g., QR001"
                       maxLength={5}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none text-lg font-mono tracking-widest"
+                      className="w-full px-4 py-3 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-lg focus:ring-2 focus:ring-[#5a4d40] focus:border-transparent outline-none text-lg font-mono tracking-widest"
                       autoFocus
                     />
                   </label>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-[#6f6256] ink-text">
                     Valid IDs: QR001, QR002, QR003, QR004
                   </p>
                 </div>
@@ -474,14 +556,14 @@ export default function BorrowPage() {
 
           {/* Error or Success Messages */}
           {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="p-4 bg-[#f6e3df] border border-[#b0665c] rounded-lg">
+              <p className="text-sm text-[#7d2d23] ink-text">{error}</p>
             </div>
           )}
 
           {cameraPermissionDenied && (
-            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-sm text-yellow-800">
+            <div className="p-4 bg-[#f4ecd8] border border-[#b49d6f] rounded-lg">
+              <p className="text-sm text-[#6b5428] ink-text">
                 <strong>Camera permission denied.</strong> Please enable camera
                 access in your browser settings and try again.
               </p>
@@ -493,7 +575,7 @@ export default function BorrowPage() {
             <div className="flex gap-3">
               <Link
                 href="/profile"
-                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-center"
+                className="flex-1 px-4 py-3 border border-[#7b6d5f] text-[#4e4033] rounded-lg font-medium hover:bg-[#eadcca] transition-colors text-center ink-text"
               >
                 Cancel
               </Link>
