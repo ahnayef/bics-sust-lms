@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import UserNavbar from "@/app/components/UserNavbar";
 import { useMemo, useState } from "react";
 import {
-  FaArrowLeft,
   FaCheckCircle,
   FaClock,
   FaExclamationTriangle,
@@ -209,24 +208,18 @@ export default function HistoryPage() {
           opacity: 0.78;
         }
       `}</style>
+      <UserNavbar />
+
       {/* Header */}
       <div className="history-surface border-b border-[#5a4a3b]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          <div className="flex items-center gap-4 mb-6">
-            <Link
-              href="/profile"
-              className="inline-flex items-center justify-center w-10 h-10 rounded hover:bg-[#eadcca] transition-colors"
-            >
-              <FaArrowLeft className="w-5 h-5 text-[#221910]" />
-            </Link>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
-                Borrow History
-              </h1>
-              <p className="text-sm text-[#5c4f42] mt-1 ink-text">
-                View all your book transactions
-              </p>
-            </div>
+          <div className="mb-6">
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
+              Borrow History
+            </h1>
+            <p className="text-sm text-[#5c4f42] mt-1 ink-text">
+              View all your book transactions
+            </p>
           </div>
 
           {/* Quick Stats */}
