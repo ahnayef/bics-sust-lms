@@ -1,9 +1,10 @@
 "use client";
 
+import UserNavbar from "@/app/components/UserNavbar";
 import { Scanner, useDevices } from "@yudiel/react-qr-scanner";
 import Link from "next/link";
 import { useState } from "react";
-import { FaArrowLeft, FaCheck, FaKeyboard, FaQrcode } from "react-icons/fa";
+import { FaCheck, FaKeyboard, FaQrcode } from "react-icons/fa";
 
 export default function BorrowPage() {
   const [copyId, setCopyId] = useState("");
@@ -145,7 +146,7 @@ export default function BorrowPage() {
     });
 
     return (
-      <div className="min-h-screen bg-[#e5d9c4] borrow-paper flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#e5d9c4] borrow-paper flex flex-col">
         <style>{`
           @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Courier+Prime:wght@400;700&display=swap');
 
@@ -186,42 +187,45 @@ export default function BorrowPage() {
             opacity: 0.78;
           }
         `}</style>
-        <div className="borrow-surface tron-border rounded-lg p-8 text-center max-w-sm w-full">
-          <div className="flex justify-center mb-6">
-            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-[#e8f1e7] border border-[#8faa8f]">
-              <FaCheck className="w-8 h-8 text-[#4e4033]" />
+        <UserNavbar />
+        <div className="flex-1 flex items-center justify-center px-4 py-8">
+          <div className="borrow-surface tron-border rounded-lg p-8 text-center max-w-sm w-full">
+            <div className="flex justify-center mb-6">
+              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-[#e8f1e7] border border-[#8faa8f]">
+                <FaCheck className="w-8 h-8 text-[#4e4033]" />
+              </div>
             </div>
-          </div>
-          <h2 className="text-2xl font-bold text-[#221910] mb-2 ink-title">
-            Borrow Successful!
-          </h2>
-          <div className="bg-[#f6ecdd] border border-[#786a5c] rounded-lg p-4 mb-6">
-            <p className="text-[#5c4f42] mb-3 ink-text">
-              <span className="font-semibold text-[#221910] ink-title">
-                {selectedCopy?.title}
-              </span>
-            </p>
-            <div className="space-y-2 text-sm ink-text">
-              <p className="text-[#5c4f42]">
-                <span className="text-[#6f6256]">Due:</span>{" "}
-                <span className="font-medium text-[#221910]">
-                  {formattedDate}
+            <h2 className="text-2xl font-bold text-[#221910] mb-2 ink-title">
+              Borrow Successful!
+            </h2>
+            <div className="bg-[#f6ecdd] border border-[#786a5c] rounded-lg p-4 mb-6">
+              <p className="text-[#5c4f42] mb-3 ink-text">
+                <span className="font-semibold text-[#221910] ink-title">
+                  {selectedCopy?.title}
                 </span>
               </p>
-              <p className="text-[#5c4f42]">
-                <span className="text-[#6f6256]">Copy ID:</span>{" "}
-                <span className="font-mono font-medium text-[#221910]">
-                  {selectedCopy?.id}
-                </span>
-              </p>
+              <div className="space-y-2 text-sm ink-text">
+                <p className="text-[#5c4f42]">
+                  <span className="text-[#6f6256]">Due:</span>{" "}
+                  <span className="font-medium text-[#221910]">
+                    {formattedDate}
+                  </span>
+                </p>
+                <p className="text-[#5c4f42]">
+                  <span className="text-[#6f6256]">Copy ID:</span>{" "}
+                  <span className="font-mono font-medium text-[#221910]">
+                    {selectedCopy?.id}
+                  </span>
+                </p>
+              </div>
             </div>
+            <Link
+              href="/profile"
+              className="inline-block px-6 py-2 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] transition-colors ink-text"
+            >
+              Go to Profile
+            </Link>
           </div>
-          <Link
-            href="/profile"
-            className="inline-block px-6 py-2 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] transition-colors ink-text"
-          >
-            Go to Profile
-          </Link>
         </div>
       </div>
     );
@@ -269,16 +273,10 @@ export default function BorrowPage() {
           opacity: 0.78;
         }
       `}</style>
+      <UserNavbar />
       {/* Header */}
       <div className="borrow-surface border-b border-[#5a4a3b]">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <Link
-            href="/profile"
-            className="inline-flex items-center gap-2 text-sm font-medium text-[#4e4033] hover:text-[#201710] mb-4 ink-text"
-          >
-            <FaArrowLeft className="w-4 h-4" />
-            Back
-          </Link>
           <h1 className="text-2xl font-bold text-[#221910] ink-title">
             Borrow a Book
           </h1>
