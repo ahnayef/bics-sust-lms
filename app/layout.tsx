@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Noto_Sans_Bengali } from "next/font/google";
+import GrainOverlay from "./components/GrainOverlay";
 import "./globals.css";
 
 const notoSansBengali = Noto_Sans_Bengali({
@@ -22,7 +23,10 @@ export default function RootLayout({
       lang="en"
       className={`${notoSansBengali.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <GrainOverlay />
+        {children}
+      </body>
     </html>
   );
 }
