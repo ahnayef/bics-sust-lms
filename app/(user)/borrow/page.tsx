@@ -275,13 +275,13 @@ export default function BorrowPage() {
       `}</style>
       <UserNavbar />
       {/* Header */}
-      <div className="borrow-surface border-b border-[#5a4a3b]">
+      {/* <div className="borrow-surface border-b border-[#5a4a3b]">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <h1 className="text-2xl font-bold text-[#221910] ink-title">
             Borrow a Book
           </h1>
         </div>
-      </div>
+      </div> */}
 
       {/* Main Content */}
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
