@@ -1,6 +1,6 @@
 export default function GrainOverlay() {
   return (
-    <div className="pointer-events-none fixed inset-0 z-50 opacity-40">
+    <div className="pointer-events-none fixed inset-0 z-50 opacity-30">
       <svg className="w-full h-full">
         <filter id="noiseFilter">
           <feTurbulence
