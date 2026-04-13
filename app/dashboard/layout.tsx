@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   FaBars,
   FaBook,
@@ -67,10 +67,6 @@ export default function DashboardLayout({
     }
     return pathname === href || pathname.startsWith(`${href}/`);
   };
-
-  useEffect(() => {
-    setSidebarOpen(false);
-  }, [pathname]);
 
   return (
     <div className="h-screen bg-[#e5d9c4] dashboard-shell overflow-hidden">
