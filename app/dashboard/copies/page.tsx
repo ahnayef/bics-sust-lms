@@ -1,7 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { FaEdit, FaPlus, FaSearch, FaTimes, FaTrash } from "react-icons/fa";
+import NextImage from "next/image";
+import QRCode from "qrcode";
+import { useRef, useState } from "react";
+import {
+  FaDownload,
+  FaEdit,
+  FaPlus,
+  FaQrcode,
+  FaSearch,
+  FaTimes,
+  FaTrash,
+} from "react-icons/fa";
 
 type CopyStatus = "available" | "borrowed" | "damaged";
 type StatusFilter = "all" | CopyStatus;
@@ -24,50 +34,160 @@ interface CopyForm {
   book: string;
 }
 
+const AVAILABLE_BOOKS: BookRef[] = [
+  {
+    id: 1,
+    title: "ইসলামের সামাজিক বিধান",
+    author: "আল্লামা জামাল আল বাদাবী",
+  },
+  { id: 2, title: "পর্দা ও ইসলাম", author: "সাইয়েদ আবুল আ’লা মওদূদী" },
+  { id: 3, title: "আদাবে জিন্দেগী", author: "আল্লামা ইউসুফ ইসলাহী" },
+  {
+    id: 4,
+    title: "ইসলামী ব্যাংকিং ও অর্থায়ন পদ্ধতি: সমস্যা ও সমাধান",
+    author: "মুফতি তাকি উসমানি",
+  },
+  { id: 5, title: "ইসলামী অর্থনীতি", author: "সাইয়েদ আবুল আ’লা মওদূদী" },
+  {
+    id: 6,
+    title: "ইসলামী অর্থ ব্যবস্থায় যাকাত",
+    author: "ড. জাবের মোহাম্মদ (ইসলামিক সেন্টার)",
+  },
+  { id: 7, title: "খেলাফত ও রাজতন্ত্র", author: "সাইয়েদ আবুল আ’লা মওদূদী" },
+  {
+    id: 8,
+    title: "ইসলামী রাষ্ট্রে অমুসলিমদের অধিকার",
+    author: "সাইয়েদ আবুল আ’লা মওদূদী",
+  },
+  {
+    id: 9,
+    title: "একটি সত্যনিষ্ঠ দলের প্রয়োজন",
+    author: "সাইয়েদ আবুল আ’লা মওদূদী",
+  },
+  {
+    id: 10,
+    title: "ইসলামী রাষ্ট্রব্যবস্থা : তত্ত্ব ও প্রয়োগ",
+    author: "ড. ইউসুফ আল-কারযাভী",
+  },
+  { id: 11, title: "ইসলামী রাষ্ট্র ও সংবিধান", author: "উল্লেখ নেই" },
+  { id: 12, title: "গণতন্ত্র: ইসলামী দৃষ্টিকোণ", author: "ড. আহমদ আলী" },
+];
+
+const QR_CARD_WIDTH = 420;
+const QR_CARD_HEIGHT = 520;
+const QR_SIZE = 260;
+const QR_CARD_PADDING = 32;
+
+const wrapCanvasText = (
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  maxLines: number,
+) => {
+  const words = text.trim().split(/\s+/);
+  const lines: string[] = [];
+  let line = "";
+
+  for (const word of words) {
+    const nextLine = line ? `${line} ${word}` : word;
+    if (ctx.measureText(nextLine).width <= maxWidth) {
+      line = nextLine;
+      continue;
+    }
+
+    if (line) {
+      lines.push(line);
+    }
+    line = word;
+  }
+
+  if (line) {
+    lines.push(line);
+  }
+
+  if (lines.length <= maxLines) {
+    return lines;
+  }
+
+  const visibleLines = lines.slice(0, maxLines);
+  let lastLine = visibleLines[maxLines - 1];
+
+  while (ctx.measureText(`${lastLine}…`).width > maxWidth && lastLine.length) {
+    lastLine = lastLine.slice(0, -1);
+  }
+
+  visibleLines[maxLines - 1] = `${lastLine}…`;
+  return visibleLines;
+};
+
+const buildQrCardImage = async (copyId: string, bookTitle: string) => {
+  const qrDataUrl = await QRCode.toDataURL(copyId, {
+    errorCorrectionLevel: "M",
+    margin: 2,
+    color: {
+      dark: "#221910",
+      light: "#ffffff",
+    },
+    width: QR_SIZE,
+  });
+
+  const qrImage = new window.Image();
+  qrImage.src = qrDataUrl;
+  await qrImage.decode();
+
+  const canvas = document.createElement("canvas");
+  canvas.width = QR_CARD_WIDTH;
+  canvas.height = QR_CARD_HEIGHT;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("Unable to create QR card canvas.");
+  }
+
+  ctx.fillStyle = "#f7efdf";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.strokeStyle = "#b29c80";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(16, 16, canvas.width - 32, canvas.height - 32, 18);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.drawImage(qrImage, QR_CARD_PADDING, QR_CARD_PADDING, QR_SIZE, QR_SIZE);
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#221910";
+  ctx.font = '700 22px "Arial", sans-serif';
+
+  const titleLines = wrapCanvasText(ctx, bookTitle, canvas.width - 64, 2);
+  const titleStartY = QR_CARD_PADDING + QR_SIZE + 54;
+
+  titleLines.forEach((line, index) => {
+    ctx.fillText(line, canvas.width / 2, titleStartY + index * 28);
+  });
+
+  ctx.fillStyle = "#5a4b3f";
+  ctx.font = '600 18px "Arial", sans-serif';
+  ctx.fillText(
+    `Copy ID: ${copyId}`,
+    canvas.width / 2,
+    titleStartY + titleLines.length * 28 + 30,
+  );
+
+  return canvas.toDataURL("image/png");
+};
+
 export default function BookCopiesManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-
-  const availableBooks: BookRef[] = [
-    {
-      id: 1,
-      title: "ইসলামের সামাজিক বিধান",
-      author: "আল্লামা জামাল আল বাদাবী",
-    },
-    { id: 2, title: "পর্দা ও ইসলাম", author: "সাইয়েদ আবুল আ’লা মওদূদী" },
-    { id: 3, title: "আদাবে জিন্দেগী", author: "আল্লামা ইউসুফ ইসলাহী" },
-    {
-      id: 4,
-      title: "ইসলামী ব্যাংকিং ও অর্থায়ন পদ্ধতি: সমস্যা ও সমাধান",
-      author: "মুফতি তাকি উসমানি",
-    },
-    { id: 5, title: "ইসলামী অর্থনীতি", author: "সাইয়েদ আবুল আ’লা মওদূদী" },
-    {
-      id: 6,
-      title: "ইসলামী অর্থ ব্যবস্থায় যাকাত",
-      author: "ড. জাবের মোহাম্মদ (ইসলামিক সেন্টার)",
-    },
-    { id: 7, title: "খেলাফত ও রাজতন্ত্র", author: "সাইয়েদ আবুল আ’লা মওদূদী" },
-    {
-      id: 8,
-      title: "ইসলামী রাষ্ট্রে অমুসলিমদের অধিকার",
-      author: "সাইয়েদ আবুল আ’লা মওদূদী",
-    },
-    {
-      id: 9,
-      title: "একটি সত্যনিষ্ঠ দলের প্রয়োজন",
-      author: "সাইয়েদ আবুল আ’লা মওদূদী",
-    },
-    {
-      id: 10,
-      title: "ইসলামী রাষ্ট্রব্যবস্থা : তত্ত্ব ও প্রয়োগ",
-      author: "ড. ইউসুফ আল-কারযাভী",
-    },
-    { id: 11, title: "ইসলামী রাষ্ট্র ও সংবিধান", author: "উল্লেখ নেই" },
-    { id: 12, title: "গণতন্ত্র: ইসলামী দৃষ্টিকোণ", author: "ড. আহমদ আলী" },
-  ];
+  const [qrModalCopyId, setQrModalCopyId] = useState<string | null>(null);
+  const [qrImageUrl, setQrImageUrl] = useState<string>("");
+  const [qrIsLoading, setQrIsLoading] = useState(false);
+  const qrRequestIdRef = useRef(0);
 
   const [bookCopies, setBookCopies] = useState<BookCopy[]>([
     {
@@ -140,7 +260,7 @@ export default function BookCopiesManagement() {
   };
 
   const getBookById = (bookId: number) => {
-    return availableBooks.find((book) => book.id === bookId);
+    return AVAILABLE_BOOKS.find((book) => book.id === bookId);
   };
 
   const query = searchTerm.toLowerCase().trim();
@@ -234,6 +354,9 @@ export default function BookCopiesManagement() {
 
   const handleDelete = (bookId: string) => {
     if (confirm("Are you sure you want to remove this copy?")) {
+      if (qrModalCopyId === bookId) {
+        closeQrModal();
+      }
       setBookCopies((prev) => prev.filter((copy) => copy.bookId !== bookId));
     }
   };
@@ -242,6 +365,58 @@ export default function BookCopiesManagement() {
     setShowAddModal(false);
     setEditingId(null);
     setFormData({ bookId: "", book: "" });
+  };
+
+  const openQrModal = async (bookId: string) => {
+    const requestId = qrRequestIdRef.current + 1;
+    qrRequestIdRef.current = requestId;
+
+    setQrModalCopyId(bookId);
+    setQrImageUrl("");
+    setQrIsLoading(true);
+
+    const copy = bookCopies.find((item) => item.bookId === bookId);
+    const book = copy ? getBookById(copy.book) : undefined;
+
+    if (!copy || !book) {
+      if (qrRequestIdRef.current === requestId) {
+        setQrIsLoading(false);
+      }
+      return;
+    }
+
+    try {
+      const imageUrl = await buildQrCardImage(copy.bookId, book.title);
+      if (qrRequestIdRef.current === requestId) {
+        setQrImageUrl(imageUrl);
+      }
+    } catch {
+      if (qrRequestIdRef.current === requestId) {
+        setQrImageUrl("");
+      }
+    } finally {
+      if (qrRequestIdRef.current === requestId) {
+        setQrIsLoading(false);
+      }
+    }
+  };
+
+  const closeQrModal = () => {
+    qrRequestIdRef.current += 1;
+    setQrModalCopyId(null);
+    setQrImageUrl("");
+    setQrIsLoading(false);
+  };
+
+  const handleDownloadQr = () => {
+    if (!qrModalCopyId || !qrImageUrl) {
+      return;
+    }
+
+    const link = document.createElement("a");
+    link.href = qrImageUrl;
+    link.download = `${qrModalCopyId}.png`;
+    link.click();
   };
 
   return (
@@ -379,6 +554,13 @@ export default function BookCopiesManagement() {
                     <td className="px-4 sm:px-6 py-3">
                       <div className="flex items-center gap-2">
                         <button
+                          onClick={() => openQrModal(copy.bookId)}
+                          className="p-2 text-[#5b4c3f] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors"
+                          aria-label={`Show QR for ${copy.bookId}`}
+                        >
+                          <FaQrcode className="w-4 h-4" />
+                        </button>
+                        <button
                           onClick={() => handleEdit(copy.bookId)}
                           className="p-2 text-[#5b4c3f] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors"
                           aria-label={`Edit ${copy.bookId}`}
@@ -437,7 +619,7 @@ export default function BookCopiesManagement() {
                   className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
                 >
                   <option value="">Choose a book</option>
-                  {availableBooks.map((book) => (
+                  {AVAILABLE_BOOKS.map((book) => (
                     <option key={book.id} value={book.id}>
                       {book.title} by {book.author}
                     </option>
@@ -479,6 +661,79 @@ export default function BookCopiesManagement() {
                 {editingId ? "Update" : "Add"} Copy
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {qrModalCopyId && (
+        <div className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-4 z-80">
+          <div className="dashboard-surface tron-border rounded-sm max-w-lg w-full p-6">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <h2 className="text-xl font-bold text-[#221910] ink-title">
+                  Copy QR Code
+                </h2>
+                <p className="text-sm text-[#5a4b3f] ink-text mt-1">
+                  Download a PNG that includes the book name and copy ID under
+                  the QR.
+                </p>
+              </div>
+              <button
+                onClick={closeQrModal}
+                className="p-2 text-[#655648] hover:bg-[#e7d8c3] rounded-sm transition-colors"
+                aria-label="Close QR modal"
+              >
+                <FaTimes className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="bg-[#f7efdf] border border-[#c4ad91] rounded-sm p-4 flex flex-col items-center gap-4">
+              {qrIsLoading && (
+                <div className="w-full min-h-105 flex items-center justify-center text-[#5a4b3f] ink-text">
+                  Generating QR preview...
+                </div>
+              )}
+
+              {!qrIsLoading && qrImageUrl && (
+                <NextImage
+                  src={qrImageUrl}
+                  alt="Copy QR preview"
+                  width={420}
+                  height={520}
+                  unoptimized
+                  className="w-full max-w-90 rounded-sm border border-[#d2bfa5] bg-white"
+                />
+              )}
+
+              {!qrIsLoading && !qrImageUrl && (
+                <div className="w-full min-h-105 flex items-center justify-center text-[#5a4b3f] ink-text">
+                  Unable to generate QR preview.
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 mt-6">
+              <button
+                onClick={closeQrModal}
+                className="flex-1 px-4 py-2.5 border border-[#8a7966] text-[#4f4134] rounded-sm hover:bg-[#eadcc8] transition-colors font-medium ink-text"
+              >
+                Close
+              </button>
+              <button
+                onClick={handleDownloadQr}
+                disabled={!qrImageUrl || qrIsLoading}
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 disabled:cursor-not-allowed transition-colors font-medium ink-text"
+              >
+                <FaDownload className="w-4 h-4" />
+                Download PNG
+              </button>
+            </div>
+
+            {qrModalCopyId && (
+              <p className="text-xs text-[#6a5a4c] mt-3 text-center ink-text">
+                {qrModalCopyId}
+              </p>
+            )}
           </div>
         </div>
       )}
