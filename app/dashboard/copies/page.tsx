@@ -31,12 +31,42 @@ export default function BookCopiesManagement() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const availableBooks: BookRef[] = [
-    { id: 1, title: "The Great Gatsby", author: "F. Scott Fitzgerald" },
-    { id: 2, title: "To Kill a Mockingbird", author: "Harper Lee" },
-    { id: 3, title: "1984", author: "George Orwell" },
-    { id: 4, title: "Pride and Prejudice", author: "Jane Austen" },
-    { id: 5, title: "Jane Eyre", author: "Charlotte Brontë" },
-    { id: 6, title: "The Hobbit", author: "J.R.R. Tolkien" },
+    {
+      id: 1,
+      title: "ইসলামের সামাজিক বিধান",
+      author: "আল্লামা জামাল আল বাদাবী",
+    },
+    { id: 2, title: "পর্দা ও ইসলাম", author: "সাইয়েদ আবুল আ’লা মওদূদী" },
+    { id: 3, title: "আদাবে জিন্দেগী", author: "আল্লামা ইউসুফ ইসলাহী" },
+    {
+      id: 4,
+      title: "ইসলামী ব্যাংকিং ও অর্থায়ন পদ্ধতি: সমস্যা ও সমাধান",
+      author: "মুফতি তাকি উসমানি",
+    },
+    { id: 5, title: "ইসলামী অর্থনীতি", author: "সাইয়েদ আবুল আ’লা মওদূদী" },
+    {
+      id: 6,
+      title: "ইসলামী অর্থ ব্যবস্থায় যাকাত",
+      author: "ড. জাবের মোহাম্মদ (ইসলামিক সেন্টার)",
+    },
+    { id: 7, title: "খেলাফত ও রাজতন্ত্র", author: "সাইয়েদ আবুল আ’লা মওদূদী" },
+    {
+      id: 8,
+      title: "ইসলামী রাষ্ট্রে অমুসলিমদের অধিকার",
+      author: "সাইয়েদ আবুল আ’লা মওদূদী",
+    },
+    {
+      id: 9,
+      title: "একটি সত্যনিষ্ঠ দলের প্রয়োজন",
+      author: "সাইয়েদ আবুল আ’লা মওদূদী",
+    },
+    {
+      id: 10,
+      title: "ইসলামী রাষ্ট্রব্যবস্থা : তত্ত্ব ও প্রয়োগ",
+      author: "ড. ইউসুফ আল-কারযাভী",
+    },
+    { id: 11, title: "ইসলামী রাষ্ট্র ও সংবিধান", author: "উল্লেখ নেই" },
+    { id: 12, title: "গণতন্ত্র: ইসলামী দৃষ্টিকোণ", author: "ড. আহমদ আলী" },
   ];
 
   const [bookCopies, setBookCopies] = useState<BookCopy[]>([
@@ -66,31 +96,31 @@ export default function BookCopiesManagement() {
     },
     {
       bookId: "BOOK-005",
-      book: 2,
-      status: "available",
-      borrowerName: null,
-    },
-    {
-      bookId: "BOOK-006",
-      book: 2,
+      book: 4,
       status: "borrowed",
       borrowerName: "Michael Brown",
     },
     {
-      bookId: "BOOK-007",
-      book: 3,
+      bookId: "BOOK-006",
+      book: 5,
       status: "borrowed",
       borrowerName: "Emily Davis",
     },
     {
+      bookId: "BOOK-007",
+      book: 6,
+      status: "available",
+      borrowerName: null,
+    },
+    {
       bookId: "BOOK-008",
-      book: 3,
+      book: 7,
       status: "borrowed",
       borrowerName: "James Wilson",
     },
     {
       bookId: "BOOK-009",
-      book: 3,
+      book: 8,
       status: "available",
       borrowerName: null,
     },

@@ -20,8 +20,8 @@ export default function HistoryPage() {
   const [allHistory] = useState([
     {
       id: 1,
-      title: "The Great Gatsby",
-      author: "F. Scott Fitzgerald",
+      title: "ইসলামের সামাজিক বিধান",
+      author: "আল্লামা জামাল আল বাদাবী",
       borrowedDate: "2025-04-01",
       dueDate: "2025-04-08",
       returnDate: "2025-04-08",
@@ -29,8 +29,8 @@ export default function HistoryPage() {
     },
     {
       id: 2,
-      title: "1984",
-      author: "George Orwell",
+      title: "পর্দা ও ইসলাম",
+      author: "সাইয়েদ আবুল আ’লা মওদূদী",
       borrowedDate: "2025-03-20",
       dueDate: "2025-03-27",
       returnDate: "2025-03-27",
@@ -38,8 +38,8 @@ export default function HistoryPage() {
     },
     {
       id: 3,
-      title: "To Kill a Mockingbird",
-      author: "Harper Lee",
+      title: "আদাবে জিন্দেগী",
+      author: "আল্লামা ইউসুফ ইসলাহী",
       borrowedDate: "2025-04-05",
       dueDate: "2025-04-12",
       returnDate: null,
@@ -47,8 +47,8 @@ export default function HistoryPage() {
     },
     {
       id: 4,
-      title: "Pride and Prejudice",
-      author: "Jane Austen",
+      title: "ইসলামী ব্যাংকিং ও অর্থায়ন পদ্ধতি: সমস্যা ও সমাধান",
+      author: "মুফতি তাকি উসমানি",
       borrowedDate: "2025-03-10",
       dueDate: "2025-03-17",
       returnDate: "2025-03-20",
@@ -56,8 +56,8 @@ export default function HistoryPage() {
     },
     {
       id: 5,
-      title: "The Catcher in the Rye",
-      author: "J.D. Salinger",
+      title: "ইসলামী অর্থনীতি",
+      author: "সাইয়েদ আবুল আ’লা মওদূদী",
       borrowedDate: "2025-02-28",
       dueDate: "2025-03-07",
       returnDate: "2025-03-10",
@@ -65,8 +65,8 @@ export default function HistoryPage() {
     },
     {
       id: 6,
-      title: "Jane Eyre",
-      author: "Charlotte Brontë",
+      title: "ইসলামী অর্থ ব্যবস্থায় যাকাত",
+      author: "ড. জাবের মোহাম্মদ (ইসলামিক সেন্টার)",
       borrowedDate: "2025-02-15",
       dueDate: "2025-02-22",
       returnDate: null,
@@ -74,8 +74,8 @@ export default function HistoryPage() {
     },
     {
       id: 7,
-      title: "The Hobbit",
-      author: "J.R.R. Tolkien",
+      title: "খেলাফত ও রাজতন্ত্র",
+      author: "সাইয়েদ আবুল আ’লা মওদূদী",
       borrowedDate: "2025-02-01",
       dueDate: "2025-02-08",
       returnDate: "2025-02-10",
@@ -83,8 +83,8 @@ export default function HistoryPage() {
     },
     {
       id: 8,
-      title: "Wuthering Heights",
-      author: "Emily Brontë",
+      title: "ইসলামী রাষ্ট্রে অমুসলিমদের অধিকার",
+      author: "সাইয়েদ আবুল আ’লা মওদূদী",
       borrowedDate: "2025-01-20",
       dueDate: "2025-01-27",
       returnDate: "2025-01-30",

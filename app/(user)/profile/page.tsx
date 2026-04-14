@@ -20,8 +20,8 @@ export default function MemberProfile() {
   // Mock data - will be replaced with actual API calls
   const [member] = useState({
     id: "1",
-    name: "John Doe",
-    email: "john@example.com",
+    name: "Ahsan Habib",
+    email: "ahnayef@duck.com",
     joinedDate: "2025-01-15",
   });
 
@@ -32,40 +32,40 @@ export default function MemberProfile() {
     currentBorrows: [
       {
         id: 1,
-        title: "To Kill a Mockingbird",
-        author: "Harper Lee",
+        title: "ইসলামের সামাজিক বিধান",
+        author: "আল্লামা জামাল আল বাদাবী",
         borrowedDate: "2025-04-05",
         dueDate: "2025-04-12",
         isSyllabus: true,
       },
       {
         id: 2,
-        title: "The Hobbit",
-        author: "J.R.R. Tolkien",
+        title: "পর্দা ও ইসলাম",
+        author: "সাইয়েদ আবুল আ’লা মওদূদী",
         borrowedDate: "2025-04-02",
         dueDate: "2025-04-15",
         isSyllabus: false,
       },
       {
         id: 3,
-        title: "Pride and Prejudice",
-        author: "Jane Austen",
+        title: "আদাবে জিন্দেগী",
+        author: "আল্লামা ইউসুফ ইসলাহী",
         borrowedDate: "2025-03-28",
         dueDate: "2025-04-10",
         isSyllabus: true,
       },
       {
         id: 4,
-        title: "The Great Gatsby",
-        author: "F. Scott Fitzgerald",
+        title: "ইসলামী ব্যাংকিং ও অর্থায়ন পদ্ধতি: সমস্যা ও সমাধান",
+        author: "মুফতি তাকি উসমানি",
         borrowedDate: "2025-04-08",
         dueDate: "2025-04-18",
         isSyllabus: true,
       },
       {
         id: 5,
-        title: "One Hundred Years of Solitude",
-        author: "Gabriel García Márquez",
+        title: "ইসলামী অর্থনীতি",
+        author: "সাইয়েদ আবুল আ’লা মওদূদী",
         borrowedDate: "2025-04-10",
         dueDate: "2025-04-17",
         status: "active",
@@ -75,8 +75,8 @@ export default function MemberProfile() {
     history: [
       {
         id: 1,
-        title: "Wuthering Heights",
-        author: "Emily Brontë",
+        title: "ইসলামী অর্থ ব্যবস্থায় যাকাত",
+        author: "ড. জাবের মোহাম্মদ (ইসলামিক সেন্টার)",
         borrowedDate: "2025-01-20",
         returnDate: "2025-01-27",
         status: "completed",
@@ -84,8 +84,8 @@ export default function MemberProfile() {
       },
       {
         id: 2,
-        title: "1984",
-        author: "George Orwell",
+        title: "খেলাফত ও রাজতন্ত্র",
+        author: "সাইয়েদ আবুল আ’লা মওদূদী",
         borrowedDate: "2025-03-20",
         returnDate: "2025-03-27",
         status: "completed",
@@ -93,8 +93,8 @@ export default function MemberProfile() {
       },
       {
         id: 3,
-        title: "Jane Eyre",
-        author: "Charlotte Brontë",
+        title: "ইসলামী রাষ্ট্রে অমুসলিমদের অধিকার",
+        author: "সাইয়েদ আবুল আ’লা মওদূদী",
         borrowedDate: "2025-02-15",
         dueDate: "2025-02-22",
         status: "overdue",
@@ -102,8 +102,8 @@ export default function MemberProfile() {
       },
       {
         id: 4,
-        title: "Mockingbird",
-        author: "Harper Lee",
+        title: "একটি সত্যনিষ্ঠ দলের প্রয়োজন",
+        author: "সাইয়েদ আবুল আ’লা মওদূদী",
         borrowedDate: "2025-04-05",
         dueDate: "2025-04-12",
         status: "active",

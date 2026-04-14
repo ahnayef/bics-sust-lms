@@ -32,21 +32,25 @@ export default function BorrowPage() {
     { title: string; author: string; copyNumber: string }
   > = {
     QR001: {
-      title: "The Great Gatsby",
-      author: "F. Scott Fitzgerald",
+      title: "ইসলামের সামাজিক বিধান",
+      author: "আল্লামা জামাল আল বাদাবী",
       copyNumber: "Copy 1",
     },
     QR002: {
-      title: "To Kill a Mockingbird",
-      author: "Harper Lee",
+      title: "পর্দা ও ইসলাম",
+      author: "সাইয়েদ আবুল আ’লা মওদূদী",
       copyNumber: "Copy 1",
     },
     QR003: {
-      title: "The Hobbit",
-      author: "J.R.R. Tolkien",
+      title: "আদাবে জিন্দেগী",
+      author: "আল্লামা ইউসুফ ইসলাহী",
       copyNumber: "Copy 2",
     },
-    QR004: { title: "1984", author: "George Orwell", copyNumber: "Copy 1" },
+    QR004: {
+      title: "ইসলামী ব্যাংকিং ও অর্থায়ন পদ্ধতি: সমস্যা ও সমাধান",
+      author: "মুফতি তাকি উসমানি",
+      copyNumber: "Copy 1",
+    },
   };
 
   const processCopyId = (value: string) => {

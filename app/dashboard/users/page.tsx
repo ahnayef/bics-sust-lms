@@ -34,8 +34,8 @@ export default function UsersManagement() {
   const [users, setUsers] = useState<User[]>([
     {
       id: 1,
-      name: "John Doe",
-      email: "john@example.com",
+      name: "Ahsan Habib",
+      email: "ahnayef@duck.com",
       rank: "Member",
     },
     {

@@ -53,9 +53,9 @@ export default function DashboardOverview() {
   const recentTransactions = [
     {
       id: 1,
-      member: "John Doe",
+      member: "Ahsan Habib",
       action: "Borrowed",
-      book: "The Great Gatsby",
+      book: "ইসলামের সামাজিক বিধান",
       date: "2026-04-11",
       status: "active",
     },
@@ -63,7 +63,7 @@ export default function DashboardOverview() {
       id: 2,
       member: "Jane Smith",
       action: "Returned",
-      book: "To Kill a Mockingbird",
+      book: "পর্দা ও ইসলাম",
       date: "2026-04-10",
       status: "pending",
     },
@@ -71,7 +71,7 @@ export default function DashboardOverview() {
       id: 3,
       member: "Mike Johnson",
       action: "Borrowed",
-      book: "1984",
+      book: "আদাবে জিন্দেগী",
       date: "2026-04-09",
       status: "active",
     },
@@ -79,7 +79,7 @@ export default function DashboardOverview() {
       id: 4,
       member: "Sarah Williams",
       action: "Returned",
-      book: "Pride and Prejudice",
+      book: "ইসলামী ব্যাংকিং ও অর্থায়ন পদ্ধতি: সমস্যা ও সমাধান",
       date: "2026-04-08",
       status: "approved",
     },
@@ -308,7 +308,7 @@ export default function DashboardOverview() {
                 </p>
                 <div className="space-y-2.5 ink-text">
                   {[
-                    { name: "John Doe", books: 12 },
+                    { name: "Ahsan Habib", books: 12 },
                     { name: "Sarah Williams", books: 10 },
                     { name: "Jane Smith", books: 8 },
                   ].map((member) => (
@@ -333,9 +333,9 @@ export default function DashboardOverview() {
                 </p>
                 <div className="space-y-2.5 ink-text">
                   {[
-                    { title: "The Great Gatsby", borrows: 24 },
-                    { title: "To Kill a Mockingbird", borrows: 19 },
-                    { title: "1984", borrows: 18 },
+                    { title: "ইসলামের সামাজিক বিধান", borrows: 24 },
+                    { title: "ইসলামী অর্থনীতি", borrows: 19 },
+                    { title: "গণতন্ত্র: ইসলামী দৃষ্টিকোণ", borrows: 18 },
                   ].map((book) => (
                     <div
                       key={book.title}
