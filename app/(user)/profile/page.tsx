@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import {
   FaArrowRight,
+  FaAward,
   FaBook,
   FaBookOpen,
   FaCheckCircle,
@@ -22,7 +23,7 @@ export default function MemberProfile() {
     id: "1",
     name: "Ahsan Habib",
     email: "ahnayef@duck.com",
-    joinedDate: "2025-01-15",
+    rank: "Activist" as "Associate" | "Activist" | "Member",
   });
 
   const [stats] = useState({
@@ -206,15 +207,26 @@ export default function MemberProfile() {
 
       {/* Profile Header Section */}
       <div className="profile-surface border-b border-[#5a4a3b]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
-              {member.name}
-            </h1>
-            <p className="text-sm text-[#5c4f42] mt-1 ink-text">
-              {member.email} • Member since{" "}
-              {new Date(member.joinedDate).toLocaleDateString()}
-            </p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-start sm:items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-xs uppercase tracking-[0.12em] text-[#6f6256] ink-text">
+                Member Profile
+              </p>
+              <h1 className="text-xl sm:text-2xl font-bold text-[#221910] leading-tight truncate ink-title">
+                {member.name}
+              </h1>
+              <p className="text-xs sm:text-sm text-[#5c4f42] mt-0.5 truncate ink-text">
+                {member.email}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 px-2.5 py-1.5 sm:px-3 sm:py-2 border border-[#7b6d5f] rounded-sm bg-[#f6ecdd] text-[#4e4033] ink-text whitespace-nowrap shrink-0">
+              <FaAward className="w-4 h-4 text-[#5a4d40]" />
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.08em]">
+                {member.rank}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -228,7 +240,7 @@ export default function MemberProfile() {
       </Link>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 lg:py-8">
         {/* Progress Overview Card */}
         <div className="profile-surface tron-border rounded-lg p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8">
           <h2 className="text-lg font-semibold text-[#221910] mb-6 ink-title">
