@@ -80,13 +80,13 @@ export default function BookCopiesManagement() {
       bookId: "BOOK-002",
       book: 1,
       status: "borrowed",
-      borrowerName: "John Smith",
+      borrowerName: "Rafiul Karim",
     },
     {
       bookId: "BOOK-003",
       book: 1,
       status: "borrowed",
-      borrowerName: "Sarah Johnson",
+      borrowerName: "Sharif Ahmed",
     },
     {
       bookId: "BOOK-004",
@@ -98,13 +98,13 @@ export default function BookCopiesManagement() {
       bookId: "BOOK-005",
       book: 4,
       status: "borrowed",
-      borrowerName: "Michael Brown",
+      borrowerName: "Mehedi Hasan",
     },
     {
       bookId: "BOOK-006",
       book: 5,
       status: "borrowed",
-      borrowerName: "Emily Davis",
+      borrowerName: "Nabil Islam",
     },
     {
       bookId: "BOOK-007",
@@ -116,7 +116,7 @@ export default function BookCopiesManagement() {
       bookId: "BOOK-008",
       book: 7,
       status: "borrowed",
-      borrowerName: "James Wilson",
+      borrowerName: "Sabbir Ahmed",
     },
     {
       bookId: "BOOK-009",

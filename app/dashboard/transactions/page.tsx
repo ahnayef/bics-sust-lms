@@ -34,7 +34,7 @@ const TRANSACTIONS: Transaction[] = [
   },
   {
     id: 13,
-    member: "Jane Smith",
+    member: "Rakib Hasan",
     type: "borrow",
     book: "পর্দা ও ইসলাম",
     bookId: "BOOK-002",
@@ -44,7 +44,7 @@ const TRANSACTIONS: Transaction[] = [
   },
   {
     id: 2,
-    member: "Jane Smith",
+    member: "Rakib Hasan",
     type: "return",
     book: "পর্দা ও ইসলাম",
     bookId: "BOOK-002",
@@ -54,7 +54,7 @@ const TRANSACTIONS: Transaction[] = [
   },
   {
     id: 14,
-    member: "Mike Johnson",
+    member: "Mahmudul Hasan",
     type: "return",
     book: "আদাবে জিন্দেগী",
     bookId: "BOOK-003",
@@ -64,7 +64,7 @@ const TRANSACTIONS: Transaction[] = [
   },
   {
     id: 3,
-    member: "Mike Johnson",
+    member: "Mahmudul Hasan",
     type: "borrow",
     book: "আদাবে জিন্দেগী",
     bookId: "BOOK-003",
@@ -74,7 +74,7 @@ const TRANSACTIONS: Transaction[] = [
   },
   {
     id: 4,
-    member: "Sarah Williams",
+    member: "Farhan Rahman",
     type: "borrow",
     book: "ইসলামী ব্যাংকিং ও অর্থায়ন পদ্ধতি: সমস্যা ও সমাধান",
     bookId: "BOOK-004",
@@ -94,7 +94,7 @@ const TRANSACTIONS: Transaction[] = [
   },
   {
     id: 6,
-    member: "Emma Davis",
+    member: "Tanvir Ahmed",
     type: "return",
     book: "ইসলামী অর্থ ব্যবস্থায় যাকাত",
     bookId: "BOOK-006",
@@ -114,7 +114,7 @@ const TRANSACTIONS: Transaction[] = [
   },
   {
     id: 8,
-    member: "Sadia Khan",
+    member: "Sadiq Khan",
     type: "return",
     book: "ইসলামী রাষ্ট্রে অমুসলিমদের অধিকার",
     bookId: "BOOK-008",

@@ -163,7 +163,7 @@ export default function Login() {
                 required
                 className="w-full px-4 py-2.5 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] focus:outline-none focus:ring-2 focus:ring-[#5a4d40] focus:border-transparent"
                 style={{ fontFamily: "Courier Prime, monospace" }}
-                placeholder="you@example.com"
+                placeholder="ahsan.habib@duck.com"
               />
             </div>
 

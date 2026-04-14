@@ -61,7 +61,7 @@ export default function DashboardOverview() {
     },
     {
       id: 2,
-      member: "Jane Smith",
+      member: "Rakib Hasan",
       action: "Returned",
       book: "পর্দা ও ইসলাম",
       date: "2026-04-10",
@@ -69,7 +69,7 @@ export default function DashboardOverview() {
     },
     {
       id: 3,
-      member: "Mike Johnson",
+      member: "Mahmudul Hasan",
       action: "Borrowed",
       book: "আদাবে জিন্দেগী",
       date: "2026-04-09",
@@ -77,7 +77,7 @@ export default function DashboardOverview() {
     },
     {
       id: 4,
-      member: "Sarah Williams",
+      member: "Farhan Rahman",
       action: "Returned",
       book: "ইসলামী ব্যাংকিং ও অর্থায়ন পদ্ধতি: সমস্যা ও সমাধান",
       date: "2026-04-08",
@@ -309,8 +309,8 @@ export default function DashboardOverview() {
                 <div className="space-y-2.5 ink-text">
                   {[
                     { name: "Ahsan Habib", books: 12 },
-                    { name: "Sarah Williams", books: 10 },
-                    { name: "Jane Smith", books: 8 },
+                    { name: "Farhan Rahman", books: 10 },
+                    { name: "Rakib Hasan", books: 8 },
                   ].map((member) => (
                     <div
                       key={member.name}

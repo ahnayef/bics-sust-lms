@@ -38,14 +38,14 @@ export default function ModeratorsManagement() {
   const [moderators, setModerators] = useState<Moderator[]>([
     {
       id: 1,
-      name: "Admin Moderator",
-      email: "admin.mod@example.com",
+      name: "Shahadat Hossain",
+      email: "shahadat.hossain@duck.com",
       createdDate: "2025-01-15",
     },
     {
       id: 2,
-      name: "Sarah Johnson",
-      email: "sarah.johnson@example.com",
+      name: "Tahmid Hasan",
+      email: "tahmid.hasan@duck.com",
       createdDate: "2025-02-10",
     },
   ]);
