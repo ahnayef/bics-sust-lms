@@ -155,7 +155,8 @@ const buildQrCardImage = async (copyId: string, bookTitle: string) => {
   ctx.fill();
   ctx.stroke();
 
-  ctx.drawImage(qrImage, QR_CARD_PADDING, QR_CARD_PADDING, QR_SIZE, QR_SIZE);
+  const qrX = (canvas.width - QR_SIZE) / 2;
+  ctx.drawImage(qrImage, qrX, QR_CARD_PADDING, QR_SIZE, QR_SIZE);
 
   ctx.textAlign = "center";
   ctx.fillStyle = "#221910";
