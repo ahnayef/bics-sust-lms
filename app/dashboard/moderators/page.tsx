@@ -38,14 +38,14 @@ export default function ModeratorsManagement() {
   const [moderators, setModerators] = useState<Moderator[]>([
     {
       id: 1,
-      name: "Shahadat Hossain",
-      email: "shahadat.hossain@duck.com",
+      name: "Admin Moderator",
+      email: "admin.mod@example.com",
       createdDate: "2025-01-15",
     },
     {
       id: 2,
-      name: "Tahmid Hasan",
-      email: "tahmid.hasan@duck.com",
+      name: "Sarah Johnson",
+      email: "sarah.johnson@example.com",
       createdDate: "2025-02-10",
     },
   ]);
@@ -366,17 +366,17 @@ export default function ModeratorsManagement() {
                   />
                 </div>
 
-                <div className="flex gap-3 pt-3">
+                <div className="flex gap-2 pt-3 sm:gap-3">
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="flex-1 px-4 py-2.5 border border-[#8a7966] text-[#4f4134] rounded-sm hover:bg-[#eadcc8] transition-colors font-medium"
+                    className="flex-1 px-2 py-2 sm:px-4 sm:py-2.5 border border-[#8a7966] text-[#4f4134] rounded-sm hover:bg-[#eadcc8] transition-colors font-medium text-sm sm:text-base"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] transition-colors font-medium"
+                    className="flex-1 px-2 py-2 sm:px-4 sm:py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] transition-colors font-medium text-sm sm:text-base"
                   >
                     {editingId ? "Update" : "Add Moderator"}
                   </button>

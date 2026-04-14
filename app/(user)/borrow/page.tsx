@@ -385,7 +385,7 @@ export default function BorrowPage() {
               </div>
 
               {/* Action Buttons for Book Card */}
-              <div className="flex gap-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -394,14 +394,14 @@ export default function BorrowPage() {
                     setReturnDate("");
                     setScanPaused(false);
                   }}
-                  className="flex-1 px-4 py-3 border border-[#7b6d5f] text-[#4e4033] rounded-lg font-medium hover:bg-[#eadcca] transition-colors ink-text"
+                  className="flex-1 px-3 py-2 sm:px-4 sm:py-3 border border-[#7b6d5f] text-[#4e4033] rounded-lg font-medium hover:bg-[#eadcca] transition-colors ink-text text-sm sm:text-base"
                 >
                   Scan Another
                 </button>
                 <button
                   type="submit"
                   disabled={!returnDate || loading}
-                  className="flex-1 px-4 py-3 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text"
+                  className="flex-1 px-3 py-2 sm:px-4 sm:py-3 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text text-sm sm:text-base"
                 >
                   {loading ? "Processing..." : "Confirm Borrow"}
                 </button>
