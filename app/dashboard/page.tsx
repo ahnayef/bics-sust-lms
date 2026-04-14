@@ -160,7 +160,7 @@ export default function DashboardOverview() {
         }
       `}</style>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-5 sm:space-y-6">
+      <div className="max-w-7xl mx-auto px-0 lg:px-8 py-6 space-y-5 sm:space-y-6">
         <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
             <div>
