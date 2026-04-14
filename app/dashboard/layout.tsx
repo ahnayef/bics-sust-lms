@@ -167,7 +167,7 @@ export default function DashboardLayout({
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0 min-h-0 overflow-y-auto">
+        <main className="flex-1 min-w-0 overflow-y-auto flex flex-col">
           {/* Top Navigation Bar */}
           <div className="hidden lg:block sticky top-0 z-20 dashboard-surface border-b border-[#6f5f4f] px-8 py-4">
             <div className="flex items-center justify-between">
@@ -189,7 +189,7 @@ export default function DashboardLayout({
           </div>
 
           {/* Page Content */}
-          <div className="p-4 lg:p-8 pb-8">{children}</div>
+          <div className="flex-1 p-4 lg:p-8 pb-20">{children}</div>
         </main>
       </div>
 
