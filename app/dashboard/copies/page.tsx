@@ -76,7 +76,11 @@ const AVAILABLE_BOOKS: BookRef[] = [
 const QR_CARD_WIDTH = 420;
 const QR_CARD_HEIGHT = 520;
 const QR_SIZE = 260;
-const QR_CARD_PADDING = 32;
+const QR_BLOCK_MIN_PADDING = 24;
+const QR_TITLE_GAP = 42;
+const QR_TITLE_LINE_HEIGHT = 28;
+const QR_COPY_GAP = 30;
+const QR_COPY_LINE_HEIGHT = 24;
 
 const wrapCanvasText = (
   ctx: CanvasRenderingContext2D,
@@ -147,18 +151,33 @@ const buildQrCardImage = async (copyId: string, bookTitle: string) => {
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  const qrX = (canvas.width - QR_SIZE) / 2;
-  ctx.drawImage(qrImage, qrX, QR_CARD_PADDING, QR_SIZE, QR_SIZE);
-
   ctx.textAlign = "center";
   ctx.fillStyle = "#221910";
   ctx.font = '700 22px "Arial", sans-serif';
 
   const titleLines = wrapCanvasText(ctx, bookTitle, canvas.width - 64, 2);
-  const titleStartY = QR_CARD_PADDING + QR_SIZE + 54;
+  const contentHeight =
+    QR_SIZE +
+    QR_TITLE_GAP +
+    titleLines.length * QR_TITLE_LINE_HEIGHT +
+    QR_COPY_GAP +
+    QR_COPY_LINE_HEIGHT;
+  const contentTop = Math.max(
+    QR_BLOCK_MIN_PADDING,
+    (canvas.height - contentHeight) / 2,
+  );
+
+  const qrX = (canvas.width - QR_SIZE) / 2;
+  ctx.drawImage(qrImage, qrX, contentTop, QR_SIZE, QR_SIZE);
+
+  const titleStartY = contentTop + QR_SIZE + QR_TITLE_GAP;
 
   titleLines.forEach((line, index) => {
-    ctx.fillText(line, canvas.width / 2, titleStartY + index * 28);
+    ctx.fillText(
+      line,
+      canvas.width / 2,
+      titleStartY + index * QR_TITLE_LINE_HEIGHT,
+    );
   });
 
   ctx.fillStyle = "#5a4b3f";
@@ -166,7 +185,7 @@ const buildQrCardImage = async (copyId: string, bookTitle: string) => {
   ctx.fillText(
     `Copy ID: ${copyId}`,
     canvas.width / 2,
-    titleStartY + titleLines.length * 28 + 30,
+    titleStartY + titleLines.length * QR_TITLE_LINE_HEIGHT + QR_COPY_GAP,
   );
 
   return canvas.toDataURL("image/png");
@@ -660,15 +679,14 @@ export default function BookCopiesManagement() {
 
       {qrModalCopyId && (
         <div className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-4 z-80">
-          <div className="dashboard-surface tron-border rounded-sm max-w-lg w-full p-6">
-            <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="dashboard-surface tron-border rounded-sm max-w-md w-full p-4">
+            <div className="flex items-start justify-between gap-3 mb-3">
               <div>
                 <h2 className="text-xl font-bold text-[#221910] ink-title">
                   Copy QR Code
                 </h2>
-                <p className="text-sm text-[#5a4b3f] ink-text mt-1">
-                  Download a PNG that includes the book name and copy ID under
-                  the QR.
+                <p className="text-xs text-[#5a4b3f] ink-text mt-0.5">
+                  Download with book name and copy ID
                 </p>
               </div>
               <button
@@ -680,7 +698,7 @@ export default function BookCopiesManagement() {
               </button>
             </div>
 
-            <div className="p-2 flex flex-col items-center gap-4">
+            <div className="p-1 flex flex-col items-center gap-3">
               {qrIsLoading && (
                 <div className="w-full min-h-105 flex items-center justify-center text-[#5a4b3f] ink-text">
                   Generating QR preview...
@@ -694,7 +712,7 @@ export default function BookCopiesManagement() {
                   width={420}
                   height={520}
                   unoptimized
-                  className="w-full max-w-90 rounded-sm bg-white shadow-sm"
+                  className="w-full max-w-80 rounded-sm bg-white shadow-sm"
                 />
               )}
 
@@ -705,17 +723,17 @@ export default function BookCopiesManagement() {
               )}
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 mt-6">
+            <div className="flex flex-col sm:flex-row gap-2 mt-4">
               <button
                 onClick={closeQrModal}
-                className="flex-1 px-4 py-2.5 border border-[#8a7966] text-[#4f4134] rounded-sm hover:bg-[#eadcc8] transition-colors font-medium ink-text"
+                className="flex-1 px-3 py-2 border border-[#8a7966] text-[#4f4134] rounded-sm hover:bg-[#eadcc8] transition-colors font-medium text-sm ink-text"
               >
                 Close
               </button>
               <button
                 onClick={handleDownloadQr}
                 disabled={!qrImageUrl || qrIsLoading}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 disabled:cursor-not-allowed transition-colors font-medium ink-text"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 disabled:cursor-not-allowed transition-colors font-medium text-sm ink-text"
               >
                 <FaDownload className="w-4 h-4" />
                 Download PNG
@@ -723,7 +741,7 @@ export default function BookCopiesManagement() {
             </div>
 
             {qrModalCopyId && (
-              <p className="text-xs text-[#6a5a4c] mt-3 text-center ink-text">
+              <p className="text-xs text-[#6a5a4c] mt-2 text-center ink-text">
                 {qrModalCopyId}
               </p>
             )}
