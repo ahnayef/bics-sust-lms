@@ -167,7 +167,9 @@ export default function Home() {
           style={{ backgroundColor: "#f1e8d9" }}
         >
           <div className="text-center border-b-2 border-double border-gray-800 pb-6 mb-6">
-            <div className="newspaper-subheader mb-4">— Since 1990 —</div>
+            <div className="newspaper-subheader mb-4">
+              BICS SUST Digital Library Platform
+            </div>
             <h1 className="newspaper-headline">
               Library Management
               <div style={{ fontSize: "2.5rem", marginTop: "0.5rem" }}>
@@ -175,7 +177,7 @@ export default function Home() {
               </div>
             </h1>
             <div className="newspaper-subheader mt-4">
-              Your Weekly Reading Companion
+              One workflow from shelf to checkout
             </div>
           </div>
 
@@ -186,8 +188,9 @@ export default function Home() {
               lineHeight: "1.8",
             }}
           >
-            Streamline your book collection management with our proven system.
-            Track borrowing, returns, and member progress the old-fashioned way.
+            Manage books, copies, and members in one place. Handle borrowing and
+            returns with clear workflows, and track member reading progress
+            across syllabus and general collections.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -218,7 +221,7 @@ export default function Home() {
           <div className="text-center mb-12 pb-6 border-b-2 border-double border-gray-900">
             <h2 className="newspaper-headline mb-2">Powerful Features</h2>
             <p className="newspaper-subheader">
-              Everything you need to manage your library efficiently
+              Everything needed to run your campus library operations
             </p>
           </div>
 
@@ -242,8 +245,8 @@ export default function Home() {
                   lineHeight: "1.6",
                 }}
               >
-                Organize and track your entire book collection with ease. Manage
-                multiple copies and maintain detailed records.
+                Organize titles and copy inventory with complete records. Keep
+                collection data structured for daily operations and audits.
               </p>
             </div>
 
@@ -266,8 +269,8 @@ export default function Home() {
                   lineHeight: "1.6",
                 }}
               >
-                Monitor member progress, borrowing history, and completion
-                status. Keep members informed with timely updates.
+                Track member borrowing history, reading activity, and syllabus
+                completion so progress is visible at a glance.
               </p>
             </div>
 
@@ -290,8 +293,8 @@ export default function Home() {
                   lineHeight: "1.6",
                 }}
               >
-                Simplified borrowing and return workflows. QR code scanning for
-                quick operations and automatic approvals.
+                Process borrow and return requests with clear status updates and
+                QR-based handling for faster desk operations.
               </p>
             </div>
 
@@ -314,8 +317,8 @@ export default function Home() {
                   lineHeight: "1.6",
                 }}
               >
-                Get insights into borrowing patterns, member engagement, and
-                collection usage with comprehensive reports.
+                Monitor borrowing trends, overdue items, and collection usage to
+                support better library planning and follow-up.
               </p>
             </div>
 
@@ -338,8 +341,8 @@ export default function Home() {
                   lineHeight: "1.6",
                 }}
               >
-                Automated reminders for due dates, overdue alerts, and return
-                approvals. Keep everyone on track.
+                Keep users informed with due-date reminders and overdue alerts
+                so books move on time and queues stay organized.
               </p>
             </div>
 
@@ -362,8 +365,8 @@ export default function Home() {
                   lineHeight: "1.6",
                 }}
               >
-                Flexible permission system for admins, moderators, and members.
-                Full control over who can do what.
+                Grant the right access level to admins, moderators, and members
+                with clear permission boundaries for each role.
               </p>
             </div>
           </div>
@@ -406,7 +409,7 @@ export default function Home() {
                 letterSpacing: "1px",
               }}
             >
-              Join us today and experience the future of library management
+              Launch your library workflow with one connected LMS
             </p>
           </div>
           <a
