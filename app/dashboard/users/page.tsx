@@ -36,7 +36,7 @@ export default function UsersManagement() {
       id: 1,
       name: "Ahsan Habib",
       email: "ahnayef@duck.com",
-      rank: "Member",
+      rank: "Associate",
     },
     {
       id: 2,
