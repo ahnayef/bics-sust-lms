@@ -144,16 +144,8 @@ const buildQrCardImage = async (copyId: string, bookTitle: string) => {
     throw new Error("Unable to create QR card canvas.");
   }
 
-  ctx.fillStyle = "#f7efdf";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
   ctx.fillStyle = "#ffffff";
-  ctx.strokeStyle = "#b29c80";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.roundRect(16, 16, canvas.width - 32, canvas.height - 32, 18);
-  ctx.fill();
-  ctx.stroke();
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   const qrX = (canvas.width - QR_SIZE) / 2;
   ctx.drawImage(qrImage, qrX, QR_CARD_PADDING, QR_SIZE, QR_SIZE);
@@ -688,7 +680,7 @@ export default function BookCopiesManagement() {
               </button>
             </div>
 
-            <div className="bg-[#f7efdf] border border-[#c4ad91] rounded-sm p-4 flex flex-col items-center gap-4">
+            <div className="p-2 flex flex-col items-center gap-4">
               {qrIsLoading && (
                 <div className="w-full min-h-105 flex items-center justify-center text-[#5a4b3f] ink-text">
                   Generating QR preview...
@@ -702,7 +694,7 @@ export default function BookCopiesManagement() {
                   width={420}
                   height={520}
                   unoptimized
-                  className="w-full max-w-90 rounded-sm border border-[#d2bfa5] bg-white"
+                  className="w-full max-w-90 rounded-sm bg-white shadow-sm"
                 />
               )}
 
