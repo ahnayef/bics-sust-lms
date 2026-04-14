@@ -196,6 +196,8 @@ export default function BookCopiesManagement() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [bookSearchTerm, setBookSearchTerm] = useState("");
+  const [showBookDropdown, setShowBookDropdown] = useState(false);
   const [qrModalCopyId, setQrModalCopyId] = useState<string | null>(null);
   const [qrImageUrl, setQrImageUrl] = useState<string>("");
   const [qrIsLoading, setQrIsLoading] = useState(false);
@@ -275,6 +277,38 @@ export default function BookCopiesManagement() {
     return AVAILABLE_BOOKS.find((book) => book.id === bookId);
   };
 
+  const getBookOptionLabel = (book: BookRef) =>
+    `${book.title} - ${book.author}`;
+
+  const filteredBookOptions = AVAILABLE_BOOKS.filter((book) => {
+    const query = bookSearchTerm.toLowerCase().trim();
+    if (!query) return true;
+    return (
+      book.title.toLowerCase().includes(query) ||
+      book.author.toLowerCase().includes(query)
+    );
+  });
+
+  const handleBookSearchChange = (value: string) => {
+    setBookSearchTerm(value);
+    setShowBookDropdown(true);
+
+    const matched = AVAILABLE_BOOKS.find(
+      (book) => getBookOptionLabel(book).toLowerCase() === value.toLowerCase(),
+    );
+
+    setFormData((prev) => ({
+      ...prev,
+      book: matched ? matched.id.toString() : "",
+    }));
+  };
+
+  const handleSelectBook = (book: BookRef) => {
+    setFormData((prev) => ({ ...prev, book: book.id.toString() }));
+    setBookSearchTerm(getBookOptionLabel(book));
+    setShowBookDropdown(false);
+  };
+
   const query = searchTerm.toLowerCase().trim();
 
   const filteredCopies = bookCopies.filter((copy) => {
@@ -313,6 +347,8 @@ export default function BookCopiesManagement() {
   const openAddModal = () => {
     setEditingId(null);
     setFormData({ bookId: getNextBookId(), book: "" });
+    setBookSearchTerm("");
+    setShowBookDropdown(false);
     setShowAddModal(true);
   };
 
@@ -338,6 +374,9 @@ export default function BookCopiesManagement() {
     if (!copy) return;
 
     setFormData({ bookId: copy.bookId, book: copy.book.toString() });
+    const selectedBook = getBookById(copy.book);
+    setBookSearchTerm(selectedBook ? getBookOptionLabel(selectedBook) : "");
+    setShowBookDropdown(false);
     setEditingId(bookId);
     setShowAddModal(true);
   };
@@ -377,6 +416,8 @@ export default function BookCopiesManagement() {
     setShowAddModal(false);
     setEditingId(null);
     setFormData({ bookId: "", book: "" });
+    setBookSearchTerm("");
+    setShowBookDropdown(false);
   };
 
   const openQrModal = async (bookId: string) => {
@@ -623,20 +664,44 @@ export default function BookCopiesManagement() {
                 <label className="block text-sm font-medium text-[#4f4134] mb-1">
                   Select Book *
                 </label>
-                <select
-                  value={formData.book}
-                  onChange={(e) =>
-                    setFormData({ ...formData, book: e.target.value })
-                  }
-                  className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
-                >
-                  <option value="">Choose a book</option>
-                  {AVAILABLE_BOOKS.map((book) => (
-                    <option key={book.id} value={book.id}>
-                      {book.title} by {book.author}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={bookSearchTerm}
+                    onFocus={() => setShowBookDropdown(true)}
+                    onBlur={() => {
+                      setTimeout(() => setShowBookDropdown(false), 120);
+                    }}
+                    onChange={(e) => handleBookSearchChange(e.target.value)}
+                    placeholder="Search book by title or author"
+                    className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
+                  />
+
+                  {showBookDropdown && (
+                    <div className="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto rounded-sm border border-[#8a7966] bg-[#f6ecdd] shadow-lg">
+                      {filteredBookOptions.length > 0 ? (
+                        filteredBookOptions.map((book) => (
+                          <button
+                            key={book.id}
+                            type="button"
+                            onMouseDown={() => handleSelectBook(book)}
+                            className="w-full px-3 py-2 text-left text-sm text-[#2f251d] hover:bg-[#eadcc8] transition-colors"
+                          >
+                            <span className="font-medium">{book.title}</span>
+                            <span className="text-[#5a4b3f]">
+                              {" "}
+                              - {book.author}
+                            </span>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-3 py-2 text-sm text-[#6a5a4c]">
+                          No matching book found
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>
