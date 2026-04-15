@@ -25,6 +25,8 @@ function MainMetric({ icon: Icon, label, value, href }: MainMetricProps) {
     <Link
       href={href}
       className="dashboard-surface tron-border rounded-sm p-2 sm:p-3 hover:bg-[#f4ebdc] transition-colors"
+      data-aos="fade-up"
+      data-aos-duration="600"
     >
       <div className="flex items-start justify-between gap-2">
         <div>
@@ -159,7 +161,11 @@ export default function DashboardOverview() {
       `}</style>
 
       <div className="max-w-7xl mx-auto px-0 lg:px-8 py-6 space-y-5 sm:space-y-6">
-        <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
+        <section
+          className="dashboard-surface tron-border rounded-sm p-5 sm:p-6"
+          data-aos="fade-up"
+          data-aos-duration="800"
+        >
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
@@ -210,6 +216,8 @@ export default function DashboardOverview() {
             <Link
               href="/dashboard/copies"
               className="dashboard-surface rounded-sm p-2 sm:p-3 border border-[#b9a58b] hover:bg-[#f4ebdc] transition-colors"
+              data-aos="fade-up"
+              data-aos-duration="600"
             >
               <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight">
                 Copies
@@ -221,10 +229,9 @@ export default function DashboardOverview() {
             <Link
               href="/dashboard/transactions"
               className="dashboard-surface rounded-sm p-2 sm:p-3 border border-[#b9a58b] hover:bg-[#f4ebdc] transition-colors"
+              data-aos="fade-up"
+              data-aos-duration="600"
             >
-              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight">
-                Pending
-              </p>
               <p className="text-lg sm:text-xl font-bold text-[#221910] ink-title mt-1 leading-none">
                 {stats.awaitingApproval}
               </p>
@@ -232,10 +239,9 @@ export default function DashboardOverview() {
             <Link
               href="/dashboard/transactions"
               className="dashboard-surface rounded-sm p-2 sm:p-3 border border-[#b9a58b] hover:bg-[#f4ebdc] transition-colors"
+              data-aos="fade-up"
+              data-aos-duration="600"
             >
-              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight">
-                Overdue
-              </p>
               <p className="text-lg sm:text-xl font-bold text-[#221910] ink-title mt-1 leading-none">
                 {stats.overdue}
               </p>
@@ -243,12 +249,16 @@ export default function DashboardOverview() {
           </div>
         </section>
 
-        <section className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-5">
-          <div className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
-            <h2 className="text-lg font-bold text-[#221910] mb-4 ink-title">
-              Action Required Today
-            </h2>
-
+        <section
+          className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-5"
+          data-aos="fade-up"
+          data-aos-duration="800"
+        >
+          <div
+            className="dashboard-surface tron-border rounded-sm p-5 sm:p-6"
+            data-aos="fade-up"
+            data-aos-duration="800"
+          >
             <div className="space-y-3 ink-text text-sm">
               <div className="flex items-center justify-between p-3 bg-[#f6ecdd] border border-[#8a7966] rounded-sm">
                 <div>
@@ -295,10 +305,11 @@ export default function DashboardOverview() {
             </div>
           </div>
 
-          <div className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
-            <h2 className="text-lg font-bold text-[#221910] mb-4 ink-title">
-              Top Activity
-            </h2>
+          <div
+            className="dashboard-surface tron-border rounded-sm p-5 sm:p-6"
+            data-aos="fade-up"
+            data-aos-duration="800"
+          >
             <div className="space-y-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.08em] text-[#5c4f42] mb-2 ink-text">
@@ -353,7 +364,11 @@ export default function DashboardOverview() {
           </div>
         </section>
 
-        <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
+        <section
+          className="dashboard-surface tron-border rounded-sm overflow-hidden"
+          data-aos="fade-up"
+          data-aos-duration="800"
+        >
           <div className="p-5 sm:p-6 border-b border-[#7d6d5a] flex items-center justify-between gap-3">
             <h2 className="text-lg sm:text-xl font-bold text-[#221910] ink-title">
               Latest Transactions
