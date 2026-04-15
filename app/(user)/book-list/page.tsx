@@ -27,6 +27,11 @@ type SortKey =
 type TypeFilter = "all" | "syllabus" | "additional";
 type AvailabilityFilter = "all" | "available" | "unavailable";
 
+const CURRENT_MEMBER = {
+  id: "Member-204",
+  name: "Mahmudul Hasan",
+};
+
 const getCopyStatusBadge = (status: LibraryCopy["status"]) =>
   status === "available" ? (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm border border-[#8f7f6c] bg-[#efe4d1] text-[#3f3328] text-[10px] font-semibold ink-text whitespace-nowrap">
@@ -157,6 +162,11 @@ export default function BookListPage() {
 
     return filtered;
   }, [availabilityFilter, searchTerm, sortBy, typeFilter]);
+
+  const isBorrowedByCurrentMember = (copy: LibraryCopy) =>
+    copy.status === "unavailable" &&
+    (copy.borrowedBy === CURRENT_MEMBER.id ||
+      copy.borrowedByName === CURRENT_MEMBER.name);
 
   return (
     <div className="min-h-screen bg-[#e5d9c4] book-list-paper overflow-x-hidden">
@@ -430,6 +440,15 @@ export default function BookListPage() {
                                               className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-sm border border-[#4f4134] bg-[#3f3328] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors font-medium text-[10px] sm:text-xs whitespace-nowrap"
                                             >
                                               Borrow
+                                            </Link>
+                                          ) : isBorrowedByCurrentMember(
+                                              copy,
+                                            ) ? (
+                                            <Link
+                                              href={`/return?copyId=${encodeURIComponent(copy.id)}`}
+                                              className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-sm border border-[#4f4134] bg-[#5a4d40] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors font-medium text-[10px] sm:text-xs whitespace-nowrap"
+                                            >
+                                              Return
                                             </Link>
                                           ) : (
                                             <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-sm border border-[#9b8a75] bg-[#e3d2bf] text-[#6f6256] font-medium text-[10px] sm:text-xs whitespace-nowrap">
