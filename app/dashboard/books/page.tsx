@@ -11,6 +11,7 @@ interface Book {
   author: string;
   isSyllabus: boolean;
   copiesCount: number;
+  pages: number;
 }
 
 interface BookForm {
@@ -19,6 +20,7 @@ interface BookForm {
   author: string;
   isSyllabus: boolean;
   copiesCount: number;
+  pages: number;
 }
 
 const EMPTY_FORM: BookForm = {
@@ -27,6 +29,7 @@ const EMPTY_FORM: BookForm = {
   author: "",
   isSyllabus: true,
   copiesCount: 0,
+  pages: 0,
 };
 
 export default function BookManagement() {
@@ -42,6 +45,7 @@ export default function BookManagement() {
       author: "আল্লামা জামাল আল বাদাবী",
       isSyllabus: true,
       copiesCount: 3,
+      pages: 284,
     },
     {
       id: 2,
@@ -49,6 +53,7 @@ export default function BookManagement() {
       author: "সাইয়েদ আবুল আ’লা মওদূদী",
       isSyllabus: true,
       copiesCount: 4,
+      pages: 156,
     },
     {
       id: 3,
@@ -56,6 +61,7 @@ export default function BookManagement() {
       author: "আল্লামা ইউসুফ ইসলাহী",
       isSyllabus: true,
       copiesCount: 3,
+      pages: 320,
     },
     {
       id: 4,
@@ -63,6 +69,7 @@ export default function BookManagement() {
       author: "মুফতি তাকি উসমানি",
       isSyllabus: true,
       copiesCount: 2,
+      pages: 448,
     },
     {
       id: 5,
@@ -70,6 +77,7 @@ export default function BookManagement() {
       author: "সাইয়েদ আবুল আ’লা মওদূদী",
       isSyllabus: true,
       copiesCount: 2,
+      pages: 256,
     },
     {
       id: 6,
@@ -77,6 +85,7 @@ export default function BookManagement() {
       author: "ড. জাবের মোহাম্মদ (ইসলামিক সেন্টার)",
       isSyllabus: true,
       copiesCount: 5,
+      pages: 192,
     },
     {
       id: 7,
@@ -84,6 +93,7 @@ export default function BookManagement() {
       author: "সাইয়েদ আবুল আ’লা মওদূদী",
       isSyllabus: false,
       copiesCount: 2,
+      pages: 224,
     },
     {
       id: 8,
@@ -91,6 +101,7 @@ export default function BookManagement() {
       author: "সাইয়েদ আবুল আ’লা মওদূদী",
       isSyllabus: false,
       copiesCount: 2,
+      pages: 176,
     },
     {
       id: 9,
@@ -98,6 +109,7 @@ export default function BookManagement() {
       author: "সাইয়েদ আবুল আ’লা মওদূদী",
       isSyllabus: false,
       copiesCount: 3,
+      pages: 128,
     },
     {
       id: 10,
@@ -105,6 +117,7 @@ export default function BookManagement() {
       author: "ড. ইউসুফ আল-কারযাভী",
       isSyllabus: false,
       copiesCount: 2,
+      pages: 352,
     },
     {
       id: 11,
@@ -112,6 +125,7 @@ export default function BookManagement() {
       author: "উল্লেখ নেই",
       isSyllabus: false,
       copiesCount: 1,
+      pages: 240,
     },
     {
       id: 12,
@@ -119,6 +133,7 @@ export default function BookManagement() {
       author: "ড. আহমদ আলী",
       isSyllabus: false,
       copiesCount: 1,
+      pages: 168,
     },
   ]);
 
@@ -166,6 +181,7 @@ export default function BookManagement() {
       author: formData.author.trim(),
       isSyllabus: formData.isSyllabus,
       copiesCount: 0,
+      pages: formData.pages,
     };
 
     setBooks((prev) => [...prev, newBook]);
@@ -195,6 +211,7 @@ export default function BookManagement() {
               title: formData.title.trim(),
               author: formData.author.trim(),
               isSyllabus: formData.isSyllabus,
+              pages: formData.pages,
             }
           : book,
       ),
@@ -305,6 +322,9 @@ export default function BookManagement() {
                   Author
                 </th>
                 <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
+                  Pages
+                </th>
+                <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
                   Copies
                 </th>
                 <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
@@ -326,6 +346,11 @@ export default function BookManagement() {
                   </td>
                   <td className="px-4 sm:px-6 py-3 text-[#5a4b3f]">
                     {book.author}
+                  </td>
+                  <td className="px-4 sm:px-6 py-3">
+                    <span className="inline-block px-3 py-1 text-xs font-semibold rounded-sm bg-[#efe4d1] text-[#46382c] border border-[#8f7f6c]">
+                      {book.pages}
+                    </span>
                   </td>
                   <td className="px-4 sm:px-6 py-3">
                     <span className="inline-block px-3 py-1 text-xs font-semibold rounded-sm bg-[#efe4d1] text-[#46382c] border border-[#8f7f6c]">
@@ -438,6 +463,25 @@ export default function BookManagement() {
                   <option value="syllabus">Syllabus Book</option>
                   <option value="additional">Additional Book</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                  Number of Pages *
+                </label>
+                <input
+                  type="number"
+                  placeholder="Enter number of pages"
+                  value={formData.pages || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      pages: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  min="1"
+                  className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
+                />
               </div>
             </div>
 
