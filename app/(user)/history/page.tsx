@@ -326,7 +326,11 @@ export default function HistoryPage() {
       <UserNavbar />
 
       {/* Header */}
-      <div className="history-surface border-b border-[#5a4a3b]">
+      <div
+        className="history-surface border-b border-[#5a4a3b]"
+        data-aos="fade-up"
+        data-aos-duration="800"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           <div className="mb-6">
             <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
@@ -378,7 +382,11 @@ export default function HistoryPage() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Filters and Search */}
-        <div className="history-surface tron-border rounded-lg p-6 mb-8">
+        <div
+          className="history-surface tron-border rounded-lg p-6 mb-8"
+          data-aos="fade-up"
+          data-aos-duration="800"
+        >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Search */}
             <div>
@@ -445,7 +453,11 @@ export default function HistoryPage() {
         </div>
 
         {/* Results */}
-        <div className="history-surface tron-border rounded-lg overflow-hidden">
+        <div
+          className="history-surface tron-border rounded-lg overflow-hidden"
+          data-aos="fade-up"
+          data-aos-duration="800"
+        >
           {filteredHistory.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
