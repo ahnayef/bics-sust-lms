@@ -252,7 +252,11 @@ export default function MemberProfile() {
       <UserNavbar />
 
       {/* Profile Header Section */}
-      <div className="profile-surface border-b border-[#5a4a3b]">
+      <div
+        className="profile-surface border-b border-[#5a4a3b]"
+        data-aos="fade-up"
+        data-aos-duration="800"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-start sm:items-center justify-between gap-3">
             <div className="min-w-0">
@@ -288,7 +292,11 @@ export default function MemberProfile() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 lg:py-8">
         {/* Progress Overview Card */}
-        <div className="profile-surface tron-border rounded-lg p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8">
+        <div
+          className="profile-surface tron-border rounded-lg p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8"
+          data-aos="fade-up"
+          data-aos-duration="800"
+        >
           <h2 className="text-lg font-semibold text-[#221910] mb-6 ink-title">
             Syllabus Reading Progress
           </h2>
@@ -352,7 +360,11 @@ export default function MemberProfile() {
         </div>
 
         {/* Currently Borrowing - Full Width Grid */}
-        <div className="profile-surface tron-border rounded-lg p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8">
+        <div
+          className="profile-surface tron-border rounded-lg p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8"
+          data-aos="fade-up"
+          data-aos-duration="800"
+        >
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-[#221910] flex items-center gap-2 ink-title">
               <FaClock className="w-5 h-5 text-[#4e4033]" />
@@ -366,10 +378,13 @@ export default function MemberProfile() {
           {stats.currentBorrows.length > 0 ? (
             <div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-                {paginatedBorrows.map((item) => (
+                {paginatedBorrows.map((item, index) => (
                   <div
                     key={item.id}
                     className="p-3 sm:p-4 border border-[#7b6d5f] rounded-lg shadow-sm transition-all bg-[#f6ecdd]"
+                    data-aos="fade-up"
+                    data-aos-duration="600"
+                    data-aos-delay={`${index * 100}ms`}
                   >
                     <div className="flex flex-col h-full">
                       <div className="flex-1 mb-3 sm:mb-4">
@@ -447,7 +462,11 @@ export default function MemberProfile() {
         </div>
 
         {/* Borrow History - Full Width Table */}
-        <div className="profile-surface tron-border rounded-lg p-4 sm:p-6 lg:p-8">
+        <div
+          className="profile-surface tron-border rounded-lg p-4 sm:p-6 lg:p-8"
+          data-aos="fade-up"
+          data-aos-duration="800"
+        >
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-[#221910] ink-title">
               Recent History
