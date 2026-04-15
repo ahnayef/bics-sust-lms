@@ -237,8 +237,6 @@ export default function ModeratorsManagement() {
                     <tr
                       key={moderator.id}
                       className="border-b border-[#d2bfa5] hover:bg-[#f4ebdc] transition-colors"
-                      data-aos="fade-up"
-                      data-aos-duration="600"
                     >
                       <td className="py-3 px-6 font-medium text-[#2b2119]">
                         {moderator.name}
@@ -289,8 +287,6 @@ export default function ModeratorsManagement() {
                 <div
                   key={moderator.id}
                   className="dashboard-surface tron-border rounded-sm p-3"
-                  data-aos="fade-up"
-                  data-aos-duration="600"
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex-1 min-w-0">
@@ -335,7 +331,7 @@ export default function ModeratorsManagement() {
         <div className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-4 z-80">
           <div
             className="dashboard-surface tron-border rounded-sm shadow-lg max-w-md w-full"
-            data-aos="fade-down"
+            data-aos="zoom-in"
             data-aos-duration="200"
           >
             <div className="p-6">
