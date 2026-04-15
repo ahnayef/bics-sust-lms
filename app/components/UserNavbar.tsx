@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FaBook, FaQrcode, FaUndoAlt } from "react-icons/fa";
+import { FaBook, FaBookOpen, FaQrcode, FaUndoAlt } from "react-icons/fa";
 
 const getLinkClassName = (isActive: boolean) =>
   `text-xs sm:text-sm font-medium transition-colors px-2 sm:px-3 py-2 rounded-md ink-text ${
@@ -14,6 +14,7 @@ const getLinkClassName = (isActive: boolean) =>
 export default function UserNavbar() {
   const pathname = usePathname();
 
+  const isBookList = pathname === "/book-list";
   const isProfile = pathname === "/profile";
   const isHistory = pathname === "/history";
   const isBorrow = pathname === "/borrow";
@@ -34,6 +35,12 @@ export default function UserNavbar() {
           </Link>
 
           <div className="flex items-center gap-2 sm:gap-4 lg:gap-6 ml-2 sm:ml-4">
+            <Link href="/book-list" className={getLinkClassName(isBookList)}>
+              <span className="inline-flex items-center gap-1.5">
+                <FaBookOpen className="w-3 h-3" />
+                Books
+              </span>
+            </Link>
             <Link href="/profile" className={getLinkClassName(isProfile)}>
               Profile
             </Link>

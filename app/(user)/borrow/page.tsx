@@ -1,9 +1,11 @@
 "use client";
 
 import UserNavbar from "@/app/components/UserNavbar";
+import { LIBRARY_COPIES_BY_ID } from "@/app/data/library";
 import { Scanner, useDevices } from "@yudiel/react-qr-scanner";
 import Link from "next/link";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   FaCheck,
   FaExclamationTriangle,
@@ -44,42 +46,11 @@ export default function BorrowPage() {
     ({ id: string } & CopyAvailability) | null
   >(null);
 
+  const searchParams = useSearchParams();
   const devices = useDevices();
 
-  // Mock available copies
-  const availableCopies: Record<string, CopyAvailability> = {
-    QR001: {
-      title: "ইসলামের সামাজিক বিধান",
-      author: "আল্লামা জামাল আল বাদাবী",
-      copyNumber: "Copy 1",
-      pages: 284,
-      status: "available",
-    },
-    QR002: {
-      title: "পর্দা ও ইসলাম",
-      author: "সাইয়েদ আবুল আ’লা মওদূদী",
-      copyNumber: "Copy 1",
-      pages: 156,
-      status: "available",
-    },
-    QR003: {
-      title: "আদাবে জিন্দেগী",
-      author: "আল্লামা ইউসুফ ইসলাহী",
-      copyNumber: "Copy 2",
-      pages: 320,
-      status: "available",
-    },
-    QR004: {
-      title: "ইসলামী ব্যাংকিং ও অর্থায়ন পদ্ধতি: সমস্যা ও সমাধান",
-      author: "মুফতি তাকি উসমানি",
-      copyNumber: "Copy 1",
-      pages: 448,
-      status: "unavailable",
-      borrowedBy: "Member-204",
-      borrowedByName: "Mahmudul Hasan",
-      expectedAvailableDate: "2026-04-20",
-    },
-  };
+  const availableCopies: Record<string, CopyAvailability> =
+    LIBRARY_COPIES_BY_ID;
 
   const processCopyId = (value: string) => {
     const upperValue = value.toUpperCase();
@@ -123,6 +94,15 @@ export default function BorrowPage() {
   const handleCopyIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     processCopyId(e.target.value);
   };
+
+  useEffect(() => {
+    const initialCopyId = searchParams.get("copyId");
+    if (initialCopyId) {
+      setInputMode("manual");
+      processCopyId(initialCopyId);
+    }
+  }, [searchParams]);
+
   //eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleScan = (detectedCodes: any[]) => {
     if (detectedCodes.length > 0) {
@@ -598,7 +578,7 @@ export default function BorrowPage() {
                     />
                   </label>
                   <p className="text-xs text-[#6f6256] ink-text">
-                    Valid IDs: QR001, QR002, QR003, QR004
+                    Use a copy ID from the book list or scan a QR code.
                   </p>
                 </div>
               )}
