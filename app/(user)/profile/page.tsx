@@ -1,5 +1,6 @@
 "use client";
 
+import StatusBadge from "@/app/components/StatusBadge";
 import UserNavbar from "@/app/components/UserNavbar";
 import {
   getApprovedBooksForMember,
@@ -171,24 +172,21 @@ export default function MemberProfile() {
     switch (status) {
       case "completed":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c] text-xs font-semibold rounded-sm ink-text">
-            <FaCheckCircle className="w-3 h-3 text-[#4e4033]" />
+          <StatusBadge tone="success" icon={FaCheckCircle}>
             Completed
-          </span>
+          </StatusBadge>
         );
       case "active":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c] text-xs font-semibold rounded-sm ink-text">
-            <FaClock className="w-3 h-3 text-[#6b5a4a]" />
+          <StatusBadge tone="info" icon={FaClock}>
             Active
-          </span>
+          </StatusBadge>
         );
       case "overdue":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c] text-xs font-semibold rounded-sm ink-text">
-            <FaExclamationTriangle className="w-3 h-3 text-[#7a4c37]" />
+          <StatusBadge tone="danger" icon={FaExclamationTriangle}>
             Overdue
-          </span>
+          </StatusBadge>
         );
       default:
         return null;
@@ -198,18 +196,16 @@ export default function MemberProfile() {
   const getBorrowRequestBadge = (status: string) => {
     if (status === "pending") {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#efe4d1] text-[#5a4b3f] border border-[#9b8a75] text-[10px] font-semibold rounded-sm ink-text">
-          <FaClock className="w-3 h-3 text-[#7b6d5f]" />
+        <StatusBadge tone="warning" size="xs" icon={FaClock}>
           Pending Approval
-        </span>
+        </StatusBadge>
       );
     }
 
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c] text-[10px] font-semibold rounded-sm ink-text">
-        <FaCheckCircle className="w-3 h-3 text-[#4e4033]" />
+      <StatusBadge tone="success" size="xs" icon={FaCheckCircle}>
         Approved
-      </span>
+      </StatusBadge>
     );
   };
 

@@ -1,5 +1,6 @@
 "use client";
 
+import StatusBadge from "@/app/components/StatusBadge";
 import NextImage from "next/image";
 import QRCode from "qrcode";
 import { useRef, useState } from "react";
@@ -331,16 +332,18 @@ export default function BookCopiesManagement() {
     borrowed: bookCopies.filter((copy) => copy.status === "borrowed").length,
   };
 
-  const getStatusBadge = (status: CopyStatus) => {
+  const getStatusBadgeTone = (
+    status: CopyStatus,
+  ): "success" | "warning" | "danger" | "neutral" => {
     switch (status) {
       case "available":
-        return "bg-[#efe4d1] text-[#3f3328] border border-[#8f7f6c]";
+        return "success";
       case "borrowed":
-        return "bg-[#f0e3cf] text-[#47392d] border border-[#9a8975]";
+        return "warning";
       case "damaged":
-        return "bg-[#eadac3] text-[#5a3d2c] border border-[#9b856d]";
+        return "danger";
       default:
-        return "bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c]";
+        return "neutral";
     }
   };
 
@@ -592,14 +595,10 @@ export default function BookCopiesManagement() {
                       {book?.author || "Unknown"}
                     </td>
                     <td className="px-4 sm:px-6 py-3">
-                      <span
-                        className={`inline-block px-3 py-1 text-xs font-semibold rounded-sm ${getStatusBadge(
-                          copy.status,
-                        )}`}
-                      >
+                      <StatusBadge tone={getStatusBadgeTone(copy.status)}>
                         {copy.status.charAt(0).toUpperCase() +
                           copy.status.slice(1)}
-                      </span>
+                      </StatusBadge>
                     </td>
                     <td className="px-4 sm:px-6 py-3 text-[#5a4b3f]">
                       {copy.borrowerName || "-"}

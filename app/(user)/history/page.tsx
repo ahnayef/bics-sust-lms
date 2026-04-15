@@ -1,5 +1,6 @@
 "use client";
 
+import StatusBadge from "@/app/components/StatusBadge";
 import UserNavbar from "@/app/components/UserNavbar";
 import { getSubmissionsForMember } from "@/app/data/pdf-submissions";
 import Link from "next/link";
@@ -182,24 +183,21 @@ export default function HistoryPage() {
     if (item?.source === "pdf") {
       if (item.pdfStatus === "approved") {
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c] text-xs font-semibold rounded-sm ink-text">
-            <FaCheckCircle className="w-3 h-3 text-[#4e4033]" />
+          <StatusBadge tone="success" icon={FaCheckCircle}>
             Approved
-          </span>
+          </StatusBadge>
         );
       } else if (item.pdfStatus === "pending") {
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#efe4d1] text-[#5a4b3f] border border-[#9b8a75] text-xs font-semibold rounded-sm ink-text">
-            <FaClock className="w-3 h-3 text-[#7b6d5f]" />
+          <StatusBadge tone="accent" icon={FaClock}>
             Pending Review
-          </span>
+          </StatusBadge>
         );
       } else if (item.pdfStatus === "rejected") {
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f6e3df] border border-[#b0665c] text-[#7d2d23] text-xs font-semibold rounded-sm ink-text">
-            <FaExclamationTriangle className="w-3 h-3" />
+          <StatusBadge tone="danger" icon={FaExclamationTriangle}>
             Rejected
-          </span>
+          </StatusBadge>
         );
       }
     }
@@ -208,31 +206,27 @@ export default function HistoryPage() {
     switch (status) {
       case "pending":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#efe4d1] text-[#5a4b3f] border border-[#9b8a75] text-xs font-semibold rounded-sm ink-text">
-            <FaClock className="w-3 h-3 text-[#7b6d5f]" />
+          <StatusBadge tone="warning" icon={FaClock}>
             Pending Approval
-          </span>
+          </StatusBadge>
         );
       case "completed":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c] text-xs font-semibold rounded-sm ink-text">
-            <FaCheckCircle className="w-3 h-3 text-[#4e4033]" />
+          <StatusBadge tone="success" icon={FaCheckCircle}>
             Completed
-          </span>
+          </StatusBadge>
         );
       case "active":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c] text-xs font-semibold rounded-sm ink-text">
-            <FaClock className="w-3 h-3 text-[#6b5a4a]" />
+          <StatusBadge tone="info" icon={FaClock}>
             Active
-          </span>
+          </StatusBadge>
         );
       case "overdue":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c] text-xs font-semibold rounded-sm ink-text">
-            <FaExclamationTriangle className="w-3 h-3 text-[#7a4c37]" />
+          <StatusBadge tone="danger" icon={FaExclamationTriangle}>
             Overdue
-          </span>
+          </StatusBadge>
         );
       default:
         return null;

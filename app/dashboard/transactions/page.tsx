@@ -1,5 +1,6 @@
 "use client";
 
+import StatusBadge from "@/app/components/StatusBadge";
 import {
   getPendingSubmissions,
   updateSubmissionStatus,
@@ -154,6 +155,10 @@ function sortTransactions(list: Transaction[], sortBy: SortKey) {
   return clone;
 }
 
+function getTransactionTypeTone(type: TxType): "info" | "accent" {
+  return type === "borrow" ? "info" : "accent";
+}
+
 export default function TransactionsManagement() {
   const [activeTab, setActiveTab] = useState<TabKey>("pending");
   const [searchTerm, setSearchTerm] = useState("");
@@ -271,9 +276,13 @@ export default function TransactionsManagement() {
             {tx.book} <span className="font-mono">({tx.bookId})</span>
           </p>
         </div>
-        <span className="inline-block px-2.5 py-1 text-xs font-semibold rounded-sm bg-[#efe4d1] text-[#3f3328] border border-[#8f7f6c] shrink-0">
+        <StatusBadge
+          tone={getTransactionTypeTone(tx.type)}
+          size="xs"
+          className="shrink-0"
+        >
           {tx.type === "borrow" ? "Borrow" : "Return"}
-        </span>
+        </StatusBadge>
       </div>
 
       <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#5a4b3f]">
@@ -501,10 +510,13 @@ export default function TransactionsManagement() {
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-sm bg-[#efe4d1] text-[#3f3328] border border-[#8f7f6c]">
-                            <FaClock className="w-3 h-3" />
+                          <StatusBadge
+                            tone={tx.status === "overdue" ? "danger" : "info"}
+                            size="xs"
+                            icon={FaClock}
+                          >
                             {tx.status === "overdue" ? "Overdue" : "Active"}
-                          </span>
+                          </StatusBadge>
                         </div>
                       </div>
 
@@ -575,9 +587,12 @@ export default function TransactionsManagement() {
                           </span>
                         </td>
                         <td className="px-4 sm:px-6 py-3">
-                          <span className="inline-block px-2 py-1 text-xs font-semibold rounded-sm bg-[#f0e3cf] text-[#47392d] border border-[#9a8975]">
+                          <StatusBadge
+                            tone={getTransactionTypeTone(tx.type)}
+                            size="xs"
+                          >
                             {tx.type === "borrow" ? "Borrow" : "Return"}
-                          </span>
+                          </StatusBadge>
                         </td>
                         <td className="px-4 sm:px-6 py-3 text-[#5a4b3f] whitespace-nowrap">
                           {formatDate(tx.requestDate)}
@@ -619,9 +634,13 @@ export default function TransactionsManagement() {
                             </p>
                           )}
                         </div>
-                        <span className="inline-block px-2.5 py-1 text-xs font-semibold rounded-sm bg-[#efe4d1] text-[#5a4b3f] border border-[#9b8a75] shrink-0">
+                        <StatusBadge
+                          tone="accent"
+                          size="xs"
+                          className="shrink-0"
+                        >
                           Pending
-                        </span>
+                        </StatusBadge>
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 pt-3 border-t border-[#c5b5a1]">

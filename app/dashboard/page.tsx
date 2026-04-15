@@ -1,5 +1,6 @@
 "use client";
 
+import StatusBadge from "@/app/components/StatusBadge";
 import Link from "next/link";
 import {
   FaArrowRight,
@@ -88,27 +89,24 @@ export default function DashboardOverview() {
   const getStatusBadge = (status: string) => {
     if (status === "active") {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c] text-xs font-semibold rounded-sm ink-text">
-          <FaClock className="w-3 h-3 text-[#6b5a4a]" />
+        <StatusBadge tone="info" icon={FaClock}>
           Active
-        </span>
+        </StatusBadge>
       );
     }
 
     if (status === "pending") {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c] text-xs font-semibold rounded-sm ink-text">
-          <FaHourglassHalf className="w-3 h-3 text-[#7a6146]" />
+        <StatusBadge tone="warning" icon={FaHourglassHalf}>
           Pending
-        </span>
+        </StatusBadge>
       );
     }
 
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c] text-xs font-semibold rounded-sm ink-text">
-        <FaCheckCircle className="w-3 h-3 text-[#4e4033]" />
+      <StatusBadge tone="success" icon={FaCheckCircle}>
         Approved
-      </span>
+      </StatusBadge>
     );
   };
 

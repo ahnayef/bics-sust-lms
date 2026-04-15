@@ -1,5 +1,6 @@
 "use client";
 
+import StatusBadge from "@/app/components/StatusBadge";
 import UserNavbar from "@/app/components/UserNavbar";
 import {
   LIBRARY_BOOKS,
@@ -43,15 +44,13 @@ const CURRENT_MEMBER = {
 
 const getCopyStatusBadge = (status: LibraryCopy["status"]) =>
   status === "available" ? (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm border border-[#8f7f6c] bg-[#efe4d1] text-[#3f3328] text-[10px] font-semibold ink-text whitespace-nowrap">
-      <FaCheckCircle className="w-3 h-3 text-[#4e4033]" />
+    <StatusBadge tone="success" size="xs" icon={FaCheckCircle}>
       Available
-    </span>
+    </StatusBadge>
   ) : (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm border border-[#9b8a75] bg-[#efe4d1] text-[#5a4b3f] text-[10px] font-semibold ink-text whitespace-nowrap">
-      <FaClock className="w-3 h-3 text-[#7b6d5f]" />
+    <StatusBadge tone="warning" size="xs" icon={FaClock}>
       Borrowed
-    </span>
+    </StatusBadge>
   );
 
 export default function BookListPage() {

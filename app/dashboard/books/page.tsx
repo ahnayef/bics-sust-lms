@@ -1,5 +1,6 @@
 "use client";
 
+import StatusBadge from "@/app/components/StatusBadge";
 import { useMemo, useState } from "react";
 import {
   FaDownload,
@@ -372,25 +373,15 @@ export default function BookManagement() {
                     {book.author}
                   </td>
                   <td className="px-4 sm:px-6 py-3">
-                    <span className="inline-block px-3 py-1 text-xs font-semibold rounded-sm bg-[#efe4d1] text-[#46382c] border border-[#8f7f6c]">
-                      {book.pages}
-                    </span>
+                    <StatusBadge tone="neutral">{book.pages}</StatusBadge>
                   </td>
                   <td className="px-4 sm:px-6 py-3">
-                    <span className="inline-block px-3 py-1 text-xs font-semibold rounded-sm bg-[#efe4d1] text-[#46382c] border border-[#8f7f6c]">
-                      {book.copiesCount}
-                    </span>
+                    <StatusBadge tone="muted">{book.copiesCount}</StatusBadge>
                   </td>
                   <td className="px-4 sm:px-6 py-3">
-                    <span
-                      className={`inline-block px-3 py-1 text-xs font-semibold rounded-sm border ${
-                        book.isSyllabus
-                          ? "bg-[#efe4d1] text-[#3f3328] border-[#8f7f6c]"
-                          : "bg-[#f0e3cf] text-[#47392d] border-[#9a8975]"
-                      }`}
-                    >
+                    <StatusBadge tone={book.isSyllabus ? "accent" : "info"}>
                       {book.isSyllabus ? "Syllabus" : "Additional"}
-                    </span>
+                    </StatusBadge>
                   </td>
                   <td className="px-4 sm:px-6 py-3">
                     <div className="flex items-center gap-2">

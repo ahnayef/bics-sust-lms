@@ -1,5 +1,6 @@
 "use client";
 
+import StatusBadge from "@/app/components/StatusBadge";
 import { useMemo, useState } from "react";
 import {
   FaBook,
@@ -303,14 +304,14 @@ export default function UsersManagement() {
     setSelectedUser(null);
   };
 
-  const getRankColor = (rank: User["rank"]) => {
+  const getRankTone = (rank: User["rank"]): "info" | "warning" | "accent" => {
     if (rank === "Activist") {
-      return "bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c]";
+      return "info";
     }
     if (rank === "Associate") {
-      return "bg-[#f0e3cf] text-[#47392d] border border-[#9a8975]";
+      return "warning";
     }
-    return "bg-[#efe4d1] text-[#46382c] border border-[#8f7f6c]";
+    return "accent";
   };
 
   const getProgressPercent = (user: User) => {
@@ -320,19 +321,34 @@ export default function UsersManagement() {
     return Math.round((user.syllabusCompleted / user.syllabusTotal) * 100);
   };
 
-  const getActivityTypeBadge = (
+  const getActivityTypeTone = (
+    type: UserProfileExtra["recentActivities"][number]["type"],
+  ): "info" | "success" | "warning" | "accent" => {
+    if (type === "borrow") {
+      return "info";
+    }
+    if (type === "return") {
+      return "success";
+    }
+    if (type === "request") {
+      return "warning";
+    }
+    return "accent";
+  };
+
+  const getActivityTypeIcon = (
     type: UserProfileExtra["recentActivities"][number]["type"],
   ) => {
     if (type === "borrow") {
-      return "bg-[#efe4d1] text-[#3f3328] border border-[#8f7f6c]";
+      return FaBook;
     }
     if (type === "return") {
-      return "bg-[#f0e3cf] text-[#47392d] border border-[#9a8975]";
+      return FaCheckCircle;
     }
     if (type === "request") {
-      return "bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c]";
+      return FaClock;
     }
-    return "bg-[#efe4d1] text-[#46382c] border border-[#8f7f6c]";
+    return FaUser;
   };
 
   return (
@@ -461,13 +477,9 @@ export default function UsersManagement() {
                       {user.email}
                     </td>
                     <td className="px-4 sm:px-6 py-3">
-                      <span
-                        className={`inline-block px-3 py-1 text-xs font-semibold rounded-sm ${getRankColor(
-                          user.rank,
-                        )}`}
-                      >
+                      <StatusBadge tone={getRankTone(user.rank)}>
                         {user.rank}
-                      </span>
+                      </StatusBadge>
                     </td>
                     <td className="px-4 sm:px-6 py-3 min-w-56">
                       <div className="space-y-1.5">
@@ -728,25 +740,13 @@ export default function UsersManagement() {
                       className="border border-[#d9c6ab] rounded-sm px-3 py-2 bg-[#f8efdf]"
                     >
                       <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-semibold uppercase tracking-[0.08em] ${getActivityTypeBadge(
-                            activity.type,
-                          )}`}
+                        <StatusBadge
+                          tone={getActivityTypeTone(activity.type)}
+                          size="xs"
+                          icon={getActivityTypeIcon(activity.type)}
                         >
-                          {activity.type === "borrow" && (
-                            <FaBook className="w-3 h-3" />
-                          )}
-                          {activity.type === "return" && (
-                            <FaCheckCircle className="w-3 h-3" />
-                          )}
-                          {activity.type === "request" && (
-                            <FaClock className="w-3 h-3" />
-                          )}
-                          {activity.type === "progress" && (
-                            <FaUser className="w-3 h-3" />
-                          )}
                           {activity.type}
-                        </span>
+                        </StatusBadge>
                         <span className="inline-flex items-center gap-1 text-[11px] text-[#6a5a4c]">
                           <FaClock className="w-3 h-3" />
                           {activity.date}
