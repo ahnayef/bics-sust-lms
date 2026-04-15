@@ -165,6 +165,8 @@ export default function Home() {
         <div
           className="max-w-4xl mx-auto newspaper-border paper-wear p-8 sm:p-12"
           style={{ backgroundColor: "#f1e8d9" }}
+          data-aos="fade-up"
+          data-aos-duration="800"
         >
           <div className="text-center border-b-2 border-double border-gray-800 pb-6 mb-6">
             <div className="newspaper-subheader mb-4">
@@ -218,7 +220,11 @@ export default function Home() {
         className="newspaper-grain py-16 px-4 sm:px-6 lg:px-8"
       >
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12 pb-6 border-b-2 border-double border-gray-900">
+          <div
+            className="text-center mb-12 pb-6 border-b-2 border-double border-gray-900"
+            data-aos="fade-up"
+            data-aos-duration="800"
+          >
             <h2 className="newspaper-headline mb-2">Powerful Features</h2>
             <p className="newspaper-subheader">
               Everything needed to run your campus library operations
@@ -227,7 +233,12 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Feature 1 */}
-            <div className="feature-box p-6">
+            <div
+              className="feature-box p-6"
+              data-aos="fade-up"
+              data-aos-duration="800"
+              data-aos-delay="0"
+            >
               <div className="w-12 h-12 bg-gray-900 rounded-sm flex items-center justify-center mb-4">
                 <FaBook className="text-yellow-100 text-xl" />
               </div>
@@ -251,7 +262,12 @@ export default function Home() {
             </div>
 
             {/* Feature 2 */}
-            <div className="feature-box p-6">
+            <div
+              className="feature-box p-6"
+              data-aos="fade-up"
+              data-aos-duration="800"
+              data-aos-delay="100"
+            >
               <div className="w-12 h-12 bg-gray-900 rounded-sm flex items-center justify-center mb-4">
                 <FaUsers className="text-yellow-100 text-xl" />
               </div>
@@ -275,7 +291,12 @@ export default function Home() {
             </div>
 
             {/* Feature 3 */}
-            <div className="feature-box p-6">
+            <div
+              className="feature-box p-6"
+              data-aos="fade-up"
+              data-aos-duration="800"
+              data-aos-delay="200"
+            >
               <div className="w-12 h-12 bg-gray-900 rounded-sm flex items-center justify-center mb-4">
                 <FaSync className="text-yellow-100 text-xl" />
               </div>
@@ -299,7 +320,12 @@ export default function Home() {
             </div>
 
             {/* Feature 4 */}
-            <div className="feature-box p-6">
+            <div
+              className="feature-box p-6"
+              data-aos="fade-up"
+              data-aos-duration="800"
+              data-aos-delay="0"
+            >
               <div className="w-12 h-12 bg-gray-900 rounded-sm flex items-center justify-center mb-4">
                 <FaChartBar className="text-yellow-100 text-xl" />
               </div>
@@ -323,7 +349,12 @@ export default function Home() {
             </div>
 
             {/* Feature 5 */}
-            <div className="feature-box p-6">
+            <div
+              className="feature-box p-6"
+              data-aos="fade-up"
+              data-aos-duration="800"
+              data-aos-delay="100"
+            >
               <div className="w-12 h-12 bg-gray-900 rounded-sm flex items-center justify-center mb-4">
                 <FaBell className="text-yellow-100 text-xl" />
               </div>
@@ -347,7 +378,12 @@ export default function Home() {
             </div>
 
             {/* Feature 6 */}
-            <div className="feature-box p-6">
+            <div
+              className="feature-box p-6"
+              data-aos="fade-up"
+              data-aos-duration="800"
+              data-aos-delay="200"
+            >
               <div className="w-12 h-12 bg-gray-900 rounded-sm flex items-center justify-center mb-4">
                 <FaLock className="text-yellow-100 text-xl" />
               </div>
@@ -386,6 +422,8 @@ export default function Home() {
         <div
           className="max-w-4xl mx-auto text-center newspaper-border paper-wear p-8 sm:p-12"
           style={{ backgroundColor: "#efe4d2", borderColor: "#6d6053" }}
+          data-aos="fade-up"
+          data-aos-duration="800"
         >
           <h2
             className="text-4xl font-semibold mb-6"
