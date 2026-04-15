@@ -13,7 +13,7 @@ import {
 export default function HistoryPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<
-    "all" | "completed" | "active" | "overdue"
+    "all" | "pending" | "completed" | "active" | "overdue"
   >("all");
   const [sortBy, setSortBy] = useState<"date" | "title" | "status">("date");
 
@@ -47,7 +47,7 @@ export default function HistoryPage() {
       borrowedDate: "2025-04-05",
       dueDate: "2025-04-12",
       returnDate: null,
-      status: "active",
+      status: "pending",
     },
     {
       id: 4,
@@ -122,7 +122,7 @@ export default function HistoryPage() {
       } else if (sortBy === "title") {
         return a.title.localeCompare(b.title);
       } else if (sortBy === "status") {
-        const statusOrder = { completed: 0, active: 1, overdue: 2 };
+        const statusOrder = { pending: 0, active: 1, overdue: 2, completed: 3 };
         return (
           statusOrder[a.status as keyof typeof statusOrder] -
           statusOrder[b.status as keyof typeof statusOrder]
@@ -137,6 +137,7 @@ export default function HistoryPage() {
   // Calculate stats
   const stats = {
     total: allHistory.length,
+    pending: allHistory.filter((item) => item.status === "pending").length,
     completed: allHistory.filter((item) => item.status === "completed").length,
     active: allHistory.filter((item) => item.status === "active").length,
     overdue: allHistory.filter((item) => item.status === "overdue").length,
@@ -144,6 +145,13 @@ export default function HistoryPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case "pending":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#efe4d1] text-[#5a4b3f] border border-[#9b8a75] text-xs font-semibold rounded-sm ink-text">
+            <FaClock className="w-3 h-3 text-[#7b6d5f]" />
+            Pending Approval
+          </span>
+        );
       case "completed":
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c] text-xs font-semibold rounded-sm ink-text">
@@ -232,7 +240,7 @@ export default function HistoryPage() {
           </div>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
             <div className="bg-[#f6ecdd] border border-[#786a5c] p-4 rounded text-center">
               <p className="text-2xl font-bold text-[#221910] ink-title">
                 {stats.total}
@@ -240,6 +248,12 @@ export default function HistoryPage() {
               <p className="text-xs text-[#5c4f42] mt-1 ink-text">
                 Total Transactions
               </p>
+            </div>
+            <div className="bg-[#f6ecdd] border border-[#786a5c] p-4 rounded text-center">
+              <p className="text-2xl font-bold text-[#221910] ink-title">
+                {stats.pending}
+              </p>
+              <p className="text-xs text-[#5c4f42] mt-1 ink-text">Pending</p>
             </div>
             <div className="bg-[#f6ecdd] border border-[#786a5c] p-4 rounded text-center">
               <p className="text-2xl font-bold text-[#221910] ink-title">
@@ -296,6 +310,7 @@ export default function HistoryPage() {
                   setStatusFilter(
                     e.target.value as
                       | "all"
+                      | "pending"
                       | "completed"
                       | "active"
                       | "overdue",
@@ -304,6 +319,7 @@ export default function HistoryPage() {
                 className="w-full px-4 py-2 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded focus:outline-none focus:ring-2 focus:ring-[#5a4d40] focus:border-transparent ink-text"
               >
                 <option value="all">All</option>
+                <option value="pending">Pending Approval</option>
                 <option value="completed">Completed</option>
                 <option value="active">Active</option>
                 <option value="overdue">Overdue</option>
@@ -393,6 +409,10 @@ export default function HistoryPage() {
                         {item.status === "completed" ? (
                           <span className="text-xs text-[#7b6d5f] ink-text">
                             -
+                          </span>
+                        ) : item.status === "pending" ? (
+                          <span className="text-xs text-[#7b6d5f] ink-text">
+                            Awaiting Approval
                           </span>
                         ) : (
                           <Link

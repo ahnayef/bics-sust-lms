@@ -38,6 +38,7 @@ export default function MemberProfile() {
         author: "আল্লামা জামাল আল বাদাবী",
         borrowedDate: "2025-04-05",
         dueDate: "2025-04-12",
+        status: "pending",
         isSyllabus: true,
       },
       {
@@ -47,6 +48,7 @@ export default function MemberProfile() {
         author: "সাইয়েদ আবুল আ’লা মওদূদী",
         borrowedDate: "2025-04-02",
         dueDate: "2025-04-15",
+        status: "active",
         isSyllabus: false,
       },
       {
@@ -56,6 +58,7 @@ export default function MemberProfile() {
         author: "আল্লামা ইউসুফ ইসলাহী",
         borrowedDate: "2025-03-28",
         dueDate: "2025-04-10",
+        status: "active",
         isSyllabus: true,
       },
       {
@@ -65,6 +68,7 @@ export default function MemberProfile() {
         author: "মুফতি তাকি উসমানি",
         borrowedDate: "2025-04-08",
         dueDate: "2025-04-18",
+        status: "active",
         isSyllabus: true,
       },
       {
@@ -159,6 +163,24 @@ export default function MemberProfile() {
       default:
         return null;
     }
+  };
+
+  const getBorrowRequestBadge = (status: string) => {
+    if (status === "pending") {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#efe4d1] text-[#5a4b3f] border border-[#9b8a75] text-[10px] font-semibold rounded-sm ink-text">
+          <FaClock className="w-3 h-3 text-[#7b6d5f]" />
+          Pending Approval
+        </span>
+      );
+    }
+
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c] text-[10px] font-semibold rounded-sm ink-text">
+        <FaCheckCircle className="w-3 h-3 text-[#4e4033]" />
+        Approved
+      </span>
+    );
   };
 
   return (
@@ -341,6 +363,9 @@ export default function MemberProfile() {
                         </p>
                       </div>
                       <div className="pt-3 sm:pt-4 border-t border-[#b9a992]">
+                        <div className="mb-2">
+                          {getBorrowRequestBadge(item.status || "active")}
+                        </div>
                         <p className="text-xs text-[#5c4f42] mb-1 ink-text">
                           Due
                         </p>
@@ -351,12 +376,18 @@ export default function MemberProfile() {
                           Borrowed{" "}
                           {new Date(item.borrowedDate).toLocaleDateString()}
                         </p>
-                        <Link
-                          href={`/return?copyId=${encodeURIComponent(item.copyId)}`}
-                          className="mt-3 inline-flex w-full items-center justify-center px-3 py-2 border border-[#7b6d5f] rounded-md text-xs sm:text-sm font-semibold text-[#4e4033] hover:bg-[#eadcca] transition-colors ink-text"
-                        >
-                          Return Book
-                        </Link>
+                        {item.status === "pending" ? (
+                          <p className="mt-3 text-[11px] text-[#6f6256] ink-text">
+                            Waiting for admin/moderator approval
+                          </p>
+                        ) : (
+                          <Link
+                            href={`/return?copyId=${encodeURIComponent(item.copyId)}`}
+                            className="mt-3 inline-flex w-full items-center justify-center px-3 py-2 border border-[#7b6d5f] rounded-md text-xs sm:text-sm font-semibold text-[#4e4033] hover:bg-[#eadcca] transition-colors ink-text"
+                          >
+                            Return Book
+                          </Link>
+                        )}
                       </div>
                     </div>
                   </div>

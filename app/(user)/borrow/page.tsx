@@ -200,13 +200,17 @@ export default function BorrowPage() {
               </div>
             </div>
             <h2 className="text-2xl font-bold text-[#221910] mb-2 ink-title">
-              Borrow Successful!
+              Borrow Request Submitted
             </h2>
             <div className="bg-[#f6ecdd] border border-[#786a5c] rounded-lg p-4 mb-6">
               <p className="text-[#5c4f42] mb-3 ink-text">
                 <span className="font-semibold text-[#221910] ink-title">
                   {selectedCopy?.title}
                 </span>
+              </p>
+              <p className="text-sm text-[#5c4f42] mb-3 ink-text">
+                Waiting for admin/moderator approval before this appears in your
+                active borrows.
               </p>
               <div className="space-y-2 text-sm ink-text">
                 <p className="text-[#5c4f42]">
