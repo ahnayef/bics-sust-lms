@@ -15,6 +15,7 @@ interface CopyAvailability {
   title: string;
   author: string;
   copyNumber: string;
+  pages?: number;
   status: "available" | "unavailable";
   borrowedBy?: string;
   borrowedByName?: string;
@@ -28,6 +29,7 @@ export default function BorrowPage() {
     title: string;
     author: string;
     copyNumber: string;
+    pages?: number;
   } | null>(null);
   const [returnDate, setReturnDate] = useState("");
   const [loading, setLoading] = useState(false);
@@ -50,24 +52,28 @@ export default function BorrowPage() {
       title: "ইসলামের সামাজিক বিধান",
       author: "আল্লামা জামাল আল বাদাবী",
       copyNumber: "Copy 1",
+      pages: 284,
       status: "available",
     },
     QR002: {
       title: "পর্দা ও ইসলাম",
       author: "সাইয়েদ আবুল আ’লা মওদূদী",
       copyNumber: "Copy 1",
+      pages: 156,
       status: "available",
     },
     QR003: {
       title: "আদাবে জিন্দেগী",
       author: "আল্লামা ইউসুফ ইসলাহী",
       copyNumber: "Copy 2",
+      pages: 320,
       status: "available",
     },
     QR004: {
       title: "ইসলামী ব্যাংকিং ও অর্থায়ন পদ্ধতি: সমস্যা ও সমাধান",
       author: "মুফতি তাকি উসমানি",
       copyNumber: "Copy 1",
+      pages: 448,
       status: "unavailable",
       borrowedBy: "Member-204",
       borrowedByName: "Mahmudul Hasan",
@@ -378,13 +384,21 @@ export default function BorrowPage() {
                       {selectedCopy.author}
                     </p>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 pt-2">
+                  <div className="grid grid-cols-3 gap-3 pt-2">
                     <div>
                       <p className="text-xs text-[#6f6256] uppercase tracking-wide mb-1 ink-text">
                         Copy #
                       </p>
                       <p className="font-medium text-[#221910] ink-text">
                         {selectedCopy.copyNumber}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#6f6256] uppercase tracking-wide mb-1 ink-text">
+                        Pages
+                      </p>
+                      <p className="font-medium text-[#221910] ink-text">
+                        {selectedCopy.pages || "N/A"}
                       </p>
                     </div>
                     <div>
