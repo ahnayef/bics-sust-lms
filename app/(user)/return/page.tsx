@@ -4,7 +4,7 @@ import UserNavbar from "@/app/components/UserNavbar";
 import { Scanner, useDevices } from "@yudiel/react-qr-scanner";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import {
   FaCheck,
   FaExclamationTriangle,
@@ -137,7 +137,18 @@ const ALL_COPIES: Record<string, AllCopy> = {
   },
 };
 
-export default function ReturnPage() {
+function ReturnPageFallback() {
+  return (
+    <div className="min-h-screen bg-[#e5d9c4]">
+      <UserNavbar />
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <p className="text-[#5c4f42]">Loading return page...</p>
+      </div>
+    </div>
+  );
+}
+
+function ReturnPageContent() {
   const searchParams = useSearchParams();
   const [copyId, setCopyId] = useState("");
   const [selectedCopy, setSelectedCopy] = useState<
@@ -671,5 +682,13 @@ export default function ReturnPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function ReturnPage() {
+  return (
+    <Suspense fallback={<ReturnPageFallback />}>
+      <ReturnPageContent />
+    </Suspense>
   );
 }

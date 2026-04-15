@@ -2,12 +2,7 @@
 
 import StatusBadge from "@/app/components/StatusBadge";
 import UserNavbar from "@/app/components/UserNavbar";
-import {
-  getApprovedBooksForMember,
-  getSubmissionsForMember,
-  MOCK_PDF_SUBMISSIONS,
-  type PdfReadSubmission,
-} from "@/app/data/pdf-submissions";
+import { getSubmissionsForMember } from "@/app/data/pdf-submissions";
 import Link from "next/link";
 import { useState } from "react";
 import {
@@ -31,9 +26,7 @@ export default function MemberProfile() {
   const [borrowPage, setBorrowPage] = useState(0);
 
   // PDF submissions state
-  const [pdfSubmissions] = useState<PdfReadSubmission[]>(MOCK_PDF_SUBMISSIONS);
   const memberPdfSubmissions = getSubmissionsForMember(CURRENT_MEMBER.id);
-  const approvedPdfBookIds = getApprovedBooksForMember(CURRENT_MEMBER.id);
 
   // Mock data - will be replaced with actual API calls
   const [member] = useState({

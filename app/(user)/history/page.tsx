@@ -2,7 +2,10 @@
 
 import StatusBadge from "@/app/components/StatusBadge";
 import UserNavbar from "@/app/components/UserNavbar";
-import { getSubmissionsForMember } from "@/app/data/pdf-submissions";
+import {
+  getSubmissionsForMember,
+  type PdfReadSubmission,
+} from "@/app/data/pdf-submissions";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
@@ -18,6 +21,128 @@ const CURRENT_MEMBER = {
   name: "Mahmudul Hasan",
 };
 
+type HistoryStatus = "pending" | "completed" | "active" | "overdue";
+
+type PhysicalHistoryItem = {
+  source: "physical";
+  id: number;
+  copyId: string;
+  title: string;
+  author: string;
+  borrowedDate: string;
+  dueDate: string;
+  returnDate: string | null;
+  status: HistoryStatus;
+};
+
+type PdfHistoryItem = {
+  source: "pdf";
+  id: string;
+  copyId?: undefined;
+  title: string;
+  author: string;
+  borrowedDate: string;
+  dueDate: string;
+  returnDate: string;
+  status: HistoryStatus;
+  pdfNote?: string;
+  rejectionReason?: string;
+  pdfStatus: PdfReadSubmission["status"];
+};
+
+type HistoryItem = PhysicalHistoryItem | PdfHistoryItem;
+
+const PHYSICAL_HISTORY: PhysicalHistoryItem[] = [
+  {
+    source: "physical",
+    id: 1,
+    copyId: "QR001",
+    title: "ইসলামের সামাজিক বিধান",
+    author: "আল্লামা জামাল আল বাদাবী",
+    borrowedDate: "2025-04-01",
+    dueDate: "2025-04-08",
+    returnDate: "2025-04-08",
+    status: "completed",
+  },
+  {
+    source: "physical",
+    id: 2,
+    copyId: "QR002",
+    title: "পর্দা ও ইসলাম",
+    author: "সাইয়েদ আবুল আ’লা মওদূদী",
+    borrowedDate: "2025-03-20",
+    dueDate: "2025-03-27",
+    returnDate: "2025-03-27",
+    status: "completed",
+  },
+  {
+    source: "physical",
+    id: 3,
+    copyId: "QR003",
+    title: "আদাবে জিন্দেগী",
+    author: "আল্লামা ইউসুফ ইসলাহী",
+    borrowedDate: "2025-04-05",
+    dueDate: "2025-04-12",
+    returnDate: null,
+    status: "pending",
+  },
+  {
+    source: "physical",
+    id: 4,
+    copyId: "QR004",
+    title: "ইসলামী ব্যাংকিং ও অর্থায়ন পদ্ধতি: সমস্যা ও সমাধান",
+    author: "মুফতি তাকি উসমানি",
+    borrowedDate: "2025-03-10",
+    dueDate: "2025-03-17",
+    returnDate: "2025-03-20",
+    status: "completed",
+  },
+  {
+    source: "physical",
+    id: 5,
+    copyId: "QR005",
+    title: "ইসলামী অর্থনীতি",
+    author: "সাইয়েদ আবুল আ’লা মওদূদী",
+    borrowedDate: "2025-02-28",
+    dueDate: "2025-03-07",
+    returnDate: "2025-03-10",
+    status: "completed",
+  },
+  {
+    source: "physical",
+    id: 6,
+    copyId: "QR004",
+    title: "ইসলামী অর্থ ব্যবস্থায় যাকাত",
+    author: "ড. জাবের মোহাম্মদ (ইসলামিক সেন্টার)",
+    borrowedDate: "2025-02-15",
+    dueDate: "2025-02-22",
+    returnDate: null,
+    status: "overdue",
+  },
+  {
+    source: "physical",
+    id: 7,
+    copyId: "QR002",
+    title: "খেলাফত ও রাজতন্ত্র",
+    author: "সাইয়েদ আবুল আ’লা মওদূদী",
+    borrowedDate: "2025-02-01",
+    dueDate: "2025-02-08",
+    returnDate: "2025-02-10",
+    status: "completed",
+  },
+  {
+    source: "physical",
+    id: 8,
+    copyId: "QR001",
+    title: "ইসলামী রাষ্ট্রে অমুসলিমদের অধিকার",
+    author: "সাইয়েদ আবুল আ’লা মওদূদী",
+    borrowedDate: "2025-01-20",
+    dueDate: "2025-01-27",
+    returnDate: "2025-01-30",
+    status: "completed",
+  },
+];
+
 export default function HistoryPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<
@@ -28,113 +153,31 @@ export default function HistoryPage() {
   // Get PDF submissions for current member
   const pdfSubmissions = getSubmissionsForMember(CURRENT_MEMBER.id);
 
-  // Mock data - will be replaced with actual API calls
-  const physicalHistory = [
-    {
-      id: 1,
-      copyId: "QR001",
-      title: "ইসলামের সামাজিক বিধান",
-      author: "আল্লামা জামাল আল বাদাবী",
-      borrowedDate: "2025-04-01",
-      dueDate: "2025-04-08",
-      returnDate: "2025-04-08",
-      status: "completed",
-    },
-    {
-      id: 2,
-      copyId: "QR002",
-      title: "পর্দা ও ইসলাম",
-      author: "সাইয়েদ আবুল আ’লা মওদূদী",
-      borrowedDate: "2025-03-20",
-      dueDate: "2025-03-27",
-      returnDate: "2025-03-27",
-      status: "completed",
-    },
-    {
-      id: 3,
-      copyId: "QR003",
-      title: "আদাবে জিন্দেগী",
-      author: "আল্লামা ইউসুফ ইসলাহী",
-      borrowedDate: "2025-04-05",
-      dueDate: "2025-04-12",
-      returnDate: null,
-      status: "pending",
-    },
-    {
-      id: 4,
-      copyId: "QR004",
-      title: "ইসলামী ব্যাংকিং ও অর্থায়ন পদ্ধতি: সমস্যা ও সমাধান",
-      author: "মুফতি তাকি উসমানি",
-      borrowedDate: "2025-03-10",
-      dueDate: "2025-03-17",
-      returnDate: "2025-03-20",
-      status: "completed",
-    },
-    {
-      id: 5,
-      copyId: "QR005",
-      title: "ইসলামী অর্থনীতি",
-      author: "সাইয়েদ আবুল আ’লা মওদূদী",
-      borrowedDate: "2025-02-28",
-      dueDate: "2025-03-07",
-      returnDate: "2025-03-10",
-      status: "completed",
-    },
-    {
-      id: 6,
-      copyId: "QR004",
-      title: "ইসলামী অর্থ ব্যবস্থায় যাকাত",
-      author: "ড. জাবের মোহাম্মদ (ইসলামিক সেন্টার)",
-      borrowedDate: "2025-02-15",
-      dueDate: "2025-02-22",
-      returnDate: null,
-      status: "overdue",
-    },
-    {
-      id: 7,
-      copyId: "QR002",
-      title: "খেলাফত ও রাজতন্ত্র",
-      author: "সাইয়েদ আবুল আ’লা মওদূদী",
-      borrowedDate: "2025-02-01",
-      dueDate: "2025-02-08",
-      returnDate: "2025-02-10",
-      status: "completed",
-    },
-    {
-      id: 8,
-      copyId: "QR001",
-      title: "ইসলামী রাষ্ট্রে অমুসলিমদের অধিকার",
-      author: "সাইয়েদ আবুল আ’লা মওদূদী",
-      borrowedDate: "2025-01-20",
-      dueDate: "2025-01-27",
-      returnDate: "2025-01-30",
-      status: "completed",
-    },
-  ];
-
   // Combine physical history with PDF submissions
-  const allHistory = [
-    ...physicalHistory,
-    ...pdfSubmissions.map((pdf) => ({
-      id: `pdf-${pdf.id}`,
-      copyId: undefined,
-      title: pdf.bookTitle,
-      author: "PDF Read",
-      borrowedDate: pdf.readDate,
-      dueDate: pdf.readDate,
-      returnDate: pdf.readDate,
-      status:
-        pdf.status === "approved"
-          ? "completed"
-          : pdf.status === "pending"
-            ? "pending"
-            : "overdue", // rejected = overdue for sorting purposes
-      source: "pdf" as const,
-      pdfNote: pdf.note,
-      rejectionReason: pdf.rejectionReason,
-      pdfStatus: pdf.status,
-    })),
-  ];
+  const allHistory = useMemo<HistoryItem[]>(
+    () => [
+      ...PHYSICAL_HISTORY,
+      ...pdfSubmissions.map((pdf) => ({
+        source: "pdf" as const,
+        id: `pdf-${pdf.id}`,
+        title: pdf.bookTitle,
+        author: "PDF Read",
+        borrowedDate: pdf.readDate,
+        dueDate: pdf.readDate,
+        returnDate: pdf.readDate,
+        status:
+          pdf.status === "approved"
+            ? ("completed" as const)
+            : pdf.status === "pending"
+              ? ("pending" as const)
+              : ("overdue" as const),
+        pdfNote: pdf.note,
+        rejectionReason: pdf.rejectionReason,
+        pdfStatus: pdf.status,
+      })),
+    ],
+    [pdfSubmissions],
+  );
 
   // Filter and sort logic
   const filteredHistory = useMemo(() => {
@@ -178,7 +221,7 @@ export default function HistoryPage() {
     overdue: allHistory.filter((item) => item.status === "overdue").length,
   };
 
-  const getStatusBadge = (status: string, item?: any) => {
+  const getStatusBadge = (status: HistoryStatus, item?: HistoryItem) => {
     // Handle PDF status badges
     if (item?.source === "pdf") {
       if (item.pdfStatus === "approved") {
@@ -450,7 +493,7 @@ export default function HistoryPage() {
                         </div>
                       </td>
                       <td className="py-3 px-6">
-                        {(item as any).source === "pdf" ? (
+                        {item.source === "pdf" ? (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#efe4d1] text-[#5a4b3f] border border-[#9b8a75] text-[10px] font-semibold rounded-sm ink-text">
                             <FaFileAlt className="w-3 h-3" />
                             PDF
@@ -484,17 +527,22 @@ export default function HistoryPage() {
                           <span className="text-xs text-[#7b6d5f] ink-text">
                             Awaiting Approval
                           </span>
-                        ) : (item as any).pdfStatus === "rejected" ? (
+                        ) : item.source === "pdf" &&
+                          item.pdfStatus === "rejected" ? (
                           <span className="text-xs text-[#7b6d5f] ink-text">
                             -
                           </span>
-                        ) : (
+                        ) : item.source === "physical" ? (
                           <Link
                             href={`/return?copyId=${encodeURIComponent(item.copyId)}`}
                             className="inline-flex items-center justify-center px-3 py-1.5 border border-[#7b6d5f] rounded-md text-xs font-semibold text-[#4e4033] hover:bg-[#eadcca] transition-colors ink-text"
                           >
                             Return
                           </Link>
+                        ) : (
+                          <span className="text-xs text-[#7b6d5f] ink-text">
+                            -
+                          </span>
                         )}
                       </td>
                     </tr>

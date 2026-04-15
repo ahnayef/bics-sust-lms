@@ -304,16 +304,6 @@ export default function UsersManagement() {
     setSelectedUser(null);
   };
 
-  const getRankTone = (rank: User["rank"]): "info" | "warning" | "accent" => {
-    if (rank === "Activist") {
-      return "info";
-    }
-    if (rank === "Associate") {
-      return "warning";
-    }
-    return "accent";
-  };
-
   const getProgressPercent = (user: User) => {
     if (user.syllabusTotal === 0) {
       return 0;
