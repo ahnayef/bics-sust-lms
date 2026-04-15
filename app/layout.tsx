@@ -1,3 +1,4 @@
+import { AOSInit } from "@/lib/AOSInit";
 import type { Metadata } from "next";
 import { Noto_Sans_Bengali } from "next/font/google";
 import GrainOverlay from "./components/GrainOverlay";
@@ -25,6 +26,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <GrainOverlay />
+        <AOSInit />
         {children}
       </body>
     </html>
