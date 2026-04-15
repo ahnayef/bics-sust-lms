@@ -4,8 +4,7 @@ import UserNavbar from "@/app/components/UserNavbar";
 import { LIBRARY_COPIES_BY_ID } from "@/app/data/library";
 import { Scanner, useDevices } from "@yudiel/react-qr-scanner";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   FaCheck,
   FaExclamationTriangle,
@@ -24,33 +23,95 @@ interface CopyAvailability {
   expectedAvailableDate?: string;
 }
 
+interface ReadBookRecord {
+  title: string;
+  author: string;
+  completedOn: string;
+}
+
+const USER_READ_BOOKS: ReadBookRecord[] = [
+  {
+    title: "পর্দা ও ইসলাম",
+    author: "সাইয়েদ আবুল আ’লা মওদূদী",
+    completedOn: "2026-03-18",
+  },
+  {
+    title: "আদাবে জিন্দেগী",
+    author: "আল্লামা ইউসুফ ইসলাহী",
+    completedOn: "2026-02-27",
+  },
+];
+
 export default function BorrowPage() {
-  const [copyId, setCopyId] = useState("");
+  const availableCopies: Record<string, CopyAvailability> =
+    LIBRARY_COPIES_BY_ID;
+
+  const initialCopyId =
+    typeof window !== "undefined"
+      ? (new URLSearchParams(window.location.search)
+          .get("copyId")
+          ?.trim()
+          .toUpperCase() ?? "")
+      : "";
+
+  const initialCopy = initialCopyId
+    ? availableCopies[initialCopyId]
+    : undefined;
+  const initialSelectedCopy =
+    initialCopy && initialCopy.status === "available"
+      ? { id: initialCopyId, ...initialCopy }
+      : null;
+  const initialUnavailableCopy =
+    initialCopy && initialCopy.status === "unavailable"
+      ? { id: initialCopyId, ...initialCopy }
+      : null;
+  const initialReadRecord = initialSelectedCopy
+    ? USER_READ_BOOKS.find(
+        (record) =>
+          record.title.toLowerCase() ===
+            initialSelectedCopy.title.toLowerCase() &&
+          record.author.toLowerCase() ===
+            initialSelectedCopy.author.toLowerCase(),
+      ) || null
+    : null;
+  const initialReturnDate = initialSelectedCopy
+    ? (() => {
+        const date = new Date();
+        date.setDate(date.getDate() + 7);
+        return date.toISOString().split("T")[0];
+      })()
+    : "";
+
+  const [copyId, setCopyId] = useState(initialCopyId);
   const [selectedCopy, setSelectedCopy] = useState<{
     id: string;
     title: string;
     author: string;
     copyNumber: string;
     pages?: number;
-  } | null>(null);
-  const [returnDate, setReturnDate] = useState("");
+  } | null>(initialSelectedCopy);
+  const [returnDate, setReturnDate] = useState(initialReturnDate);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(
+    initialUnavailableCopy
+      ? "This copy is currently unavailable and cannot be borrowed."
+      : "",
+  );
   const [success, setSuccess] = useState(false);
-  const [inputMode, setInputMode] = useState<"qr" | "manual">("qr");
+  const [inputMode, setInputMode] = useState<"qr" | "manual">(
+    initialCopyId ? "manual" : "qr",
+  );
   const [deviceId, setDeviceId] = useState<string | undefined>(undefined);
   const [scanPaused, setScanPaused] = useState(false);
   const [scannerInitialized, setScannerInitialized] = useState(true);
   const [cameraPermissionDenied, setCameraPermissionDenied] = useState(false);
   const [unavailableCopy, setUnavailableCopy] = useState<
     ({ id: string } & CopyAvailability) | null
-  >(null);
-
-  const searchParams = useSearchParams();
+  >(initialUnavailableCopy);
+  const [alreadyReadBook, setAlreadyReadBook] = useState<ReadBookRecord | null>(
+    initialReadRecord,
+  );
   const devices = useDevices();
-
-  const availableCopies: Record<string, CopyAvailability> =
-    LIBRARY_COPIES_BY_ID;
 
   const processCopyId = (value: string) => {
     const upperValue = value.toUpperCase();
@@ -58,6 +119,7 @@ export default function BorrowPage() {
     setError("");
     setSelectedCopy(null);
     setUnavailableCopy(null);
+    setAlreadyReadBook(null);
     setReturnDate(""); // Reset return date when changing book
 
     if (upperValue.length === 5) {
@@ -72,6 +134,14 @@ export default function BorrowPage() {
         }
 
         setSelectedCopy({ id: upperValue, ...copy });
+        const existingReadRecord = USER_READ_BOOKS.find(
+          (record) =>
+            record.title.toLowerCase() === copy.title.toLowerCase() &&
+            record.author.toLowerCase() === copy.author.toLowerCase(),
+        );
+        if (existingReadRecord) {
+          setAlreadyReadBook(existingReadRecord);
+        }
         // Set default return date to 7 days from now
         const defaultReturn = new Date();
         defaultReturn.setDate(defaultReturn.getDate() + 7);
@@ -94,14 +164,6 @@ export default function BorrowPage() {
   const handleCopyIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     processCopyId(e.target.value);
   };
-
-  useEffect(() => {
-    const initialCopyId = searchParams.get("copyId");
-    if (initialCopyId) {
-      setInputMode("manual");
-      processCopyId(initialCopyId);
-    }
-  }, [searchParams]);
 
   //eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleScan = (detectedCodes: any[]) => {
@@ -392,6 +454,26 @@ export default function BorrowPage() {
                   </div>
                 </div>
               </div>
+
+              {alreadyReadBook && (
+                <div className="borrow-surface tron-border rounded-lg p-4 border-2 border-[#b49d6f] border-l-4 border-l-[#8a7348] bg-[#f4ecd8]">
+                  <div className="flex items-start gap-3">
+                    <FaExclamationTriangle className="w-5 h-5 text-[#7a6338] mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-[#6b5428] ink-text mb-1">
+                        You already completed this book before
+                      </p>
+                      <p className="text-xs text-[#6b5428] ink-text">
+                        Last completed on{" "}
+                        {new Date(
+                          alreadyReadBook.completedOn,
+                        ).toLocaleDateString()}
+                        . You can still borrow another copy if needed.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Return Date Input */}
               <div className="borrow-surface tron-border rounded-lg p-6">
