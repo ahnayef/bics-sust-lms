@@ -1,6 +1,12 @@
 "use client";
 
 import UserNavbar from "@/app/components/UserNavbar";
+import {
+  getApprovedBooksForMember,
+  getSubmissionsForMember,
+  MOCK_PDF_SUBMISSIONS,
+  type PdfReadSubmission,
+} from "@/app/data/pdf-submissions";
 import Link from "next/link";
 import { useState } from "react";
 import {
@@ -14,9 +20,19 @@ import {
   FaQrcode,
 } from "react-icons/fa";
 
+const CURRENT_MEMBER = {
+  id: "Member-204",
+  name: "Mahmudul Hasan",
+};
+
 export default function MemberProfile() {
   // Pagination state
   const [borrowPage, setBorrowPage] = useState(0);
+
+  // PDF submissions state
+  const [pdfSubmissions] = useState<PdfReadSubmission[]>(MOCK_PDF_SUBMISSIONS);
+  const memberPdfSubmissions = getSubmissionsForMember(CURRENT_MEMBER.id);
+  const approvedPdfBookIds = getApprovedBooksForMember(CURRENT_MEMBER.id);
 
   // Mock data - will be replaced with actual API calls
   const [member] = useState({
@@ -122,9 +138,23 @@ export default function MemberProfile() {
     ],
   });
 
-  const remaining = stats.syllabusBooks - stats.completedSyllabus;
+  // Calculate completion including both physical borrows and approved PDFs
+  const physicallyCompletedBooks = new Set(
+    stats.history.filter((h) => h.status === "completed").map((h) => h.title),
+  );
+  const pdfCompletedBooks = new Set(
+    memberPdfSubmissions
+      .filter((s) => s.status === "approved")
+      .map((s) => s.bookTitle),
+  );
+  const totalCompletedBooks = new Set([
+    ...Array.from(physicallyCompletedBooks),
+    ...Array.from(pdfCompletedBooks),
+  ]).size;
+
+  const remaining = stats.syllabusBooks - totalCompletedBooks;
   const completionPercentage = Math.round(
-    (stats.completedSyllabus / stats.syllabusBooks) * 100,
+    (totalCompletedBooks / stats.syllabusBooks) * 100,
   );
 
   // Pagination logic
@@ -278,8 +308,7 @@ export default function MemberProfile() {
           <div className="mb-6 sm:mb-8">
             <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between mb-3 gap-2">
               <span className="text-xs sm:text-sm font-medium text-[#4e4033] ink-text">
-                {stats.completedSyllabus} of {stats.syllabusBooks} syllabus
-                books
+                {totalCompletedBooks} of {stats.syllabusBooks} syllabus books
               </span>
               <span className="text-xl sm:text-2xl font-bold text-[#221910] ink-title">
                 {completionPercentage}%
@@ -299,7 +328,7 @@ export default function MemberProfile() {
             <div className="bg-[#f6ecdd] border border-[#786a5c] p-3 sm:p-4 rounded-lg text-center">
               <FaCheckCircle className="w-4 sm:w-5 h-4 sm:h-5 text-[#4e4033] mx-auto mb-2" />
               <p className="text-lg sm:text-2xl font-bold text-[#221910] ink-title">
-                {stats.completedSyllabus}
+                {totalCompletedBooks}
               </p>
               <p className="text-xs text-[#5c4f42] mt-1 ink-text">Completed</p>
             </div>

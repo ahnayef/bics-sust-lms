@@ -1,14 +1,21 @@
 "use client";
 
 import UserNavbar from "@/app/components/UserNavbar";
+import { getSubmissionsForMember } from "@/app/data/pdf-submissions";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   FaCheckCircle,
   FaClock,
   FaExclamationTriangle,
+  FaFileAlt,
   FaSearch,
 } from "react-icons/fa";
+
+const CURRENT_MEMBER = {
+  id: "Member-204",
+  name: "Mahmudul Hasan",
+};
 
 export default function HistoryPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -17,8 +24,11 @@ export default function HistoryPage() {
   >("all");
   const [sortBy, setSortBy] = useState<"date" | "title" | "status">("date");
 
+  // Get PDF submissions for current member
+  const pdfSubmissions = getSubmissionsForMember(CURRENT_MEMBER.id);
+
   // Mock data - will be replaced with actual API calls
-  const [allHistory] = useState([
+  const physicalHistory = [
     {
       id: 1,
       copyId: "QR001",
@@ -99,7 +109,31 @@ export default function HistoryPage() {
       returnDate: "2025-01-30",
       status: "completed",
     },
-  ]);
+  ];
+
+  // Combine physical history with PDF submissions
+  const allHistory = [
+    ...physicalHistory,
+    ...pdfSubmissions.map((pdf) => ({
+      id: `pdf-${pdf.id}`,
+      copyId: undefined,
+      title: pdf.bookTitle,
+      author: "PDF Read",
+      borrowedDate: pdf.readDate,
+      dueDate: pdf.readDate,
+      returnDate: pdf.readDate,
+      status:
+        pdf.status === "approved"
+          ? "completed"
+          : pdf.status === "pending"
+            ? "pending"
+            : "overdue", // rejected = overdue for sorting purposes
+      source: "pdf" as const,
+      pdfNote: pdf.note,
+      rejectionReason: pdf.rejectionReason,
+      pdfStatus: pdf.status,
+    })),
+  ];
 
   // Filter and sort logic
   const filteredHistory = useMemo(() => {
@@ -143,7 +177,34 @@ export default function HistoryPage() {
     overdue: allHistory.filter((item) => item.status === "overdue").length,
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, item?: any) => {
+    // Handle PDF status badges
+    if (item?.source === "pdf") {
+      if (item.pdfStatus === "approved") {
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c] text-xs font-semibold rounded-sm ink-text">
+            <FaCheckCircle className="w-3 h-3 text-[#4e4033]" />
+            Approved
+          </span>
+        );
+      } else if (item.pdfStatus === "pending") {
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#efe4d1] text-[#5a4b3f] border border-[#9b8a75] text-xs font-semibold rounded-sm ink-text">
+            <FaClock className="w-3 h-3 text-[#7b6d5f]" />
+            Pending Review
+          </span>
+        );
+      } else if (item.pdfStatus === "rejected") {
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f6e3df] border border-[#b0665c] text-[#7d2d23] text-xs font-semibold rounded-sm ink-text">
+            <FaExclamationTriangle className="w-3 h-3" />
+            Rejected
+          </span>
+        );
+      }
+    }
+
+    // Handle physical borrow status badges
     switch (status) {
       case "pending":
         return (
@@ -357,6 +418,9 @@ export default function HistoryPage() {
                       Book
                     </th>
                     <th className="text-left py-3 px-6 font-semibold text-[#4e4033] ink-text">
+                      Source
+                    </th>
+                    <th className="text-left py-3 px-6 font-semibold text-[#4e4033] ink-text">
                       Borrowed
                     </th>
                     <th className="text-left py-3 px-6 font-semibold text-[#4e4033] ink-text">
@@ -391,6 +455,18 @@ export default function HistoryPage() {
                           </p>
                         </div>
                       </td>
+                      <td className="py-3 px-6">
+                        {(item as any).source === "pdf" ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#efe4d1] text-[#5a4b3f] border border-[#9b8a75] text-[10px] font-semibold rounded-sm ink-text">
+                            <FaFileAlt className="w-3 h-3" />
+                            PDF
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c] text-[10px] font-semibold rounded-sm ink-text">
+                            Physical Copy
+                          </span>
+                        )}
+                      </td>
                       <td className="py-3 px-6 text-[#5c4f42] text-xs ink-text">
                         {new Date(item.borrowedDate).toLocaleDateString()}
                       </td>
@@ -403,7 +479,7 @@ export default function HistoryPage() {
                           : "-"}
                       </td>
                       <td className="py-3 px-6">
-                        {getStatusBadge(item.status)}
+                        {getStatusBadge(item.status, item)}
                       </td>
                       <td className="py-3 px-6">
                         {item.status === "completed" ? (
@@ -413,6 +489,10 @@ export default function HistoryPage() {
                         ) : item.status === "pending" ? (
                           <span className="text-xs text-[#7b6d5f] ink-text">
                             Awaiting Approval
+                          </span>
+                        ) : (item as any).pdfStatus === "rejected" ? (
+                          <span className="text-xs text-[#7b6d5f] ink-text">
+                            -
                           </span>
                         ) : (
                           <Link

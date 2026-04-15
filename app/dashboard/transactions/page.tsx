@@ -1,9 +1,14 @@
 "use client";
 
+import {
+  getPendingSubmissions,
+  updateSubmissionStatus,
+  type PdfReadSubmission,
+} from "@/app/data/pdf-submissions";
 import { useMemo, useState } from "react";
-import { FaCheck, FaClock, FaSearch, FaTimes } from "react-icons/fa";
+import { FaCheck, FaClock, FaFileAlt, FaSearch, FaTimes } from "react-icons/fa";
 
-type TabKey = "pending" | "active" | "history";
+type TabKey = "pending" | "active" | "history" | "pdf-reports";
 type SortKey = "date" | "member";
 type StatusFilter = "all" | "active" | "overdue";
 type TxType = "borrow" | "return";
@@ -155,6 +160,15 @@ export default function TransactionsManagement() {
   const [sortBy, setSortBy] = useState<SortKey>("date");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
+  // PDF Reports state
+  const [pdfReports, setPdfReports] = useState<PdfReadSubmission[]>(
+    getPendingSubmissions(),
+  );
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [selectedForReject, setSelectedForReject] =
+    useState<PdfReadSubmission | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+
   const pendingBorrows = useMemo(
     () =>
       TRANSACTIONS.filter(
@@ -227,6 +241,25 @@ export default function TransactionsManagement() {
     if (tab !== "active") {
       setStatusFilter("all");
     }
+  };
+
+  const handlePdfApprove = (pdfId: string) => {
+    updateSubmissionStatus(pdfId, "approved", "Admin");
+    setPdfReports((prev) => prev.filter((p) => p.id !== pdfId));
+  };
+
+  const handlePdfReject = () => {
+    if (!selectedForReject || !rejectionReason.trim()) return;
+    updateSubmissionStatus(
+      selectedForReject.id,
+      "rejected",
+      "Admin",
+      rejectionReason,
+    );
+    setPdfReports((prev) => prev.filter((p) => p.id !== selectedForReject.id));
+    setShowRejectModal(false);
+    setSelectedForReject(null);
+    setRejectionReason("");
   };
 
   const PendingCard = ({ tx }: { tx: Transaction }) => (
@@ -313,10 +346,10 @@ export default function TransactionsManagement() {
       </section>
 
       <section className="dashboard-surface tron-border rounded-sm border border-[#5f4f40] overflow-hidden">
-        <div className="grid grid-cols-1 sm:grid-cols-3 bg-[#eadcc8] border-b border-[#7c6d5d]">
+        <div className="flex flex-col bg-[#eadcc8] border-b border-[#7c6d5d]">
           <button
             onClick={() => clearFiltersForTab("pending")}
-            className={`px-4 py-3 text-left text-sm transition-colors ink-text border-b sm:border-b-0 border-[#cfbba1] sm:border-r sm:border-[#cfbba1] ${
+            className={`px-4 py-3 text-left text-sm transition-colors ink-text border-b border-[#cfbba1] ${
               activeTab === "pending"
                 ? "bg-[#f0e3cf] text-[#221910] font-semibold"
                 : "text-[#5a4b3f] hover:text-[#2f251d]"
@@ -326,7 +359,7 @@ export default function TransactionsManagement() {
           </button>
           <button
             onClick={() => clearFiltersForTab("active")}
-            className={`px-4 py-3 text-left text-sm transition-colors ink-text border-b sm:border-b-0 border-[#cfbba1] sm:border-r sm:border-[#cfbba1] ${
+            className={`px-4 py-3 text-left text-sm transition-colors ink-text border-b border-[#cfbba1] ${
               activeTab === "active"
                 ? "bg-[#f0e3cf] text-[#221910] font-semibold"
                 : "text-[#5a4b3f] hover:text-[#2f251d]"
@@ -336,13 +369,24 @@ export default function TransactionsManagement() {
           </button>
           <button
             onClick={() => clearFiltersForTab("history")}
-            className={`px-4 py-3 text-left text-sm transition-colors ink-text ${
+            className={`px-4 py-3 text-left text-sm transition-colors ink-text border-b border-[#cfbba1] ${
               activeTab === "history"
                 ? "bg-[#f0e3cf] text-[#221910] font-semibold"
                 : "text-[#5a4b3f] hover:text-[#2f251d]"
             }`}
           >
             History ({summary.completed})
+          </button>
+          <button
+            onClick={() => clearFiltersForTab("pdf-reports")}
+            className={`px-4 py-3 text-left text-sm transition-colors ink-text flex items-center gap-2 ${
+              activeTab === "pdf-reports"
+                ? "bg-[#f0e3cf] text-[#221910] font-semibold"
+                : "text-[#5a4b3f] hover:text-[#2f251d]"
+            }`}
+          >
+            <FaFileAlt className="w-4 h-4" />
+            PDF Reports ({pdfReports.length})
           </button>
         </div>
 
@@ -391,7 +435,7 @@ export default function TransactionsManagement() {
                 )}
               </section>
             </div>
-          ) : (
+          ) : activeTab === "active" ? (
             <div className="space-y-4">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                 <div className="relative lg:col-span-2">
@@ -435,120 +479,228 @@ export default function TransactionsManagement() {
                 </div>
               </div>
 
-              {activeTab === "active" ? (
-                <div className="space-y-2">
-                  {activeTransactions.length === 0 ? (
-                    <div className="border border-[#cfbba1] rounded-sm p-8 text-center text-[#6a5a4c] ink-text">
-                      No active records match current filters.
-                    </div>
-                  ) : (
-                    activeTransactions.map((tx) => (
-                      <article
-                        key={tx.id}
-                        className="border border-[#b9a58b] rounded-sm bg-[#f6ecdd] p-4 ink-text"
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                          <div>
-                            <p className="font-semibold text-[#2b2119]">
-                              {tx.member}
-                            </p>
-                            <p className="text-sm text-[#5a4b3f]">
-                              {tx.book}{" "}
-                              <span className="font-mono">({tx.bookId})</span>
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-sm bg-[#efe4d1] text-[#3f3328] border border-[#8f7f6c]">
-                              <FaClock className="w-3 h-3" />
-                              {tx.status === "overdue" ? "Overdue" : "Active"}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="mt-2 text-xs text-[#5a4b3f] grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <p>Requested: {formatDate(tx.requestDate)}</p>
-                          <p
-                            className={
-                              tx.dueDate && isOverdueDate(tx.dueDate)
-                                ? "font-semibold text-[#2b2119]"
-                                : ""
-                            }
-                          >
-                            Due: {tx.dueDate ? formatDate(tx.dueDate) : "-"}
+              <div className="space-y-2">
+                {activeTransactions.length === 0 ? (
+                  <div className="border border-[#cfbba1] rounded-sm p-8 text-center text-[#6a5a4c] ink-text">
+                    No active records match current filters.
+                  </div>
+                ) : (
+                  activeTransactions.map((tx) => (
+                    <article
+                      key={tx.id}
+                      className="border border-[#b9a58b] rounded-sm bg-[#f6ecdd] p-4 ink-text"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div>
+                          <p className="font-semibold text-[#2b2119]">
+                            {tx.member}
+                          </p>
+                          <p className="text-sm text-[#5a4b3f]">
+                            {tx.book}{" "}
+                            <span className="font-mono">({tx.bookId})</span>
                           </p>
                         </div>
-                      </article>
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-sm bg-[#efe4d1] text-[#3f3328] border border-[#8f7f6c]">
+                            <FaClock className="w-3 h-3" />
+                            {tx.status === "overdue" ? "Overdue" : "Active"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="mt-2 text-xs text-[#5a4b3f] grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <p>Requested: {formatDate(tx.requestDate)}</p>
+                        <p
+                          className={
+                            tx.dueDate && isOverdueDate(tx.dueDate)
+                              ? "font-semibold text-[#2b2119]"
+                              : ""
+                          }
+                        >
+                          Due: {tx.dueDate ? formatDate(tx.dueDate) : "-"}
+                        </p>
+                      </div>
+                    </article>
+                  ))
+                )}
+              </div>
+            </div>
+          ) : activeTab === "history" ? (
+            <div className="overflow-x-auto border border-[#b9a58b] rounded-sm">
+              <table className="w-full text-sm ink-text min-w-160">
+                <thead>
+                  <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
+                    <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
+                      Member
+                    </th>
+                    <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
+                      Book
+                    </th>
+                    <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
+                      ID
+                    </th>
+                    <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
+                      Type
+                    </th>
+                    <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
+                      Date
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historyTransactions.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={5}
+                        className="px-4 sm:px-6 py-8 text-center text-[#6a5a4c]"
+                      >
+                        No completed transactions match current filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    historyTransactions.map((tx) => (
+                      <tr
+                        key={tx.id}
+                        className="border-b border-[#d2bfa5] hover:bg-[#f4ebdc] transition-colors"
+                      >
+                        <td className="px-4 sm:px-6 py-3 font-medium text-[#2b2119]">
+                          {tx.member}
+                        </td>
+                        <td className="px-4 sm:px-6 py-3 text-[#5a4b3f]">
+                          {tx.book}
+                        </td>
+                        <td className="px-4 sm:px-6 py-3">
+                          <span className="font-mono text-xs bg-[#efe4d1] text-[#3f3328] border border-[#8f7f6c] px-2 py-1 rounded-sm">
+                            {tx.bookId}
+                          </span>
+                        </td>
+                        <td className="px-4 sm:px-6 py-3">
+                          <span className="inline-block px-2 py-1 text-xs font-semibold rounded-sm bg-[#f0e3cf] text-[#47392d] border border-[#9a8975]">
+                            {tx.type === "borrow" ? "Borrow" : "Return"}
+                          </span>
+                        </td>
+                        <td className="px-4 sm:px-6 py-3 text-[#5a4b3f] whitespace-nowrap">
+                          {formatDate(tx.requestDate)}
+                        </td>
+                      </tr>
                     ))
                   )}
+                </tbody>
+              </table>
+            </div>
+          ) : activeTab === "pdf-reports" ? (
+            <div className="space-y-4">
+              {pdfReports.length === 0 ? (
+                <div className="p-8 text-center border border-[#b9a58b] rounded-sm text-[#6a5a4c] ink-text">
+                  <FaFileAlt className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>No pending PDF submissions to review.</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto border border-[#b9a58b] rounded-sm">
-                  <table className="w-full text-sm ink-text min-w-160">
-                    <thead>
-                      <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
-                        <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
-                          Member
-                        </th>
-                        <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
-                          Book
-                        </th>
-                        <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
-                          ID
-                        </th>
-                        <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
-                          Type
-                        </th>
-                        <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
-                          Date
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {historyTransactions.length === 0 ? (
-                        <tr>
-                          <td
-                            colSpan={5}
-                            className="px-4 sm:px-6 py-8 text-center text-[#6a5a4c]"
-                          >
-                            No completed transactions match current filters.
-                          </td>
-                        </tr>
-                      ) : (
-                        historyTransactions.map((tx) => (
-                          <tr
-                            key={tx.id}
-                            className="border-b border-[#d2bfa5] hover:bg-[#f4ebdc] transition-colors"
-                          >
-                            <td className="px-4 sm:px-6 py-3 font-medium text-[#2b2119]">
-                              {tx.member}
-                            </td>
-                            <td className="px-4 sm:px-6 py-3 text-[#5a4b3f]">
-                              {tx.book}
-                            </td>
-                            <td className="px-4 sm:px-6 py-3">
-                              <span className="font-mono text-xs bg-[#efe4d1] text-[#3f3328] border border-[#8f7f6c] px-2 py-1 rounded-sm">
-                                {tx.bookId}
-                              </span>
-                            </td>
-                            <td className="px-4 sm:px-6 py-3">
-                              <span className="inline-block px-2 py-1 text-xs font-semibold rounded-sm bg-[#f0e3cf] text-[#47392d] border border-[#9a8975]">
-                                {tx.type === "borrow" ? "Borrow" : "Return"}
-                              </span>
-                            </td>
-                            <td className="px-4 sm:px-6 py-3 text-[#5a4b3f] whitespace-nowrap">
-                              {formatDate(tx.requestDate)}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                <div className="space-y-3">
+                  {pdfReports.map((pdf) => (
+                    <article
+                      key={pdf.id}
+                      className="border border-[#b9a58b] rounded-sm bg-[#f6ecdd] p-4 ink-text"
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <div className="flex-1">
+                          <p className="text-xs text-[#5a4b3f] mb-1">
+                            Member: {pdf.memberName} ({pdf.memberId})
+                          </p>
+                          <p className="font-semibold text-[#2b2119]">
+                            {pdf.bookTitle}
+                          </p>
+                          <p className="text-xs text-[#5a4b3f] mt-1">
+                            Date: {new Date(pdf.readDate).toLocaleDateString()}
+                          </p>
+                          {pdf.note && (
+                            <p className="text-xs text-[#6a5a4c] mt-2 italic">
+                              Note: &ldquo;{pdf.note}&rdquo;
+                            </p>
+                          )}
+                        </div>
+                        <span className="inline-block px-2.5 py-1 text-xs font-semibold rounded-sm bg-[#efe4d1] text-[#5a4b3f] border border-[#9b8a75] shrink-0">
+                          Pending
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 pt-3 border-t border-[#c5b5a1]">
+                        <button
+                          onClick={() => handlePdfApprove(pdf.id)}
+                          className="px-3 py-2 bg-[#4a7c59] text-[#f6ecdd] border border-[#3d6447] rounded-sm hover:bg-[#3d6447] transition-colors text-xs font-semibold flex items-center justify-center gap-1.5 ink-text"
+                        >
+                          <FaCheck className="w-3.5 h-3.5" />
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedForReject(pdf);
+                            setShowRejectModal(true);
+                          }}
+                          className="px-3 py-2 bg-[#8b5c4a] text-[#f6ecdd] border border-[#6b4437] rounded-sm hover:bg-[#6b4437] transition-colors text-xs font-semibold flex items-center justify-center gap-1.5 ink-text"
+                        >
+                          <FaTimes className="w-3.5 h-3.5" />
+                          Reject
+                        </button>
+                      </div>
+                    </article>
+                  ))}
                 </div>
               )}
             </div>
-          )}
+          ) : null}
         </div>
       </section>
+
+      {/* Rejection Reason Modal */}
+      {showRejectModal && selectedForReject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-[#f1e7d8] border border-[#5f4d42] rounded-lg w-full max-w-md p-6 shadow-xl">
+            <h2 className="text-lg font-bold text-[#221910] mb-4 ink-title">
+              Reject PDF Submission
+            </h2>
+
+            <div className="mb-4 p-3 bg-[#f8f2e5] border border-[#c9b8a5] rounded">
+              <p className="text-xs text-[#5a4b3f] mb-1 ink-text">Book</p>
+              <p className="font-semibold text-[#221910] ink-title">
+                {selectedForReject.bookTitle}
+              </p>
+            </div>
+
+            <label className="block text-sm font-semibold text-[#4e4033] mb-2 ink-text">
+              Rejection Reason *
+            </label>
+            <textarea
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Explain why this submission is being rejected..."
+              rows={3}
+              className="w-full px-3 py-2 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-sm focus:ring-2 focus:ring-[#5a4d40] focus:border-transparent outline-none ink-text text-sm mb-4"
+            />
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowRejectModal(false);
+                  setSelectedForReject(null);
+                  setRejectionReason("");
+                }}
+                className="flex-1 px-3 py-2 border border-[#7b6d5f] text-[#4e4033] rounded-sm hover:bg-[#eadcca] transition-colors font-medium text-sm ink-text"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePdfReject}
+                disabled={!rejectionReason.trim()}
+                className="flex-1 px-3 py-2 bg-[#8b5c4a] text-[#f6ecdd] rounded-sm hover:bg-[#6b4437] disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm ink-text"
+              >
+                Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

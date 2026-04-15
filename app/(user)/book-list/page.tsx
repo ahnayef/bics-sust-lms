@@ -6,6 +6,12 @@ import {
   type LibraryBook,
   type LibraryCopy,
 } from "@/app/data/library";
+import {
+  addNewSubmission,
+  hasExistingSubmissionForBook,
+  MOCK_PDF_SUBMISSIONS,
+  type PdfReadSubmission,
+} from "@/app/data/pdf-submissions";
 import Link from "next/link";
 import { Fragment, useMemo, useState } from "react";
 import {
@@ -13,9 +19,11 @@ import {
   FaBookOpen,
   FaCheckCircle,
   FaClock,
+  FaFileAlt,
   FaFilter,
   FaSearch,
   FaSortAmountDown,
+  FaTimes,
 } from "react-icons/fa";
 
 type SortKey =
@@ -52,6 +60,76 @@ export default function BookListPage() {
     useState<AvailabilityFilter>("all");
   const [sortBy, setSortBy] = useState<SortKey>("title");
   const [expandedBookId, setExpandedBookId] = useState<number | null>(null);
+
+  // PDF submission modal state
+  const [showPdfModal, setShowPdfModal] = useState(false);
+  const [selectedBookForPDF, setSelectedBookForPDF] =
+    useState<LibraryBook | null>(null);
+  const [pdfReadDate, setPdfReadDate] = useState("");
+  const [pdfNote, setPdfNote] = useState("");
+  const [pdfSubmitError, setPdfSubmitError] = useState("");
+  const [pdfSubmitSuccess, setPdfSubmitSuccess] = useState(false);
+  const [pdfSubmissions, setPdfSubmissions] =
+    useState<PdfReadSubmission[]>(MOCK_PDF_SUBMISSIONS);
+
+  const openPdfModal = (book: LibraryBook) => {
+    setSelectedBookForPDF(book);
+    setPdfReadDate("");
+    setPdfNote("");
+    setPdfSubmitError("");
+    setPdfSubmitSuccess(false);
+    setShowPdfModal(true);
+  };
+
+  const closePdfModal = () => {
+    setShowPdfModal(false);
+    setSelectedBookForPDF(null);
+  };
+
+  const handlePdfSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPdfSubmitError("");
+
+    if (!selectedBookForPDF) {
+      setPdfSubmitError("No book selected");
+      return;
+    }
+
+    if (!pdfReadDate.trim()) {
+      setPdfSubmitError("Please select a read date");
+      return;
+    }
+
+    // Check for duplicate pending/approved submission
+    if (
+      hasExistingSubmissionForBook(CURRENT_MEMBER.id, selectedBookForPDF.id, [
+        "rejected",
+      ])
+    ) {
+      setPdfSubmitError(
+        "You already have a pending or approved submission for this book",
+      );
+      return;
+    }
+
+    // Create new submission
+    const newSubmission = addNewSubmission(
+      CURRENT_MEMBER.id,
+      CURRENT_MEMBER.name,
+      selectedBookForPDF.id,
+      selectedBookForPDF.title,
+      pdfReadDate,
+      pdfNote,
+    );
+
+    setPdfSubmissions([...pdfSubmissions, newSubmission]);
+    setPdfSubmitSuccess(true);
+
+    // Auto-close after success
+    setTimeout(() => {
+      closePdfModal();
+    }, 1500);
+  };
 
   const hasActiveFilters =
     searchTerm.trim() !== "" ||
@@ -434,27 +512,37 @@ export default function BookListPage() {
                                               "Unknown"}
                                         </td>
                                         <td className="py-1.5 pr-2">
-                                          {copy.status === "available" ? (
-                                            <Link
-                                              href={`/borrow?copyId=${encodeURIComponent(copy.id)}`}
-                                              className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-sm border border-[#4f4134] bg-[#3f3328] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors font-medium text-[10px] sm:text-xs whitespace-nowrap"
+                                          <div className="flex gap-1 flex-wrap">
+                                            {copy.status === "available" ? (
+                                              <Link
+                                                href={`/borrow?copyId=${encodeURIComponent(copy.id)}`}
+                                                className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-sm border border-[#4f4134] bg-[#3f3328] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors font-medium text-[10px] sm:text-xs whitespace-nowrap"
+                                              >
+                                                Borrow
+                                              </Link>
+                                            ) : isBorrowedByCurrentMember(
+                                                copy,
+                                              ) ? (
+                                              <Link
+                                                href={`/return?copyId=${encodeURIComponent(copy.id)}`}
+                                                className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-sm border border-[#4f4134] bg-[#5a4d40] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors font-medium text-[10px] sm:text-xs whitespace-nowrap"
+                                              >
+                                                Return
+                                              </Link>
+                                            ) : (
+                                              <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-sm border border-[#9b8a75] bg-[#e3d2bf] text-[#6f6256] font-medium text-[10px] sm:text-xs whitespace-nowrap">
+                                                Borrowed
+                                              </span>
+                                            )}
+                                            <button
+                                              type="button"
+                                              onClick={() => openPdfModal(book)}
+                                              className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-sm border border-[#6b5d4f] bg-[#5a4d40] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors font-medium text-[10px] sm:text-xs whitespace-nowrap"
                                             >
-                                              Borrow
-                                            </Link>
-                                          ) : isBorrowedByCurrentMember(
-                                              copy,
-                                            ) ? (
-                                            <Link
-                                              href={`/return?copyId=${encodeURIComponent(copy.id)}`}
-                                              className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-sm border border-[#4f4134] bg-[#5a4d40] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors font-medium text-[10px] sm:text-xs whitespace-nowrap"
-                                            >
-                                              Return
-                                            </Link>
-                                          ) : (
-                                            <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-sm border border-[#9b8a75] bg-[#e3d2bf] text-[#6f6256] font-medium text-[10px] sm:text-xs whitespace-nowrap">
-                                              Borrowed
-                                            </span>
-                                          )}
+                                              <FaFileAlt className="w-3 h-3" />
+                                              Mark as Read (PDF)
+                                            </button>
+                                          </div>
                                         </td>
                                       </tr>
                                     ))}
@@ -473,6 +561,100 @@ export default function BookListPage() {
           )}
         </section>
       </div>
+
+      {/* PDF Submission Modal */}
+      {showPdfModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="book-list-surface tron-border rounded-lg w-full max-w-md bg-[#f1e7d8] border border-[#5f4d42] p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-[#221910] ink-title">
+                Mark as Read (PDF)
+              </h2>
+              <button
+                onClick={closePdfModal}
+                className="p-1 text-[#6f6256] hover:text-[#3f352d] transition-colors"
+              >
+                <FaTimes className="w-5 h-5" />
+              </button>
+            </div>
+
+            {pdfSubmitSuccess ? (
+              <div className="text-center py-6">
+                <div className="flex justify-center mb-3">
+                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#e8f1e7] border border-[#8faa8f]">
+                    <FaCheckCircle className="w-6 h-6 text-[#4e4033]" />
+                  </div>
+                </div>
+                <p className="text-[#221910] font-semibold mb-1 ink-title">
+                  Submitted!
+                </p>
+                <p className="text-sm text-[#5c4f42] ink-text">
+                  Your PDF read submission is pending moderator approval.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handlePdfSubmit} className="space-y-4">
+                <div>
+                  <p className="text-sm font-semibold text-[#4e4033] mb-2 ink-text">
+                    Book
+                  </p>
+                  <p className="text-sm text-[#221910] ink-title font-semibold">
+                    {selectedBookForPDF?.title}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-[#4e4033] mb-2 ink-text">
+                    Read Date *
+                  </label>
+                  <input
+                    type="date"
+                    value={pdfReadDate}
+                    onChange={(e) => setPdfReadDate(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-sm focus:ring-2 focus:ring-[#5a4d40] focus:border-transparent outline-none ink-text"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-[#4e4033] mb-2 ink-text">
+                    Note (optional)
+                  </label>
+                  <textarea
+                    value={pdfNote}
+                    onChange={(e) => setPdfNote(e.target.value)}
+                    placeholder="e.g., Read full copy, partial reading, etc."
+                    rows={3}
+                    className="w-full px-3 py-2 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-sm focus:ring-2 focus:ring-[#5a4d40] focus:border-transparent outline-none ink-text text-sm"
+                  />
+                </div>
+
+                {pdfSubmitError && (
+                  <div className="p-3 bg-[#f6e3df] border border-[#b0665c] text-[#7d2d23] text-sm rounded-sm ink-text">
+                    {pdfSubmitError}
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={closePdfModal}
+                    className="flex-1 px-3 py-2 border border-[#7b6d5f] text-[#4e4033] rounded-sm hover:bg-[#eadcca] transition-colors font-medium text-sm ink-text"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-3 py-2 bg-[#5a4d40] text-[#f6ede1] rounded-sm hover:bg-[#4c4035] transition-colors font-medium text-sm ink-text"
+                  >
+                    Submit
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
