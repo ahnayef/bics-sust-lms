@@ -291,7 +291,11 @@ export default function BookListPage() {
       <UserNavbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
-        <section className="book-list-surface tron-border rounded-lg p-3 sm:p-4">
+        <section
+          className="book-list-surface tron-border rounded-lg p-3 sm:p-4"
+          data-aos="fade-up"
+          data-aos-duration="800"
+        >
           <div className="flex flex-col gap-1.5">
             <div className="inline-flex w-fit items-center gap-2 px-2.5 py-0.5 rounded-full border border-[#8a7966] bg-[#f6ecdd] text-[#4e4033] ink-text text-[9px] uppercase tracking-[0.12em]">
               <FaBook className="w-3 h-3" />
@@ -309,7 +313,11 @@ export default function BookListPage() {
           </div>
         </section>
 
-        <section className="book-list-surface tron-border rounded-lg p-3 sm:p-4">
+        <section
+          className="book-list-surface tron-border rounded-lg p-3 sm:p-4"
+          data-aos="fade-up"
+          data-aos-duration="800"
+        >
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-6 gap-2.5">
             <div className="relative xl:col-span-2">
               <FaSearch className="absolute left-3 top-3 text-[#7a6a5a]" />
@@ -376,7 +384,11 @@ export default function BookListPage() {
           </div>
         </section>
 
-        <section className="book-list-surface tron-border rounded-lg overflow-hidden border border-[#5f4f40]">
+        <section
+          className="book-list-surface tron-border rounded-lg overflow-hidden border border-[#5f4f40]"
+          data-aos="fade-up"
+          data-aos-duration="800"
+        >
           {filteredBooks.length === 0 ? (
             <div className="p-10 text-center">
               <p className="text-[#5c4f42] ink-text">
@@ -588,7 +600,11 @@ export default function BookListPage() {
       {/* PDF Submission Modal */}
       {showPdfModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="book-list-surface tron-border rounded-lg w-full max-w-md bg-[#f1e7d8] border border-[#5f4d42] p-6 shadow-xl">
+          <div
+            className="book-list-surface tron-border rounded-lg w-full max-w-md bg-[#f1e7d8] border border-[#5f4d42] p-6 shadow-xl"
+            data-aos="zoom-in"
+            data-aos-duration="200"
+          >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-[#221910] ink-title">
                 Mark as Read (PDF)
