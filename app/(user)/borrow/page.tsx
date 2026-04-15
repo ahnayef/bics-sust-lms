@@ -274,7 +274,7 @@ export default function BorrowPage() {
         <div className="flex-1 flex items-center justify-center px-4 py-8">
           <div
             className="borrow-surface tron-border rounded-lg p-8 text-center max-w-sm w-full"
-            data-aos="zoom-in"
+            data-aos="fade-down"
             data-aos-duration="200"
           >
             <div className="flex justify-center mb-6">
@@ -536,12 +536,16 @@ export default function BorrowPage() {
           {!selectedCopy && (
             <div
               className="borrow-surface tron-border rounded-lg p-6"
-              data-aos="fade-up"
+              data-aos="fade-down"
               data-aos-duration="800"
             >
               {inputMode === "qr" ? (
                 <div className="space-y-4">
-                  <div className="space-y-3 mb-4">
+                  <div
+                    className="space-y-3 mb-4"
+                    data-aos="fade-down"
+                    data-aos-duration="600"
+                  >
                     <label className="block">
                       <p className="text-sm font-medium text-[#4e4033] mb-2 ink-text">
                         Select Camera
@@ -574,7 +578,11 @@ export default function BorrowPage() {
                         : "Start QR Scanner"}
                     </button>
                   ) : null}
-                  <div className="relative max-w-md mx-auto">
+                  <div
+                    className="relative max-w-md mx-auto"
+                    data-aos="fade-down"
+                    data-aos-duration="600"
+                  >
                     <div className="relative bg-[#1f1812] rounded-sm shadow-lg aspect-square overflow-clip">
                       <Scanner
                         formats={["qr_code"]}
@@ -636,7 +644,11 @@ export default function BorrowPage() {
                     <div className="absolute -bottom-1 -right-1 w-1.5 h-6 bg-[#3d3024] pointer-events-none"></div>
                   </div>
 
-                  <p className="text-xs text-[#5c4f42] text-center ink-text">
+                  <p
+                    className="text-xs text-[#5c4f42] text-center ink-text"
+                    data-aos="fade-down"
+                    data-aos-duration="600"
+                  >
                     Position QR code within the frame
                   </p>
 
@@ -645,6 +657,8 @@ export default function BorrowPage() {
                       type="button"
                       onClick={() => setScanPaused(false)}
                       className="w-full px-4 py-2 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] transition-colors ink-text"
+                      data-aos="fade-down"
+                      data-aos-duration="600"
                     >
                       Resume Scanning
                     </button>
@@ -654,6 +668,8 @@ export default function BorrowPage() {
                       type="button"
                       onClick={() => setScannerInitialized(false)}
                       className="w-full px-4 py-2 bg-[#7b6d5f] text-[#f6ede1] rounded-lg font-medium hover:bg-[#6a5d50] transition-colors ink-text"
+                      data-aos="fade-down"
+                      data-aos-duration="600"
                     >
                       Stop Scanner
                     </button>
@@ -661,7 +677,11 @@ export default function BorrowPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <label className="block">
+                  <label
+                    className="block"
+                    data-aos="fade-down"
+                    data-aos-duration="600"
+                  >
                     <p className="text-sm font-medium text-[#4e4033] mb-2 ink-text">
                       Copy ID
                     </p>
@@ -675,7 +695,11 @@ export default function BorrowPage() {
                       autoFocus
                     />
                   </label>
-                  <p className="text-xs text-[#6f6256] ink-text">
+                  <p
+                    className="text-xs text-[#6f6256] ink-text"
+                    data-aos="fade-down"
+                    data-aos-duration="600"
+                  >
                     Use a copy ID from the book list or scan a QR code.
                   </p>
                 </div>
