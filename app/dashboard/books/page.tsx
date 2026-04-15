@@ -379,7 +379,7 @@ export default function BookManagement() {
                     <StatusBadge tone="muted">{book.copiesCount}</StatusBadge>
                   </td>
                   <td className="px-4 sm:px-6 py-3">
-                    <StatusBadge tone={book.isSyllabus ? "accent" : "info"}>
+                    <StatusBadge tone="neutral">
                       {book.isSyllabus ? "Syllabus" : "Additional"}
                     </StatusBadge>
                   </td>

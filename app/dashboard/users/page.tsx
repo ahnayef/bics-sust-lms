@@ -477,9 +477,9 @@ export default function UsersManagement() {
                       {user.email}
                     </td>
                     <td className="px-4 sm:px-6 py-3">
-                      <StatusBadge tone={getRankTone(user.rank)}>
+                      <span className="inline-block px-3 py-1 text-xs font-semibold rounded-sm border border-[#b9a58b] bg-[#f6ecdd] text-[#4f4134] ink-text">
                         {user.rank}
-                      </StatusBadge>
+                      </span>
                     </td>
                     <td className="px-4 sm:px-6 py-3 min-w-56">
                       <div className="space-y-1.5">
