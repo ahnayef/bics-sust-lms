@@ -272,7 +272,11 @@ export default function BorrowPage() {
         `}</style>
         <UserNavbar />
         <div className="flex-1 flex items-center justify-center px-4 py-8">
-          <div className="borrow-surface tron-border rounded-lg p-8 text-center max-w-sm w-full">
+          <div
+            className="borrow-surface tron-border rounded-lg p-8 text-center max-w-sm w-full"
+            data-aos="zoom-in"
+            data-aos-duration="200"
+          >
             <div className="flex justify-center mb-6">
               <div className="flex items-center justify-center w-16 h-16 rounded-full bg-[#e8f1e7] border border-[#8faa8f]">
                 <FaCheck className="w-8 h-8 text-[#4e4033]" />
@@ -373,7 +377,11 @@ export default function BorrowPage() {
       {/* Main Content */}
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Mode Selector */}
-        <div className="flex gap-2 mb-6 borrow-surface tron-border rounded-lg p-1">
+        <div
+          className="flex gap-2 mb-6 borrow-surface tron-border rounded-lg p-1"
+          data-aos="fade-up"
+          data-aos-duration="800"
+        >
           <button
             onClick={() => setInputMode("qr")}
             className={`flex-1 px-4 py-2 rounded font-medium transition-colors ${
@@ -401,7 +409,11 @@ export default function BorrowPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* When book is selected, show it prominently at top */}
           {selectedCopy && (
-            <div className="space-y-4">
+            <div
+              className="space-y-4"
+              data-aos="fade-up"
+              data-aos-duration="800"
+            >
               <div className="borrow-surface tron-border rounded-lg p-6 border-2 border-[#8faa8f] border-l-4 border-l-[#5e7b60] shadow-lg">
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 mb-4">
@@ -522,7 +534,11 @@ export default function BorrowPage() {
 
           {/* Scanner - only show when no book selected */}
           {!selectedCopy && (
-            <div className="borrow-surface tron-border rounded-lg p-6">
+            <div
+              className="borrow-surface tron-border rounded-lg p-6"
+              data-aos="fade-up"
+              data-aos-duration="800"
+            >
               {inputMode === "qr" ? (
                 <div className="space-y-4">
                   <div className="space-y-3 mb-4">
