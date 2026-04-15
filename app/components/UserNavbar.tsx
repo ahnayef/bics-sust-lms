@@ -15,7 +15,7 @@ import {
 } from "react-icons/fa";
 
 const getLinkClassName = (isActive: boolean) =>
-  `text-xs sm:text-sm font-medium transition-colors px-2 sm:px-3 py-2 rounded-md ink-text ${
+  `flex items-center text-xs sm:text-sm font-medium transition-colors px-2 sm:px-3 py-2 rounded-md ink-text ${
     isActive
       ? "bg-[#d9c7ad] text-[#201710] border border-[#8b775f]"
       : "text-[#4e4033] hover:text-[#201710] hover:bg-[#e9dcc9] border border-transparent"
@@ -82,7 +82,7 @@ export default function UserNavbar() {
                   href={link.href}
                   className={getLinkClassName(link.isActive)}
                 >
-                  <span className="inline-flex items-center gap-1.5">
+                  <span className="inline-flex items-center justify-center gap-1.5">
                     <Icon className="w-3 h-3" />
                     {link.label}
                   </span>
@@ -149,7 +149,7 @@ export default function UserNavbar() {
                     key={link.href}
                     href={link.href}
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium ink-text border transition-colors ${
+                    className={`flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium ink-text border transition-colors ${
                       link.isActive
                         ? "bg-[#d9c7ad] text-[#201710] border-[#8b775f]"
                         : "text-[#4e4033] hover:text-[#201710] hover:bg-[#e9dcc9] border-transparent"
