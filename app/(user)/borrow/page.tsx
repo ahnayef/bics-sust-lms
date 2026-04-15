@@ -4,7 +4,22 @@ import UserNavbar from "@/app/components/UserNavbar";
 import { Scanner, useDevices } from "@yudiel/react-qr-scanner";
 import Link from "next/link";
 import { useState } from "react";
-import { FaCheck, FaKeyboard, FaQrcode } from "react-icons/fa";
+import {
+  FaCheck,
+  FaExclamationTriangle,
+  FaKeyboard,
+  FaQrcode,
+} from "react-icons/fa";
+
+interface CopyAvailability {
+  title: string;
+  author: string;
+  copyNumber: string;
+  status: "available" | "unavailable";
+  borrowedBy?: string;
+  borrowedByName?: string;
+  expectedAvailableDate?: string;
+}
 
 export default function BorrowPage() {
   const [copyId, setCopyId] = useState("");
@@ -23,33 +38,40 @@ export default function BorrowPage() {
   const [scanPaused, setScanPaused] = useState(false);
   const [scannerInitialized, setScannerInitialized] = useState(true);
   const [cameraPermissionDenied, setCameraPermissionDenied] = useState(false);
+  const [unavailableCopy, setUnavailableCopy] = useState<
+    ({ id: string } & CopyAvailability) | null
+  >(null);
 
   const devices = useDevices();
 
   // Mock available copies
-  const availableCopies: Record<
-    string,
-    { title: string; author: string; copyNumber: string }
-  > = {
+  const availableCopies: Record<string, CopyAvailability> = {
     QR001: {
       title: "ইসলামের সামাজিক বিধান",
       author: "আল্লামা জামাল আল বাদাবী",
       copyNumber: "Copy 1",
+      status: "available",
     },
     QR002: {
       title: "পর্দা ও ইসলাম",
       author: "সাইয়েদ আবুল আ’লা মওদূদী",
       copyNumber: "Copy 1",
+      status: "available",
     },
     QR003: {
       title: "আদাবে জিন্দেগী",
       author: "আল্লামা ইউসুফ ইসলাহী",
       copyNumber: "Copy 2",
+      status: "available",
     },
     QR004: {
       title: "ইসলামী ব্যাংকিং ও অর্থায়ন পদ্ধতি: সমস্যা ও সমাধান",
       author: "মুফতি তাকি উসমানি",
       copyNumber: "Copy 1",
+      status: "unavailable",
+      borrowedBy: "Member-204",
+      borrowedByName: "Mahmudul Hasan",
+      expectedAvailableDate: "2026-04-20",
     },
   };
 
@@ -58,11 +80,20 @@ export default function BorrowPage() {
     setCopyId(upperValue);
     setError("");
     setSelectedCopy(null);
+    setUnavailableCopy(null);
     setReturnDate(""); // Reset return date when changing book
 
     if (upperValue.length === 5) {
       const copy = availableCopies[upperValue];
       if (copy) {
+        if (copy.status === "unavailable") {
+          setUnavailableCopy({ id: upperValue, ...copy });
+          setError(
+            "This copy is currently unavailable and cannot be borrowed.",
+          );
+          return false;
+        }
+
         setSelectedCopy({ id: upperValue, ...copy });
         // Set default return date to 7 days from now
         const defaultReturn = new Date();
@@ -557,6 +588,45 @@ export default function BorrowPage() {
                   </p>
                 </div>
               )}
+            </div>
+          )}
+
+          {unavailableCopy && (
+            <div className="borrow-surface tron-border rounded-lg p-5 border-2 border-[#b0665c] border-l-4 border-l-[#8d4f45] bg-[#f8e7e3]">
+              <div className="flex items-start gap-3">
+                <FaExclamationTriangle className="w-5 h-5 text-[#8d4f45] mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-[#7d2d23] ink-text mb-1">
+                    This copy is currently unavailable
+                  </p>
+                  <p className="text-sm text-[#5b3a33] ink-text font-semibold">
+                    {unavailableCopy.title}
+                  </p>
+                  <p className="text-xs text-[#6c4d44] ink-text mt-1">
+                    {unavailableCopy.copyNumber} ({unavailableCopy.id})
+                  </p>
+                  {(unavailableCopy.borrowedByName ||
+                    unavailableCopy.borrowedBy) && (
+                    <p className="text-xs text-[#6c4d44] ink-text mt-1">
+                      Borrowed by:{" "}
+                      {unavailableCopy.borrowedByName ||
+                        unavailableCopy.borrowedBy}
+                      {unavailableCopy.borrowedBy &&
+                      unavailableCopy.borrowedByName
+                        ? ` (${unavailableCopy.borrowedBy})`
+                        : ""}
+                    </p>
+                  )}
+                  {unavailableCopy.expectedAvailableDate && (
+                    <p className="text-xs text-[#6c4d44] ink-text mt-1">
+                      Expected available:{" "}
+                      {new Date(
+                        unavailableCopy.expectedAvailableDate,
+                      ).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
