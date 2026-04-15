@@ -261,7 +261,11 @@ export default function BookManagement() {
 
   return (
     <div className="space-y-6">
-      <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
+      <section
+        className="dashboard-surface tron-border rounded-sm p-5 sm:p-6"
+        data-aos="fade-up"
+        data-aos-duration="800"
+      >
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
@@ -310,7 +314,11 @@ export default function BookManagement() {
         </div>
       </section>
 
-      <section className="dashboard-surface tron-border rounded-sm p-4 sm:p-5 border border-[#5f4f40]">
+      <section
+        className="dashboard-surface tron-border rounded-sm p-4 sm:p-5 border border-[#5f4f40]"
+        data-aos="fade-up"
+        data-aos-duration="800"
+      >
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           <div className="relative lg:col-span-2">
             <FaSearch className="absolute left-3 top-3 text-[#7a6a5a]" />
@@ -335,7 +343,11 @@ export default function BookManagement() {
         </div>
       </section>
 
-      <section className="dashboard-surface tron-border rounded-sm overflow-hidden border border-[#5f4f40]">
+      <section
+        className="dashboard-surface tron-border rounded-sm overflow-hidden border border-[#5f4f40]"
+        data-aos="fade-up"
+        data-aos-duration="800"
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-sm ink-text min-w-160">
             <thead>
@@ -428,7 +440,11 @@ export default function BookManagement() {
 
       {showAddModal && (
         <div className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-4 z-80">
-          <div className="dashboard-surface tron-border rounded-sm max-w-md w-full p-6">
+          <div
+            className="dashboard-surface tron-border rounded-sm max-w-md w-full p-6"
+            data-aos="zoom-in"
+            data-aos-duration="200"
+          >
             <div className="flex items-start justify-between gap-3 mb-4">
               <h2 className="text-xl font-bold text-[#221910] ink-title">
                 {editingId ? "Edit Book" : "Add New Book"}
