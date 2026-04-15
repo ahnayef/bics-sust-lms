@@ -309,7 +309,11 @@ export default function TransactionsManagement() {
 
   return (
     <div className="space-y-6">
-      <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
+      <section
+        className="dashboard-surface tron-border rounded-sm p-5 sm:p-6"
+        data-aos="fade-up"
+        data-aos-duration="800"
+      >
         <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
           Transactions Command Desk
         </h1>
@@ -354,7 +358,11 @@ export default function TransactionsManagement() {
         </div>
       </section>
 
-      <section className="dashboard-surface tron-border rounded-sm border border-[#5f4f40] overflow-hidden">
+      <section
+        className="dashboard-surface tron-border rounded-sm border border-[#5f4f40] overflow-hidden"
+        data-aos="fade-up"
+        data-aos-duration="800"
+      >
         <div className="flex flex-col bg-[#eadcc8] border-b border-[#7c6d5d]">
           <button
             onClick={() => clearFiltersForTab("pending")}
