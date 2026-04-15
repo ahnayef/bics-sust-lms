@@ -15,6 +15,7 @@ export interface LibraryBook {
   author: string;
   isSyllabus: boolean;
   pages: number;
+  pdfLink?: string;
   copies: LibraryCopy[];
 }
 
@@ -32,6 +33,7 @@ export const LIBRARY_BOOKS: LibraryBook[] = [
     author: "আল্লামা জামাল আল বাদাবী",
     isSyllabus: true,
     pages: 284,
+    pdfLink: "https://example.com/pdfs/book-001.pdf",
     copies: [
       {
         id: "QR001",
@@ -54,6 +56,7 @@ export const LIBRARY_BOOKS: LibraryBook[] = [
     author: "সাইয়েদ আবুল আ’লা মওদূদী",
     isSyllabus: true,
     pages: 156,
+    pdfLink: "https://example.com/pdfs/book-002.pdf",
     copies: [
       {
         id: "QR002",
@@ -73,6 +76,7 @@ export const LIBRARY_BOOKS: LibraryBook[] = [
     author: "আল্লামা ইউসুফ ইসলাহী",
     isSyllabus: true,
     pages: 320,
+    pdfLink: "https://example.com/pdfs/book-003.pdf",
     copies: [
       {
         id: "QR003",
@@ -87,6 +91,7 @@ export const LIBRARY_BOOKS: LibraryBook[] = [
     author: "মুফতি তাকি উসমানি",
     isSyllabus: true,
     pages: 448,
+    pdfLink: "https://example.com/pdfs/book-004.pdf",
     copies: [
       {
         id: "QR004",
@@ -104,6 +109,7 @@ export const LIBRARY_BOOKS: LibraryBook[] = [
     author: "সাইয়েদ আবুল আ’লা মওদূদী",
     isSyllabus: true,
     pages: 256,
+    pdfLink: "https://example.com/pdfs/book-005.pdf",
     copies: [
       {
         id: "QR005",
@@ -126,6 +132,7 @@ export const LIBRARY_BOOKS: LibraryBook[] = [
     author: "ড. জাবের মোহাম্মদ (ইসলামিক সেন্টার)",
     isSyllabus: true,
     pages: 192,
+    pdfLink: "https://example.com/pdfs/book-006.pdf",
     copies: [
       {
         id: "QR006",
@@ -140,6 +147,7 @@ export const LIBRARY_BOOKS: LibraryBook[] = [
     author: "সাইয়েদ আবুল আ’লা মওদূদী",
     isSyllabus: false,
     pages: 224,
+    pdfLink: "https://example.com/pdfs/book-007.pdf",
     copies: [
       {
         id: "QR007",
@@ -157,6 +165,7 @@ export const LIBRARY_BOOKS: LibraryBook[] = [
     author: "সাইয়েদ আবুল আ’লা মওদূদী",
     isSyllabus: false,
     pages: 176,
+    pdfLink: "https://example.com/pdfs/book-008.pdf",
     copies: [
       {
         id: "QR008",
@@ -171,6 +180,7 @@ export const LIBRARY_BOOKS: LibraryBook[] = [
     author: "সাইয়েদ আবুল আ’লা মওদূদী",
     isSyllabus: false,
     pages: 128,
+    pdfLink: "https://example.com/pdfs/book-009.pdf",
     copies: [
       {
         id: "QR009",
@@ -185,6 +195,7 @@ export const LIBRARY_BOOKS: LibraryBook[] = [
     author: "ড. ইউসুফ আল-কারযাভী",
     isSyllabus: false,
     pages: 352,
+    pdfLink: "https://example.com/pdfs/book-010.pdf",
     copies: [
       {
         id: "QR010",
@@ -202,6 +213,7 @@ export const LIBRARY_BOOKS: LibraryBook[] = [
     author: "উল্লেখ নেই",
     isSyllabus: false,
     pages: 240,
+    pdfLink: "https://example.com/pdfs/book-011.pdf",
     copies: [
       {
         id: "QR011",
@@ -216,6 +228,7 @@ export const LIBRARY_BOOKS: LibraryBook[] = [
     author: "ড. আহমদ আলী",
     isSyllabus: false,
     pages: 168,
+    pdfLink: "https://example.com/pdfs/book-012.pdf",
     copies: [
       {
         id: "QR012",

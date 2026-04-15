@@ -19,6 +19,7 @@ import {
   FaBookOpen,
   FaCheckCircle,
   FaClock,
+  FaDownload,
   FaFileAlt,
   FaFilter,
   FaSearch,
@@ -406,6 +407,9 @@ export default function BookListPage() {
                     <th className="px-3 sm:px-4 py-2 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]">
                       Open
                     </th>
+                    <th className="px-3 sm:px-4 py-2 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]">
+                      PDF
+                    </th>
                   </tr>
                 </thead>
 
@@ -469,11 +473,31 @@ export default function BookListPage() {
                           <td className="px-3 sm:px-4 py-2 text-sm">
                             {availableCount}
                           </td>
+                          <td className="px-3 sm:px-4 py-2 text-sm">
+                            {book.pdfLink ? (
+                              <a
+                                href={book.pdfLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(event) => event.stopPropagation()}
+                                className="inline-flex items-center justify-center gap-1 px-2 py-1 rounded-sm border border-[#4f4134] bg-[#3f3328] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors text-[10px] font-semibold whitespace-nowrap"
+                                aria-label={`Download PDF for ${book.title}`}
+                                title="Download PDF"
+                              >
+                                <FaDownload className="w-3 h-3" />
+                                Download
+                              </a>
+                            ) : (
+                              <span className="text-[#7b6d5f] text-[10px]">
+                                -
+                              </span>
+                            )}
+                          </td>
                         </tr>
 
                         {isExpanded && (
                           <tr className="bg-[#f8f1e5] border-b border-[#d2bfa5]">
-                            <td colSpan={6} className="px-3 sm:px-4 py-2">
+                            <td colSpan={7} className="px-3 sm:px-4 py-2">
                               <div className="w-full overflow-x-auto">
                                 <table className="w-full min-w-150 text-[11px] sm:text-xs">
                                   <thead>

@@ -1,7 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FaEdit, FaPlus, FaSearch, FaTimes, FaTrash } from "react-icons/fa";
+import {
+  FaDownload,
+  FaEdit,
+  FaPlus,
+  FaSearch,
+  FaTimes,
+  FaTrash,
+} from "react-icons/fa";
 
 type BookTypeFilter = "all" | "syllabus" | "additional";
 
@@ -12,6 +19,7 @@ interface Book {
   isSyllabus: boolean;
   copiesCount: number;
   pages: number;
+  pdfLink?: string;
 }
 
 interface BookForm {
@@ -21,6 +29,7 @@ interface BookForm {
   isSyllabus: boolean;
   copiesCount: number;
   pages: number;
+  pdfLink: string;
 }
 
 const EMPTY_FORM: BookForm = {
@@ -30,6 +39,7 @@ const EMPTY_FORM: BookForm = {
   isSyllabus: true,
   copiesCount: 0,
   pages: 0,
+  pdfLink: "",
 };
 
 export default function BookManagement() {
@@ -46,6 +56,7 @@ export default function BookManagement() {
       isSyllabus: true,
       copiesCount: 3,
       pages: 284,
+      pdfLink: "https://example.com/pdfs/book-001.pdf",
     },
     {
       id: 2,
@@ -54,6 +65,7 @@ export default function BookManagement() {
       isSyllabus: true,
       copiesCount: 4,
       pages: 156,
+      pdfLink: "https://example.com/pdfs/book-002.pdf",
     },
     {
       id: 3,
@@ -62,6 +74,7 @@ export default function BookManagement() {
       isSyllabus: true,
       copiesCount: 3,
       pages: 320,
+      pdfLink: "https://example.com/pdfs/book-003.pdf",
     },
     {
       id: 4,
@@ -70,6 +83,7 @@ export default function BookManagement() {
       isSyllabus: true,
       copiesCount: 2,
       pages: 448,
+      pdfLink: "https://example.com/pdfs/book-004.pdf",
     },
     {
       id: 5,
@@ -78,6 +92,7 @@ export default function BookManagement() {
       isSyllabus: true,
       copiesCount: 2,
       pages: 256,
+      pdfLink: "https://example.com/pdfs/book-005.pdf",
     },
     {
       id: 6,
@@ -86,6 +101,7 @@ export default function BookManagement() {
       isSyllabus: true,
       copiesCount: 5,
       pages: 192,
+      pdfLink: "https://example.com/pdfs/book-006.pdf",
     },
     {
       id: 7,
@@ -94,6 +110,7 @@ export default function BookManagement() {
       isSyllabus: false,
       copiesCount: 2,
       pages: 224,
+      pdfLink: "https://example.com/pdfs/book-007.pdf",
     },
     {
       id: 8,
@@ -102,6 +119,7 @@ export default function BookManagement() {
       isSyllabus: false,
       copiesCount: 2,
       pages: 176,
+      pdfLink: "https://example.com/pdfs/book-008.pdf",
     },
     {
       id: 9,
@@ -110,6 +128,7 @@ export default function BookManagement() {
       isSyllabus: false,
       copiesCount: 3,
       pages: 128,
+      pdfLink: "https://example.com/pdfs/book-009.pdf",
     },
     {
       id: 10,
@@ -118,6 +137,7 @@ export default function BookManagement() {
       isSyllabus: false,
       copiesCount: 2,
       pages: 352,
+      pdfLink: "https://example.com/pdfs/book-010.pdf",
     },
     {
       id: 11,
@@ -126,6 +146,7 @@ export default function BookManagement() {
       isSyllabus: false,
       copiesCount: 1,
       pages: 240,
+      pdfLink: "https://example.com/pdfs/book-011.pdf",
     },
     {
       id: 12,
@@ -134,6 +155,7 @@ export default function BookManagement() {
       isSyllabus: false,
       copiesCount: 1,
       pages: 168,
+      pdfLink: "https://example.com/pdfs/book-012.pdf",
     },
   ]);
 
@@ -182,6 +204,7 @@ export default function BookManagement() {
       isSyllabus: formData.isSyllabus,
       copiesCount: 0,
       pages: formData.pages,
+      pdfLink: formData.pdfLink.trim() || undefined,
     };
 
     setBooks((prev) => [...prev, newBook]);
@@ -193,7 +216,7 @@ export default function BookManagement() {
     const book = books.find((b) => b.id === id);
     if (!book) return;
 
-    setFormData(book);
+    setFormData({ ...book, pdfLink: book.pdfLink ?? "" });
     setEditingId(id);
     setShowAddModal(true);
   };
@@ -212,6 +235,7 @@ export default function BookManagement() {
               author: formData.author.trim(),
               isSyllabus: formData.isSyllabus,
               pages: formData.pages,
+              pdfLink: formData.pdfLink.trim() || undefined,
             }
           : book,
       ),
@@ -370,6 +394,18 @@ export default function BookManagement() {
                   </td>
                   <td className="px-4 sm:px-6 py-3">
                     <div className="flex items-center gap-2">
+                      {book.pdfLink ? (
+                        <a
+                          href={book.pdfLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 text-[#4e4033] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors"
+                          aria-label={`Download PDF for ${book.title}`}
+                          title="Download PDF"
+                        >
+                          <FaDownload className="w-4 h-4" />
+                        </a>
+                      ) : null}
                       <button
                         onClick={() => handleEdit(book.id)}
                         className="p-2 text-[#5b4c3f] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors"
@@ -480,6 +516,21 @@ export default function BookManagement() {
                     })
                   }
                   min="1"
+                  className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                  PDF Link (optional)
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://example.com/book.pdf"
+                  value={formData.pdfLink}
+                  onChange={(e) =>
+                    setFormData({ ...formData, pdfLink: e.target.value })
+                  }
                   className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
                 />
               </div>
