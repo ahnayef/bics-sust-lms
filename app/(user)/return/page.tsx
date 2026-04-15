@@ -59,6 +59,84 @@ const BORROWED_COPIES: Record<string, BorrowedCopy> = {
   },
 };
 
+interface AllCopy {
+  title: string;
+  author: string;
+  copyNumber: string;
+  borrowedBy?: string;
+  borrowedByName?: string;
+  borrowedDate?: string;
+  dueDate?: string;
+}
+
+// All copies in the library system (for validation)
+const ALL_COPIES: Record<string, AllCopy> = {
+  QR001: {
+    title: "ইসলামের সামাজিক বিধান",
+    author: "আল্লামা জামাল আল বাদাবী",
+    copyNumber: "Copy 1",
+    borrowedBy: "Member-101",
+    borrowedByName: "You",
+    borrowedDate: "2026-04-05",
+    dueDate: "2026-04-12",
+  },
+  QR002: {
+    title: "পর্দা ও ইসলাম",
+    author: "সাইয়েদ আবুল আ'লা মওদূদী",
+    copyNumber: "Copy 1",
+    borrowedBy: "Member-101",
+    borrowedByName: "You",
+    borrowedDate: "2026-04-02",
+    dueDate: "2026-04-15",
+  },
+  QR003: {
+    title: "আদাবে জিন্দেগী",
+    author: "আল্লামা ইউসুফ ইসলাহী",
+    copyNumber: "Copy 2",
+    borrowedBy: "Member-101",
+    borrowedByName: "You",
+    borrowedDate: "2026-03-28",
+    dueDate: "2026-04-10",
+  },
+  QR004: {
+    title: "ইসলামী অর্থনীতি",
+    author: "সাইয়েদ আবুল আ'লা মওদূদী",
+    copyNumber: "Copy 1",
+    borrowedBy: "Member-101",
+    borrowedByName: "You",
+    borrowedDate: "2026-04-09",
+    dueDate: "2026-04-17",
+  },
+  QR005: {
+    title: "ইসলামী অর্থনীতি",
+    author: "সাইয়েদ আবুল আ'লা মওদূদী",
+    copyNumber: "Copy 2",
+    borrowedBy: "Member-101",
+    borrowedByName: "You",
+    borrowedDate: "2026-04-10",
+    dueDate: "2026-04-17",
+  },
+  QR006: {
+    title: "সুন্নাহর আইনী মর্যাদা",
+    author: "সাইয়েদ আবুল আ'লা মওদূদী",
+    copyNumber: "Copy 1",
+    borrowedBy: "Member-205",
+    borrowedByName: "Ahmed Khan",
+  },
+  QR007: {
+    title: "আল-কুরআনের সূরা সমূহের বিষয়বস্তু",
+    author: "আবুল হাসান আলী নদভী",
+    copyNumber: "Copy 1",
+    borrowedBy: "Member-302",
+    borrowedByName: "Fatima Akter",
+  },
+  QR008: {
+    title: "তাফসীরে মা'আরিফুল কোরআন",
+    author: "মুফতি মুহাম্মাদ শফী উসমানী",
+    copyNumber: "Copy 1",
+  },
+};
+
 export default function ReturnPage() {
   const searchParams = useSearchParams();
   const [copyId, setCopyId] = useState("");
@@ -120,10 +198,30 @@ export default function ReturnPage() {
     setSelectedCopy(null);
 
     if (upperValue.length === 5) {
-      const copy = BORROWED_COPIES[upperValue];
-      if (copy) {
-        setSelectedCopy({ id: upperValue, ...copy });
+      // First check if it exists in the system
+      const systemCopy = ALL_COPIES[upperValue];
+
+      if (!systemCopy) {
+        setError("Copy not found in the library system.");
+        return false;
+      }
+
+      // Then check if user has borrowed this copy
+      const userCopy = BORROWED_COPIES[upperValue];
+      if (userCopy) {
+        setSelectedCopy({ id: upperValue, ...userCopy });
         return true;
+      }
+
+      // Copy exists but user hasn't borrowed it
+      if (systemCopy.borrowedBy) {
+        setError(
+          `This copy is currently borrowed by ${systemCopy.borrowedByName} (${systemCopy.borrowedBy}). You cannot return a book you haven't borrowed.`,
+        );
+      } else {
+        setError(
+          "This copy hasn't been borrowed by anyone yet. You can only return books you've borrowed.",
+        );
       }
       return false;
     }
@@ -461,9 +559,6 @@ export default function ReturnPage() {
                       autoFocus
                     />
                   </label>
-                  <p className="text-xs text-[#6f6256] ink-text">
-                    Valid IDs: QR001, QR002, QR003, QR004
-                  </p>
                 </div>
               )}
             </div>
