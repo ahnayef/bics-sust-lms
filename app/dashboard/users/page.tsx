@@ -1,7 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FaEdit, FaPlus, FaSearch, FaTimes, FaTrash } from "react-icons/fa";
+import {
+  FaBook,
+  FaCheckCircle,
+  FaClock,
+  FaEdit,
+  FaEnvelope,
+  FaEye,
+  FaPlus,
+  FaSearch,
+  FaTimes,
+  FaTrash,
+  FaUser,
+} from "react-icons/fa";
 
 type RankFilter = "all" | "Activist" | "Associate" | "Member";
 
@@ -10,6 +22,10 @@ interface User {
   name: string;
   email: string;
   rank: "Activist" | "Associate" | "Member";
+  syllabusCompleted: number;
+  syllabusTotal: number;
+  activeBorrows: number;
+  pendingRequests: number;
 }
 
 interface UserForm {
@@ -18,17 +34,125 @@ interface UserForm {
   rank: "Activist" | "Associate" | "Member";
 }
 
+interface UserProfileExtra {
+  recentActivities: {
+    title: string;
+    date: string;
+    type: "borrow" | "return" | "progress" | "request";
+  }[];
+}
+
 const EMPTY_FORM: UserForm = {
   name: "",
   email: "",
   rank: "Member",
 };
 
+const USER_PROFILE_EXTRAS: Record<number, UserProfileExtra> = {
+  1: {
+    recentActivities: [
+      {
+        title: "Submitted borrow request for QR005",
+        date: "2026-04-13",
+        type: "request",
+      },
+      {
+        title: "Returned QR002 on time",
+        date: "2026-04-11",
+        type: "return",
+      },
+      {
+        title: "Completed syllabus book: পর্দা ও ইসলাম",
+        date: "2026-04-07",
+        type: "progress",
+      },
+    ],
+  },
+  2: {
+    recentActivities: [
+      {
+        title: "Borrowed QR003",
+        date: "2026-04-12",
+        type: "borrow",
+      },
+      {
+        title: "Completed syllabus book: আদাবে জিন্দেগী",
+        date: "2026-04-09",
+        type: "progress",
+      },
+      {
+        title: "Submitted borrow request for QR006",
+        date: "2026-04-05",
+        type: "request",
+      },
+    ],
+  },
+  3: {
+    recentActivities: [
+      {
+        title: "Submitted borrow request for QR004",
+        date: "2026-04-14",
+        type: "request",
+      },
+      {
+        title: "Borrowed QR001",
+        date: "2026-04-10",
+        type: "borrow",
+      },
+      {
+        title: "Returned QR006",
+        date: "2026-04-03",
+        type: "return",
+      },
+    ],
+  },
+  4: {
+    recentActivities: [
+      {
+        title: "Completed syllabus milestone: 70%",
+        date: "2026-04-12",
+        type: "progress",
+      },
+      {
+        title: "Borrowed QR010",
+        date: "2026-04-06",
+        type: "borrow",
+      },
+      {
+        title: "Returned QR008",
+        date: "2026-04-01",
+        type: "return",
+      },
+    ],
+  },
+  5: {
+    recentActivities: [
+      {
+        title: "Submitted 2 pending borrow requests",
+        date: "2026-04-13",
+        type: "request",
+      },
+      {
+        title: "Borrowed QR009",
+        date: "2026-04-08",
+        type: "borrow",
+      },
+      {
+        title: "Completed syllabus book: ইসলামী অর্থনীতি",
+        date: "2026-04-02",
+        type: "progress",
+      },
+    ],
+  },
+};
+
 export default function UsersManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [rankFilter, setRankFilter] = useState<RankFilter>("all");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [formData, setFormData] = useState<UserForm>(EMPTY_FORM);
 
   const [users, setUsers] = useState<User[]>([
@@ -37,30 +161,50 @@ export default function UsersManagement() {
       name: "Ahsan Habib",
       email: "ahnayef@duck.com",
       rank: "Associate",
+      syllabusCompleted: 12,
+      syllabusTotal: 80,
+      activeBorrows: 2,
+      pendingRequests: 1,
     },
     {
       id: 2,
       name: "Rakib Hasan",
       email: "rakib.hasan@duck.com",
       rank: "Activist",
+      syllabusCompleted: 24,
+      syllabusTotal: 80,
+      activeBorrows: 1,
+      pendingRequests: 0,
     },
     {
       id: 3,
       name: "Mahmudul Hasan",
       email: "mahmudul.hasan@duck.com",
       rank: "Associate",
+      syllabusCompleted: 37,
+      syllabusTotal: 80,
+      activeBorrows: 3,
+      pendingRequests: 1,
     },
     {
       id: 4,
       name: "Farhan Rahman",
       email: "farhan.rahman@duck.com",
       rank: "Member",
+      syllabusCompleted: 56,
+      syllabusTotal: 80,
+      activeBorrows: 2,
+      pendingRequests: 0,
     },
     {
       id: 5,
       name: "Tanvir Ahmed",
       email: "tanvir.ahmed@duck.com",
       rank: "Activist",
+      syllabusCompleted: 9,
+      syllabusTotal: 80,
+      activeBorrows: 1,
+      pendingRequests: 2,
     },
   ]);
 
@@ -106,6 +250,11 @@ export default function UsersManagement() {
     }
   };
 
+  const handleViewProfileClick = (user: User) => {
+    setSelectedUser(user);
+    setShowProfileModal(true);
+  };
+
   const handleSave = () => {
     if (!formData.name.trim() || !formData.email.trim()) {
       return;
@@ -130,6 +279,10 @@ export default function UsersManagement() {
         name: formData.name.trim(),
         email: formData.email.trim(),
         rank: formData.rank,
+        syllabusCompleted: 0,
+        syllabusTotal: 80,
+        activeBorrows: 0,
+        pendingRequests: 0,
       };
       setUsers((prev) => [...prev, newUser]);
     }
@@ -145,12 +298,39 @@ export default function UsersManagement() {
     setFormData(EMPTY_FORM);
   };
 
+  const closeProfileModal = () => {
+    setShowProfileModal(false);
+    setSelectedUser(null);
+  };
+
   const getRankColor = (rank: User["rank"]) => {
     if (rank === "Activist") {
       return "bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c]";
     }
     if (rank === "Associate") {
       return "bg-[#f0e3cf] text-[#47392d] border border-[#9a8975]";
+    }
+    return "bg-[#efe4d1] text-[#46382c] border border-[#8f7f6c]";
+  };
+
+  const getProgressPercent = (user: User) => {
+    if (user.syllabusTotal === 0) {
+      return 0;
+    }
+    return Math.round((user.syllabusCompleted / user.syllabusTotal) * 100);
+  };
+
+  const getActivityTypeBadge = (
+    type: UserProfileExtra["recentActivities"][number]["type"],
+  ) => {
+    if (type === "borrow") {
+      return "bg-[#efe4d1] text-[#3f3328] border border-[#8f7f6c]";
+    }
+    if (type === "return") {
+      return "bg-[#f0e3cf] text-[#47392d] border border-[#9a8975]";
+    }
+    if (type === "request") {
+      return "bg-[#f3e9d8] text-[#3f3328] border border-[#8f7f6c]";
     }
     return "bg-[#efe4d1] text-[#46382c] border border-[#8f7f6c]";
   };
@@ -255,51 +435,100 @@ export default function UsersManagement() {
                   Rank
                 </th>
                 <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
+                  Progress
+                </th>
+                <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
+                  Borrow Status
+                </th>
+                <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((user) => (
-                <tr
-                  key={user.id}
-                  className="border-b border-[#d2bfa5] hover:bg-[#f4ebdc] transition-colors"
-                >
-                  <td className="px-4 sm:px-6 py-3 font-medium text-[#2b2119]">
-                    {user.name}
-                  </td>
-                  <td className="px-4 sm:px-6 py-3 text-[#5a4b3f]">
-                    {user.email}
-                  </td>
-                  <td className="px-4 sm:px-6 py-3">
-                    <span
-                      className={`inline-block px-3 py-1 text-xs font-semibold rounded-sm ${getRankColor(
-                        user.rank,
-                      )}`}
-                    >
-                      {user.rank}
-                    </span>
-                  </td>
-                  <td className="px-4 sm:px-6 py-3">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleEditClick(user)}
-                        className="p-2 text-[#5b4c3f] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors"
-                        aria-label={`Edit ${user.name}`}
+              {filteredUsers.map((user) => {
+                const progress = getProgressPercent(user);
+
+                return (
+                  <tr
+                    key={user.id}
+                    className="border-b border-[#d2bfa5] hover:bg-[#f4ebdc] transition-colors"
+                  >
+                    <td className="px-4 sm:px-6 py-3 font-medium text-[#2b2119]">
+                      {user.name}
+                    </td>
+                    <td className="px-4 sm:px-6 py-3 text-[#5a4b3f]">
+                      {user.email}
+                    </td>
+                    <td className="px-4 sm:px-6 py-3">
+                      <span
+                        className={`inline-block px-3 py-1 text-xs font-semibold rounded-sm ${getRankColor(
+                          user.rank,
+                        )}`}
                       >
-                        <FaEdit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(user.id)}
-                        className="p-2 text-[#6a4e3d] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors"
-                        aria-label={`Delete ${user.name}`}
-                      >
-                        <FaTrash className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {user.rank}
+                      </span>
+                    </td>
+                    <td className="px-4 sm:px-6 py-3 min-w-56">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs text-[#5a4b3f]">
+                          <span>
+                            {user.syllabusCompleted}/{user.syllabusTotal}
+                          </span>
+                          <span className="font-semibold text-[#2b2119]">
+                            {progress}%
+                          </span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-[#e4d4bf] border border-[#ccb79b] overflow-hidden">
+                          <div
+                            className="h-full bg-[#5a4d40]"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 sm:px-6 py-3 text-xs text-[#5a4b3f]">
+                      <p>
+                        Active:{" "}
+                        <span className="font-semibold text-[#2b2119]">
+                          {user.activeBorrows}
+                        </span>
+                      </p>
+                      <p>
+                        Pending:{" "}
+                        <span className="font-semibold text-[#2b2119]">
+                          {user.pendingRequests}
+                        </span>
+                      </p>
+                    </td>
+                    <td className="px-4 sm:px-6 py-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleViewProfileClick(user)}
+                          className="p-2 text-[#5b4c3f] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors"
+                          aria-label={`View profile of ${user.name}`}
+                        >
+                          <FaEye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleEditClick(user)}
+                          className="p-2 text-[#5b4c3f] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors"
+                          aria-label={`Edit ${user.name}`}
+                        >
+                          <FaEdit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(user.id)}
+                          className="p-2 text-[#6a4e3d] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors"
+                          aria-label={`Delete ${user.name}`}
+                        >
+                          <FaTrash className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -392,6 +621,150 @@ export default function UsersManagement() {
                 className="flex-1 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 disabled:cursor-not-allowed transition-colors font-medium ink-text"
               >
                 {editingUserId ? "Update User" : "Add User"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showProfileModal && selectedUser && (
+        <div className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-4 z-80">
+          <div className="dashboard-surface tron-border rounded-sm max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <h2 className="text-xl font-bold text-[#221910] ink-title">
+                  User Profile
+                </h2>
+                <p className="text-sm text-[#5a4b3f] ink-text mt-1">
+                  Detailed progress and activity overview
+                </p>
+              </div>
+              <button
+                onClick={closeProfileModal}
+                className="p-2 text-[#655648] hover:bg-[#e7d8c3] rounded-sm transition-colors"
+                aria-label="Close user profile modal"
+              >
+                <FaTimes className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-5 ink-text">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
+                  <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42]">
+                    Name
+                  </p>
+                  <p className="text-base font-semibold text-[#221910] mt-1 inline-flex items-center gap-2">
+                    <FaUser className="w-3.5 h-3.5 text-[#5a4d40]" />
+                    {selectedUser.name}
+                  </p>
+                </div>
+
+                <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
+                  <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42]">
+                    Email
+                  </p>
+                  <p className="text-sm font-medium text-[#221910] mt-1 inline-flex items-center gap-2 break-all">
+                    <FaEnvelope className="w-3.5 h-3.5 text-[#5a4d40]" />
+                    {selectedUser.email}
+                  </p>
+                </div>
+
+                <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
+                  <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42]">
+                    Rank
+                  </p>
+                  <p className="text-sm font-semibold text-[#221910] mt-1">
+                    {selectedUser.rank}
+                  </p>
+                </div>
+              </div>
+
+              <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-4">
+                <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-2">
+                  Syllabus Progress
+                </p>
+                <div className="flex items-center justify-between text-sm text-[#5a4b3f] mb-2">
+                  <span>
+                    {selectedUser.syllabusCompleted}/
+                    {selectedUser.syllabusTotal}
+                  </span>
+                  <span className="font-semibold text-[#221910]">
+                    {getProgressPercent(selectedUser)}%
+                  </span>
+                </div>
+                <div className="w-full h-2.5 rounded-full bg-[#e4d4bf] border border-[#ccb79b] overflow-hidden">
+                  <div
+                    className="h-full bg-[#5a4d40]"
+                    style={{ width: `${getProgressPercent(selectedUser)}%` }}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3 mt-3 text-sm">
+                  <p className="text-[#5a4b3f]">
+                    Active borrows:{" "}
+                    <span className="font-semibold text-[#221910]">
+                      {selectedUser.activeBorrows}
+                    </span>
+                  </p>
+                  <p className="text-[#5a4b3f]">
+                    Pending requests:{" "}
+                    <span className="font-semibold text-[#221910]">
+                      {selectedUser.pendingRequests}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-4">
+                <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-2">
+                  Recent Activities
+                </p>
+                <div className="space-y-2 text-sm text-[#5a4b3f]">
+                  {(
+                    USER_PROFILE_EXTRAS[selectedUser.id]?.recentActivities || []
+                  ).map((activity) => (
+                    <div
+                      key={`${activity.type}-${activity.date}-${activity.title}`}
+                      className="border border-[#d9c6ab] rounded-sm px-3 py-2 bg-[#f8efdf]"
+                    >
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-semibold uppercase tracking-[0.08em] ${getActivityTypeBadge(
+                            activity.type,
+                          )}`}
+                        >
+                          {activity.type === "borrow" && (
+                            <FaBook className="w-3 h-3" />
+                          )}
+                          {activity.type === "return" && (
+                            <FaCheckCircle className="w-3 h-3" />
+                          )}
+                          {activity.type === "request" && (
+                            <FaClock className="w-3 h-3" />
+                          )}
+                          {activity.type === "progress" && (
+                            <FaUser className="w-3 h-3" />
+                          )}
+                          {activity.type}
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-[11px] text-[#6a5a4c]">
+                          <FaClock className="w-3 h-3" />
+                          {activity.date}
+                        </span>
+                      </div>
+                      <p>{activity.title}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={closeProfileModal}
+                className="px-4 py-2.5 border border-[#8a7966] text-[#4f4134] rounded-sm hover:bg-[#eadcc8] transition-colors font-medium ink-text"
+              >
+                Close
               </button>
             </div>
           </div>
