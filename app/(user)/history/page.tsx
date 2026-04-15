@@ -1,6 +1,7 @@
 "use client";
 
 import UserNavbar from "@/app/components/UserNavbar";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   FaCheckCircle,
@@ -20,6 +21,7 @@ export default function HistoryPage() {
   const [allHistory] = useState([
     {
       id: 1,
+      copyId: "QR001",
       title: "ইসলামের সামাজিক বিধান",
       author: "আল্লামা জামাল আল বাদাবী",
       borrowedDate: "2025-04-01",
@@ -29,6 +31,7 @@ export default function HistoryPage() {
     },
     {
       id: 2,
+      copyId: "QR002",
       title: "পর্দা ও ইসলাম",
       author: "সাইয়েদ আবুল আ’লা মওদূদী",
       borrowedDate: "2025-03-20",
@@ -38,6 +41,7 @@ export default function HistoryPage() {
     },
     {
       id: 3,
+      copyId: "QR003",
       title: "আদাবে জিন্দেগী",
       author: "আল্লামা ইউসুফ ইসলাহী",
       borrowedDate: "2025-04-05",
@@ -47,6 +51,7 @@ export default function HistoryPage() {
     },
     {
       id: 4,
+      copyId: "QR004",
       title: "ইসলামী ব্যাংকিং ও অর্থায়ন পদ্ধতি: সমস্যা ও সমাধান",
       author: "মুফতি তাকি উসমানি",
       borrowedDate: "2025-03-10",
@@ -56,6 +61,7 @@ export default function HistoryPage() {
     },
     {
       id: 5,
+      copyId: "QR005",
       title: "ইসলামী অর্থনীতি",
       author: "সাইয়েদ আবুল আ’লা মওদূদী",
       borrowedDate: "2025-02-28",
@@ -65,6 +71,7 @@ export default function HistoryPage() {
     },
     {
       id: 6,
+      copyId: "QR004",
       title: "ইসলামী অর্থ ব্যবস্থায় যাকাত",
       author: "ড. জাবের মোহাম্মদ (ইসলামিক সেন্টার)",
       borrowedDate: "2025-02-15",
@@ -74,6 +81,7 @@ export default function HistoryPage() {
     },
     {
       id: 7,
+      copyId: "QR002",
       title: "খেলাফত ও রাজতন্ত্র",
       author: "সাইয়েদ আবুল আ’লা মওদূদী",
       borrowedDate: "2025-02-01",
@@ -83,6 +91,7 @@ export default function HistoryPage() {
     },
     {
       id: 8,
+      copyId: "QR001",
       title: "ইসলামী রাষ্ট্রে অমুসলিমদের অধিকার",
       author: "সাইয়েদ আবুল আ’লা মওদূদী",
       borrowedDate: "2025-01-20",
@@ -343,6 +352,9 @@ export default function HistoryPage() {
                     <th className="text-left py-3 px-6 font-semibold text-[#4e4033] ink-text">
                       Status
                     </th>
+                    <th className="text-left py-3 px-6 font-semibold text-[#4e4033] ink-text">
+                      Action
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -376,6 +388,20 @@ export default function HistoryPage() {
                       </td>
                       <td className="py-3 px-6">
                         {getStatusBadge(item.status)}
+                      </td>
+                      <td className="py-3 px-6">
+                        {item.status === "completed" ? (
+                          <span className="text-xs text-[#7b6d5f] ink-text">
+                            -
+                          </span>
+                        ) : (
+                          <Link
+                            href={`/return?copyId=${encodeURIComponent(item.copyId)}`}
+                            className="inline-flex items-center justify-center px-3 py-1.5 border border-[#7b6d5f] rounded-md text-xs font-semibold text-[#4e4033] hover:bg-[#eadcca] transition-colors ink-text"
+                          >
+                            Return
+                          </Link>
+                        )}
                       </td>
                     </tr>
                   ))}

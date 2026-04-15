@@ -33,6 +33,7 @@ export default function MemberProfile() {
     currentBorrows: [
       {
         id: 1,
+        copyId: "QR001",
         title: "ইসলামের সামাজিক বিধান",
         author: "আল্লামা জামাল আল বাদাবী",
         borrowedDate: "2025-04-05",
@@ -41,6 +42,7 @@ export default function MemberProfile() {
       },
       {
         id: 2,
+        copyId: "QR002",
         title: "পর্দা ও ইসলাম",
         author: "সাইয়েদ আবুল আ’লা মওদূদী",
         borrowedDate: "2025-04-02",
@@ -49,6 +51,7 @@ export default function MemberProfile() {
       },
       {
         id: 3,
+        copyId: "QR003",
         title: "আদাবে জিন্দেগী",
         author: "আল্লামা ইউসুফ ইসলাহী",
         borrowedDate: "2025-03-28",
@@ -57,6 +60,7 @@ export default function MemberProfile() {
       },
       {
         id: 4,
+        copyId: "QR004",
         title: "ইসলামী ব্যাংকিং ও অর্থায়ন পদ্ধতি: সমস্যা ও সমাধান",
         author: "মুফতি তাকি উসমানি",
         borrowedDate: "2025-04-08",
@@ -65,6 +69,7 @@ export default function MemberProfile() {
       },
       {
         id: 5,
+        copyId: "QR005",
         title: "ইসলামী অর্থনীতি",
         author: "সাইয়েদ আবুল আ’লা মওদূদী",
         borrowedDate: "2025-04-10",
@@ -346,6 +351,12 @@ export default function MemberProfile() {
                           Borrowed{" "}
                           {new Date(item.borrowedDate).toLocaleDateString()}
                         </p>
+                        <Link
+                          href={`/return?copyId=${encodeURIComponent(item.copyId)}`}
+                          className="mt-3 inline-flex w-full items-center justify-center px-3 py-2 border border-[#7b6d5f] rounded-md text-xs sm:text-sm font-semibold text-[#4e4033] hover:bg-[#eadcca] transition-colors ink-text"
+                        >
+                          Return Book
+                        </Link>
                       </div>
                     </div>
                   </div>
