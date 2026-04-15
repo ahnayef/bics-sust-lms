@@ -238,7 +238,11 @@ export default function Login() {
       <div className="absolute inset-0 login-paper pointer-events-none" />
 
       <div className="w-full max-w-md relative z-10">
-        <div className="text-center mb-7 sm:mb-8">
+        <div
+          className="text-center mb-7 sm:mb-8"
+          data-aos="fade-up"
+          data-aos-duration="800"
+        >
           <Link href="/" className="inline-block">
             <span
               className="text-3xl sm:text-[2.05rem] font-bold text-[#221910]"
@@ -255,7 +259,12 @@ export default function Login() {
           </p>
         </div>
 
-        <div className="relative login-card tron-border bg-[#f1e7d8] p-6 sm:p-8 space-y-6">
+        <div
+          className="relative login-card tron-border bg-[#f1e7d8] p-6 sm:p-8 space-y-6"
+          data-aos="fade-up"
+          data-aos-duration="800"
+          data-aos-delay="100"
+        >
           <div className="border-b border-[#7b6d5f] pb-4">
             <h1
               className="text-3xl font-bold text-[#221910]"
@@ -374,7 +383,11 @@ export default function Login() {
             className="absolute inset-0 bg-[#1f170f]/42 backdrop-blur-[1px]"
           />
 
-          <div className="relative z-10 w-full max-w-md bg-[#f1e7d8] login-card tron-border p-5 sm:p-6 space-y-5">
+          <div
+            className="relative z-10 w-full max-w-md bg-[#f1e7d8] login-card tron-border p-5 sm:p-6 space-y-5"
+            data-aos="fade-up"
+            data-aos-duration="600"
+          >
             <div className="border-b border-[#7b6d5f] pb-3">
               <h2
                 className="text-2xl font-bold text-[#221910]"
