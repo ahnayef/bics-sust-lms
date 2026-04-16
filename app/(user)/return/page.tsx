@@ -433,15 +433,35 @@ function ReturnPageContent() {
         </div>
 
         <div
-          className="flex gap-2 mb-6 return-surface tron-border rounded-lg p-1"
+          className="relative flex gap-2 mb-6 return-surface tron-border rounded-lg p-1"
           data-aos="fade-up"
           data-aos-duration="800"
         >
+          <style>{`
+            .mode-selector-bg {
+              position: absolute;
+              height: calc(100% - 8px);
+              width: calc(50% - 4px);
+              background-color: #5a4d40;
+              border-radius: 6px;
+              transition: left 0.3s ease-in-out;
+              top: 4px;
+              left: 4px;
+              z-index: 0;
+              pointer-events: none;
+            }
+            .mode-selector-bg.manual {
+              left: calc(50% + 4px);
+            }
+          `}</style>
+          <div
+            className={`mode-selector-bg ${inputMode === "manual" ? "manual" : ""}`}
+          ></div>
           <button
             onClick={() => setInputMode("qr")}
-            className={`flex-1 px-3 sm:px-4 py-2 rounded font-medium transition-colors text-sm sm:text-base ${
+            className={`flex-1 px-3 sm:px-4 py-2 rounded font-medium transition-colors text-sm sm:text-base relative z-10 ${
               inputMode === "qr"
-                ? "bg-[#5a4d40] text-[#f6ede1]"
+                ? "text-[#f6ede1]"
                 : "text-[#4e4033] hover:bg-[#eadcca]"
             } ink-text`}
           >
@@ -450,9 +470,9 @@ function ReturnPageContent() {
           </button>
           <button
             onClick={() => setInputMode("manual")}
-            className={`flex-1 px-3 sm:px-4 py-2 rounded font-medium transition-colors text-sm sm:text-base ${
+            className={`flex-1 px-3 sm:px-4 py-2 rounded font-medium transition-colors text-sm sm:text-base relative z-10 ${
               inputMode === "manual"
-                ? "bg-[#5a4d40] text-[#f6ede1]"
+                ? "text-[#f6ede1]"
                 : "text-[#4e4033] hover:bg-[#eadcca]"
             } ink-text`}
           >
@@ -470,7 +490,11 @@ function ReturnPageContent() {
             >
               {inputMode === "qr" ? (
                 <div className="space-y-4">
-                  <label className="block">
+                  <label
+                    className="block"
+                    data-aos="fade-down"
+                    data-aos-duration="600"
+                  >
                     <p className="text-sm font-medium text-[#4e4033] mb-2 ink-text">
                       Select Camera
                     </p>
@@ -503,7 +527,11 @@ function ReturnPageContent() {
                     </button>
                   ) : null}
 
-                  <div className="relative max-w-md mx-auto">
+                  <div
+                    className="relative max-w-md mx-auto"
+                    data-aos="fade-down"
+                    data-aos-duration="600"
+                  >
                     <div className="relative bg-[#1f1812] rounded-sm shadow-lg aspect-square overflow-clip">
                       <Scanner
                         formats={["qr_code"]}
@@ -552,7 +580,11 @@ function ReturnPageContent() {
                     </div>
                   </div>
 
-                  <p className="text-xs text-[#5c4f42] text-center ink-text">
+                  <p
+                    className="text-xs text-[#5c4f42] text-center ink-text"
+                    data-aos="fade-down"
+                    data-aos-duration="600"
+                  >
                     Position QR code within the frame
                   </p>
 
@@ -568,7 +600,11 @@ function ReturnPageContent() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <label className="block">
+                  <div
+                    className="block"
+                    data-aos="fade-down"
+                    data-aos-duration="600"
+                  >
                     <p className="text-sm font-medium text-[#4e4033] mb-2 ink-text">
                       Copy ID
                     </p>
@@ -581,7 +617,7 @@ function ReturnPageContent() {
                       className="w-full px-4 py-3 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-lg focus:ring-2 focus:ring-[#5a4d40] focus:border-transparent outline-none text-lg font-mono tracking-widest"
                       autoFocus
                     />
-                  </label>
+                  </div>
                 </div>
               )}
             </div>

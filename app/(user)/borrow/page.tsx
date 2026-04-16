@@ -378,15 +378,35 @@ export default function BorrowPage() {
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Mode Selector */}
         <div
-          className="flex gap-2 mb-6 borrow-surface tron-border rounded-lg p-1"
+          className="relative flex gap-2 mb-6 borrow-surface tron-border rounded-lg p-1"
           data-aos="fade-up"
           data-aos-duration="800"
         >
+          <style>{`
+            .mode-selector-bg {
+              position: absolute;
+              height: calc(100% - 8px);
+              width: calc(50% - 4px);
+              background-color: #5a4d40;
+              border-radius: 6px;
+              transition: left 0.3s ease-in-out;
+              top: 4px;
+              left: 4px;
+              z-index: 0;
+              pointer-events: none;
+            }
+            .mode-selector-bg.manual {
+              left: calc(50% + 4px);
+            }
+          `}</style>
+          <div
+            className={`mode-selector-bg ${inputMode === "manual" ? "manual" : ""}`}
+          ></div>
           <button
             onClick={() => setInputMode("qr")}
-            className={`flex-1 px-4 py-2 rounded font-medium transition-colors ${
+            className={`flex-1 px-4 py-2 rounded font-medium transition-colors relative z-10 ${
               inputMode === "qr"
-                ? "bg-[#5a4d40] text-[#f6ede1]"
+                ? "text-[#f6ede1]"
                 : "text-[#4e4033] hover:bg-[#eadcca]"
             } ink-text`}
           >
@@ -395,9 +415,9 @@ export default function BorrowPage() {
           </button>
           <button
             onClick={() => setInputMode("manual")}
-            className={`flex-1 px-4 py-2 rounded font-medium transition-colors ${
+            className={`flex-1 px-4 py-2 rounded font-medium transition-colors relative z-10 ${
               inputMode === "manual"
-                ? "bg-[#5a4d40] text-[#f6ede1]"
+                ? "text-[#f6ede1]"
                 : "text-[#4e4033] hover:bg-[#eadcca]"
             } ink-text`}
           >
