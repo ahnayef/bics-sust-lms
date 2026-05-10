@@ -1,361 +1,415 @@
-"use client";
-
-import StatusBadge from "@/app/components/StatusBadge";
 import Link from "next/link";
+import { getOverviewData } from "@/server/library";
+import type {
+  Transaction,
+  PdfSubmission,
+  TopMember,
+  PopularBook,
+} from "@/types/library";
 import {
   FaArrowRight,
   FaBook,
   FaCheckCircle,
-  FaClock,
   FaExchangeAlt,
+  FaExclamationTriangle,
+  FaFileAlt,
   FaHourglassHalf,
-  FaShieldAlt,
   FaUsers,
 } from "react-icons/fa";
 
-interface MainMetricProps {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: number;
-  href: string;
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
 
-function MainMetric({ icon: Icon, label, value, href }: MainMetricProps) {
-  return (
-    <Link
-      href={href}
-      className="dashboard-surface tron-border rounded-sm p-2 sm:p-3 hover:bg-[#f4ebdc] transition-colors"
-      data-aos="fade-up"
-      data-aos-duration="600"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight">
-            {label}
-          </p>
-          <p className="text-xl sm:text-2xl font-bold text-[#221910] ink-title mt-1 leading-none">
-            {value}
-          </p>
-        </div>
-        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-[#6f5e4d]" />
-      </div>
-    </Link>
+function daysOverdue(dueDate: string | null): number {
+  if (!dueDate) return 0;
+  return Math.max(
+    0,
+    Math.floor((Date.now() - new Date(dueDate).getTime()) / 86_400_000),
   );
 }
 
-export default function DashboardOverview() {
-  const stats = {
-    totalBooks: 80,
-    totalMembers: 24,
-    totalCopies: 145,
-    activeBorrows: 38,
-    awaitingApproval: 5,
-    overdue: 3,
+function fmtDate(d: string | null | undefined): string {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? "?";
+  return (
+    (parts[0][0]?.toUpperCase() ?? "") +
+    (parts[parts.length - 1][0]?.toUpperCase() ?? "")
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared UI atoms
+// ─────────────────────────────────────────────────────────────────────────────
+
+function StatCard({
+  label,
+  value,
+  sub,
+  href,
+  urgent = false,
+}: {
+  label: string;
+  value: number | string;
+  sub?: string;
+  href?: string;
+  urgent?: boolean;
+}) {
+  const cls = urgent
+    ? "border-[#c4614a] bg-[#fdf0ec] hover:bg-[#f9e6e1]"
+    : "border-[#b9a58b] bg-[#f6ecdd] hover:bg-[#f0e6d3]";
+  const valCls = urgent ? "text-[#9b3a25]" : "text-[#221910]";
+
+  const inner = (
+    <div
+      className={`border rounded-sm p-3 sm:p-4 transition-colors h-full ${cls}`}
+    >
+      <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight">
+        {label}
+      </p>
+      <p
+        className={`text-xl sm:text-2xl font-bold ink-title mt-1 leading-none ${valCls}`}
+      >
+        {value}
+      </p>
+      {sub && <p className="text-[10px] text-[#7a6a5a] ink-text mt-1">{sub}</p>}
+    </div>
+  );
+
+  return href ? <Link href={href}>{inner}</Link> : <div>{inner}</div>;
+}
+
+function SectionHeader({
+  title,
+  href,
+  hrefLabel = "View All",
+}: {
+  title: string;
+  href?: string;
+  hrefLabel?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-[#7d6d5a]">
+      <h2 className="text-base sm:text-lg font-bold text-[#221910] ink-title">
+        {title}
+      </h2>
+      {href && (
+        <Link
+          href={href}
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-[#4f4134] hover:text-[#2f251d] ink-text transition-colors"
+        >
+          {hrefLabel} <FaArrowRight className="w-3 h-3" />
+        </Link>
+      )}
+    </div>
+  );
+}
+
+function StatusPill({ status }: { status: string }) {
+  const styles: Record<string, string> = {
+    active: "border-[#7aaa7a] bg-[#e8f0e8] text-[#2d5a2d]",
+    overdue: "border-[#d0604a] bg-[#fce8e4] text-[#8b2c1a]",
+    pending: "border-[#d4a44e] bg-[#fef3e2] text-[#7a5219]",
+    completed: "border-[#8aa06f] bg-[#e8efdf] text-[#384d24]",
+    rejected: "border-[#b09898] bg-[#f5f0f0] text-[#5a3a3a]",
   };
+  return (
+    <span
+      className={`inline-block px-2 py-0.5 text-[11px] font-semibold border rounded-sm ink-text capitalize ${styles[status] ?? "border-[#b9a58b] bg-[#f6ecdd] text-[#4f4134]"}`}
+    >
+      {status}
+    </span>
+  );
+}
 
-  const recentTransactions = [
-    {
-      id: 1,
-      member: "Ahsan Habib",
-      action: "Borrowed",
-      book: "ইসলামের সামাজিক বিধান",
-      date: "2026-04-11",
-      status: "active",
-    },
-    {
-      id: 2,
-      member: "Rakib Hasan",
-      action: "Returned",
-      book: "পর্দা ও ইসলাম",
-      date: "2026-04-10",
-      status: "pending",
-    },
-    {
-      id: 3,
-      member: "Mahmudul Hasan",
-      action: "Borrowed",
-      book: "আদাবে জিন্দেগী",
-      date: "2026-04-09",
-      status: "active",
-    },
-    {
-      id: 4,
-      member: "Farhan Rahman",
-      action: "Returned",
-      book: "ইসলামী ব্যাংকিং ও অর্থায়ন পদ্ধতি: সমস্যা ও সমাধান",
-      date: "2026-04-08",
-      status: "approved",
-    },
-  ];
+function Avatar({
+  url,
+  name,
+  size = "sm",
+}: {
+  url: string | null;
+  name: string;
+  size?: "sm" | "md";
+}) {
+  const dim = size === "md" ? "w-9 h-9 text-sm" : "w-7 h-7 text-xs";
+  return url ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={url}
+      alt={name}
+      className={`${dim} rounded-full object-cover border border-[#8a7966] shrink-0`}
+    />
+  ) : (
+    <div
+      className={`${dim} rounded-full bg-[#d9cbb7] border border-[#8a7966] flex items-center justify-center font-bold text-[#4a3e33] shrink-0 ink-title select-none`}
+    >
+      {getInitials(name)}
+    </div>
+  );
+}
 
-  const getStatusBadge = (status: string) => {
-    if (status === "active") {
-      return (
-        <StatusBadge tone="info" icon={FaClock}>
-          Active
-        </StatusBadge>
-      );
-    }
+function BarRow({
+  label,
+  value,
+  total,
+  color,
+}: {
+  label: string;
+  value: number;
+  total: number;
+  color: string;
+}) {
+  const pct = total > 0 ? (value / total) * 100 : 0;
+  return (
+    <div>
+      <div className="flex items-center justify-between text-xs ink-text text-[#5a4b3f] mb-1">
+        <span>{label}</span>
+        <span className="font-semibold text-[#221910]">
+          {value} / {total}
+        </span>
+      </div>
+      <div className="w-full h-2 bg-[#e4d4bf] rounded-full overflow-hidden border border-[#ccb79b]">
+        <div
+          className={`h-full ${color} rounded-full`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
 
-    if (status === "pending") {
-      return (
-        <StatusBadge tone="warning" icon={FaHourglassHalf}>
-          Pending
-        </StatusBadge>
-      );
-    }
+const TH = ({ children }: { children: React.ReactNode }) => (
+  <th className="px-4 sm:px-5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-[#3b3026] whitespace-nowrap">
+    {children}
+  </th>
+);
 
-    return (
-      <StatusBadge tone="success" icon={FaCheckCircle}>
-        Approved
-      </StatusBadge>
-    );
-  };
+// ─────────────────────────────────────────────────────────────────────────────
+// Page
+// ─────────────────────────────────────────────────────────────────────────────
+
+export default async function DashboardOverview() {
+  const {
+    stats,
+    overdueItems,
+    pendingBorrows,
+    pendingReturns,
+    recentActivity,
+    topMembers,
+    popularBooks,
+    pendingPdfs,
+  } = await getOverviewData();
+
+  const urgentCount =
+    stats.overdueCount +
+    stats.pendingBorrowRequests +
+    stats.pendingReturnRequests +
+    stats.pendingPdfSubmissions;
 
   return (
-    <div className="min-h-full bg-[#e5d9c4] dashboard-paper pb-8">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Courier+Prime:wght@400;700&display=swap');
+    <div className="space-y-5 sm:space-y-6">
+      {/* ── Header + Key Stats ─────────────────────────────────────────── */}
+      <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
+              Dashboard Overview
+            </h1>
+            <p className="text-sm text-[#5c4f42] mt-1 ink-text">
+              Live snapshot of library operations.
+            </p>
+          </div>
 
-        .dashboard-paper {
-          background-image:
-            linear-gradient(180deg, #eee4d3 0%, #e5d8c1 52%, #dcccb2 100%),
-            linear-gradient(92deg, rgba(88, 66, 46, 0.05), transparent 24%),
-            linear-gradient(268deg, rgba(88, 66, 46, 0.04), transparent 18%),
-            repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.008) 2px, rgba(0,0,0,.008) 4px),
-            repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,.008) 2px, rgba(0,0,0,.008) 4px),
-            url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220"><filter id="p"><feTurbulence type="fractalNoise" baseFrequency="0.78" numOctaves="4" seed="11"/></filter><rect width="220" height="220" fill="%23e5d9c4"/><rect width="220" height="220" filter="url(%23p)" opacity="0.028"/></svg>');
-        }
-
-        .ink-text {
-          font-family: 'Courier Prime', monospace;
-        }
-
-        .ink-title {
-          font-family: 'Playfair Display', serif;
-        }
-
-        .dashboard-surface {
-          background-color: #f1e7d8;
-          border: 1px solid #46372b;
-          box-shadow: inset 0 0 0 1px rgba(244, 235, 219, 0.55), 0 0 0 1px rgba(69, 55, 43, 0.2);
-        }
-
-        .tron-border {
-          position: relative;
-          overflow: hidden;
-        }
-
-        .tron-border::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          background:
-            repeating-linear-gradient(90deg, rgba(77, 59, 43, 0.24) 0 3px, transparent 3px 20px) top / 100% 1px no-repeat,
-            repeating-linear-gradient(90deg, rgba(77, 59, 43, 0.18) 0 2px, transparent 2px 18px) bottom / 100% 1px no-repeat,
-            repeating-linear-gradient(180deg, rgba(77, 59, 43, 0.18) 0 2px, transparent 2px 16px) left / 1px 100% no-repeat,
-            repeating-linear-gradient(180deg, rgba(77, 59, 43, 0.14) 0 2px, transparent 2px 20px) right / 1px 100% no-repeat;
-          opacity: 0.78;
-        }
-      `}</style>
-
-      <div className="max-w-7xl mx-auto px-0 lg:px-8 py-6 space-y-5 sm:space-y-6">
-        <section
-          className="dashboard-surface tron-border rounded-sm p-5 sm:p-6"
-          data-aos="fade-up"
-          data-aos-duration="800"
-        >
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
-                Dashboard Bulletin
-              </h1>
-              <p className="text-sm sm:text-base text-[#5c4f42] mt-1.5 ink-text">
-                Fast daily overview with clear priorities and quick action
-                links.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-2 px-3 py-2 border border-[#7c6b59] bg-[#f6ecdd] text-[#4b3d31] text-xs uppercase tracking-[0.08em] ink-text">
-                <FaShieldAlt className="w-3.5 h-3.5" />
-                Records Verified
+          <div className="flex flex-wrap items-center gap-2">
+            {urgentCount > 0 && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#d0604a] bg-[#fce8e4] text-[#8b2c1a] text-xs font-semibold rounded-sm ink-text">
+                <FaExclamationTriangle className="w-3 h-3" />
+                {urgentCount} action{urgentCount !== 1 ? "s" : ""} needed
               </span>
-              <Link
-                href="/dashboard/transactions"
-                className="inline-flex items-center gap-2 px-3 py-2 border border-[#4e4033] bg-[#3f3328] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors text-xs font-medium rounded-sm ink-text"
-              >
-                Review Queue <FaArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-4 sm:mt-5">
-            <MainMetric
-              icon={FaBook}
-              label="Books"
-              value={stats.totalBooks}
-              href="/dashboard/books"
-            />
-            <MainMetric
-              icon={FaUsers}
-              label="Members"
-              value={stats.totalMembers}
-              href="/dashboard/users"
-            />
-            <MainMetric
-              icon={FaExchangeAlt}
-              label="Active"
-              value={stats.activeBorrows}
-              href="/dashboard/transactions"
-            />
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-2.5 sm:mt-3">
+            )}
             <Link
-              href="/dashboard/copies"
-              className="dashboard-surface rounded-sm p-2 sm:p-3 border border-[#b9a58b] hover:bg-[#f4ebdc] transition-colors"
-              data-aos="fade-up"
-              data-aos-duration="600"
+              href="/dashboard/transactions"
+              className="inline-flex items-center gap-2 px-3 py-1.5 border border-[#4e4033] bg-[#3f3328] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors text-xs font-medium rounded-sm ink-text"
             >
-              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight">
+              Review Queue <FaArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+          <StatCard
+            label="Books"
+            value={stats.totalBooks}
+            sub={`${stats.syllabusBooks} syllabus`}
+            href="/dashboard/books"
+          />
+          <StatCard
+            label="Copies"
+            value={stats.totalCopies}
+            sub={`${stats.availableCopies} available`}
+            href="/dashboard/copies"
+          />
+          <StatCard
+            label="Members"
+            value={stats.totalMembers}
+            sub={`${stats.verifiedMembers} verified`}
+            href="/dashboard/users"
+          />
+          <StatCard
+            label="Active Borrows"
+            value={stats.activeBorrows}
+            href="/dashboard/transactions"
+          />
+          <StatCard
+            label="Overdue"
+            value={stats.overdueCount}
+            urgent={stats.overdueCount > 0}
+            href="/dashboard/transactions"
+          />
+          <StatCard
+            label="Done This Month"
+            value={stats.completedThisMonth}
+            sub="completed"
+            href="/dashboard/transactions"
+          />
+        </div>
+      </section>
+
+      {/* ── Action Required + Collection Health ──────────────────────── */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-5">
+        {/* Action Required */}
+        <section className="dashboard-surface tron-border rounded-sm">
+          <SectionHeader
+            title="Action Required"
+            href="/dashboard/transactions"
+            hrefLabel="Open Queue"
+          />
+          <div className="p-4 sm:p-5 space-y-2.5">
+            {[
+              {
+                label: "Overdue Borrows",
+                count: stats.overdueCount,
+                icon: FaExclamationTriangle,
+                urgent: true,
+              },
+              {
+                label: "Pending Borrow Requests",
+                count: stats.pendingBorrowRequests,
+                icon: FaHourglassHalf,
+                urgent: stats.pendingBorrowRequests > 0,
+              },
+              {
+                label: "Pending Return Requests",
+                count: stats.pendingReturnRequests,
+                icon: FaExchangeAlt,
+                urgent: stats.pendingReturnRequests > 0,
+              },
+              {
+                label: "PDF Submissions to Review",
+                count: stats.pendingPdfSubmissions,
+                icon: FaFileAlt,
+                urgent: false,
+              },
+            ].map(({ label, count, icon: Icon, urgent }) => (
+              <Link
+                key={label}
+                href="/dashboard/transactions"
+                className={`flex items-center justify-between p-3 border rounded-sm transition-colors ${
+                  urgent && count > 0
+                    ? "border-[#c4614a] bg-[#fdf0ec] hover:bg-[#f9e6e1]"
+                    : "border-[#c4b08a] bg-[#f8f1e6] hover:bg-[#ede3d4]"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Icon
+                    className={`w-3.5 h-3.5 shrink-0 ${urgent && count > 0 ? "text-[#c4614a]" : "text-[#7a6a5a]"}`}
+                  />
+                  <span className="text-sm ink-text text-[#3f3328]">
+                    {label}
+                  </span>
+                </div>
+                <span
+                  className={`text-xl font-bold ink-title ${urgent && count > 0 ? "text-[#9b3a25]" : "text-[#221910]"}`}
+                >
+                  {count}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* Collection Health */}
+        <section className="dashboard-surface tron-border rounded-sm">
+          <SectionHeader title="Collection Health" />
+          <div className="p-4 sm:p-5 space-y-5">
+            <div className="space-y-2.5">
+              <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text font-semibold">
                 Copies
               </p>
-              <p className="text-lg sm:text-xl font-bold text-[#221910] ink-title mt-1 leading-none">
-                {stats.totalCopies}
-              </p>
-            </Link>
-            <Link
-              href="/dashboard/transactions"
-              className="dashboard-surface rounded-sm p-2 sm:p-3 border border-[#b9a58b] hover:bg-[#f4ebdc] transition-colors"
-              data-aos="fade-up"
-              data-aos-duration="600"
-            >
-              <p className="text-lg sm:text-xl font-bold text-[#221910] ink-title mt-1 leading-none">
-                {stats.awaitingApproval}
-              </p>
-            </Link>
-            <Link
-              href="/dashboard/transactions"
-              className="dashboard-surface rounded-sm p-2 sm:p-3 border border-[#b9a58b] hover:bg-[#f4ebdc] transition-colors"
-              data-aos="fade-up"
-              data-aos-duration="600"
-            >
-              <p className="text-lg sm:text-xl font-bold text-[#221910] ink-title mt-1 leading-none">
-                {stats.overdue}
-              </p>
-            </Link>
-          </div>
-        </section>
-
-        <section
-          className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-5"
-          data-aos="fade-up"
-          data-aos-duration="800"
-        >
-          <div
-            className="dashboard-surface tron-border rounded-sm p-5 sm:p-6"
-            data-aos="fade-up"
-            data-aos-duration="800"
-          >
-            <div className="space-y-3 ink-text text-sm">
-              <div className="flex items-center justify-between p-3 bg-[#f6ecdd] border border-[#8a7966] rounded-sm">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.08em] text-[#5c4f42]">
-                    Past Due
-                  </p>
-                  <p className="text-2xl font-bold text-[#221910] ink-title mt-1">
-                    {stats.overdue}
-                  </p>
-                </div>
-                <span className="text-[11px] font-semibold px-2.5 py-1 border border-[#7e6a55] bg-[#ebddc9] text-[#3f3328] uppercase tracking-[0.08em]">
-                  Priority
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-[#f6ecdd] border border-[#8a7966] rounded-sm">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.08em] text-[#5c4f42]">
-                    Awaiting Approval
-                  </p>
-                  <p className="text-2xl font-bold text-[#221910] ink-title mt-1">
-                    {stats.awaitingApproval}
-                  </p>
-                </div>
-                <span className="text-[11px] font-semibold px-2.5 py-1 border border-[#7e6a55] bg-[#ebddc9] text-[#3f3328] uppercase tracking-[0.08em]">
-                  Queue
-                </span>
-              </div>
+              <BarRow
+                label="Available"
+                value={stats.availableCopies}
+                total={stats.totalCopies}
+                color="bg-[#6b9e5e]"
+              />
+              <BarRow
+                label="Borrowed"
+                value={stats.borrowedCopies}
+                total={stats.totalCopies}
+                color="bg-[#5a7ab5]"
+              />
+              <BarRow
+                label="Damaged"
+                value={stats.damagedCopies}
+                total={stats.totalCopies}
+                color="bg-[#c4614a]"
+              />
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Link
-                href="/dashboard/transactions"
-                className="inline-flex items-center gap-2 px-4 py-2 border border-[#4e4033] bg-[#3f3328] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors text-sm font-medium rounded-sm ink-text"
-              >
-                Open Transactions <FaArrowRight className="w-3.5 h-3.5" />
-              </Link>
-              <Link
-                href="/dashboard/copies"
-                className="inline-flex items-center gap-2 px-4 py-2 border border-[#8a7966] text-[#4f4134] hover:bg-[#eadcc8] transition-colors text-sm font-medium rounded-sm ink-text"
-              >
-                Inspect Copies
-              </Link>
-            </div>
-          </div>
-
-          <div
-            className="dashboard-surface tron-border rounded-sm p-5 sm:p-6"
-            data-aos="fade-up"
-            data-aos-duration="800"
-          >
-            <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 pt-3 border-t border-[#d2bfa5]">
               <div>
-                <p className="text-xs uppercase tracking-[0.08em] text-[#5c4f42] mb-2 ink-text">
-                  Most Active Members
+                <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-2 ink-text font-semibold">
+                  Books
                 </p>
-                <div className="space-y-2.5 ink-text">
+                <div className="space-y-1.5 text-sm ink-text">
                   {[
-                    { name: "Ahsan Habib", books: 12 },
-                    { name: "Farhan Rahman", books: 10 },
-                    { name: "Rakib Hasan", books: 8 },
-                  ].map((member) => (
+                    ["Syllabus", stats.syllabusBooks],
+                    ["General", stats.generalBooks],
+                  ].map(([l, v]) => (
                     <div
-                      key={member.name}
-                      className="flex items-center justify-between border-b border-[#ccb99f] pb-2"
+                      key={String(l)}
+                      className="flex justify-between text-[#3f3328]"
                     >
-                      <span className="text-sm text-[#46392d] font-medium">
-                        {member.name}
-                      </span>
-                      <span className="text-sm font-bold text-[#221910]">
-                        {member.books} books
-                      </span>
+                      <span>{l}</span>
+                      <span className="font-bold">{v}</span>
                     </div>
                   ))}
                 </div>
               </div>
-
               <div>
-                <p className="text-xs uppercase tracking-[0.08em] text-[#5c4f42] mb-2 ink-text">
-                  Popular Books
+                <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-2 ink-text font-semibold">
+                  Members
                 </p>
-                <div className="space-y-2.5 ink-text">
+                <div className="space-y-1.5 text-sm ink-text">
                   {[
-                    { title: "ইসলামের সামাজিক বিধান", borrows: 24 },
-                    { title: "ইসলামী অর্থনীতি", borrows: 19 },
-                    { title: "গণতন্ত্র: ইসলামী দৃষ্টিকোণ", borrows: 18 },
-                  ].map((book) => (
+                    ["Verified", stats.verifiedMembers],
+                    ["Unverified", stats.unverifiedMembers],
+                  ].map(([l, v]) => (
                     <div
-                      key={book.title}
-                      className="flex items-center justify-between border-b border-[#ccb99f] pb-2"
+                      key={String(l)}
+                      className="flex justify-between text-[#3f3328]"
                     >
-                      <span className="text-sm text-[#46392d] truncate pr-3">
-                        {book.title}
-                      </span>
-                      <span className="text-sm font-bold text-[#221910] whitespace-nowrap">
-                        {book.borrows}x
-                      </span>
+                      <span>{l}</span>
+                      <span className="font-bold">{v}</span>
                     </div>
                   ))}
                 </div>
@@ -363,65 +417,336 @@ export default function DashboardOverview() {
             </div>
           </div>
         </section>
+      </div>
 
+      {/* ── Top Borrowers + Popular Books ────────────────────────────── */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-5">
+        <section className="dashboard-surface tron-border rounded-sm">
+          <SectionHeader title="Top Borrowers" href="/dashboard/users" />
+          {topMembers.length === 0 ? (
+            <p className="p-5 text-sm text-[#6a5a4c] ink-text">
+              No borrow history yet.
+            </p>
+          ) : (
+            <div className="divide-y divide-[#d2bfa5]">
+              {topMembers.map((m: TopMember, i) => (
+                <Link
+                  key={m.id}
+                  href={`/dashboard/users/${m.id}`}
+                  className="flex items-center gap-3 px-5 py-3.5 hover:bg-[#f4ebdc] transition-colors"
+                >
+                  <span className="w-5 text-xs font-bold text-[#8a7966] ink-text shrink-0">
+                    #{i + 1}
+                  </span>
+                  <Avatar url={m.avatar_url} name={m.full_name} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-[#2b2119] ink-text text-sm truncate">
+                      {m.full_name}
+                    </p>
+                    <p className="text-xs text-[#7a6a5a] ink-text">
+                      @{m.username}
+                    </p>
+                  </div>
+                  <span className="text-sm font-bold text-[#221910] ink-title shrink-0">
+                    {m.totalBorrows}×
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="dashboard-surface tron-border rounded-sm">
+          <SectionHeader title="Most Borrowed Books" href="/dashboard/books" />
+          {popularBooks.length === 0 ? (
+            <p className="p-5 text-sm text-[#6a5a4c] ink-text">
+              No borrow history yet.
+            </p>
+          ) : (
+            <div className="divide-y divide-[#d2bfa5]">
+              {popularBooks.map((b: PopularBook, i) => (
+                <div key={b.id} className="flex items-center gap-3 px-5 py-3.5">
+                  <span className="w-5 text-xs font-bold text-[#8a7966] ink-text shrink-0">
+                    #{i + 1}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-[#2b2119] ink-text text-sm truncate">
+                      {b.title}
+                    </p>
+                    <p className="text-xs text-[#7a6a5a] ink-text flex items-center gap-1.5">
+                      {b.author}
+                      {b.is_syllabus && (
+                        <span className="px-1.5 py-0.5 text-[9px] font-semibold border border-[#8aa06f] bg-[#eef5e9] text-[#3d5c2e] rounded-sm">
+                          Syllabus
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <span className="text-sm font-bold text-[#221910] ink-title shrink-0">
+                    {b.totalBorrows}×
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+
+      {/* ── Overdue Items ─────────────────────────────────────────────── */}
+      {overdueItems.length > 0 && (
         <section
           className="dashboard-surface tron-border rounded-sm overflow-hidden"
-          data-aos="fade-up"
-          data-aos-duration="800"
+          style={{ borderColor: "#c4614a" }}
         >
-          <div className="p-5 sm:p-6 border-b border-[#7d6d5a] flex items-center justify-between gap-3">
-            <h2 className="text-lg sm:text-xl font-bold text-[#221910] ink-title">
-              Latest Transactions
-            </h2>
-            <Link
-              href="/dashboard/transactions"
-              className="inline-flex items-center gap-2 text-[#4f4134] hover:text-[#2f251d] font-medium text-sm ink-text"
-            >
-              View All <FaArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-
+          <SectionHeader
+            title={`Overdue Borrows — ${overdueItems.length}`}
+            href="/dashboard/transactions"
+            hrefLabel="Manage"
+          />
           <div className="overflow-x-auto">
-            <table className="w-full text-sm ink-text min-w-160">
+            <table className="w-full text-sm ink-text">
               <thead>
-                <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
-                  <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] text-xs sm:text-sm font-semibold uppercase tracking-[0.08em]">
-                    Member
-                  </th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] text-xs sm:text-sm font-semibold uppercase tracking-[0.08em]">
-                    Action
-                  </th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] text-xs sm:text-sm font-semibold uppercase tracking-[0.08em]">
-                    Book
-                  </th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] text-xs sm:text-sm font-semibold uppercase tracking-[0.08em]">
-                    Date
-                  </th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] text-xs sm:text-sm font-semibold uppercase tracking-[0.08em]">
-                    Status
-                  </th>
+                <tr className="bg-[#fce8e4] border-b border-[#d0604a]">
+                  {["Member", "Book", "Copy", "Due Date", "Days Over"].map(
+                    (h) => (
+                      <th
+                        key={h}
+                        className="px-4 sm:px-5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8b2c1a] whitespace-nowrap"
+                      >
+                        {h}
+                      </th>
+                    ),
+                  )}
                 </tr>
               </thead>
               <tbody>
-                {recentTransactions.map((tx) => (
+                {overdueItems.map((tx: Transaction) => {
+                  const days = daysOverdue(tx.due_date);
+                  return (
+                    <tr
+                      key={tx.id}
+                      className="border-b border-[#f0d4cc] hover:bg-[#fdf0ec] transition-colors"
+                    >
+                      <td className="px-4 sm:px-5 py-3">
+                        <div className="flex items-center gap-2">
+                          <Avatar
+                            url={tx.user?.avatar_url ?? null}
+                            name={tx.user?.full_name ?? "?"}
+                          />
+                          <Link
+                            href={`/dashboard/users/${tx.user?.id}`}
+                            className="font-medium text-[#2b2119] hover:underline text-sm"
+                          >
+                            {tx.user?.full_name}
+                          </Link>
+                        </div>
+                      </td>
+                      <td className="px-4 sm:px-5 py-3 text-[#3f3328] max-w-48">
+                        <p className="truncate">{tx.book?.title}</p>
+                      </td>
+                      <td className="px-4 sm:px-5 py-3 text-[#5a4b3f]">
+                        {tx.copy ? `#${tx.copy.copy_number}` : "—"}
+                      </td>
+                      <td className="px-4 sm:px-5 py-3 text-[#5a4b3f] whitespace-nowrap">
+                        {fmtDate(tx.due_date)}
+                      </td>
+                      <td className="px-4 sm:px-5 py-3">
+                        <span className="font-bold text-[#9b3a25]">
+                          {days}d
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* ── Pending Queues ────────────────────────────────────────────── */}
+      {(pendingBorrows.length > 0 || pendingReturns.length > 0) && (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-5">
+          {pendingBorrows.length > 0 && (
+            <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
+              <SectionHeader
+                title={`Borrow Requests — ${pendingBorrows.length}`}
+                href="/dashboard/transactions"
+                hrefLabel="Review"
+              />
+              <div className="divide-y divide-[#d2bfa5]">
+                {pendingBorrows.map((tx: Transaction) => (
+                  <div
+                    key={tx.id}
+                    className="flex items-center gap-3 px-5 py-3.5"
+                  >
+                    <Avatar
+                      url={tx.user?.avatar_url ?? null}
+                      name={tx.user?.full_name ?? "?"}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-[#2b2119] ink-text truncate">
+                        {tx.user?.full_name}
+                      </p>
+                      <p className="text-xs text-[#7a6a5a] ink-text truncate">
+                        {tx.book?.title}
+                      </p>
+                    </div>
+                    <p className="text-xs text-[#7a6a5a] ink-text whitespace-nowrap shrink-0">
+                      {fmtDate(tx.request_date)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {pendingReturns.length > 0 && (
+            <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
+              <SectionHeader
+                title={`Return Requests — ${pendingReturns.length}`}
+                href="/dashboard/transactions"
+                hrefLabel="Review"
+              />
+              <div className="divide-y divide-[#d2bfa5]">
+                {pendingReturns.map((tx: Transaction) => (
+                  <div
+                    key={tx.id}
+                    className="flex items-center gap-3 px-5 py-3.5"
+                  >
+                    <Avatar
+                      url={tx.user?.avatar_url ?? null}
+                      name={tx.user?.full_name ?? "?"}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-[#2b2119] ink-text truncate">
+                        {tx.user?.full_name}
+                      </p>
+                      <p className="text-xs text-[#7a6a5a] ink-text truncate">
+                        {tx.book?.title}
+                      </p>
+                    </div>
+                    <p className="text-xs text-[#7a6a5a] ink-text whitespace-nowrap shrink-0">
+                      {fmtDate(tx.request_date)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+      )}
+
+      {/* ── Recent Activity ───────────────────────────────────────────── */}
+      <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
+        <SectionHeader title="Recent Activity" href="/dashboard/transactions" />
+        {recentActivity.length === 0 ? (
+          <p className="p-5 text-sm text-[#6a5a4c] ink-text">
+            No activity yet.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm ink-text">
+              <thead>
+                <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
+                  <TH>Member</TH>
+                  <TH>Type</TH>
+                  <TH>Book</TH>
+                  <TH>Copy</TH>
+                  <TH>Date</TH>
+                  <TH>Status</TH>
+                </tr>
+              </thead>
+              <tbody>
+                {recentActivity.map((tx: Transaction) => (
                   <tr
                     key={tx.id}
                     className="border-b border-[#d2bfa5] hover:bg-[#f4ebdc] transition-colors"
                   >
-                    <td className="px-4 sm:px-6 py-3 font-medium text-[#2b2119]">
-                      {tx.member}
+                    <td className="px-4 sm:px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <Avatar
+                          url={tx.user?.avatar_url ?? null}
+                          name={tx.user?.full_name ?? "?"}
+                        />
+                        <Link
+                          href={`/dashboard/users/${tx.user?.id}`}
+                          className="font-medium text-[#2b2119] hover:underline text-sm"
+                        >
+                          {tx.user?.full_name}
+                        </Link>
+                      </div>
                     </td>
-                    <td className="px-4 sm:px-6 py-3 text-[#5a4b3f]">
-                      {tx.action}
+                    <td className="px-4 sm:px-5 py-3 capitalize text-[#5a4b3f]">
+                      {tx.type}
                     </td>
-                    <td className="px-4 sm:px-6 py-3 text-[#5a4b3f]">
-                      {tx.book}
+                    <td className="px-4 sm:px-5 py-3 text-[#3f3328] max-w-48">
+                      <p className="truncate">{tx.book?.title}</p>
                     </td>
-                    <td className="px-4 sm:px-6 py-3 text-[#5a4b3f]">
-                      {new Date(tx.date).toLocaleDateString()}
+                    <td className="px-4 sm:px-5 py-3 text-[#5a4b3f]">
+                      {tx.copy ? `#${tx.copy.copy_number}` : "—"}
                     </td>
-                    <td className="px-4 sm:px-6 py-3">
-                      {getStatusBadge(tx.status)}
+                    <td className="px-4 sm:px-5 py-3 text-[#5a4b3f] whitespace-nowrap">
+                      {fmtDate(tx.request_date)}
+                    </td>
+                    <td className="px-4 sm:px-5 py-3">
+                      <StatusPill status={tx.status} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* ── Pending PDF Submissions ───────────────────────────────────── */}
+      {pendingPdfs.length > 0 && (
+        <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
+          <SectionHeader
+            title={`Pending PDF Reviews — ${pendingPdfs.length}`}
+            href="/dashboard/transactions"
+            hrefLabel="Review"
+          />
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm ink-text">
+              <thead>
+                <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
+                  <TH>Member</TH>
+                  <TH>Book</TH>
+                  <TH>Submitted</TH>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingPdfs.map((ps: PdfSubmission) => (
+                  <tr
+                    key={ps.id}
+                    className="border-b border-[#d2bfa5] hover:bg-[#f4ebdc] transition-colors"
+                  >
+                    <td className="px-4 sm:px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <Avatar
+                          url={ps.user?.avatar_url ?? null}
+                          name={ps.user?.full_name ?? "?"}
+                        />
+                        <Link
+                          href={`/dashboard/users/${ps.user?.id}`}
+                          className="font-medium text-[#2b2119] hover:underline text-sm"
+                        >
+                          {ps.user?.full_name}
+                        </Link>
+                      </div>
+                    </td>
+                    <td className="px-4 sm:px-5 py-3 text-[#3f3328] max-w-48">
+                      <p className="truncate">{ps.book?.title}</p>
+                      {ps.book?.is_syllabus && (
+                        <span className="px-1.5 py-0.5 text-[9px] font-semibold border border-[#8aa06f] bg-[#eef5e9] text-[#3d5c2e] rounded-sm">
+                          Syllabus
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 sm:px-5 py-3 text-[#5a4b3f] whitespace-nowrap">
+                      {fmtDate(ps.submitted_at)}
                     </td>
                   </tr>
                 ))}
@@ -429,7 +754,7 @@ export default function DashboardOverview() {
             </table>
           </div>
         </section>
-      </div>
+      )}
     </div>
   );
 }

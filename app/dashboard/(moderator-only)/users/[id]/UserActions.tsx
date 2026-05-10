@@ -17,18 +17,27 @@ export default function UserActions({ userId, isVerified, userName }: Props) {
   const [isPending, startTransition] = useTransition();
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [showUnverifyModal, setShowUnverifyModal] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const handleVerify = () => {
+    setActionError(null);
     startTransition(async () => {
-      await verifyUser(userId);
+      const result = await verifyUser(userId);
+      if (result?.error) {
+        setActionError(result.error);
+      }
       setShowVerifyModal(false);
       router.refresh();
     });
   };
 
   const handleUnverify = () => {
+    setActionError(null);
     startTransition(async () => {
-      await unVerifyUser(userId);
+      const result = await unVerifyUser(userId);
+      if (result?.error) {
+        setActionError(result.error);
+      }
       setShowUnverifyModal(false);
       router.refresh();
     });
@@ -36,6 +45,12 @@ export default function UserActions({ userId, isVerified, userName }: Props) {
 
   return (
     <>
+      {actionError && (
+        <div className="mb-3 px-4 py-2.5 border border-[#b0665c] bg-[#f6e3df] text-[#7d2d23] text-sm rounded-sm ink-text">
+          {actionError}
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-3">
         <button
           type="button"

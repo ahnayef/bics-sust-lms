@@ -347,3 +347,81 @@ create policy "Admins insert settings"
 -- create table if not exists public.pdf_submissions ( ... );
 -- create table if not exists public.settings ( ... );
 -- insert into public.settings values ('syllabus_total','80') on conflict do nothing;
+
+-- ============================================================
+-- Performance indexes
+-- ============================================================
+
+create index if not exists idx_transactions_status
+  on public.transactions(status);
+
+create index if not exists idx_transactions_type_status
+  on public.transactions(type, status);
+
+create index if not exists idx_transactions_user_id_status
+  on public.transactions(user_id, status);
+
+create index if not exists idx_transactions_due_date
+  on public.transactions(due_date)
+  where due_date is not null;
+
+create index if not exists idx_transactions_request_date
+  on public.transactions(request_date desc);
+
+create index if not exists idx_pdf_submissions_status
+  on public.pdf_submissions(status);
+
+create index if not exists idx_books_is_syllabus
+  on public.books(is_syllabus);
+
+create index if not exists idx_profiles_role
+  on public.profiles(role);
+
+-- ============================================================
+-- Additional settings
+-- ============================================================
+
+insert into public.settings (key, value) values
+  ('loan_period_days',       '14'),   -- default loan window in days
+  ('fine_per_day_bdt',       '5'),    -- overdue fine per day (BDT)
+  ('max_borrows_per_member', '3')     -- max concurrent borrows per member
+on conflict (key) do nothing;
+
+-- ============================================================
+-- mark_overdue_transactions() function
+--
+-- Updates any active borrow whose due_date has passed to 'overdue'.
+-- Called automatically by the overview page on each load.
+-- Can also be scheduled via pg_cron for real-time accuracy.
+-- ============================================================
+
+create or replace function public.mark_overdue_transactions()
+returns integer
+language plpgsql
+security definer
+as $$
+declare
+  affected integer;
+begin
+  update public.transactions
+  set
+    status     = 'overdue',
+    updated_at = now()
+  where
+    type     = 'borrow'
+    and status   = 'active'
+    and due_date is not null
+    and due_date < current_date;
+
+  get diagnostics affected = row_count;
+  return affected;
+end;
+$$;
+
+
+-- Allow admins and moderators to update any profile
+create policy "Admins and mods can update any profile"
+  on public.profiles for update
+  using (
+    (auth.jwt() ->> 'role') in ('admin', 'moderator')
+  );

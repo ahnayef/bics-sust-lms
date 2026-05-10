@@ -21,7 +21,9 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
+import { getBookByQR } from "@/server/library";
 import { revalidatePath } from "next/cache";
+import type { Copy } from "@/types/library";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Auth helpers
@@ -52,6 +54,26 @@ async function requireModOrAdmin() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Copy lookup (used by the borrow UI to resolve a QR/ID to book info)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Look up a copy by its QR/ID text and return it with nested book data.
+ * Called client-side during the borrow flow so we avoid exposing the full
+ * copies table — callers only learn what they need for a borrow request.
+ */
+export async function lookupCopy(
+  copyId: string,
+): Promise<{ copy: Copy | null; error?: string }> {
+  const trimmed = copyId.trim().toUpperCase();
+  if (!trimmed) return { copy: null };
+  const copy = await getBookByQR(trimmed);
+  if (!copy)
+    return { copy: null, error: "Copy not found. Check the ID and try again." };
+  return { copy };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // User-facing borrow / return
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -77,7 +99,8 @@ export async function borrowBook(
     .single();
 
   if (!copy) return { error: "Copy not found" };
-  if (copy.status !== "available") return { error: "This copy is not available" };
+  if (copy.status !== "available")
+    return { error: "This copy is not available" };
 
   // Block duplicate requests
   const { data: dup } = await supabase
@@ -89,7 +112,9 @@ export async function borrowBook(
     .limit(1);
 
   if (dup && dup.length > 0) {
-    return { error: "You already have an active or pending request for this copy" };
+    return {
+      error: "You already have an active or pending request for this copy",
+    };
   }
 
   const { error } = await supabase.from("transactions").insert({
@@ -103,6 +128,9 @@ export async function borrowBook(
   if (error) return { error: error.message };
 
   revalidatePath("/dashboard/transactions");
+  revalidatePath("/dashboard/return");
+  revalidatePath("/dashboard/history");
+  revalidatePath("/dashboard/book-list");
   return {};
 }
 
@@ -159,6 +187,9 @@ export async function returnBook(
   if (error) return { error: error.message };
 
   revalidatePath("/dashboard/transactions");
+  revalidatePath("/dashboard/return");
+  revalidatePath("/dashboard/history");
+  revalidatePath("/dashboard/book-list");
   return {};
 }
 
@@ -211,9 +242,11 @@ export async function allowBorrowRequest(
     .update({ status: "borrowed" })
     .eq("id", txn.copy_id);
 
-  if (copyErr) return { error: `Approved but copy update failed: ${copyErr.message}` };
+  if (copyErr)
+    return { error: `Approved but copy update failed: ${copyErr.message}` };
 
   revalidatePath("/dashboard/transactions");
+  revalidatePath("/dashboard/book-list");
   return {};
 }
 
@@ -289,13 +322,18 @@ export async function approveReturnRequest(
   // Complete the return transaction
   const { error: returnErr } = await supabase
     .from("transactions")
-    .update({ status: "completed", approved_date: now, return_date: now, reviewed_by: sub })
+    .update({
+      status: "completed",
+      approved_date: now,
+      return_date: now,
+      reviewed_by: sub,
+    })
     .eq("id", transaction_id);
 
   if (returnErr) return { error: returnErr.message };
 
   // Complete the original borrow transaction (active/overdue → completed)
-  await supabase
+  const { error: borrowErr } = await supabase
     .from("transactions")
     .update({ status: "completed", return_date: now })
     .eq("user_id", txn.user_id)
@@ -303,15 +341,29 @@ export async function approveReturnRequest(
     .eq("type", "borrow")
     .in("status", ["active", "overdue"]);
 
+  if (borrowErr) {
+    // Non-fatal: the return is already recorded; log and continue.
+    console.error(
+      "[approveReturnRequest] borrow update failed:",
+      borrowErr.message,
+    );
+  }
+
   // Free the copy
   const { error: copyErr } = await supabase
     .from("copies")
     .update({ status: "available" })
     .eq("id", txn.copy_id);
 
-  if (copyErr) return { error: `Return approved but copy update failed: ${copyErr.message}` };
+  if (copyErr)
+    return {
+      error: `Return approved but copy update failed: ${copyErr.message}`,
+    };
 
   revalidatePath("/dashboard/transactions");
+  revalidatePath("/dashboard/return");
+  revalidatePath("/dashboard/book-list");
+  revalidatePath("/dashboard/history");
   return {};
 }
 
@@ -383,7 +435,9 @@ export async function submitPdfReport(
     .limit(1);
 
   if (dup && dup.length > 0) {
-    return { error: "You already have a pending or approved report for this book" };
+    return {
+      error: "You already have a pending or approved report for this book",
+    };
   }
 
   const { error } = await supabase.from("pdf_submissions").insert({
@@ -397,6 +451,8 @@ export async function submitPdfReport(
   if (error) return { error: error.message };
 
   revalidatePath("/dashboard/transactions");
+  revalidatePath("/dashboard/history");
+  revalidatePath("/dashboard/book-list");
   return {};
 }
 

@@ -443,7 +443,7 @@ export default function EditProfileForm({
               {/* ── Submit ── */}
               <div className="pt-2 flex gap-3">
                 <Link
-                  href="/dashboard/profile"
+                  href="/dashboard"
                   className="flex-1 py-3 px-4 text-center bg-[#ede0cc] text-[#4a3825] border border-[#c9b99a] font-semibold rounded-sm hover:bg-[#e4d5b8] active:scale-[0.98] transition-all duration-150 ink-text text-base"
                 >
                   Cancel

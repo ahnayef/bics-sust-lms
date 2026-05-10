@@ -35,7 +35,10 @@ export interface Copy {
   created_at: string;
   updated_at: string;
   // joined
-  book?: Pick<Book, "id" | "title" | "author" | "is_syllabus" | "pages" | "pdf_link">;
+  book?: Pick<
+    Book,
+    "id" | "title" | "author" | "is_syllabus" | "pages" | "pdf_link"
+  >;
 }
 
 export interface Transaction {
@@ -54,7 +57,10 @@ export interface Transaction {
   created_at: string;
   updated_at: string;
   // joined
-  user?: Pick<Profile, "id" | "full_name" | "username" | "email" | "avatar_url">;
+  user?: Pick<
+    Profile,
+    "id" | "full_name" | "username" | "email" | "avatar_url"
+  >;
   copy?: Pick<Copy, "id" | "copy_number" | "status" | "book_id">;
   book?: Pick<Book, "id" | "title" | "author" | "is_syllabus">;
   reviewer?: Pick<Profile, "id" | "full_name">;
@@ -92,4 +98,52 @@ export interface UserWithStats extends Profile {
   syllabusTotal: number;
   activeBorrows: number;
   pendingRequests: number;
+}
+
+// ── Overview dashboard ───────────────────────────────────────────────────────
+
+export interface OverviewStats {
+  totalBooks: number;
+  syllabusBooks: number;
+  generalBooks: number;
+  totalCopies: number;
+  availableCopies: number;
+  borrowedCopies: number;
+  damagedCopies: number;
+  totalMembers: number;
+  verifiedMembers: number;
+  unverifiedMembers: number;
+  activeBorrows: number;
+  overdueCount: number;
+  pendingBorrowRequests: number;
+  pendingReturnRequests: number;
+  pendingPdfSubmissions: number;
+  completedThisMonth: number;
+}
+
+export interface TopMember {
+  id: string;
+  full_name: string;
+  username: string;
+  avatar_url: string | null;
+  totalBorrows: number;
+}
+
+export interface PopularBook {
+  id: string;
+  title: string;
+  author: string;
+  is_syllabus: boolean;
+  totalBorrows: number;
+}
+
+export interface OverviewData {
+  stats: OverviewStats;
+  overdueItems: Transaction[];
+  pendingBorrows: Transaction[];
+  pendingReturns: Transaction[];
+  recentActivity: Transaction[];
+  topMembers: TopMember[];
+  popularBooks: PopularBook[];
+  pendingPdfs: PdfSubmission[];
 }

@@ -9,8 +9,11 @@ import { createClient } from "@/lib/supabase/server";
 import type {
   Book,
   Copy,
-  Transaction,
+  OverviewData,
+  PopularBook,
   PdfSubmission,
+  TopMember,
+  Transaction,
   UserStats,
   UserWithStats,
 } from "@/types/library";
@@ -36,7 +39,9 @@ export async function getBook(id: string): Promise<Book | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("books")
-    .select("*, copies(id, copy_number, status, book_id, created_at, updated_at)")
+    .select(
+      "*, copies(id, copy_number, status, book_id, created_at, updated_at)",
+    )
     .eq("id", id)
     .single();
   if (error || !data) return null;
@@ -48,9 +53,7 @@ export async function getBookByQR(copyId: string): Promise<Copy | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("copies")
-    .select(
-      "*, book:books(id, title, author, is_syllabus, pages, pdf_link)",
-    )
+    .select("*, book:books(id, title, author, is_syllabus, pages, pdf_link)")
     .eq("id", copyId)
     .single();
   if (error || !data) return null;
@@ -58,7 +61,9 @@ export async function getBookByQR(copyId: string): Promise<Copy | null> {
 }
 
 /** Current status of a specific copy. */
-export async function bookStatus(copyId: string): Promise<Copy["status"] | null> {
+export async function bookStatus(
+  copyId: string,
+): Promise<Copy["status"] | null> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("copies")
@@ -77,9 +82,7 @@ export async function getCopies(): Promise<Copy[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("copies")
-    .select(
-      "*, book:books(id, title, author, is_syllabus)",
-    )
+    .select("*, book:books(id, title, author, is_syllabus)")
     .order("book_id")
     .order("copy_number");
   if (error || !data) return [];
@@ -239,7 +242,7 @@ export async function getUsers(): Promise<UserWithStats[]> {
   const { data: profiles } = await supabase
     .from("profiles")
     .select(
-      "id, full_name, username, email, avatar_url, rank, role, is_verified, profile_completed, created_at, updated_at, phone, division_id, district_id, upazila_id",
+      "id, full_name, username, email, avatar_url, rank, role, is_verified, profile_completed, created_at, updated_at, phone, division_id, district_id, upazila_id, division:divisions(id,name), district:districts(id,name), upazila:upazilas(id,name)",
     )
     .order("created_at", { ascending: false });
 
@@ -312,4 +315,189 @@ export async function getUsers(): Promise<UserWithStats[]> {
       pendingRequests,
     };
   });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Dashboard Overview
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Fetches everything the overview dashboard needs in parallel:
+ * stats, overdue items, pending queues, recent activity,
+ * top borrowers, and most-borrowed books.
+ *
+ * Also triggers `mark_overdue_transactions()` so that any active borrow
+ * past its due_date is automatically marked overdue before stats are read.
+ */
+export async function getOverviewData(): Promise<OverviewData> {
+  const supabase = await createClient();
+
+  // Best-effort: mark overdue (no-op if the SQL function doesn't exist yet)
+  await supabase.rpc("mark_overdue_transactions");
+
+  const firstOfMonth = new Date(
+    new Date().getFullYear(),
+    new Date().getMonth(),
+    1,
+  ).toISOString();
+
+  const [
+    { data: books },
+    { data: copies },
+    { data: members },
+    { data: openTransactions },
+    { data: recentActivity },
+    { data: borrowHistory },
+    { data: pendingPdfs },
+    { count: completedThisMonth },
+  ] = await Promise.all([
+    supabase.from("books").select("id, is_syllabus"),
+
+    supabase.from("copies").select("id, status"),
+
+    supabase.from("profiles").select("id, is_verified").eq("role", "member"),
+
+    // All open work in one query — partitioned client-side
+    supabase
+      .from("transactions")
+      .select(
+        `id, type, status, request_date, due_date,
+         user:profiles!user_id(id, full_name, username, avatar_url),
+         book:books!book_id(id, title, author, is_syllabus),
+         copy:copies!copy_id(id, copy_number)`,
+      )
+      .in("status", ["active", "overdue", "pending"])
+      .order("due_date", { ascending: true }),
+
+    // Latest 15 transactions for the activity feed
+    supabase
+      .from("transactions")
+      .select(
+        `id, type, status, request_date, due_date,
+         user:profiles!user_id(id, full_name, username, avatar_url),
+         book:books!book_id(id, title, author),
+         copy:copies!copy_id(id, copy_number)`,
+      )
+      .order("request_date", { ascending: false })
+      .limit(15),
+
+    // All borrow records (active + completed + overdue) for aggregation
+    supabase
+      .from("transactions")
+      .select(
+        "user_id, book_id, user:profiles!user_id(id, full_name, username, avatar_url), book:books!book_id(id, title, author, is_syllabus)",
+      )
+      .eq("type", "borrow")
+      .in("status", ["active", "completed", "overdue"]),
+
+    // Pending PDF submissions
+    supabase
+      .from("pdf_submissions")
+      .select(
+        `id, submitted_at,
+         user:profiles!user_id(id, full_name, username, avatar_url),
+         book:books!book_id(id, title, author, is_syllabus)`,
+      )
+      .eq("status", "pending")
+      .order("submitted_at", { ascending: true })
+      .limit(10),
+
+    // Completed this calendar month — count only
+    supabase
+      .from("transactions")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "completed")
+      .gte("updated_at", firstOfMonth),
+  ]);
+
+  // Partition open transactions
+  const allOpen = openTransactions ?? [];
+  const overdueItems = allOpen.filter((t) => t.status === "overdue");
+  const pendingBorrows = allOpen.filter(
+    (t) => t.type === "borrow" && t.status === "pending",
+  );
+  const pendingReturns = allOpen.filter(
+    (t) => t.type === "return" && t.status === "pending",
+  );
+  const activeBorrows = allOpen.filter(
+    (t) => t.status === "active" || t.status === "overdue",
+  );
+
+  // Aggregate top borrowers
+  const memberMap = new Map<
+    string,
+    { meta: NonNullable<Transaction["user"]>; count: number }
+  >();
+  for (const tx of borrowHistory ?? []) {
+    const user = (tx as unknown as Transaction).user;
+    if (!user) continue;
+    const entry = memberMap.get(tx.user_id) ?? { meta: user, count: 0 };
+    entry.count++;
+    memberMap.set(tx.user_id, entry);
+  }
+  const topMembers: TopMember[] = [...memberMap.values()]
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+    .map(({ meta, count }) => ({
+      id: meta.id,
+      full_name: meta.full_name,
+      username: meta.username,
+      avatar_url: meta.avatar_url,
+      totalBorrows: count,
+    }));
+
+  // Aggregate most-borrowed books
+  const bookMap = new Map<
+    string,
+    { meta: NonNullable<Transaction["book"]>; count: number }
+  >();
+  for (const tx of borrowHistory ?? []) {
+    const book = (tx as unknown as Transaction).book;
+    if (!book) continue;
+    const entry = bookMap.get(tx.book_id) ?? { meta: book, count: 0 };
+    entry.count++;
+    bookMap.set(tx.book_id, entry);
+  }
+  const popularBooks: PopularBook[] = [...bookMap.values()]
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+    .map(({ meta, count }) => ({
+      id: meta.id,
+      title: meta.title,
+      author: meta.author,
+      is_syllabus: meta.is_syllabus,
+      totalBorrows: count,
+    }));
+
+  const booksArr = books ?? [];
+  const copiesArr = copies ?? [];
+  const membersArr = members ?? [];
+
+  return {
+    stats: {
+      totalBooks: booksArr.length,
+      syllabusBooks: booksArr.filter((b) => b.is_syllabus).length,
+      generalBooks: booksArr.filter((b) => !b.is_syllabus).length,
+      totalCopies: copiesArr.length,
+      availableCopies: copiesArr.filter((c) => c.status === "available").length,
+      borrowedCopies: copiesArr.filter((c) => c.status === "borrowed").length,
+      damagedCopies: copiesArr.filter((c) => c.status === "damaged").length,
+      totalMembers: membersArr.length,
+      verifiedMembers: membersArr.filter((m) => m.is_verified).length,
+      unverifiedMembers: membersArr.filter((m) => !m.is_verified).length,
+      activeBorrows: activeBorrows.length,
+      overdueCount: overdueItems.length,
+      pendingBorrowRequests: pendingBorrows.length,
+      pendingReturnRequests: pendingReturns.length,
+      pendingPdfSubmissions: (pendingPdfs ?? []).length,
+      completedThisMonth: completedThisMonth ?? 0,
+    },
+    overdueItems: overdueItems as unknown as Transaction[],
+    pendingBorrows: pendingBorrows as unknown as Transaction[],
+    pendingReturns: pendingReturns as unknown as Transaction[],
+    recentActivity: (recentActivity ?? []) as unknown as Transaction[],
+    topMembers,
+    popularBooks,
+    pendingPdfs: (pendingPdfs ?? []) as unknown as PdfSubmission[],
+  };
 }

@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
   FaCheck,
+  FaCheckCircle,
   FaPlus,
   FaSearch,
   FaShieldAlt,
   FaTimes,
+  FaTimesCircle,
   FaUserSlash,
 } from "react-icons/fa";
 import { promoteToModerator, demoteModerator } from "@/server/profiles";
@@ -221,6 +223,17 @@ export default function ModeratorsClient({ initialModerators }: Props) {
                         <FaShieldAlt className="w-2.5 h-2.5" />
                         {person.role === "admin" ? "Admin" : "Moderator"}
                       </span>
+                      {person.is_verified ? (
+                        <FaCheckCircle
+                          className="w-3.5 h-3.5 text-[#5a8a3e]"
+                          title="Verified"
+                        />
+                      ) : (
+                        <FaTimesCircle
+                          className="w-3.5 h-3.5 text-[#b07a2a]"
+                          title="Unverified"
+                        />
+                      )}
                     </div>
                     <p className="text-sm text-[#5a4b3f] ink-text truncate">
                       {person.email}

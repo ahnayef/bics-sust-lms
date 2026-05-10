@@ -10,6 +10,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
@@ -209,7 +210,7 @@ export async function updateProfile(
 
   if (updateError) return { error: updateError.message };
 
-  redirect("/dashboard/profile");
+  redirect("/dashboard");
 }
 
 // ---------------------------------------------------------------------------
@@ -291,33 +292,61 @@ export async function updateProfileInfo(
 
   if (updateError) return { error: updateError.message };
 
-  redirect("/dashboard/profile");
+  redirect("/dashboard");
 }
 
 export async function verifyUser(userId: string): Promise<{ error?: string }> {
+  console.log("[verifyUser] called with userId:", userId);
+
   const supabase = await createClient();
   const { data: claimsData } = await supabase.auth.getClaims();
   const claims = claimsData?.claims;
 
+  console.log("[verifyUser] caller sub:", claims?.sub ?? "(none)");
+
   if (!claims?.sub) return { error: "Not authenticated" };
 
-  const { data: callerProfile } = await supabase
+  const { data: callerProfile, error: profileError } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", claims.sub)
     .single();
 
+  console.log(
+    "[verifyUser] callerProfile:",
+    callerProfile,
+    "profileError:",
+    profileError,
+  );
+
   if (!callerProfile || !["admin", "moderator"].includes(callerProfile.role)) {
-    console.log("Insufficient Permissions");
+    return { error: "Insufficient permissions" };
   }
 
-  const { error } = await supabase
+  const {
+    data: updateData,
+    error,
+    count,
+    status,
+    statusText,
+  } = await supabase
     .from("profiles")
     .update({ is_verified: true })
-    .eq("id", userId);
+    .eq("id", userId)
+    .select();
+
+  console.log("[verifyUser] update result:", {
+    updateData,
+    error,
+    count,
+    status,
+    statusText,
+  });
 
   if (error) return { error: error.message };
 
+  revalidatePath(`/dashboard/users/${userId}`);
+  revalidatePath("/dashboard/users");
   return {};
 }
 
@@ -348,6 +377,9 @@ export async function unVerifyUser(
     .eq("id", userId);
 
   if (error) return { error: error.message };
+
+  revalidatePath(`/dashboard/users/${userId}`);
+  revalidatePath("/dashboard/users");
   return {};
 }
 
