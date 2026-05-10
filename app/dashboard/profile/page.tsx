@@ -119,7 +119,7 @@ export default async function DashboardProfilePage() {
           {/* Actions */}
           <div className="mt-5 pt-4 border-t border-[#d9c8b0] flex flex-wrap gap-3 justify-end">
             <Link
-              href={`/dashboard/${profile.username}`}
+              href={`/dashboard/profile/${profile.username}`}
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#4d4034] border border-[#8a7966] rounded-sm hover:bg-[#eadcc8] transition-colors ink-text"
             >
               View Public Profile
