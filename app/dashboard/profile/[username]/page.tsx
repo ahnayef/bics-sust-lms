@@ -65,11 +65,11 @@ export default async function DashboardUserProfilePage({
     <div className="p-2 sm:p-0 max-w-3xl mx-auto space-y-5">
       {/* Back */}
       <Link
-        href="/dashboard/users"
+        href="/dashboard"
         className="inline-flex items-center gap-2 text-sm text-[#5a4b3f] hover:text-[#221910] transition-colors ink-text"
       >
         <FaArrowLeft className="w-3.5 h-3.5" />
-        Back to Users
+        Back to Dashboard
       </Link>
 
       {/* Hero */}
@@ -126,7 +126,7 @@ export default async function DashboardUserProfilePage({
             </div>
 
             <p className="text-xs text-[#7a6a5c] ink-text mt-3">
-              Member since {joinedDate}
+              Joined on: <b>{joinedDate}</b>
             </p>
           </div>
         </div>

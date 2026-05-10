@@ -26,7 +26,7 @@ interface DashboardShellProps {
 const navigationItems = [
   {
     label: "My Profile",
-    href: "/dashboard/profile",
+    href: "/dashboard",
     icon: FaUser,
     requiresRole: ["admin", "moderator", "member"],
   },
@@ -38,7 +38,7 @@ const navigationItems = [
   },
   {
     label: "Overview",
-    href: "/dashboard",
+    href: "/dashboard/overview",
     icon: FaChartLine,
     requiresRole: ["admin", "moderator", "member"],
   },
