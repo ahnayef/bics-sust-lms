@@ -40,7 +40,7 @@ const navigationItems = [
     label: "Overview",
     href: "/dashboard/overview",
     icon: FaChartLine,
-    requiresRole: ["admin", "moderator", "member"],
+    requiresRole: ["admin", "moderator"],
   },
   {
     label: "Moderators",
