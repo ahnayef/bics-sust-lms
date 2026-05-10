@@ -5,7 +5,7 @@ import GrainOverlay from "./components/GrainOverlay";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 const notoSansBengali = Noto_Sans_Bengali({
   variable: "--font-noto-sans-bengali",
@@ -25,10 +25,17 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", notoSansBengali.variable, "font-sans", geist.variable)}
+      className={cn(
+        "h-full",
+        "antialiased",
+        notoSansBengali.variable,
+        "font-sans",
+        geist.variable,
+      )}
     >
       <body className="min-h-full flex flex-col">
-        <GrainOverlay />
+        {/* shows up as a box in mobile screen */}
+        {/*<GrainOverlay />*/}
         <AOSInit />
         {children}
       </body>

@@ -151,7 +151,7 @@ export default function DashboardShell({
       <aside className="flex flex-col shrink-0 w-14 lg:w-64 h-screen overflow-y-auto dashboard-surface tron-border border-r border-[#5e4e3e] transition-all duration-300">
         <Link
           href="/dashboard"
-          className="flex items-center gap-2 px-3 lg:px-6 py-5 border-b border-[#6d5c4a] ink-title text-[#221910] font-bold text-lg overflow-hidden"
+          className="flex items-center gap-2 px-3 lg:px-6 py-[17px] border-b border-[#6d5c4a] ink-title text-[#221910] font-bold text-lg overflow-hidden"
         >
           <FaBook className="w-5 h-5 lg:w-6 lg:h-6 text-[#554738] shrink-0" />
           <span className="hidden lg:block whitespace-nowrap">
@@ -186,7 +186,7 @@ export default function DashboardShell({
       {/* Main Content */}
       <main className="flex-1 min-w-0 overflow-y-auto flex flex-col">
         {/* Top Bar — always visible */}
-        <div className="sticky top-0 z-20 dashboard-surface border-b border-[#6f5f4f] px-4 lg:px-8 py-3 lg:py-4">
+        <div className="sticky top-0 z-20 dashboard-surface border-b border-[#6f5f4f] px-4 lg:px-8 py-3">
           <div className="flex items-center justify-between">
             <h1 className="text-lg lg:text-xl font-semibold text-[#221910] ink-title">
               Dashboard
