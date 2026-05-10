@@ -1,0 +1,242 @@
+import { getProfile } from "@/server/geo";
+import { getUserStats } from "@/server/library";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { FaArrowLeft, FaCheckCircle, FaClock } from "react-icons/fa";
+import UserActions from "./UserActions";
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? "?";
+  return (
+    (parts[0][0]?.toUpperCase() ?? "") +
+    (parts[parts.length - 1][0]?.toUpperCase() ?? "")
+  );
+}
+
+export default async function UserProfilePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+
+  const [profile, stats] = await Promise.all([
+    getProfile(id),
+    getUserStats(id),
+  ]);
+
+  if (!profile) {
+    notFound();
+  }
+
+  const joinedDate = new Date(profile.created_at).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  const progress =
+    stats.syllabusTotal > 0
+      ? Math.round((stats.syllabusCompleted / stats.syllabusTotal) * 100)
+      : 0;
+
+  return (
+    <div className="space-y-6 max-w-3xl">
+      {/* Back link */}
+      <Link
+        href="/dashboard/users"
+        className="inline-flex items-center gap-2 text-sm text-[#5a4b3f] hover:text-[#221910] transition-colors ink-text"
+      >
+        <FaArrowLeft className="w-3.5 h-3.5" />
+        Back to Users
+      </Link>
+
+      {/* Header card — avatar + name + badges */}
+      <div className="dashboard-surface tron-border rounded-sm p-6">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            {profile.avatar_url ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={profile.avatar_url}
+                alt={profile.full_name}
+                className="w-16 h-16 rounded-full object-cover border-2 border-[#8a7966] shrink-0"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-[#d9cbb7] border-2 border-[#8a7966] flex items-center justify-center text-xl font-bold text-[#4a3e33] shrink-0 ink-title select-none">
+                {getInitials(profile.full_name)}
+              </div>
+            )}
+
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
+                {profile.full_name}
+              </h1>
+              <p className="text-[#5a4b3f] ink-text mt-0.5">
+                @{profile.username}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            {profile.is_verified ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-sm border border-[#a3b994] bg-[#eef5e9] text-[#3d5c2e] ink-text">
+                <FaCheckCircle className="w-3.5 h-3.5" />
+                Verified
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-sm border border-[#c9b48a] bg-[#fdf5e4] text-[#7a5e2a] ink-text">
+                <FaClock className="w-3.5 h-3.5" />
+                Unverified
+              </span>
+            )}
+
+            <span className="inline-block px-3 py-1.5 text-xs font-semibold rounded-sm border border-[#b9a58b] bg-[#f6ecdd] text-[#4f4134] ink-text capitalize">
+              {profile.role}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Reading progress + borrow stats */}
+      <div className="dashboard-surface tron-border rounded-sm p-6">
+        <h2 className="text-base font-semibold text-[#3b3026] ink-title mb-4 uppercase tracking-[0.06em]">
+          Library Activity
+        </h2>
+
+        <div className="space-y-4">
+          {/* Syllabus progress bar */}
+          <div>
+            <div className="flex items-center justify-between text-sm text-[#5a4b3f] ink-text mb-1.5">
+              <span>
+                Syllabus progress —{" "}
+                <span className="font-semibold text-[#2b2119]">
+                  {stats.syllabusCompleted}
+                </span>{" "}
+                of{" "}
+                <span className="font-semibold text-[#2b2119]">
+                  {stats.syllabusTotal}
+                </span>{" "}
+                books
+              </span>
+              <span className="font-bold text-[#2b2119]">{progress}%</span>
+            </div>
+            <div className="w-full h-3 rounded-full bg-[#e4d4bf] border border-[#ccb79b] overflow-hidden">
+              <div
+                className="h-full bg-[#5a4d40] transition-all"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Quick borrow counts */}
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
+              <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1 ink-text">
+                Active Borrows
+              </p>
+              <p className="text-2xl font-bold text-[#221910] ink-title leading-none">
+                {stats.activeBorrows}
+              </p>
+            </div>
+            <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
+              <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1 ink-text">
+                Pending Requests
+              </p>
+              <p className="text-2xl font-bold text-[#221910] ink-title leading-none">
+                {stats.pendingRequests}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Details grid */}
+      <div className="dashboard-surface tron-border rounded-sm p-6">
+        <h2 className="text-base font-semibold text-[#3b3026] ink-title mb-4 uppercase tracking-[0.06em]">
+          Profile Details
+        </h2>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 ink-text">
+          <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
+            <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1">
+              Email
+            </p>
+            <p className="text-sm font-medium text-[#221910] break-all">
+              {profile.email}
+            </p>
+          </div>
+
+          <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
+            <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1">
+              Phone
+            </p>
+            <p className="text-sm font-medium text-[#221910]">
+              {profile.phone ?? (
+                <span className="text-[#8a7966] italic">Not provided</span>
+              )}
+            </p>
+          </div>
+
+          <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
+            <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1">
+              Rank
+            </p>
+            <p className="text-sm font-semibold text-[#221910]">
+              {profile.rank}
+            </p>
+          </div>
+
+          <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
+            <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1">
+              Location
+            </p>
+            <p className="text-sm font-medium text-[#221910]">
+              {profile.upazila?.name &&
+              profile.district?.name &&
+              profile.division?.name ? (
+                `${profile.upazila.name}, ${profile.district.name}, ${profile.division.name}`
+              ) : (
+                <span className="text-[#8a7966] italic">Not assigned</span>
+              )}
+            </p>
+          </div>
+
+          <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
+            <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1">
+              Joined
+            </p>
+            <p className="text-sm font-medium text-[#221910]">{joinedDate}</p>
+          </div>
+
+          <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
+            <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1">
+              Verification Status
+            </p>
+            <p className="text-sm font-medium text-[#221910]">
+              {profile.is_verified ? "Verified" : "Not yet verified"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Admin actions — verify + unverify */}
+      <div className="dashboard-surface tron-border rounded-sm p-6">
+        <h2 className="text-base font-semibold text-[#3b3026] ink-title mb-2 uppercase tracking-[0.06em]">
+          Admin Actions
+        </h2>
+        <p className="text-sm text-[#5a4b3f] ink-text mb-4">
+          Verifying a user confirms their membership and grants full library
+          access. Unverifying suspends that access.
+        </p>
+
+        <UserActions
+          userId={id}
+          isVerified={profile.is_verified}
+          userName={profile.full_name}
+        />
+      </div>
+    </div>
+  );
+}

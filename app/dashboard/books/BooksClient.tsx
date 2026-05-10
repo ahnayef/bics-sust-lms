@@ -1,0 +1,677 @@
+"use client";
+
+import StatusBadge from "@/app/components/StatusBadge";
+import { addBook, editBook, removeBook } from "@/server/library-actions";
+import type { Book } from "@/types/library";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import {
+  FaDownload,
+  FaEdit,
+  FaPlus,
+  FaSearch,
+  FaTimes,
+  FaTrash,
+} from "react-icons/fa";
+import ConfirmModal from "@/components/ui/confirm-modal";
+
+type BookTypeFilter = "all" | "syllabus" | "additional";
+
+interface BookForm {
+  id: string;
+  title: string;
+  author: string;
+  is_syllabus: boolean;
+  pages: string;
+  pdf_link: string;
+  first_copy_id: string;
+}
+
+const EMPTY_FORM: BookForm = {
+  id: "",
+  title: "",
+  author: "",
+  is_syllabus: true,
+  pages: "",
+  pdf_link: "",
+  first_copy_id: "",
+};
+
+interface Props {
+  initialBooks: Book[];
+}
+
+type PendingAction =
+  | { type: "add" }
+  | { type: "update" }
+  | { type: "delete"; id: string; title: string; author: string };
+
+export default function BooksClient({ initialBooks }: Props) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  const [books, setBooks] = useState<Book[]>(initialBooks);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState<BookTypeFilter>("all");
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState<BookForm>(EMPTY_FORM);
+  const [flash, setFlash] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(
+    null,
+  );
+
+  // Keep local list in sync when the server component re-renders after router.refresh()
+  useEffect(() => {
+    setBooks(initialBooks);
+  }, [initialBooks]);
+
+  const showFlash = (type: "success" | "error", text: string) => {
+    setFlash({ type, text });
+    setTimeout(() => setFlash(null), 4500);
+  };
+
+  const counts = useMemo(
+    () => ({
+      total: books.length,
+      syllabus: books.filter((b) => b.is_syllabus).length,
+      additional: books.filter((b) => !b.is_syllabus).length,
+      copies: books.reduce((sum, b) => sum + (b.copies?.length ?? 0), 0),
+    }),
+    [books],
+  );
+
+  const filteredBooks = useMemo(() => {
+    const query = searchTerm.toLowerCase().trim();
+    return books.filter((book) => {
+      const matchesSearch =
+        book.title.toLowerCase().includes(query) ||
+        book.author.toLowerCase().includes(query);
+      const matchesType =
+        typeFilter === "all" ||
+        (typeFilter === "syllabus" ? book.is_syllabus : !book.is_syllabus);
+      return matchesSearch && matchesType;
+    });
+  }, [books, searchTerm, typeFilter]);
+
+  const openAddModal = () => {
+    setEditingId(null);
+    setFormData(EMPTY_FORM);
+    setShowAddModal(true);
+  };
+
+  const handleAdd = () => {
+    if (!formData.title.trim() || !formData.author.trim()) return;
+    setPendingAction({ type: "add" });
+  };
+
+  const confirmAdd = () => {
+    setPendingAction(null);
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("title", formData.title.trim());
+      fd.set("author", formData.author.trim());
+      fd.set("is_syllabus", formData.is_syllabus ? "true" : "false");
+      if (formData.pages) fd.set("pages", formData.pages);
+      if (formData.pdf_link.trim())
+        fd.set("pdf_link", formData.pdf_link.trim());
+      if (formData.first_copy_id.trim())
+        fd.set("first_copy_id", formData.first_copy_id.trim());
+
+      const result = await addBook(fd);
+      if (result.error) {
+        showFlash("error", result.error);
+      } else {
+        showFlash("success", "Book added successfully.");
+        closeModal();
+        router.refresh();
+      }
+    });
+  };
+
+  const handleEdit = (id: string) => {
+    const book = books.find((b) => b.id === id);
+    if (!book) return;
+    setFormData({
+      id: book.id,
+      title: book.title,
+      author: book.author,
+      is_syllabus: book.is_syllabus,
+      pages: book.pages?.toString() ?? "",
+      pdf_link: book.pdf_link ?? "",
+      first_copy_id: "",
+    });
+    setEditingId(id);
+    setShowAddModal(true);
+  };
+
+  const handleUpdate = () => {
+    if (!editingId || !formData.title.trim() || !formData.author.trim()) return;
+    setPendingAction({ type: "update" });
+  };
+
+  const confirmUpdate = () => {
+    if (!editingId) return;
+    setPendingAction(null);
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("id", editingId);
+      fd.set("title", formData.title.trim());
+      fd.set("author", formData.author.trim());
+      fd.set("is_syllabus", formData.is_syllabus ? "true" : "false");
+      if (formData.pages) fd.set("pages", formData.pages);
+      if (formData.pdf_link.trim())
+        fd.set("pdf_link", formData.pdf_link.trim());
+
+      const result = await editBook(fd);
+      if (result.error) {
+        showFlash("error", result.error);
+      } else {
+        showFlash("success", "Book updated successfully.");
+        closeModal();
+        router.refresh();
+      }
+    });
+  };
+
+  const handleDelete = (id: string) => {
+    const book = books.find((b) => b.id === id);
+    if (!book) return;
+    setPendingAction({
+      type: "delete",
+      id: book.id,
+      title: book.title,
+      author: book.author,
+    });
+  };
+
+  const confirmDelete = () => {
+    if (!pendingAction || pendingAction.type !== "delete") return;
+    const { id } = pendingAction;
+    setPendingAction(null);
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("id", id);
+      const result = await removeBook(fd);
+      if (result.error) {
+        showFlash("error", result.error);
+      } else {
+        showFlash("success", "Book deleted.");
+        router.refresh();
+      }
+    });
+  };
+
+  const closeModal = () => {
+    setShowAddModal(false);
+    setEditingId(null);
+    setFormData(EMPTY_FORM);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Flash notification */}
+      {flash && (
+        <div
+          className={`fixed top-4 right-4 z-[200] px-4 py-3 rounded-sm border text-sm font-medium ink-text shadow-lg transition-all ${
+            flash.type === "success"
+              ? "bg-[#e8f5e8] border-[#6b9e6b] text-[#2a4a2a]"
+              : "bg-[#f5e8e8] border-[#9e6b6b] text-[#4a2a2a]"
+          }`}
+        >
+          {flash.text}
+        </div>
+      )}
+
+      {/* Header + stats */}
+      <section
+        className="dashboard-surface tron-border rounded-sm p-5 sm:p-6"
+        data-aos="fade-up"
+        data-aos-duration="800"
+      >
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
+              Books Control Room
+            </h1>
+            <p className="text-[#5a4b3f] mt-1 ink-text">
+              Keep catalog records clean and quickly classify syllabus vs
+              additional reading.
+            </p>
+          </div>
+
+          <button
+            onClick={openAddModal}
+            disabled={isPending}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 transition-colors font-medium ink-text"
+          >
+            <FaPlus className="w-4 h-4" />
+            Add Book
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-4 sm:mt-5">
+          <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-2 sm:p-3">
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight text-nowrap">
+              Total Books
+            </p>
+            <p className="text-xl sm:text-2xl font-bold text-[#221910] ink-title mt-1 leading-none">
+              {counts.total}
+            </p>
+          </div>
+          <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-2 sm:p-3">
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight">
+              Syllabus
+            </p>
+            <p className="text-xl sm:text-2xl font-bold text-[#221910] ink-title mt-1 leading-none">
+              {counts.syllabus}
+            </p>
+          </div>
+          <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-2 sm:p-3">
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight">
+              Additional
+            </p>
+            <p className="text-xl sm:text-2xl font-bold text-[#221910] ink-title mt-1 leading-none">
+              {counts.additional}
+            </p>
+          </div>
+          <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-2 sm:p-3">
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight">
+              Total Copies
+            </p>
+            <p className="text-xl sm:text-2xl font-bold text-[#221910] ink-title mt-1 leading-none">
+              {counts.copies}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Search & filter bar */}
+      <section
+        className="dashboard-surface tron-border rounded-sm p-4 sm:p-5 border border-[#5f4f40]"
+        data-aos="fade-up"
+        data-aos-duration="800"
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          <div className="relative lg:col-span-2">
+            <FaSearch className="absolute left-3 top-3 text-[#7a6a5a]" />
+            <input
+              type="text"
+              placeholder="Search by title or author..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none ink-text"
+            />
+          </div>
+
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value as BookTypeFilter)}
+            className="px-3 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none ink-text"
+          >
+            <option value="all">All Types</option>
+            <option value="syllabus">Syllabus</option>
+            <option value="additional">Additional</option>
+          </select>
+        </div>
+      </section>
+
+      {/* Books table */}
+      <section
+        className="dashboard-surface tron-border rounded-sm overflow-hidden border border-[#5f4f40]"
+        data-aos="fade-up"
+        data-aos-duration="800"
+      >
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm ink-text min-w-160">
+            <thead>
+              <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
+                <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
+                  Title
+                </th>
+                <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
+                  Author
+                </th>
+                <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
+                  Pages
+                </th>
+                <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
+                  Copies
+                </th>
+                <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
+                  Type
+                </th>
+                <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredBooks.map((book) => (
+                <tr
+                  key={book.id}
+                  className="border-b border-[#d2bfa5] hover:bg-[#f4ebdc] transition-colors"
+                >
+                  <td className="px-4 sm:px-6 py-3 font-medium text-[#2b2119]">
+                    {book.title}
+                  </td>
+                  <td className="px-4 sm:px-6 py-3 text-[#5a4b3f]">
+                    {book.author}
+                  </td>
+                  <td className="px-4 sm:px-6 py-3">
+                    <StatusBadge tone="neutral">
+                      {book.pages ?? "—"}
+                    </StatusBadge>
+                  </td>
+                  <td className="px-4 sm:px-6 py-3">
+                    <StatusBadge tone="muted">
+                      {book.copies?.length ?? 0}
+                    </StatusBadge>
+                  </td>
+                  <td className="px-4 sm:px-6 py-3">
+                    <StatusBadge tone="neutral">
+                      {book.is_syllabus ? "Syllabus" : "Additional"}
+                    </StatusBadge>
+                  </td>
+                  <td className="px-4 sm:px-6 py-3">
+                    <div className="flex items-center gap-2">
+                      {book.pdf_link ? (
+                        <a
+                          href={book.pdf_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 text-[#4e4033] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors"
+                          aria-label={`Download PDF for ${book.title}`}
+                          title="Download PDF"
+                        >
+                          <FaDownload className="w-4 h-4" />
+                        </a>
+                      ) : null}
+                      <button
+                        onClick={() => handleEdit(book.id)}
+                        disabled={isPending}
+                        className="p-2 text-[#5b4c3f] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors disabled:opacity-55"
+                        aria-label={`Edit ${book.title}`}
+                      >
+                        <FaEdit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(book.id)}
+                        disabled={isPending}
+                        className="p-2 text-[#6a4e3d] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors disabled:opacity-55"
+                        aria-label={`Delete ${book.title}`}
+                      >
+                        <FaTrash className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {filteredBooks.length === 0 && (
+          <div className="text-center py-12 text-[#6a5a4c] ink-text">
+            <p>No books match this search/filter combination.</p>
+          </div>
+        )}
+      </section>
+
+      {/* Add / Edit modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-4 z-80">
+          <div
+            className="dashboard-surface tron-border rounded-sm max-w-md w-full p-6 max-h-[90vh] overflow-y-auto"
+            data-aos="zoom-in"
+            data-aos-duration="200"
+          >
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <h2 className="text-xl font-bold text-[#221910] ink-title">
+                {editingId ? "Edit Book" : "Add New Book"}
+              </h2>
+              <button
+                onClick={closeModal}
+                disabled={isPending}
+                className="p-2 text-[#655648] hover:bg-[#e7d8c3] rounded-sm transition-colors"
+                aria-label="Close book modal"
+              >
+                <FaTimes className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 ink-text">
+              <div>
+                <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                  Book Title *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter book title"
+                  value={formData.title}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
+                  className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                  Author *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter author name"
+                  value={formData.author}
+                  onChange={(e) =>
+                    setFormData({ ...formData, author: e.target.value })
+                  }
+                  className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                  Book Type *
+                </label>
+                <select
+                  value={formData.is_syllabus ? "syllabus" : "additional"}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      is_syllabus: e.target.value === "syllabus",
+                    })
+                  }
+                  className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
+                >
+                  <option value="syllabus">Syllabus Book</option>
+                  <option value="additional">Additional Book</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                  Number of Pages
+                </label>
+                <input
+                  type="number"
+                  placeholder="Enter number of pages"
+                  value={formData.pages}
+                  onChange={(e) =>
+                    setFormData({ ...formData, pages: e.target.value })
+                  }
+                  min="1"
+                  className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                  PDF Link (optional)
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://example.com/book.pdf"
+                  value={formData.pdf_link}
+                  onChange={(e) =>
+                    setFormData({ ...formData, pdf_link: e.target.value })
+                  }
+                  className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
+                />
+              </div>
+
+              {!editingId && (
+                <div>
+                  <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                    First Copy Number{" "}
+                    <span className="font-normal text-[#7a6a5c]">
+                      (optional, 1–999)
+                    </span>
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={999}
+                    placeholder="e.g. 1"
+                    value={formData.first_copy_id}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        first_copy_id: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
+                  />
+                  <p className="text-xs text-[#6a5a4c] mt-1">
+                    {formData.first_copy_id &&
+                    parseInt(formData.first_copy_id) >= 1 &&
+                    parseInt(formData.first_copy_id) <= 999 ? (
+                      <>
+                        Will be stored as{" "}
+                        <span className="font-mono font-semibold">
+                          QR
+                          {String(parseInt(formData.first_copy_id)).padStart(
+                            3,
+                            "0",
+                          )}
+                        </span>
+                        . Creates copy #1 immediately.
+                      </>
+                    ) : (
+                      "Creates copy #1 immediately if provided."
+                    )}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={closeModal}
+                disabled={isPending}
+                className="flex-1 px-4 py-2.5 border border-[#8a7966] text-[#4f4134] rounded-sm hover:bg-[#eadcc8] disabled:opacity-55 transition-colors font-medium ink-text"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={editingId ? handleUpdate : handleAdd}
+                disabled={
+                  isPending || !formData.title.trim() || !formData.author.trim()
+                }
+                className="flex-1 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 disabled:cursor-not-allowed transition-colors font-medium ink-text"
+              >
+                {isPending ? "Saving…" : `${editingId ? "Update" : "Add"} Book`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm modal */}
+      {pendingAction && (
+        <ConfirmModal
+          open
+          onClose={() => setPendingAction(null)}
+          onConfirm={
+            pendingAction.type === "add"
+              ? confirmAdd
+              : pendingAction.type === "update"
+                ? confirmUpdate
+                : confirmDelete
+          }
+          title={
+            pendingAction.type === "add"
+              ? "Add Book"
+              : pendingAction.type === "update"
+                ? "Update Book"
+                : "Delete Book"
+          }
+          description={
+            pendingAction.type === "delete"
+              ? "This will delete the book and ALL its physical copies. This cannot be undone."
+              : undefined
+          }
+          preview={
+            pendingAction.type === "delete" ? (
+              <div className="space-y-1 text-sm">
+                <p>
+                  <span className="font-semibold">Title:</span>{" "}
+                  {pendingAction.title}
+                </p>
+                <p>
+                  <span className="font-semibold">Author:</span>{" "}
+                  {pendingAction.author}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-1 text-sm">
+                <p>
+                  <span className="font-semibold">Title:</span> {formData.title}
+                </p>
+                <p>
+                  <span className="font-semibold">Author:</span>{" "}
+                  {formData.author}
+                </p>
+                <p>
+                  <span className="font-semibold">Type:</span>{" "}
+                  {formData.is_syllabus ? "Syllabus" : "Additional"}
+                </p>
+                {formData.pages && (
+                  <p>
+                    <span className="font-semibold">Pages:</span>{" "}
+                    {formData.pages}
+                  </p>
+                )}
+                {pendingAction.type === "add" &&
+                  formData.first_copy_id &&
+                  parseInt(formData.first_copy_id) >= 1 &&
+                  parseInt(formData.first_copy_id) <= 999 && (
+                    <p>
+                      <span className="font-semibold">First Copy:</span> QR
+                      {String(parseInt(formData.first_copy_id)).padStart(
+                        3,
+                        "0",
+                      )}
+                    </p>
+                  )}
+              </div>
+            )
+          }
+          confirmLabel={
+            pendingAction.type === "add"
+              ? "Add Book"
+              : pendingAction.type === "update"
+                ? "Save Changes"
+                : "Delete Book"
+          }
+          danger={pendingAction.type === "delete"}
+          loading={isPending}
+        />
+      )}
+    </div>
+  );
+}

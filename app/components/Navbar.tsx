@@ -3,8 +3,15 @@
 import Link from "next/link";
 import { useState } from "react";
 
-export default function Navbar() {
+interface NavbarProps {
+  isLoggedIn?: boolean;
+}
+
+export default function Navbar({ isLoggedIn = false }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  const ctaHref = isLoggedIn ? "/dashboard" : "/login";
+  const ctaLabel = isLoggedIn ? "Dashboard" : "Sign In";
 
   return (
     <nav
@@ -18,7 +25,10 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="flex flex-col items-start leading-none">
+          <Link
+            href={isLoggedIn ? "/dashboard" : "/"}
+            className="flex flex-col items-start leading-none"
+          >
             <span
               className="text-2xl font-bold tracking-tight text-[#1f1a17]"
               style={{ fontFamily: "Playfair Display, serif" }}
@@ -35,37 +45,34 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link
-              href="#features"
-              className="text-[#2c2520] hover:text-black font-semibold tracking-wide text-sm transition-colors"
-              style={{ fontFamily: "Courier Prime, monospace" }}
-            >
-              Features
-            </Link>
-            <Link
-              href="#contact"
-              className="text-[#2c2520] hover:text-black font-semibold tracking-wide text-sm transition-colors"
-              style={{ fontFamily: "Courier Prime, monospace" }}
-            >
-              Contact
-            </Link>
-            <Link
-              href="/login"
-              className="text-[#2c2520] hover:text-black font-semibold tracking-wide text-sm transition-colors"
-              style={{ fontFamily: "Courier Prime, monospace" }}
-            >
-              Archive
-            </Link>
+            {!isLoggedIn && (
+              <>
+                <Link
+                  href="#features"
+                  className="text-[#2c2520] hover:text-black font-semibold tracking-wide text-sm transition-colors"
+                  style={{ fontFamily: "Courier Prime, monospace" }}
+                >
+                  Features
+                </Link>
+                <Link
+                  href="#contact"
+                  className="text-[#2c2520] hover:text-black font-semibold tracking-wide text-sm transition-colors"
+                  style={{ fontFamily: "Courier Prime, monospace" }}
+                >
+                  Contact
+                </Link>
+              </>
+            )}
           </div>
 
           {/* CTA Button */}
           <div className="hidden md:block">
             <Link
-              href="/login"
+              href={ctaHref}
               className="px-5 py-2 font-semibold text-sm transition-colors border border-[#6d6053] bg-[#6d6053] text-[#f3ebdd] hover:bg-[#5b5045]"
               style={{ fontFamily: "Courier Prime, monospace" }}
             >
-              Sign In
+              {ctaLabel}
             </Link>
           </div>
 
@@ -103,37 +110,33 @@ export default function Navbar() {
         {/* Mobile Navigation */}
         {isOpen && (
           <div className="md:hidden pb-4 pt-2 space-y-2 border-t border-[#3c342d]">
+            {!isLoggedIn && (
+              <>
+                <Link
+                  href="#features"
+                  className="block px-4 py-2 text-[#2c2520] hover:bg-[#d9cbb7] tracking-wide font-semibold"
+                  style={{ fontFamily: "Courier Prime, monospace" }}
+                  onClick={() => setIsOpen(false)}
+                >
+                  Features
+                </Link>
+                <Link
+                  href="#contact"
+                  className="block px-4 py-2 text-[#2c2520] hover:bg-[#d9cbb7] tracking-wide font-semibold"
+                  style={{ fontFamily: "Courier Prime, monospace" }}
+                  onClick={() => setIsOpen(false)}
+                >
+                  Contact
+                </Link>
+              </>
+            )}
             <Link
-              href="#features"
-              className="block px-4 py-2 text-[#2c2520] hover:bg-[#d9cbb7] tracking-wide font-semibold"
-              style={{ fontFamily: "Courier Prime, monospace" }}
-              onClick={() => setIsOpen(false)}
-            >
-              Features
-            </Link>
-            <Link
-              href="#contact"
-              className="block px-4 py-2 text-[#2c2520] hover:bg-[#d9cbb7] tracking-wide font-semibold"
-              style={{ fontFamily: "Courier Prime, monospace" }}
-              onClick={() => setIsOpen(false)}
-            >
-              Contact
-            </Link>
-            <Link
-              href="/login"
-              className="block px-4 py-2 text-[#2c2520] hover:bg-[#d9cbb7] tracking-wide font-semibold"
-              style={{ fontFamily: "Courier Prime, monospace" }}
-              onClick={() => setIsOpen(false)}
-            >
-              Archive
-            </Link>
-            <Link
-              href="/login"
+              href={ctaHref}
               className="block px-4 py-2 bg-[#6d6053] text-[#f3ebdd] font-semibold tracking-wide hover:bg-[#5b5045]"
               style={{ fontFamily: "Courier Prime, monospace" }}
               onClick={() => setIsOpen(false)}
             >
-              Sign In
+              {ctaLabel}
             </Link>
           </div>
         )}
