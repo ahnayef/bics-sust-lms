@@ -194,7 +194,7 @@ export default function EditProfileForm({
           {/* Back link */}
           <div className="mb-5">
             <Link
-              href="/dashboard/profile"
+              href="/dashboard"
               className="inline-flex items-center gap-2 text-sm text-[#6a5a4c] hover:text-[#221910] ink-text transition-colors"
             >
               <FaArrowLeft className="w-3 h-3" />
