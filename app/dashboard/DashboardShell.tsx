@@ -193,7 +193,7 @@ export default function DashboardShell({
             </h1>
             <div className="flex items-center gap-3 lg:gap-6">
               <Link
-                href="/dashboard/profile"
+                href="/dashboard"
                 className="hidden sm:flex items-center gap-2 text-sm text-[#5a4b3f] ink-text hover:text-[#221910] transition-colors"
               >
                 {userAvatar ? (
