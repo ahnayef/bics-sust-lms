@@ -1,15 +1,21 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient as createRawClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { cache } from "react";
 
 /**
- * Standard SSR Supabase client.
+ * Per-request memoised SSR Supabase client.
  *
- * RLS is disabled on all tables — authorisation is enforced in application
- * code (server actions / route handlers) instead. This client reads the
- * user session from cookies so auth.getClaims() / auth.getUser() work as
- * expected in every Server Action and Route Handler.
+ * React's `cache()` deduplicates this function within a single render tree
+ * (i.e. one HTTP request). Every server function that calls `createClient()`
+ * — getClaims, getProfile, getUserStats, etc. — reuses the SAME client
+ * instance, so cookies are read only once and only one client object is
+ * constructed per request.
+ *
+ * The memoisation is automatically reset for the next request, so there is
+ * no cross-request leakage.
  */
-export async function createClient() {
+export const createClient = cache(async () => {
   const cookieStore = await cookies();
 
   return createServerClient(
@@ -31,5 +37,23 @@ export async function createClient() {
         },
       },
     },
+  );
+});
+
+/**
+ * Bare service-role client for use inside `unstable_cache` callbacks.
+ *
+ * `unstable_cache` functions run outside any request context, so they
+ * cannot call `await cookies()`. This client skips the SSR cookie
+ * plumbing and connects directly with the service key — RLS is still
+ * bypassed because RLS is disabled at the database level.
+ *
+ * Create a fresh instance on each call; `unstable_cache` ensures the
+ * function body only runs on cache misses, not on every request.
+ */
+export function createServiceClient() {
+  return createRawClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_KEY!,
   );
 }

@@ -103,6 +103,15 @@ export async function checkUsernameAvailable(
 // ---------------------------------------------------------------------------
 
 export async function getDivisions(): Promise<GeoResult<Division>> {
+  // Fast path: local JSON cache loaded at module init — no Supabase call needed.
+  if (cachedDivisions.length > 0) {
+    return {
+      data: [...cachedDivisions].sort((a, b) => a.name.localeCompare(b.name)),
+      source: "local-cache",
+    };
+  }
+
+  // Slow path: cache not populated yet (first run before `bun fetch-geo`).
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("divisions")
@@ -113,19 +122,22 @@ export async function getDivisions(): Promise<GeoResult<Division>> {
     return { data: data as Division[], source: "supabase" };
   }
 
-  if (cachedDivisions.length > 0) {
-    return {
-      data: [...cachedDivisions].sort((a, b) => a.name.localeCompare(b.name)),
-      source: "local-cache",
-    };
-  }
-
   return { data: [], source: "unavailable" };
 }
 
 export async function getDistrictsByDivision(
   divisionId: string,
 ): Promise<GeoResult<District>> {
+  // Fast path: local cache is always sorted and filtered in memory.
+  const fromCache = cachedDistricts
+    .filter((d) => d.division_id === divisionId)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  if (fromCache.length > 0) {
+    return { data: fromCache, source: "local-cache" };
+  }
+
+  // Slow path: fall back to Supabase when local cache is empty.
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("districts")
@@ -137,20 +149,22 @@ export async function getDistrictsByDivision(
     return { data: data as District[], source: "supabase" };
   }
 
-  const fromCache = cachedDistricts
-    .filter((d) => d.division_id === divisionId)
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  if (fromCache.length > 0) {
-    return { data: fromCache, source: "local-cache" };
-  }
-
   return { data: [], source: "unavailable" };
 }
 
 export async function getUpazilasByDistrict(
   districtId: string,
 ): Promise<GeoResult<Upazila>> {
+  // Fast path: local cache filtered in memory.
+  const fromCache = cachedUpazilas
+    .filter((u) => u.district_id === districtId)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  if (fromCache.length > 0) {
+    return { data: fromCache, source: "local-cache" };
+  }
+
+  // Slow path: Supabase when local cache is empty.
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("upazilas")
@@ -160,14 +174,6 @@ export async function getUpazilasByDistrict(
 
   if (!error && data && data.length > 0) {
     return { data: data as Upazila[], source: "supabase" };
-  }
-
-  const fromCache = cachedUpazilas
-    .filter((u) => u.district_id === districtId)
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  if (fromCache.length > 0) {
-    return { data: fromCache, source: "local-cache" };
   }
 
   return { data: [], source: "unavailable" };

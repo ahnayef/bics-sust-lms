@@ -7,7 +7,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -123,6 +123,7 @@ export async function addBook(
     }
   }
 
+  revalidateTag("books", "max");
   revalidatePath("/dashboard/books");
   revalidatePath("/dashboard/copies");
   return { bookId: book.id };
@@ -160,6 +161,7 @@ export async function editBook(
 
   if (error) return { error: error.message };
 
+  revalidateTag("books", "max");
   revalidatePath("/dashboard/books");
   revalidatePath("/dashboard/copies");
   return {};
@@ -198,6 +200,7 @@ export async function removeBook(
   const { error } = await supabase.from("books").delete().eq("id", id);
   if (error) return { error: error.message };
 
+  revalidateTag("books", "max");
   revalidatePath("/dashboard/books");
   revalidatePath("/dashboard/copies");
   return {};
@@ -260,6 +263,7 @@ export async function addCopyOfBook(
 
   if (error) return { error: error.message };
 
+  revalidateTag("books", "max");
   revalidatePath("/dashboard/copies");
   revalidatePath("/dashboard/books");
   return {};
@@ -295,6 +299,7 @@ export async function removeCopyOfBook(
   const { error } = await supabase.from("copies").delete().eq("id", copy_id);
   if (error) return { error: error.message };
 
+  revalidateTag("books", "max");
   revalidatePath("/dashboard/copies");
   revalidatePath("/dashboard/books");
   return {};

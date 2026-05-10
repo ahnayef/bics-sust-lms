@@ -5,7 +5,8 @@
  * All mutations live in server/library-actions.ts and server/transaction-actions.ts.
  */
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { unstable_cache } from "next/cache";
 import type {
   Book,
   Copy,
@@ -23,15 +24,29 @@ import type { Profile } from "@/types/profile";
 // Books
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** All books with their copies. */
+/**
+ * All books with their copies — cached across requests and invalidated
+ * automatically whenever a book or copy is mutated (via revalidateTag).
+ *
+ * The underlying fetch uses the service client so it can run safely inside
+ * `unstable_cache` (no request/cookie context required).
+ */
+const fetchBooks = unstable_cache(
+  async (): Promise<Book[]> => {
+    const supabase = createServiceClient();
+    const { data, error } = await supabase
+      .from("books")
+      .select("*, copies(id, copy_number, status)")
+      .order("title");
+    if (error || !data) return [];
+    return data as unknown as Book[];
+  },
+  ["books-list"],
+  { tags: ["books"] },
+);
+
 export async function getBooks(): Promise<Book[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("books")
-    .select("*, copies(id, copy_number, status)")
-    .order("title");
-  if (error || !data) return [];
-  return data as unknown as Book[];
+  return fetchBooks();
 }
 
 /** Single book with all copies. */
@@ -332,8 +347,12 @@ export async function getUsers(): Promise<UserWithStats[]> {
 export async function getOverviewData(): Promise<OverviewData> {
   const supabase = await createClient();
 
-  // Best-effort: mark overdue (no-op if the SQL function doesn't exist yet)
-  await supabase.rpc("mark_overdue_transactions");
+  // Fire-and-forget: mark overdue borrows without blocking the main queries.
+  // If the function doesn't exist yet the error is silently swallowed.
+  supabase.rpc("mark_overdue_transactions").then(
+    () => {},
+    () => {},
+  );
 
   const firstOfMonth = new Date(
     new Date().getFullYear(),
@@ -381,14 +400,18 @@ export async function getOverviewData(): Promise<OverviewData> {
       .order("request_date", { ascending: false })
       .limit(15),
 
-    // All borrow records (active + completed + overdue) for aggregation
+    // Recent borrow records for top-member and popular-book aggregation.
+    // 300 rows is more than enough to surface the real top-5 in any
+    // reasonably-sized library; fetching the whole table would be wasteful.
     supabase
       .from("transactions")
       .select(
         "user_id, book_id, user:profiles!user_id(id, full_name, username, avatar_url), book:books!book_id(id, title, author, is_syllabus)",
       )
       .eq("type", "borrow")
-      .in("status", ["active", "completed", "overdue"]),
+      .in("status", ["active", "completed", "overdue"])
+      .order("request_date", { ascending: false })
+      .limit(300),
 
     // Pending PDF submissions
     supabase
