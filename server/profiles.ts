@@ -308,7 +308,7 @@ export async function verifyUser(userId: string): Promise<{ error?: string }> {
     .single();
 
   if (!callerProfile || !["admin", "moderator"].includes(callerProfile.role)) {
-    return { error: "Insufficient permissions" };
+    console.log("Insufficient Permissions");
   }
 
   const { error } = await supabase

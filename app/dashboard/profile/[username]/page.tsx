@@ -12,7 +12,6 @@ import {
   FaPhone,
   FaShieldAlt,
 } from "react-icons/fa";
-import ProfileUserActions from "./ProfileUserActions";
 
 export default async function DashboardUserProfilePage({
   params,
@@ -215,21 +214,6 @@ export default async function DashboardUserProfilePage({
             )}
           </dl>
         )}
-      </section>
-
-      {/* Admin actions */}
-      <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
-        <h2 className="text-base font-bold text-[#221910] ink-title mb-1 border-b border-[#c9b89a] pb-2">
-          Admin Actions
-        </h2>
-        <p className="text-sm text-[#5a4b3f] ink-text mb-4 mt-3">
-          Verification grants the member full library access.
-        </p>
-        <ProfileUserActions
-          userId={profile.id}
-          isVerified={profile.is_verified}
-          userName={profile.full_name}
-        />
       </section>
     </div>
   );
