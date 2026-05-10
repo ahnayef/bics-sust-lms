@@ -41,15 +41,15 @@ export const createClient = cache(async () => {
 });
 
 /**
- * Bare service-role client for use inside `unstable_cache` callbacks.
+ * Bare service-role client for use inside `'use cache'` scopes and similar.
  *
- * `unstable_cache` functions run outside any request context, so they
- * cannot call `await cookies()`. This client skips the SSR cookie
+ * Those callbacks run outside a normal request-bound Supabase SSR client,
+ * so they cannot call `await cookies()`. This client skips the SSR cookie
  * plumbing and connects directly with the service key — RLS is still
  * bypassed because RLS is disabled at the database level.
  *
- * Create a fresh instance on each call; `unstable_cache` ensures the
- * function body only runs on cache misses, not on every request.
+ * Create a fresh instance on each call; the cache layer ensures the heavy
+ * work only runs on cache misses, not on every request.
  */
 export function createServiceClient() {
   return createRawClient(

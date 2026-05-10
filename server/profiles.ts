@@ -9,6 +9,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
+import { invalidateUsersAndOverview } from "@/server/cache-invalidation";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -133,6 +134,7 @@ export async function setupProfile(
 
   if (upsertError) return { error: upsertError.message };
 
+  invalidateUsersAndOverview();
   redirect("/dashboard");
 }
 
@@ -210,6 +212,7 @@ export async function updateProfile(
 
   if (updateError) return { error: updateError.message };
 
+  invalidateUsersAndOverview();
   redirect("/dashboard");
 }
 
@@ -292,6 +295,7 @@ export async function updateProfileInfo(
 
   if (updateError) return { error: updateError.message };
 
+  invalidateUsersAndOverview();
   redirect("/dashboard");
 }
 
@@ -345,6 +349,7 @@ export async function verifyUser(userId: string): Promise<{ error?: string }> {
 
   if (error) return { error: error.message };
 
+  invalidateUsersAndOverview();
   revalidatePath(`/dashboard/users/${userId}`);
   revalidatePath("/dashboard/users");
   return {};
@@ -378,6 +383,7 @@ export async function unVerifyUser(
 
   if (error) return { error: error.message };
 
+  invalidateUsersAndOverview();
   revalidatePath(`/dashboard/users/${userId}`);
   revalidatePath("/dashboard/users");
   return {};
@@ -476,6 +482,7 @@ export async function promoteToModerator(
     .eq("id", target.id);
 
   if (error) return { error: error.message };
+  invalidateUsersAndOverview();
   return { success: `${target.full_name} is now a moderator` };
 }
 
@@ -513,5 +520,6 @@ export async function demoteModerator(
     .eq("id", userId);
 
   if (error) return { error: error.message };
+  invalidateUsersAndOverview();
   return { success: `${target.full_name} has been removed as moderator` };
 }

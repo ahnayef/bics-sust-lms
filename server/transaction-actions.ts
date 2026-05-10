@@ -21,6 +21,10 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
+import {
+  invalidateAfterPdfMutation,
+  invalidateAfterTransactionMutation,
+} from "@/server/cache-invalidation";
 import { getBookByQR } from "@/server/library";
 import { revalidatePath } from "next/cache";
 import type { Copy } from "@/types/library";
@@ -127,6 +131,7 @@ export async function borrowBook(
 
   if (error) return { error: error.message };
 
+  invalidateAfterTransactionMutation();
   revalidatePath("/dashboard/transactions");
   revalidatePath("/dashboard/return");
   revalidatePath("/dashboard/history");
@@ -186,6 +191,7 @@ export async function returnBook(
 
   if (error) return { error: error.message };
 
+  invalidateAfterTransactionMutation();
   revalidatePath("/dashboard/transactions");
   revalidatePath("/dashboard/return");
   revalidatePath("/dashboard/history");
@@ -245,8 +251,11 @@ export async function allowBorrowRequest(
   if (copyErr)
     return { error: `Approved but copy update failed: ${copyErr.message}` };
 
+  invalidateAfterTransactionMutation();
   revalidatePath("/dashboard/transactions");
   revalidatePath("/dashboard/book-list");
+  revalidatePath("/dashboard/return");
+  revalidatePath("/dashboard/history");
   return {};
 }
 
@@ -282,6 +291,7 @@ export async function rejectBorrowRequest(
 
   if (error) return { error: error.message };
 
+  invalidateAfterTransactionMutation();
   revalidatePath("/dashboard/transactions");
   return {};
 }
@@ -360,6 +370,7 @@ export async function approveReturnRequest(
       error: `Return approved but copy update failed: ${copyErr.message}`,
     };
 
+  invalidateAfterTransactionMutation();
   revalidatePath("/dashboard/transactions");
   revalidatePath("/dashboard/return");
   revalidatePath("/dashboard/book-list");
@@ -399,6 +410,7 @@ export async function rejectReturnRequest(
 
   if (error) return { error: error.message };
 
+  invalidateAfterTransactionMutation();
   revalidatePath("/dashboard/transactions");
   return {};
 }
@@ -450,6 +462,7 @@ export async function submitPdfReport(
 
   if (error) return { error: error.message };
 
+  invalidateAfterPdfMutation();
   revalidatePath("/dashboard/transactions");
   revalidatePath("/dashboard/history");
   revalidatePath("/dashboard/book-list");
@@ -483,6 +496,7 @@ export async function approvePdfReport(
 
   if (error) return { error: error.message };
 
+  invalidateAfterPdfMutation();
   revalidatePath("/dashboard/transactions");
   return {};
 }
@@ -516,6 +530,7 @@ export async function rejectPdfReport(
 
   if (error) return { error: error.message };
 
+  invalidateAfterPdfMutation();
   revalidatePath("/dashboard/transactions");
   return {};
 }

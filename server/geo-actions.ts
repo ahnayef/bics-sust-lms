@@ -8,6 +8,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
+import { invalidateUsersDirectory } from "@/server/cache-invalidation";
 import { revalidatePath } from "next/cache";
 
 async function requireAdmin(): Promise<{ error: string } | { sub: string }> {
@@ -52,6 +53,7 @@ export async function addThana(
 
   if (error) return { error: error.message };
 
+  invalidateUsersDirectory();
   revalidatePath("/dashboard/thanas");
   return {};
 }
@@ -85,6 +87,7 @@ export async function deleteThana(
   const { error } = await supabase.from("upazilas").delete().eq("id", id);
   if (error) return { error: error.message };
 
+  invalidateUsersDirectory();
   revalidatePath("/dashboard/thanas");
   return {};
 }
@@ -114,6 +117,7 @@ export async function modifyThana(
 
   if (error) return { error: error.message };
 
+  invalidateUsersDirectory();
   revalidatePath("/dashboard/thanas");
   return {};
 }

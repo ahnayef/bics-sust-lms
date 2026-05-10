@@ -7,7 +7,8 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { invalidateAfterBookOrCopyMutation } from "@/server/cache-invalidation";
+import { revalidatePath } from "next/cache";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -88,8 +89,8 @@ export async function addBook(
   if (first_copy_raw) {
     try {
       first_copy_id = formatCopyId(first_copy_raw);
-    } catch (e: any) {
-      return { error: e.message };
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : String(e) };
     }
     // Duplicate check
     const { data: dup } = await supabase
@@ -115,6 +116,7 @@ export async function addBook(
       .insert({ id: first_copy_id, book_id: book.id, copy_number: 1 });
 
     if (copyErr) {
+      invalidateAfterBookOrCopyMutation();
       revalidatePath("/dashboard/books");
       return {
         bookId: book.id,
@@ -123,7 +125,7 @@ export async function addBook(
     }
   }
 
-  revalidateTag("books", "max");
+  invalidateAfterBookOrCopyMutation();
   revalidatePath("/dashboard/books");
   revalidatePath("/dashboard/copies");
   return { bookId: book.id };
@@ -161,7 +163,7 @@ export async function editBook(
 
   if (error) return { error: error.message };
 
-  revalidateTag("books", "max");
+  invalidateAfterBookOrCopyMutation();
   revalidatePath("/dashboard/books");
   revalidatePath("/dashboard/copies");
   return {};
@@ -200,7 +202,7 @@ export async function removeBook(
   const { error } = await supabase.from("books").delete().eq("id", id);
   if (error) return { error: error.message };
 
-  revalidateTag("books", "max");
+  invalidateAfterBookOrCopyMutation();
   revalidatePath("/dashboard/books");
   revalidatePath("/dashboard/copies");
   return {};
@@ -232,8 +234,8 @@ export async function addCopyOfBook(
   let copy_id: string;
   try {
     copy_id = formatCopyId(copy_raw);
-  } catch (e: any) {
-    return { error: e.message };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : String(e) };
   }
 
   // Server-side duplicate check
@@ -263,7 +265,7 @@ export async function addCopyOfBook(
 
   if (error) return { error: error.message };
 
-  revalidateTag("books", "max");
+  invalidateAfterBookOrCopyMutation();
   revalidatePath("/dashboard/copies");
   revalidatePath("/dashboard/books");
   return {};
@@ -299,7 +301,7 @@ export async function removeCopyOfBook(
   const { error } = await supabase.from("copies").delete().eq("id", copy_id);
   if (error) return { error: error.message };
 
-  revalidateTag("books", "max");
+  invalidateAfterBookOrCopyMutation();
   revalidatePath("/dashboard/copies");
   revalidatePath("/dashboard/books");
   return {};

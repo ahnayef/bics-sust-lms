@@ -10,12 +10,22 @@ import Footer from "./components/Footer";
 import Navbar from "./components/Navbar";
 import "../styles/grain.css";
 import { getClaims } from "@/server/user";
+import { Suspense } from "react";
 
-export default async function Home() {
+export default function Home() {
+  return (
+    <Suspense fallback={<HomeFallback />}>
+      <HomeContent />
+    </Suspense>
+  );
+}
+
+async function HomeContent() {
   const claims = await getClaims();
   const isLoggedIn = !!claims;
   const ctaHref = isLoggedIn ? "/dashboard" : "/login";
   const ctaLabel = isLoggedIn ? "Go to Dashboard" : "Get Started";
+  const year = new Date().getFullYear();
 
   return (
     <>
@@ -328,6 +338,22 @@ export default async function Home() {
         </div>
       </section>
 
+      <Footer year={year} />
+    </>
+  );
+}
+
+function HomeFallback() {
+  return (
+    <>
+      <Navbar isLoggedIn={false} />
+      <div
+        className="newspaper-grain flex min-h-[50vh] items-center justify-center px-4 pt-12"
+        aria-busy
+        aria-label="Loading"
+      >
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
       <Footer />
     </>
   );

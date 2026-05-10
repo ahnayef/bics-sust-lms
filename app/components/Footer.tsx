@@ -1,7 +1,8 @@
 import Link from "next/link";
 
-export default function Footer() {
-  const currentYear = new Date().getFullYear();
+/** Pass `year` from a dynamic parent (after `cookies` / auth) so prerender avoids raw `Date()`. */
+export default function Footer({ year }: { year?: number }) {
+  const currentYear = year ?? 2026;
 
   return (
     <footer

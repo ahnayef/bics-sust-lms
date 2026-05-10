@@ -6,7 +6,8 @@
  */
 
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { unstable_cache } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
+import { cookies } from "next/headers";
 import type {
   Book,
   Copy,
@@ -25,28 +26,27 @@ import type { Profile } from "@/types/profile";
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * All books with their copies — cached across requests and invalidated
- * automatically whenever a book or copy is mutated (via revalidateTag).
+ * All books with their copies — cached across requests and invalidated on writes
+ * via `updateTag("books")` (see server/cache-invalidation.ts).
  *
- * The underlying fetch uses the service client so it can run safely inside
- * `unstable_cache` (no request/cookie context required).
+ * Uses the service role client inside `'use cache'` (no cookie context).
  */
-const fetchBooks = unstable_cache(
-  async (): Promise<Book[]> => {
-    const supabase = createServiceClient();
-    const { data, error } = await supabase
-      .from("books")
-      .select("*, copies(id, copy_number, status)")
-      .order("title");
-    if (error || !data) return [];
-    return data as unknown as Book[];
-  },
-  ["books-list"],
-  { tags: ["books"] },
-);
+async function loadBooksCached(): Promise<Book[]> {
+  "use cache";
+  cacheTag("books");
+  cacheLife("max");
+
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from("books")
+    .select("*, copies(id, copy_number, status)")
+    .order("title");
+  if (error || !data) return [];
+  return data as unknown as Book[];
+}
 
 export async function getBooks(): Promise<Book[]> {
-  return fetchBooks();
+  return loadBooksCached();
 }
 
 /** Single book with all copies. */
@@ -92,9 +92,12 @@ export async function bookStatus(
 // Copies
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** All copies with their parent book info. */
-export async function getCopies(): Promise<Copy[]> {
-  const supabase = await createClient();
+async function loadCopiesCached(): Promise<Copy[]> {
+  "use cache";
+  cacheTag("copies");
+  cacheLife("max");
+
+  const supabase = createServiceClient();
   const { data, error } = await supabase
     .from("copies")
     .select("*, book:books(id, title, author, is_syllabus)")
@@ -102,6 +105,11 @@ export async function getCopies(): Promise<Copy[]> {
     .order("copy_number");
   if (error || !data) return [];
   return data as unknown as Copy[];
+}
+
+/** All copies with their parent book info. */
+export async function getCopies(): Promise<Copy[]> {
+  return loadCopiesCached();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -114,11 +122,14 @@ export interface TransactionFilters {
   userId?: string;
 }
 
-/** All transactions matching optional filters, newest first. */
-export async function getTransactions(
-  filters?: TransactionFilters,
+async function loadTransactionsCached(
+  filters: TransactionFilters,
 ): Promise<Transaction[]> {
-  const supabase = await createClient();
+  "use cache";
+  cacheTag("transactions");
+  cacheLife("max");
+
+  const supabase = createServiceClient();
   let query = supabase
     .from("transactions")
     .select(
@@ -130,13 +141,20 @@ export async function getTransactions(
     )
     .order("request_date", { ascending: false });
 
-  if (filters?.type) query = query.eq("type", filters.type);
-  if (filters?.status) query = query.eq("status", filters.status);
-  if (filters?.userId) query = query.eq("user_id", filters.userId);
+  if (filters.type) query = query.eq("type", filters.type);
+  if (filters.status) query = query.eq("status", filters.status);
+  if (filters.userId) query = query.eq("user_id", filters.userId);
 
   const { data, error } = await query;
   if (error || !data) return [];
   return data as unknown as Transaction[];
+}
+
+/** All transactions matching optional filters, newest first. */
+export async function getTransactions(
+  filters?: TransactionFilters,
+): Promise<Transaction[]> {
+  return loadTransactionsCached(filters ?? {});
 }
 
 /** Transactions for a specific user. */
@@ -155,11 +173,14 @@ export interface PdfFilters {
   status?: string;
 }
 
-/** All PDF reading submissions, newest first. */
-export async function getPdfSubmissions(
-  filters?: PdfFilters,
+async function loadPdfSubmissionsCached(
+  filters: PdfFilters,
 ): Promise<PdfSubmission[]> {
-  const supabase = await createClient();
+  "use cache";
+  cacheTag("pdf-submissions");
+  cacheLife("max");
+
+  const supabase = createServiceClient();
   let query = supabase
     .from("pdf_submissions")
     .select(
@@ -170,12 +191,19 @@ export async function getPdfSubmissions(
     )
     .order("submitted_at", { ascending: false });
 
-  if (filters?.userId) query = query.eq("user_id", filters.userId);
-  if (filters?.status) query = query.eq("status", filters.status);
+  if (filters.userId) query = query.eq("user_id", filters.userId);
+  if (filters.status) query = query.eq("status", filters.status);
 
   const { data, error } = await query;
   if (error || !data) return [];
   return data as unknown as PdfSubmission[];
+}
+
+/** All PDF reading submissions, newest first. */
+export async function getPdfSubmissions(
+  filters?: PdfFilters,
+): Promise<PdfSubmission[]> {
+  return loadPdfSubmissionsCached(filters ?? {});
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -228,10 +256,12 @@ export async function getUserStats(userId: string): Promise<UserStats> {
   // Union: unique syllabus book_ids completed
   const syllabusIds = new Set<string>();
   for (const t of completedBorrows ?? []) {
-    if ((t as any).book?.is_syllabus) syllabusIds.add(t.book_id);
+    if ((t as { book?: { is_syllabus?: boolean } }).book?.is_syllabus)
+      syllabusIds.add(t.book_id);
   }
   for (const ps of approvedPdfs ?? []) {
-    if ((ps as any).book?.is_syllabus) syllabusIds.add(ps.book_id);
+    if ((ps as { book?: { is_syllabus?: boolean } }).book?.is_syllabus)
+      syllabusIds.add(ps.book_id);
   }
 
   return {
@@ -251,8 +281,12 @@ export async function getUserStats(userId: string): Promise<UserStats> {
  * All profiles (members, mods, admins) with their reading progress and
  * borrow counts. Uses batch queries to avoid N+1.
  */
-export async function getUsers(): Promise<UserWithStats[]> {
-  const supabase = await createClient();
+async function loadUsersCached(): Promise<UserWithStats[]> {
+  "use cache";
+  cacheTag("users");
+  cacheLife("max");
+
+  const supabase = createServiceClient();
 
   const { data: profiles } = await supabase
     .from("profiles")
@@ -312,13 +346,23 @@ export async function getUsers(): Promise<UserWithStats[]> {
 
     const syllabusIds = new Set<string>();
     for (const t of completedBorrows ?? []) {
-      if ((t as any).user_id === profile.id && (t as any).book?.is_syllabus) {
-        syllabusIds.add(t.book_id);
+      const row = t as {
+        user_id: string;
+        book_id: string;
+        book?: { is_syllabus?: boolean };
+      };
+      if (row.user_id === profile.id && row.book?.is_syllabus) {
+        syllabusIds.add(row.book_id);
       }
     }
     for (const ps of approvedPdfs ?? []) {
-      if ((ps as any).user_id === profile.id && (ps as any).book?.is_syllabus) {
-        syllabusIds.add(ps.book_id);
+      const row = ps as {
+        user_id: string;
+        book_id: string;
+        book?: { is_syllabus?: boolean };
+      };
+      if (row.user_id === profile.id && row.book?.is_syllabus) {
+        syllabusIds.add(row.book_id);
       }
     }
 
@@ -332,6 +376,10 @@ export async function getUsers(): Promise<UserWithStats[]> {
   });
 }
 
+export async function getUsers(): Promise<UserWithStats[]> {
+  return loadUsersCached();
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Dashboard Overview
 // ─────────────────────────────────────────────────────────────────────────────
@@ -341,24 +389,20 @@ export async function getUsers(): Promise<UserWithStats[]> {
  * stats, overdue items, pending queues, recent activity,
  * top borrowers, and most-borrowed books.
  *
- * Also triggers `mark_overdue_transactions()` so that any active borrow
- * past its due_date is automatically marked overdue before stats are read.
+ * `firstOfMonth` is part of the cache key so the "completed this month" query
+ * stays correct across month boundaries. `mark_overdue_transactions` runs on
+ * cache refresh (miss / after invalidation), not on every cache hit.
  */
-export async function getOverviewData(): Promise<OverviewData> {
-  const supabase = await createClient();
+async function loadOverviewDataCached(
+  firstOfMonth: string,
+): Promise<OverviewData> {
+  "use cache";
+  cacheTag("overview");
+  cacheLife("max");
 
-  // Fire-and-forget: mark overdue borrows without blocking the main queries.
-  // If the function doesn't exist yet the error is silently swallowed.
-  supabase.rpc("mark_overdue_transactions").then(
-    () => {},
-    () => {},
-  );
+  const supabase = createServiceClient();
 
-  const firstOfMonth = new Date(
-    new Date().getFullYear(),
-    new Date().getMonth(),
-    1,
-  ).toISOString();
+  await supabase.rpc("mark_overdue_transactions");
 
   const [
     { data: books },
@@ -523,4 +567,16 @@ export async function getOverviewData(): Promise<OverviewData> {
     popularBooks,
     pendingPdfs: (pendingPdfs ?? []) as unknown as PdfSubmission[],
   };
+}
+
+export async function getOverviewData(): Promise<OverviewData> {
+  // Request data must be read before `new Date()` in prerender-sensitive trees
+  // (Cache Components); `cookies()` marks this path as dynamic.
+  await cookies();
+  const firstOfMonth = new Date(
+    new Date().getFullYear(),
+    new Date().getMonth(),
+    1,
+  ).toISOString();
+  return loadOverviewDataCached(firstOfMonth);
 }

@@ -1,19 +1,51 @@
 import { getClaims } from "@/server/user";
 import { getProfile } from "@/server/geo";
 import DashboardShell from "./DashboardShell";
+import { Suspense } from "react";
 
-export default async function DashboardLayout({
+function DashboardRootFallback() {
+  return (
+    <div
+      className="flex min-h-screen items-center justify-center bg-background"
+      aria-busy
+      aria-label="Loading dashboard"
+    >
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+    </div>
+  );
+}
+
+function DashboardPageFallback() {
+  return (
+    <div
+      className="flex flex-1 items-center justify-center p-8"
+      aria-busy
+      aria-label="Loading content"
+    >
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+    </div>
+  );
+}
+
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Get claims first (no RLS involved — reads JWT)
+  return (
+    <Suspense fallback={<DashboardRootFallback />}>
+      <DashboardLayoutAsync>{children}</DashboardLayoutAsync>
+    </Suspense>
+  );
+}
+
+async function DashboardLayoutAsync({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const claims = await getClaims();
-
-  // Get profile for display name — own-row select, no recursion risk
   const profile = claims ? await getProfile(claims.sub) : null;
-
-  // Role comes from the profile row; fall back to "member"
   const userRole = profile?.role ?? "member";
   const userName = profile?.full_name ?? claims?.email ?? "User";
   const userAvatar = profile?.avatar_url ?? null;
@@ -24,7 +56,7 @@ export default async function DashboardLayout({
       userRole={userRole}
       userAvatar={userAvatar}
     >
-      {children}
+      <Suspense fallback={<DashboardPageFallback />}>{children}</Suspense>
     </DashboardShell>
   );
 }
