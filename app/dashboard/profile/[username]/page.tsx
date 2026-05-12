@@ -1,6 +1,7 @@
 import { getProfileByUsername } from "@/server/geo";
 import { getUserStats } from "@/server/library";
 import { getClaims } from "@/server/user";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
@@ -71,9 +72,11 @@ export default async function DashboardUserProfilePage({
       <section className="dashboard-surface tron-border rounded-sm p-6 sm:p-8">
         <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
           {profile.avatar_url ? (
-            <img
+            <Image
               src={profile.avatar_url}
               alt={profile.full_name}
+              width={80}
+              height={80}
               className="w-20 h-20 rounded-full object-cover border-2 border-[#8a7966] shrink-0"
             />
           ) : (

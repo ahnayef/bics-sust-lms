@@ -22,6 +22,7 @@ export type ActionLogType =
 
 export interface Book {
   id: string; // UUID
+  short_id: string;
   title: string;
   author: string;
   is_syllabus: boolean;

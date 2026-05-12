@@ -4,7 +4,10 @@ import ThanaCombobox from "@/components/ThanaCombobox";
 import ConfirmModal from "@/components/ui/confirm-modal";
 import type { GeoSource } from "@/server/geo";
 import { updateProfileInfo } from "@/server/profiles";
+import "@/styles/components.css";
+import "@/styles/typography.css";
 import type { Profile, Thana, UserRank } from "@/types/profile";
+import Image from "next/image";
 import Link from "next/link";
 import { useActionState, useMemo, useRef, useState } from "react";
 import {
@@ -12,8 +15,6 @@ import {
   FaExclamationTriangle,
   FaMapMarkerAlt,
 } from "react-icons/fa";
-import "@/styles/typography.css";
-import "@/styles/components.css";
 
 interface Props {
   profile: Profile;
@@ -148,9 +149,11 @@ export default function EditProfileForm({
           <div className="dashboard-surface tron-border rounded-sm p-6 sm:p-8">
             <div className="flex items-center gap-4 mb-6 pb-5 border-b border-[#c9b89a]">
               {profile.avatar_url ? (
-                <img
+                <Image
                   src={profile.avatar_url}
                   alt={profile.full_name}
+                  width={56}
+                  height={56}
                   className="w-14 h-14 rounded-full object-cover border-2 border-[#8a7966] shrink-0"
                 />
               ) : (

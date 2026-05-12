@@ -1,6 +1,7 @@
 import { getProfile } from "@/server/geo";
 import { getUserStats } from "@/server/library";
 import { getClaims } from "@/server/user";
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
@@ -50,9 +51,11 @@ export default async function DashboardProfilePage() {
           <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
             {" "}
             {profile.avatar_url ? (
-              <img
+              <Image
                 src={profile.avatar_url}
                 alt={profile.full_name}
+                width={96}
+                height={96}
                 className="w-24 h-24 rounded-full object-cover border-2 border-[#8a7966] shrink-0"
               />
             ) : (

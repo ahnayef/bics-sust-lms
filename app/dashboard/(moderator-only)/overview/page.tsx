@@ -5,6 +5,7 @@ import type {
   TopMember,
   Transaction,
 } from "@/types/library";
+import Image from "next/image";
 import Link from "next/link";
 import {
   FaArrowRight,
@@ -139,10 +140,11 @@ function Avatar({
 }) {
   const dim = size === "md" ? "w-9 h-9 text-sm" : "w-7 h-7 text-xs";
   return url ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
+    <Image
       src={url}
       alt={name}
+      width={size === "md" ? 36 : 28}
+      height={size === "md" ? 36 : 28}
       className={`${dim} rounded-full object-cover border border-[#8a7966] shrink-0`}
     />
   ) : (
@@ -324,11 +326,10 @@ export default async function DashboardOverview() {
               <Link
                 key={label}
                 href={`/dashboard/transactions?tab=${tab}`}
-                className={`flex items-center justify-between p-3 border rounded-sm transition-colors ${
-                  urgent && count > 0
+                className={`flex items-center justify-between p-3 border rounded-sm transition-colors ${urgent && count > 0
                     ? "border-[#c4614a] bg-[#fdf0ec] hover:bg-[#f9e6e1]"
                     : "border-[#c4b08a] bg-[#f8f1e6] hover:bg-[#ede3d4]"
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-2.5">
                   <Icon

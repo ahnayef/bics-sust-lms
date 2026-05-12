@@ -1,5 +1,8 @@
 "use client";
 
+import type { UserWithStats } from "@/types/library";
+import Image from "next/image";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   FaCheckCircle,
@@ -9,8 +12,6 @@ import {
   FaTimes,
   FaTimesCircle,
 } from "react-icons/fa";
-import Link from "next/link";
-import type { UserWithStats } from "@/types/library";
 
 type Tab = "all" | "verified" | "unverified";
 type SortField = "joinDate" | "progress" | "rank";
@@ -177,11 +178,10 @@ export default function UsersClient({ users }: Props) {
             key={t}
             type="button"
             onClick={() => setTab(t)}
-            className={`px-4 sm:px-6 py-2.5 text-sm font-medium ink-text transition-colors flex items-center gap-2 border-b-2 -mb-px cursor-pointer ${
-              tab === t
+            className={`px-4 sm:px-6 py-2.5 text-sm font-medium ink-text transition-colors flex items-center gap-2 border-b-2 -mb-px cursor-pointer ${tab === t
                 ? "border-[#5a4d40] text-[#2b2119]"
                 : "border-transparent text-[#6a5a4c] hover:text-[#2b2119] hover:border-[#b9a58b]"
-            }`}
+              }`}
           >
             {t === "all"
               ? "All Users"
@@ -302,8 +302,8 @@ export default function UsersClient({ users }: Props) {
                 const progress =
                   user.syllabusTotal > 0
                     ? Math.round(
-                        (user.syllabusCompleted / user.syllabusTotal) * 100,
-                      )
+                      (user.syllabusCompleted / user.syllabusTotal) * 100,
+                    )
                     : 0;
                 const joinedDate = new Date(user.created_at).toLocaleDateString(
                   "en-GB",
@@ -318,10 +318,11 @@ export default function UsersClient({ users }: Props) {
                     <td className="px-4 sm:px-6 py-3">
                       <div className="flex items-center gap-2.5">
                         {user.avatar_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
+                          <Image
                             src={user.avatar_url}
                             alt={user.full_name}
+                            width={32}
+                            height={32}
                             className="w-8 h-8 rounded-full object-cover border border-[#8a7966] shrink-0"
                           />
                         ) : (

@@ -1,11 +1,12 @@
 "use client";
 
 import { signOut } from "@/server/auth";
+import "@/styles/components.css";
+import "@/styles/typography.css";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useState } from "react";
-import "@/styles/typography.css";
-import "@/styles/components.css";
 import {
   FaBars,
   FaBook,
@@ -210,9 +211,11 @@ export default function DashboardShell({
                 className="flex items-center gap-2 text-sm text-[#5a4b3f] ink-text hover:text-[#221910] transition-colors"
               >
                 {userAvatar ? (
-                  <img
+                  <Image
                     src={userAvatar}
                     alt={userName}
+                    width={28}
+                    height={28}
                     className="w-7 h-7 rounded-full object-cover border border-[#8a7966]"
                   />
                 ) : (

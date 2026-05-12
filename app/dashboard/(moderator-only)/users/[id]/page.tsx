@@ -1,6 +1,7 @@
 import { getProfile } from "@/server/geo";
 import { getUserStats } from "@/server/library";
 import { moderatorPermissions } from "@/server/profiles";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -72,10 +73,11 @@ export default async function UserProfilePage({
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex items-center gap-4">
             {profile.avatar_url ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
+              <Image
                 src={profile.avatar_url}
                 alt={profile.full_name}
+                width={64}
+                height={64}
                 className="w-16 h-16 rounded-full object-cover border-2 border-[#8a7966] shrink-0"
               />
             ) : (
