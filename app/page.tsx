@@ -1,5 +1,6 @@
 import { getProfile } from "@/server/geo";
 import { getClaims } from "@/server/user";
+import { cacheLife, cacheTag } from "next/cache";
 import { Suspense } from "react";
 import {
   FaBell,
@@ -13,9 +14,14 @@ import "../styles/grain.css";
 import Footer from "./components/Footer";
 import Navbar from "./components/Navbar";
 
-const year = new Date().getFullYear();
+async function getCachedYear() {
+  "use cache";
+  cacheTag("year");
+  cacheLife("days");
+  return new Date().getFullYear();
+}
 
-export default function Home() {
+export default async function Home() {
   return (
     <Suspense fallback={<HomeFallback />}>
       <HomeContent />
@@ -24,6 +30,7 @@ export default function Home() {
 }
 
 async function HomeContent() {
+  const year = await getCachedYear();
   const claims = await getClaims();
   const profile = claims ? await getProfile(claims.sub as string) : null;
   const isLoggedIn = !!claims;

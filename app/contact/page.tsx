@@ -1,10 +1,13 @@
+import { cacheLife, cacheTag } from "next/cache";
 import { FaClock, FaEnvelope, FaQuestionCircle } from "react-icons/fa";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
 
-const year = new Date().getFullYear();
-
-export default function ContactPage() {
+export default async function ContactPage() {
+  "use cache";
+  cacheTag("year");
+  cacheLife("days");
+  const year = new Date().getFullYear();
   return (
     <div className="min-h-screen bg-[#e8dcc8]">
       <Navbar />
