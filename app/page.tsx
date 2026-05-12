@@ -13,6 +13,8 @@ import "../styles/grain.css";
 import Footer from "./components/Footer";
 import Navbar from "./components/Navbar";
 
+const year = new Date().getFullYear();
+
 export default function Home() {
   return (
     <Suspense fallback={<HomeFallback />}>
@@ -29,7 +31,6 @@ async function HomeContent() {
 
   const ctaHref = !isLoggedIn ? "/login" : isProfileComplete ? "/dashboard" : "/setup";
   const ctaLabel = !isLoggedIn ? "Get Started" : isProfileComplete ? "Go to Dashboard" : "Finish Setup";
-  const year = new Date().getFullYear();
 
   return (
     <>
