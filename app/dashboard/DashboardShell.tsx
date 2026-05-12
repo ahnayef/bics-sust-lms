@@ -10,7 +10,9 @@ import {
   FaChartLine,
   FaExchangeAlt,
   FaGraduationCap,
+  FaHome,
   FaMapMarkerAlt,
+  FaPrint,
   FaShieldAlt,
   FaUser,
   FaUsers,
@@ -24,6 +26,12 @@ interface DashboardShellProps {
 }
 
 const navigationItems = [
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: FaHome,
+    requiresRole: ["admin", "moderator", "member"],
+  },
   {
     label: "My Profile",
     href: "/dashboard/profile",
@@ -76,7 +84,13 @@ const navigationItems = [
     label: "Thanas",
     href: "/dashboard/thanas",
     icon: FaMapMarkerAlt,
-    requiresRole: ["admin"],
+    requiresRole: ["admin", "moderator"],
+  },
+  {
+    label: "Print QR",
+    href: "/dashboard/print-qr",
+    icon: FaPrint,
+    requiresRole: ["admin", "moderator"],
   },
 ];
 
@@ -100,7 +114,7 @@ export default function DashboardShell({
   };
 
   return (
-    <div className="h-screen flex overflow-hidden dashboard-shell">
+    <div className="h-screen flex overflow-hidden dashboard-shell print:h-auto print:overflow-visible print:block">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Courier+Prime:wght@400;700&display=swap');
 
@@ -148,7 +162,7 @@ export default function DashboardShell({
       `}</style>
 
       {/* Sidebar — always visible, narrow on mobile, full on lg+ */}
-      <aside className="flex flex-col shrink-0 w-14 lg:w-64 h-screen overflow-y-auto dashboard-surface tron-border border-r border-[#5e4e3e] transition-all duration-300">
+      <aside className="flex flex-col shrink-0 w-14 lg:w-64 h-screen overflow-y-auto dashboard-surface tron-border border-r border-[#5e4e3e] transition-all duration-300 print:hidden">
         <Link
           href="/dashboard"
           className="flex items-center gap-2 px-3 lg:px-6 py-[17px] border-b border-[#6d5c4a] ink-title text-[#221910] font-bold text-lg overflow-hidden"
@@ -166,11 +180,10 @@ export default function DashboardShell({
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 lg:px-4 py-3 rounded-sm transition-colors ink-text border overflow-hidden ${
-                  isActive(item.href)
-                    ? "bg-[#eadcc8] text-[#221910] border-[#7d6d5a]"
-                    : "text-[#4d4034] border-transparent hover:bg-[#ece0ce] hover:border-[#b59f86]"
-                }`}
+                className={`flex items-center gap-3 px-3 lg:px-4 py-3 rounded-sm transition-colors ink-text border overflow-hidden ${isActive(item.href)
+                  ? "bg-[#eadcc8] text-[#221910] border-[#7d6d5a]"
+                  : "text-[#4d4034] border-transparent hover:bg-[#ece0ce] hover:border-[#b59f86]"
+                  }`}
                 title={item.label}
               >
                 <Icon className="w-4 h-4 shrink-0" />
@@ -184,17 +197,21 @@ export default function DashboardShell({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 min-w-0 overflow-y-auto flex flex-col">
+      <main className="flex-1 min-w-0 overflow-y-auto flex flex-col print:overflow-visible">
         {/* Top Bar — always visible */}
-        <div className="sticky top-0 z-20 dashboard-surface border-b border-[#6f5f4f] px-4 lg:px-8 py-3">
+        <div className="sticky top-0 z-20 dashboard-surface border-b border-[#6f5f4f] px-4 lg:px-8 py-3 print:hidden">
           <div className="flex items-center justify-between">
             <h1 className="text-lg lg:text-xl font-semibold text-[#221910] ink-title">
-              Dashboard
+              {pathname === "/dashboard"
+                ? "Home"
+                : pathname.startsWith("/dashboard/profile")
+                  ? "My Profile"
+                  : "Dashboard"}
             </h1>
             <div className="flex items-center gap-3 lg:gap-6">
               <Link
                 href="/dashboard"
-                className="hidden sm:flex items-center gap-2 text-sm text-[#5a4b3f] ink-text hover:text-[#221910] transition-colors"
+                className="flex items-center gap-2 text-sm text-[#5a4b3f] ink-text hover:text-[#221910] transition-colors"
               >
                 {userAvatar ? (
                   <img
@@ -207,7 +224,7 @@ export default function DashboardShell({
                     {userName.charAt(0).toUpperCase()}
                   </div>
                 )}
-                <span>
+                <span className="hidden sm:block">
                   Welcome back,{" "}
                   <span className="font-semibold text-[#2f251d]">
                     {userName}
@@ -227,7 +244,9 @@ export default function DashboardShell({
         </div>
 
         {/* Page Content */}
-        <div className="flex-1 p-4 lg:p-8 pb-20">{children}</div>
+        <div className="flex-1 px-1 py-4 sm:p-4 lg:p-8 pb-20 print:p-0 print:m-0">
+          {children}
+        </div>
       </main>
     </div>
   );

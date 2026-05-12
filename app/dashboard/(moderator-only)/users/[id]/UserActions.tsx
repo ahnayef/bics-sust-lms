@@ -1,23 +1,33 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
-import { verifyUser, unVerifyUser } from "@/server/profiles";
 import ConfirmModal from "@/components/ui/confirm-modal";
+import { unVerifyUser, verifyUser, makeAdmin } from "@/server/profiles";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 
 interface Props {
   userId: string;
   isVerified: boolean;
   userName: string;
+  userRole: string;
+  isAdmin: boolean;
 }
 
-export default function UserActions({ userId, isVerified, userName }: Props) {
+export default function UserActions({
+  userId,
+  isVerified,
+  userName,
+  userRole,
+  isAdmin,
+}: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [showUnverifyModal, setShowUnverifyModal] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [showMakeAdminModal1, setShowMakeAdminModal1] = useState(false);
+  const [showMakeAdminModal2, setShowMakeAdminModal2] = useState(false);
 
   const handleVerify = () => {
     setActionError(null);
@@ -39,6 +49,20 @@ export default function UserActions({ userId, isVerified, userName }: Props) {
         setActionError(result.error);
       }
       setShowUnverifyModal(false);
+      router.refresh();
+    });
+  };
+
+  const handleMakeAdmin = () => {
+    setActionError(null);
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("userId", userId);
+      const result = await makeAdmin(fd);
+      if (result?.error) {
+        setActionError(result.error);
+      }
+      setShowMakeAdminModal2(false);
       router.refresh();
     });
   };
@@ -71,6 +95,17 @@ export default function UserActions({ userId, isVerified, userName }: Props) {
           <FaTimesCircle className="w-4 h-4" />
           Unverify User
         </button>
+
+        {isAdmin && userRole !== "admin" && (
+          <button
+            type="button"
+            onClick={() => setShowMakeAdminModal1(true)}
+            disabled={isPending}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#8b2b2b] text-[#f4e8d4] border border-[#6b2222] rounded-sm hover:bg-[#a63333] transition-colors font-medium text-sm ink-text disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Make Admin
+          </button>
+        )}
       </div>
 
       <ConfirmModal
@@ -92,6 +127,33 @@ export default function UserActions({ userId, isVerified, userName }: Props) {
         preview={userName}
         danger={true}
         confirmLabel="Remove Verification"
+        loading={isPending}
+      />
+
+      <ConfirmModal
+        open={showMakeAdminModal1}
+        onClose={() => setShowMakeAdminModal1(false)}
+        onConfirm={() => {
+          setShowMakeAdminModal1(false);
+          setShowMakeAdminModal2(true);
+        }}
+        title="Make Admin - First Confirmation"
+        description="Are you absolutely sure you want to make this user an Admin? Admins have full access to everything."
+        preview={userName}
+        danger={true}
+        confirmLabel="Yes, I am sure"
+        loading={isPending}
+      />
+
+      <ConfirmModal
+        open={showMakeAdminModal2}
+        onClose={() => setShowMakeAdminModal2(false)}
+        onConfirm={handleMakeAdmin}
+        title="Make Admin - Final Confirmation"
+        description="This is a destructive action. Once an Admin, they can modify other users, including moderators. Are you REALLY sure?"
+        preview={`Target User: ${userName}`}
+        danger={true}
+        confirmLabel="Yes, Make Admin"
         loading={isPending}
       />
     </>

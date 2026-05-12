@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { signInWithGoogle } from "@/server/auth";
+import Link from "next/link";
 
 export default function Login() {
   return (
@@ -79,7 +79,7 @@ export default function Login() {
         <div
           className="text-center mb-7 sm:mb-8"
           data-aos="fade-up"
-          data-aos-duration="800"
+          data-aos-duration="300"
         >
           <Link href="/" className="inline-block">
             <span
@@ -101,7 +101,7 @@ export default function Login() {
         <div
           className="relative login-card tron-border bg-[#f1e7d8] p-6 sm:p-8 space-y-6"
           data-aos="fade-up"
-          data-aos-duration="800"
+          data-aos-duration="300"
           data-aos-delay="100"
         >
           <div className="border-b border-[#7b6d5f] pb-4">

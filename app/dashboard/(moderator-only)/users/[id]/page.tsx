@@ -1,8 +1,14 @@
 import { getProfile } from "@/server/geo";
 import { getUserStats } from "@/server/library";
-import { notFound } from "next/navigation";
+import { moderatorPermissions } from "@/server/profiles";
 import Link from "next/link";
-import { FaArrowLeft, FaCheckCircle, FaClock } from "react-icons/fa";
+import { notFound } from "next/navigation";
+import {
+  FaArrowLeft,
+  FaArrowRight,
+  FaCheckCircle,
+  FaClock,
+} from "react-icons/fa";
 import UserActions from "./UserActions";
 
 function getInitials(name: string): string {
@@ -21,9 +27,10 @@ export default async function UserProfilePage({
 }) {
   const { id } = await params;
 
-  const [profile, stats] = await Promise.all([
+  const [profile, stats, perms] = await Promise.all([
     getProfile(id),
     getUserStats(id),
+    moderatorPermissions(),
   ]);
 
   if (!profile) {
@@ -44,13 +51,21 @@ export default async function UserProfilePage({
   return (
     <div className="space-y-6 max-w-3xl">
       {/* Back link */}
-      <Link
-        href="/dashboard/users"
-        className="inline-flex items-center gap-2 text-sm text-[#5a4b3f] hover:text-[#221910] transition-colors ink-text"
-      >
-        <FaArrowLeft className="w-3.5 h-3.5" />
-        Back to Users
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link
+          href="/dashboard/users"
+          className="inline-flex items-center gap-2 text-sm text-[#5a4b3f] hover:text-[#221910] transition-colors ink-text"
+        >
+          <FaArrowLeft className="w-3.5 h-3.5" />
+          Back to Users
+        </Link>
+        <Link
+          href={`/dashboard/profile/${profile.username}`}
+          className="inline-flex items-center gap-2 px-3 py-1.5 border border-[#8a7966] text-[#4e4033] bg-[#eadcca] hover:bg-[#d6c4b0] transition-colors text-xs font-semibold rounded-sm ink-text"
+        >
+          View Public Profile <FaArrowRight className="w-3 h-3" />
+        </Link>
+      </div>
 
       {/* Header card — avatar + name + badges */}
       <div className="dashboard-surface tron-border rounded-sm p-6">
@@ -190,13 +205,11 @@ export default async function UserProfilePage({
 
           <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
             <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1">
-              Location
+              Thana
             </p>
             <p className="text-sm font-medium text-[#221910]">
-              {profile.upazila?.name &&
-              profile.district?.name &&
-              profile.division?.name ? (
-                `${profile.upazila.name}, ${profile.district.name}, ${profile.division.name}`
+              {profile.thana?.name ? (
+                profile.thana.name
               ) : (
                 <span className="text-[#8a7966] italic">Not assigned</span>
               )}
@@ -235,6 +248,8 @@ export default async function UserProfilePage({
           userId={id}
           isVerified={profile.is_verified}
           userName={profile.full_name}
+          userRole={profile.role}
+          isAdmin={perms.role === "admin"}
         />
       </div>
     </div>

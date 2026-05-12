@@ -11,11 +11,6 @@ import {
 } from "react-icons/fa";
 import Link from "next/link";
 import type { UserWithStats } from "@/types/library";
-import type { Division, District, Upazila } from "@/types/profile";
-import {
-  fetchDistrictsByDivision,
-  fetchUpazilasByDistrict,
-} from "@/server/profiles";
 
 type Tab = "all" | "verified" | "unverified";
 type SortField = "joinDate" | "progress" | "rank";
@@ -31,7 +26,6 @@ const RANK_ORDER: Record<string, number> = {
 
 interface Props {
   users: UserWithStats[];
-  divisions: Division[];
 }
 
 function getInitials(name: string): string {
@@ -57,21 +51,24 @@ function VerificationBadge({ verified }: { verified: boolean }) {
   );
 }
 
-export default function UsersClient({ users, divisions }: Props) {
+export default function UsersClient({ users }: Props) {
   const [tab, setTab] = useState<Tab>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [rankFilter, setRankFilter] = useState<RankFilter>("all");
+  const [thanaFilter, setThanaFilter] = useState<string>("all");
   const [sortField, setSortField] = useState<SortField>("joinDate");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
-  const [divisionFilter, setDivisionFilter] = useState("");
-  const [districtFilter, setDistrictFilter] = useState("");
-  const [upazilaFilter, setUpazilaFilter] = useState("");
-  const [availableDistricts, setAvailableDistricts] = useState<District[]>([]);
-  const [availableUpazilas, setAvailableUpazilas] = useState<Upazila[]>([]);
-  const [loadingDistricts, setLoadingDistricts] = useState(false);
-  const [loadingUpazilas, setLoadingUpazilas] = useState(false);
 
-  // Tab base sets
+  const uniqueThanas = useMemo(() => {
+    const thanas = new Map<string, string>();
+    for (const u of users) {
+      if (u.thana?.id) thanas.set(u.thana.id, u.thana.name);
+    }
+    return Array.from(thanas.entries()).sort((a, b) =>
+      a[1].localeCompare(b[1]),
+    );
+  }, [users]);
+
   const verifiedUsers = useMemo(
     () => users.filter((u) => u.is_verified),
     [users],
@@ -87,7 +84,6 @@ export default function UsersClient({ users, divisions }: Props) {
         ? unverifiedUsers
         : users;
 
-  // Filter + sort
   const filteredUsers = useMemo(() => {
     const query = searchTerm.toLowerCase().trim();
     const filtered = baseUsers.filter((user) => {
@@ -99,9 +95,7 @@ export default function UsersClient({ users, divisions }: Props) {
       )
         return false;
       if (rankFilter !== "all" && user.rank !== rankFilter) return false;
-      if (divisionFilter && user.division_id !== divisionFilter) return false;
-      if (districtFilter && user.district_id !== districtFilter) return false;
-      if (upazilaFilter && user.upazila_id !== upazilaFilter) return false;
+      if (thanaFilter !== "all" && user.thana?.id !== thanaFilter) return false;
       return true;
     });
 
@@ -121,45 +115,12 @@ export default function UsersClient({ users, divisions }: Props) {
       }
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [
-    baseUsers,
-    searchTerm,
-    rankFilter,
-    divisionFilter,
-    districtFilter,
-    upazilaFilter,
-    sortField,
-    sortDir,
-  ]);
+  }, [baseUsers, searchTerm, rankFilter, thanaFilter, sortField, sortDir]);
 
   const tabCounts = {
     all: users.length,
     verified: verifiedUsers.length,
     unverified: unverifiedUsers.length,
-  };
-
-  const handleDivisionChange = async (val: string) => {
-    setDivisionFilter(val);
-    setDistrictFilter("");
-    setUpazilaFilter("");
-    setAvailableDistricts([]);
-    setAvailableUpazilas([]);
-    if (!val) return;
-    setLoadingDistricts(true);
-    const { data } = await fetchDistrictsByDivision(val);
-    setAvailableDistricts(data);
-    setLoadingDistricts(false);
-  };
-
-  const handleDistrictChange = async (val: string) => {
-    setDistrictFilter(val);
-    setUpazilaFilter("");
-    setAvailableUpazilas([]);
-    if (!val) return;
-    setLoadingUpazilas(true);
-    const { data } = await fetchUpazilasByDistrict(val);
-    setAvailableUpazilas(data);
-    setLoadingUpazilas(false);
   };
 
   const selectClass =
@@ -168,27 +129,20 @@ export default function UsersClient({ users, divisions }: Props) {
   const hasActiveFilters =
     searchTerm !== "" ||
     rankFilter !== "all" ||
+    thanaFilter !== "all" ||
     sortField !== "joinDate" ||
-    sortDir !== "desc" ||
-    divisionFilter !== "" ||
-    districtFilter !== "" ||
-    upazilaFilter !== "";
+    sortDir !== "desc";
 
   const resetFilters = () => {
     setSearchTerm("");
     setRankFilter("all");
+    setThanaFilter("all");
     setSortField("joinDate");
     setSortDir("desc");
-    setDivisionFilter("");
-    setDistrictFilter("");
-    setUpazilaFilter("");
-    setAvailableDistricts([]);
-    setAvailableUpazilas([]);
   };
 
   return (
     <div className="space-y-5">
-      {/* Header */}
       <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
           Users
@@ -217,11 +171,11 @@ export default function UsersClient({ users, divisions }: Props) {
         </div>
       </section>
 
-      {/* Tabs */}
       <div className="flex border-b border-[#b9a58b] gap-0">
         {(["all", "verified", "unverified"] as const).map((t) => (
           <button
             key={t}
+            type="button"
             onClick={() => setTab(t)}
             className={`px-4 sm:px-6 py-2.5 text-sm font-medium ink-text transition-colors flex items-center gap-2 border-b-2 -mb-px cursor-pointer ${
               tab === t
@@ -241,15 +195,14 @@ export default function UsersClient({ users, divisions }: Props) {
         ))}
       </div>
 
-      {/* Filters + Sort */}
       <section className="dashboard-surface tron-border rounded-sm p-4 sm:p-5 border border-[#5f4f40] space-y-3">
-        {/* Section header with optional reset */}
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#5c4f42] ink-text">
             Filters &amp; Sort
           </span>
           {hasActiveFilters && (
             <button
+              type="button"
               onClick={resetFilters}
               className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#7a4c37] border border-[#c4a882] bg-[#f6ecdd] rounded-sm hover:bg-[#ede3d4] hover:border-[#b0906a] transition-colors ink-text cursor-pointer"
             >
@@ -259,7 +212,6 @@ export default function UsersClient({ users, divisions }: Props) {
           )}
         </div>
 
-        {/* Row 1: search + sort field + sort direction */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="relative sm:col-span-1">
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7a6a5a] w-3.5 h-3.5" />
@@ -281,6 +233,7 @@ export default function UsersClient({ users, divisions }: Props) {
             <option value="rank">Sort: Rank</option>
           </select>
           <button
+            type="button"
             onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
             className="flex items-center justify-center gap-2 px-3 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm hover:bg-[#ede3d4] transition-colors ink-text text-sm cursor-pointer"
           >
@@ -293,8 +246,7 @@ export default function UsersClient({ users, divisions }: Props) {
           </button>
         </div>
 
-        {/* Row 2: rank + cascading geo */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <select
             value={rankFilter}
             onChange={(e) => setRankFilter(e.target.value as RankFilter)}
@@ -306,52 +258,22 @@ export default function UsersClient({ users, divisions }: Props) {
             <option value="Associate">Associate</option>
             <option value="Member">Member</option>
           </select>
+
           <select
-            value={divisionFilter}
-            onChange={(e) => handleDivisionChange(e.target.value)}
+            value={thanaFilter}
+            onChange={(e) => setThanaFilter(e.target.value)}
             className={selectClass}
           >
-            <option value="">All Divisions</option>
-            {divisions.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={districtFilter}
-            onChange={(e) => handleDistrictChange(e.target.value)}
-            disabled={!divisionFilter || loadingDistricts}
-            className={`${selectClass} disabled:opacity-40 disabled:cursor-not-allowed`}
-          >
-            <option value="">
-              {loadingDistricts ? "Loading…" : "All Districts"}
-            </option>
-            {availableDistricts.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={upazilaFilter}
-            onChange={(e) => setUpazilaFilter(e.target.value)}
-            disabled={!districtFilter || loadingUpazilas}
-            className={`${selectClass} disabled:opacity-40 disabled:cursor-not-allowed`}
-          >
-            <option value="">
-              {loadingUpazilas ? "Loading…" : "All Thanas"}
-            </option>
-            {availableUpazilas.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
+            <option value="all">All Thanas</option>
+            {uniqueThanas.map(([id, name]) => (
+              <option key={id} value={id}>
+                {name}
               </option>
             ))}
           </select>
         </div>
       </section>
 
-      {/* Table */}
       <section className="dashboard-surface tron-border rounded-sm overflow-hidden border border-[#5f4f40]">
         <div className="overflow-x-auto">
           <table className="w-full text-sm ink-text min-w-160">
@@ -393,7 +315,6 @@ export default function UsersClient({ users, divisions }: Props) {
                     key={user.id}
                     className="border-b border-[#d2bfa5] hover:bg-[#f4ebdc] transition-colors"
                   >
-                    {/* Name + avatar + verification */}
                     <td className="px-4 sm:px-6 py-3">
                       <div className="flex items-center gap-2.5">
                         {user.avatar_url ? (

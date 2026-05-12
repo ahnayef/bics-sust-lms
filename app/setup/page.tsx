@@ -1,7 +1,22 @@
-import { getDivisions } from "@/server/geo";
+import { Suspense } from "react";
+import { getThanas } from "@/server/geo";
 import SetupForm from "./SetupForm";
 
-export default async function SetupPage() {
-  const { data: divisions, source } = await getDivisions();
-  return <SetupForm divisions={divisions} geoSource={source} />;
+async function SetupWithData() {
+  const { data: thanas, source } = await getThanas();
+  return <SetupForm thanas={thanas} geoSource={source} />;
+}
+
+export default function SetupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[#e5d9c4] text-[#5a4b3f] ink-text text-sm">
+          Loading…
+        </div>
+      }
+    >
+      <SetupWithData />
+    </Suspense>
+  );
 }

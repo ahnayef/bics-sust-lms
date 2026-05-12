@@ -6,18 +6,17 @@ import { FaCheck, FaPencilAlt, FaTimes, FaTrash } from "react-icons/fa";
 import { deleteThana, modifyThana } from "@/server/geo-actions";
 import ConfirmModal from "@/components/ui/confirm-modal";
 
-interface UpazilaChipProps {
+interface ThanaChipProps {
   id: string;
   name: string;
 }
 
-export function UpazilaChip({ id, name }: UpazilaChipProps) {
+export function ThanaChip({ id, name }: ThanaChipProps) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [editing, setEditing] = useState(false);
 
-  // ── Delete modal ──────────────────────────────────────────────────────────
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
@@ -33,7 +32,6 @@ export function UpazilaChip({ id, name }: UpazilaChipProps) {
     });
   }
 
-  // ── Rename modal ──────────────────────────────────────────────────────────
   const [renameOpen, setRenameOpen] = useState(false);
   const [pendingName, setPendingName] = useState("");
   const [renameLoading, setRenameLoading] = useState(false);
@@ -60,7 +58,6 @@ export function UpazilaChip({ id, name }: UpazilaChipProps) {
     });
   }
 
-  // ── Editing (rename) view ─────────────────────────────────────────────────
   if (editing) {
     return (
       <>
@@ -104,7 +101,7 @@ export function UpazilaChip({ id, name }: UpazilaChipProps) {
             if (!renameLoading) setRenameOpen(false);
           }}
           onConfirm={handleRenameConfirm}
-          title="Rename Upazila"
+          title="Rename Thana"
           preview={`Renaming from '${name}' to '${pendingName}'`}
           confirmLabel="Rename"
           loading={renameLoading}
@@ -113,7 +110,6 @@ export function UpazilaChip({ id, name }: UpazilaChipProps) {
     );
   }
 
-  // ── Default (display) view ────────────────────────────────────────────────
   return (
     <>
       <div className="inline-flex items-center gap-1.5 px-3 py-1 text-xs border border-[#c4ae8e] bg-[#f6ecdd] rounded-sm text-[#3b3026] ink-text">
@@ -142,8 +138,8 @@ export function UpazilaChip({ id, name }: UpazilaChipProps) {
           if (!deleteLoading) setDeleteOpen(false);
         }}
         onConfirm={handleDeleteConfirm}
-        title="Delete Upazila"
-        description="This cannot be undone. If any member profiles reference this upazila, deletion will be blocked automatically."
+        title="Delete Thana"
+        description="This cannot be undone. If any member profiles reference this thana, deletion will be blocked automatically."
         preview={name}
         danger={true}
         confirmLabel="Delete"

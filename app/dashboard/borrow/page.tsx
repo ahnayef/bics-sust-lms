@@ -31,7 +31,11 @@ export default async function BorrowPage({
   // Books the user has already physically completed (for the "already read" warning)
   const completedBooks = allTxns
     .filter((tx) => tx.type === "borrow" && tx.status === "completed")
-    .map((tx) => ({ bookId: tx.book_id, completedOn: tx.updated_at }));
+    .map((tx) => ({
+      bookId: tx.book_id,
+      completedOn: tx.updated_at,
+      copyId: tx.copy_id,
+    }));
 
   return (
     <BorrowClient

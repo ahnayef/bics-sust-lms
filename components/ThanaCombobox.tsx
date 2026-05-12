@@ -36,7 +36,7 @@ interface Props {
   disabledHint?: string;
 }
 
-export default function LocationCombobox({
+export default function ThanaCombobox({
   name,
   options,
   value,

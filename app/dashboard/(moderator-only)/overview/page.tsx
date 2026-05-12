@@ -1,20 +1,17 @@
-import Link from "next/link";
 import { getOverviewData } from "@/server/library";
 import type {
-  Transaction,
   PdfSubmission,
-  TopMember,
   PopularBook,
+  TopMember,
+  Transaction,
 } from "@/types/library";
+import Link from "next/link";
 import {
   FaArrowRight,
-  FaBook,
-  FaCheckCircle,
   FaExchangeAlt,
   FaExclamationTriangle,
   FaFileAlt,
   FaHourglassHalf,
-  FaUsers,
 } from "react-icons/fa";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -240,7 +237,7 @@ export default async function DashboardOverview() {
               href="/dashboard/transactions"
               className="inline-flex items-center gap-2 px-3 py-1.5 border border-[#4e4033] bg-[#3f3328] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors text-xs font-medium rounded-sm ink-text"
             >
-              Review Queue <FaArrowRight className="w-3 h-3" />
+              View Transactions <FaArrowRight className="w-3 h-3" />
             </Link>
           </div>
         </div>
@@ -267,19 +264,19 @@ export default async function DashboardOverview() {
           <StatCard
             label="Active Borrows"
             value={stats.activeBorrows}
-            href="/dashboard/transactions"
+            href="/dashboard/transactions?tab=active"
           />
           <StatCard
             label="Overdue"
             value={stats.overdueCount}
             urgent={stats.overdueCount > 0}
-            href="/dashboard/transactions"
+            href="/dashboard/transactions?tab=active"
           />
           <StatCard
             label="Done This Month"
             value={stats.completedThisMonth}
             sub="completed"
-            href="/dashboard/transactions"
+            href="/dashboard/transactions?tab=history"
           />
         </div>
       </section>
@@ -300,29 +297,33 @@ export default async function DashboardOverview() {
                 count: stats.overdueCount,
                 icon: FaExclamationTriangle,
                 urgent: true,
+                tab: "active",
               },
               {
                 label: "Pending Borrow Requests",
                 count: stats.pendingBorrowRequests,
                 icon: FaHourglassHalf,
                 urgent: stats.pendingBorrowRequests > 0,
+                tab: "pending",
               },
               {
                 label: "Pending Return Requests",
                 count: stats.pendingReturnRequests,
                 icon: FaExchangeAlt,
                 urgent: stats.pendingReturnRequests > 0,
+                tab: "pending",
               },
               {
                 label: "PDF Submissions to Review",
                 count: stats.pendingPdfSubmissions,
                 icon: FaFileAlt,
                 urgent: false,
+                tab: "pdf",
               },
-            ].map(({ label, count, icon: Icon, urgent }) => (
+            ].map(({ label, count, icon: Icon, urgent, tab }) => (
               <Link
                 key={label}
-                href="/dashboard/transactions"
+                href={`/dashboard/transactions?tab=${tab}`}
                 className={`flex items-center justify-between p-3 border rounded-sm transition-colors ${
                   urgent && count > 0
                     ? "border-[#c4614a] bg-[#fdf0ec] hover:bg-[#f9e6e1]"
@@ -500,7 +501,7 @@ export default async function DashboardOverview() {
         >
           <SectionHeader
             title={`Overdue Borrows — ${overdueItems.length}`}
-            href="/dashboard/transactions"
+            href="/dashboard/transactions?tab=active"
             hrefLabel="Manage"
           />
           <div className="overflow-x-auto">
@@ -571,7 +572,7 @@ export default async function DashboardOverview() {
             <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
               <SectionHeader
                 title={`Borrow Requests — ${pendingBorrows.length}`}
-                href="/dashboard/transactions"
+                href="/dashboard/transactions?tab=pending"
                 hrefLabel="Review"
               />
               <div className="divide-y divide-[#d2bfa5]">
@@ -605,7 +606,7 @@ export default async function DashboardOverview() {
             <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
               <SectionHeader
                 title={`Return Requests — ${pendingReturns.length}`}
-                href="/dashboard/transactions"
+                href="/dashboard/transactions?tab=pending"
                 hrefLabel="Review"
               />
               <div className="divide-y divide-[#d2bfa5]">
@@ -639,7 +640,10 @@ export default async function DashboardOverview() {
 
       {/* ── Recent Activity ───────────────────────────────────────────── */}
       <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
-        <SectionHeader title="Recent Activity" href="/dashboard/transactions" />
+        <SectionHeader
+          title="Recent Activity"
+          href="/dashboard/transactions?tab=history"
+        />
         {recentActivity.length === 0 ? (
           <p className="p-5 text-sm text-[#6a5a4c] ink-text">
             No activity yet.
@@ -705,7 +709,7 @@ export default async function DashboardOverview() {
         <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
           <SectionHeader
             title={`Pending PDF Reviews — ${pendingPdfs.length}`}
-            href="/dashboard/transactions"
+            href="/dashboard/transactions?tab=pdf"
             hrefLabel="Review"
           />
           <div className="overflow-x-auto">

@@ -3,7 +3,7 @@
 /**
  * server/profiles.ts — Server Actions only (form submissions, mutations).
  *
- * Data-fetching helpers (getDivisions, getProfile, etc.) live in server/geo.ts
+ * Data-fetching helpers (getProfile, getThanas, etc.) live in server/geo.ts
  * so they can be called directly from Server Components without the "use server"
  * restriction that turns everything into POST-only Server Actions.
  */
@@ -15,31 +15,10 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
-// Geo action wrappers — thin async wrappers so client components can call
-// these as Server Actions without importing server-only modules directly.
-// ---------------------------------------------------------------------------
-
-export async function fetchDistrictsByDivision(
-  divisionId: string,
-): Promise<
-  import("@/server/geo").GeoResult<import("@/types/profile").District>
-> {
-  const { getDistrictsByDivision } = await import("@/server/geo");
-  return getDistrictsByDivision(divisionId);
-}
-
-export async function fetchUpazilasByDistrict(
-  districtId: string,
-): Promise<
-  import("@/server/geo").GeoResult<import("@/types/profile").Upazila>
-> {
-  const { getUpazilasByDistrict } = await import("@/server/geo");
-  return getUpazilasByDistrict(districtId);
-}
-
-// ---------------------------------------------------------------------------
 // Validation schema
 // ---------------------------------------------------------------------------
+
+const thanaIdRequired = z.string().uuid("Please select a thana");
 
 const profileSchema = z.object({
   full_name: z.string().min(2, "Full name must be at least 2 characters"),
@@ -59,9 +38,7 @@ const profileSchema = z.object({
   rank: z.enum(["None", "Member", "Associate", "Supporter"], {
     error: "Rank must be None, Member, Associate, or Supporter",
   }),
-  division_id: z.string().min(1, "Division is required"),
-  district_id: z.string().min(1, "District is required"),
-  upazila_id: z.string().min(1, "Upazila is required"),
+  thana_id: thanaIdRequired,
 });
 
 // ---------------------------------------------------------------------------
@@ -87,9 +64,7 @@ export async function setupProfile(
     username: formData.get("username") as string,
     phone: (formData.get("phone") as string | null) ?? "",
     rank: formData.get("rank") as string,
-    division_id: formData.get("division_id") as string,
-    district_id: formData.get("district_id") as string,
-    upazila_id: formData.get("upazila_id") as string,
+    thana_id: formData.get("thana_id") as string,
   };
 
   const parsed = profileSchema.safeParse(raw);
@@ -97,15 +72,7 @@ export async function setupProfile(
     return { error: parsed.error.issues[0]?.message ?? "Validation error" };
   }
 
-  const {
-    full_name,
-    username,
-    phone,
-    rank,
-    division_id,
-    district_id,
-    upazila_id,
-  } = parsed.data;
+  const { full_name, username, phone, rank, thana_id } = parsed.data;
 
   const { data: existing } = await supabase
     .from("profiles")
@@ -124,9 +91,7 @@ export async function setupProfile(
     phone: phone || null,
     avatar_url: avatarUrl,
     rank,
-    division_id,
-    district_id,
-    upazila_id,
+    thana_id,
     role: "member",
     is_verified: false,
     profile_completed: true,
@@ -138,88 +103,15 @@ export async function setupProfile(
   redirect("/dashboard");
 }
 
-export async function updateProfile(
-  formData: FormData,
-): Promise<{ error: string } | void> {
-  const supabase = await createClient();
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const claims = claimsData?.claims;
-
-  if (!claims?.sub) redirect("/login");
-
-  // Read avatar from OAuth provider metadata (e.g. Google)
-  const { data: userData } = await supabase.auth.getUser();
-  const avatarUrl: string | null =
-    userData?.user?.user_metadata?.avatar_url ?? null;
-
-  const raw = {
-    full_name: formData.get("full_name") as string,
-    username: formData.get("username") as string,
-    phone: (formData.get("phone") as string | null) ?? "",
-    rank: formData.get("rank") as string,
-    division_id: formData.get("division_id") as string,
-    district_id: formData.get("district_id") as string,
-    upazila_id: formData.get("upazila_id") as string,
-  };
-
-  const parsed = profileSchema.safeParse(raw);
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Validation error" };
-  }
-
-  const {
-    full_name,
-    username,
-    phone,
-    rank,
-    division_id,
-    district_id,
-    upazila_id,
-  } = parsed.data;
-
-  const { data: existing } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("username", username)
-    .neq("id", claims.sub)
-    .maybeSingle();
-
-  if (existing) return { error: "Username already taken" };
-
-  // Detect rank change → strip verification
-  const { data: current } = await supabase
-    .from("profiles")
-    .select("rank")
-    .eq("id", claims.sub)
-    .single();
-
-  const rankChanged = current?.rank !== rank;
-
-  const { error: updateError } = await supabase
-    .from("profiles")
-    .update({
-      username,
-      full_name,
-      phone: phone || null,
-      rank,
-      division_id,
-      district_id,
-      upazila_id,
-      ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
-      ...(rankChanged ? { is_verified: false } : {}),
-    })
-    .eq("id", claims.sub);
-
-  if (updateError) return { error: updateError.message };
-
-  invalidateUsersAndOverview();
-  redirect("/dashboard");
-}
-
 // ---------------------------------------------------------------------------
 // updateProfileInfo — edit-only action (username & avatar are immutable)
 // Rank change automatically strips is_verified.
 // ---------------------------------------------------------------------------
+
+const optionalThanaId = z
+  .string()
+  .transform((s) => (s.trim() === "" ? null : s.trim()))
+  .pipe(z.union([z.null(), z.string().uuid()]));
 
 const profileEditSchema = z.object({
   full_name: z.string().min(2, "Full name must be at least 2 characters"),
@@ -231,9 +123,7 @@ const profileEditSchema = z.object({
   rank: z.enum(["None", "Member", "Associate", "Supporter"], {
     error: "Invalid rank",
   }),
-  division_id: z.string().min(1, "Division is required"),
-  district_id: z.string().min(1, "District is required"),
-  upazila_id: z.string().min(1, "Upazila is required"),
+  thana_id: optionalThanaId,
   hide_sensitive_info: z.boolean().optional(),
 });
 
@@ -249,9 +139,7 @@ export async function updateProfileInfo(
     full_name: formData.get("full_name") as string,
     phone: (formData.get("phone") as string | null) ?? "",
     rank: formData.get("rank") as string,
-    division_id: formData.get("division_id") as string,
-    district_id: formData.get("district_id") as string,
-    upazila_id: formData.get("upazila_id") as string,
+    thana_id: (formData.get("thana_id") as string | null) ?? "",
     hide_sensitive_info: formData.get("hide_sensitive_info") === "true",
   };
 
@@ -260,15 +148,8 @@ export async function updateProfileInfo(
     return { error: parsed.error.issues[0]?.message ?? "Validation error" };
   }
 
-  const {
-    full_name,
-    phone,
-    rank,
-    division_id,
-    district_id,
-    upazila_id,
-    hide_sensitive_info,
-  } = parsed.data;
+  const { full_name, phone, rank, thana_id, hide_sensitive_info } =
+    parsed.data;
 
   // Detect rank change → strip verification
   const { data: current } = await supabase
@@ -285,9 +166,7 @@ export async function updateProfileInfo(
       full_name,
       phone: phone || null,
       rank,
-      division_id,
-      district_id,
-      upazila_id,
+      thana_id,
       hide_sensitive_info: hide_sensitive_info ?? false,
       ...(rankChanged ? { is_verified: false } : {}),
     })
@@ -296,7 +175,7 @@ export async function updateProfileInfo(
   if (updateError) return { error: updateError.message };
 
   invalidateUsersAndOverview();
-  redirect("/dashboard");
+  redirect("/dashboard/profile");
 }
 
 export async function verifyUser(userId: string): Promise<{ error?: string }> {
@@ -437,7 +316,7 @@ export async function moderatorPermissions(): Promise<{
     canVerifyUsers: isMod,
     canManageUsers: isMod,
     canManageModerators: isAdmin,
-    canManageThanas: isAdmin,
+    canManageThanas: isMod,
     role,
   };
 }
@@ -486,6 +365,45 @@ export async function promoteToModerator(
   return { success: `${target.full_name} is now a moderator` };
 }
 
+export async function makeAdmin(
+  formData: FormData,
+): Promise<{ error?: string; success?: string }> {
+  const supabase = await createClient();
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const claims = claimsData?.claims;
+  if (!claims?.sub) return { error: "Not authenticated" };
+
+  const { data: callerProfile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", claims.sub)
+    .single();
+  if (callerProfile?.role !== "admin")
+    return { error: "Only admins can promote users to admin" };
+
+  const userId = formData.get("userId") as string;
+  if (!userId) return { error: "User ID is required" };
+
+  const { data: target } = await supabase
+    .from("profiles")
+    .select("id, full_name, role")
+    .eq("id", userId)
+    .single();
+
+  if (!target) return { error: "User not found" };
+  if (target.role === "admin")
+    return { error: "User is already an admin" };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ role: "admin" })
+    .eq("id", userId);
+
+  if (error) return { error: error.message };
+  invalidateUsersAndOverview();
+  return { success: `${target.full_name} is now an admin` };
+}
+
 export async function demoteModerator(
   formData: FormData,
 ): Promise<{ error?: string; success?: string }> {
@@ -522,4 +440,18 @@ export async function demoteModerator(
   if (error) return { error: error.message };
   invalidateUsersAndOverview();
   return { success: `${target.full_name} has been removed as moderator` };
+}
+
+export async function checkUsernameAvailability(username: string): Promise<"available" | "unavailable" | "invalid"> {
+  const parsed = profileSchema.shape.username.safeParse(username);
+  if (!parsed.success) return "invalid";
+
+  const supabase = await createClient();
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("username", username)
+    .maybeSingle();
+
+  return existing ? "unavailable" : "available";
 }

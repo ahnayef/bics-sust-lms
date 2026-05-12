@@ -373,8 +373,6 @@ export default function TransactionsClient({
       {/* Stats */}
       <section
         className="dashboard-surface tron-border rounded-sm p-5 sm:p-6"
-        data-aos="fade-up"
-        data-aos-duration="600"
       >
         <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
           Transactions
@@ -416,8 +414,6 @@ export default function TransactionsClient({
       {/* Tabs */}
       <section
         className="dashboard-surface tron-border rounded-sm border border-[#5f4f40] overflow-hidden"
-        data-aos="fade-up"
-        data-aos-duration="600"
       >
         <Tabs defaultValue="pending" className="w-full">
           {/* Tab bar */}

@@ -1,3 +1,5 @@
+import { getClaims } from "@/server/user";
+import { Suspense } from "react";
 import {
   FaBell,
   FaBook,
@@ -6,11 +8,9 @@ import {
   FaSync,
   FaUsers,
 } from "react-icons/fa";
+import "../styles/grain.css";
 import Footer from "./components/Footer";
 import Navbar from "./components/Navbar";
-import "../styles/grain.css";
-import { getClaims } from "@/server/user";
-import { Suspense } from "react";
 
 export default function Home() {
   return (
@@ -37,7 +37,7 @@ async function HomeContent() {
           className="max-w-4xl mx-auto newspaper-border paper-wear p-8 sm:p-12 mt-10"
           style={{ backgroundColor: "#f1e8d9" }}
           data-aos="fade-up"
-          data-aos-duration="800"
+          data-aos-duration="300"
         >
           <div className="text-center border-b-2 border-double border-gray-800 pb-6 mb-6">
             <div className="newspaper-subheader mb-4">
@@ -96,7 +96,7 @@ async function HomeContent() {
           <div
             className="text-center mb-12 pb-6 border-b-2 border-double border-gray-900"
             data-aos="fade-up"
-            data-aos-duration="800"
+            data-aos-duration="300"
           >
             <h2 className="newspaper-headline mb-2">Powerful Features</h2>
             <p className="newspaper-subheader">
@@ -109,7 +109,7 @@ async function HomeContent() {
             <div
               className="feature-box p-6"
               data-aos="fade-up"
-              data-aos-duration="800"
+              data-aos-duration="300"
               data-aos-delay="0"
             >
               <div className="w-12 h-12 bg-gray-900 rounded-sm flex items-center justify-center mb-4">
@@ -138,7 +138,7 @@ async function HomeContent() {
             <div
               className="feature-box p-6"
               data-aos="fade-up"
-              data-aos-duration="800"
+              data-aos-duration="300"
               data-aos-delay="100"
             >
               <div className="w-12 h-12 bg-gray-900 rounded-sm flex items-center justify-center mb-4">
@@ -167,7 +167,7 @@ async function HomeContent() {
             <div
               className="feature-box p-6"
               data-aos="fade-up"
-              data-aos-duration="800"
+              data-aos-duration="300"
               data-aos-delay="200"
             >
               <div className="w-12 h-12 bg-gray-900 rounded-sm flex items-center justify-center mb-4">
@@ -196,7 +196,7 @@ async function HomeContent() {
             <div
               className="feature-box p-6"
               data-aos="fade-up"
-              data-aos-duration="800"
+              data-aos-duration="300"
               data-aos-delay="0"
             >
               <div className="w-12 h-12 bg-gray-900 rounded-sm flex items-center justify-center mb-4">
@@ -225,7 +225,7 @@ async function HomeContent() {
             <div
               className="feature-box p-6"
               data-aos="fade-up"
-              data-aos-duration="800"
+              data-aos-duration="300"
               data-aos-delay="100"
             >
               <div className="w-12 h-12 bg-gray-900 rounded-sm flex items-center justify-center mb-4">
@@ -254,7 +254,7 @@ async function HomeContent() {
             <div
               className="feature-box p-6"
               data-aos="fade-up"
-              data-aos-duration="800"
+              data-aos-duration="300"
               data-aos-delay="200"
             >
               <div className="w-12 h-12 bg-gray-900 rounded-sm flex items-center justify-center mb-4">
@@ -296,7 +296,7 @@ async function HomeContent() {
           className="max-w-4xl mx-auto text-center newspaper-border paper-wear p-8 sm:p-12"
           style={{ backgroundColor: "#efe4d2", borderColor: "#6d6053" }}
           data-aos="fade-up"
-          data-aos-duration="800"
+          data-aos-duration="300"
         >
           <h2
             className="text-4xl font-semibold mb-6"

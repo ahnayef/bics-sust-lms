@@ -24,7 +24,6 @@ Open [http://localhost:3000](http://localhost:3000) with your browser.
 bun run build      # production build
 bun run start      # start production server
 bun run lint       # run ESLint
-bun fetch-geo      # seed the geo cache from bdapis
 ```
 
 ## Tech Stack

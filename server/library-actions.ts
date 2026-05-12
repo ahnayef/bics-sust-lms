@@ -7,6 +7,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
+import { randomBytes } from "crypto";
 import { invalidateAfterBookOrCopyMutation } from "@/server/cache-invalidation";
 import { revalidatePath } from "next/cache";
 
@@ -14,19 +15,7 @@ import { revalidatePath } from "next/cache";
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Turn a 1-999 numeric input into the canonical QR ID format: "QR001" … "QR999".
- * Throws a descriptive string if the value is out of range or non-numeric.
- */
-function formatCopyId(raw: string | null | undefined): string {
-  if (!raw || !raw.toString().trim())
-    throw new Error("Copy number is required");
-  const num = parseInt(raw.toString().trim(), 10);
-  if (!Number.isFinite(num) || num < 1 || num > 999) {
-    throw new Error("Copy number must be between 1 and 999");
-  }
-  return `QR${String(num).padStart(3, "0")}`;
-}
+// No more formatCopyId needed, IDs are auto-generated as QR{book-id}-{copyNumber}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Auth helper
@@ -78,39 +67,24 @@ export async function addBook(
   const pagesRaw = parseInt(formData.get("pages") as string, 10);
   const pages = Number.isFinite(pagesRaw) && pagesRaw > 0 ? pagesRaw : null;
   const pdf_link = (formData.get("pdf_link") as string)?.trim() || null;
-  const first_copy_raw =
-    (formData.get("first_copy_id") as string)?.trim() || null;
+  const first_copy_raw = formData.get("auto_add_first_copy") === "true";
 
   if (!title) return { error: "Title is required" };
   if (!author) return { error: "Author is required" };
 
-  // Validate and format copy ID before touching the database
-  let first_copy_id: string | null = null;
-  if (first_copy_raw) {
-    try {
-      first_copy_id = formatCopyId(first_copy_raw);
-    } catch (e) {
-      return { error: e instanceof Error ? e.message : String(e) };
-    }
-    // Duplicate check
-    const { data: dup } = await supabase
-      .from("copies")
-      .select("id")
-      .eq("id", first_copy_id)
-      .maybeSingle();
-    if (dup) return { error: `Copy ${first_copy_id} already exists` };
-  }
+  const short_id = randomBytes(3).toString("hex");
 
   const { data: book, error: bookErr } = await supabase
     .from("books")
-    .insert({ title, author, is_syllabus, pages, pdf_link })
-    .select("id")
+    .insert({ title, author, is_syllabus, pages, pdf_link, short_id })
+    .select("id, short_id")
     .single();
 
   if (bookErr || !book)
     return { error: bookErr?.message ?? "Failed to add book" };
 
-  if (first_copy_id) {
+  if (first_copy_raw) {
+    const first_copy_id = `QR${book.short_id}-1`;
     const { error: copyErr } = await supabase
       .from("copies")
       .insert({ id: first_copy_id, book_id: book.id, copy_number: 1 });
@@ -120,7 +94,7 @@ export async function addBook(
       revalidatePath("/dashboard/books");
       return {
         bookId: book.id,
-        error: `Book added but copy ${first_copy_id} failed: ${copyErr.message}`,
+        error: `Book added but failed to create first copy: ${copyErr.message}`,
       };
     }
   }
@@ -226,28 +200,15 @@ export async function addCopyOfBook(
 
   const supabase = await createClient();
   const book_id = formData.get("book_id") as string;
-  const copy_raw = (formData.get("copy_id") as string)?.trim();
-
   if (!book_id) return { error: "Book ID is required" };
 
-  // Validate and format the numeric input → QR string
-  let copy_id: string;
-  try {
-    copy_id = formatCopyId(copy_raw);
-  } catch (e) {
-    return { error: e instanceof Error ? e.message : String(e) };
-  }
+  const { data: book } = await supabase
+    .from("books")
+    .select("short_id")
+    .eq("id", book_id)
+    .single();
 
-  // Server-side duplicate check
-  const { data: dup } = await supabase
-    .from("copies")
-    .select("id")
-    .eq("id", copy_id)
-    .maybeSingle();
-  if (dup)
-    return {
-      error: `Copy ${copy_id} already exists — pick a different number`,
-    };
+  if (!book) return { error: "Book not found" };
 
   // Auto-number: max existing copy_number + 1
   const { data: existing } = await supabase
@@ -258,6 +219,7 @@ export async function addCopyOfBook(
     .limit(1);
 
   const copy_number = (existing?.[0]?.copy_number ?? 0) + 1;
+  const copy_id = `QR${book.short_id}-${copy_number}`;
 
   const { error } = await supabase
     .from("copies")

@@ -61,6 +61,8 @@ const FILTERS: BorrowFilter[] = [
   "rejected",
 ];
 
+const ITEMS_PER_PAGE = 15;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Badge sub-components
 // ─────────────────────────────────────────────────────────────────────────────
@@ -134,12 +136,11 @@ function PdfStatusBadge({ status }: { status: PdfSubmission["status"] }) {
 export default function HistoryClient({ transactions, pdfSubmissions }: Props) {
   const [borrowSearch, setBorrowSearch] = useState("");
   const [borrowFilter, setBorrowFilter] = useState<BorrowFilter>("all");
+  const [borrowPage, setBorrowPage] = useState(1);
+  const [pdfPage, setPdfPage] = useState(1);
 
-  // Only borrow-type transactions (already newest-first from the server)
-  const borrowTransactions = useMemo(
-    () => transactions.filter((tx) => tx.type === "borrow"),
-    [transactions],
-  );
+  // Show all transactions (both borrow and return)
+  const borrowTransactions = transactions;
 
   const filteredBorrows = useMemo(() => {
     const q = borrowSearch.toLowerCase().trim();
@@ -153,6 +154,23 @@ export default function HistoryClient({ transactions, pdfSubmissions }: Props) {
       return matchesSearch && matchesFilter;
     });
   }, [borrowTransactions, borrowSearch, borrowFilter]);
+
+  const paginatedBorrows = useMemo(() => {
+    const start = (borrowPage - 1) * ITEMS_PER_PAGE;
+    return filteredBorrows.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredBorrows, borrowPage]);
+
+  const paginatedPdfs = useMemo(() => {
+    const start = (pdfPage - 1) * ITEMS_PER_PAGE;
+    return pdfSubmissions.slice(start, start + ITEMS_PER_PAGE);
+  }, [pdfSubmissions, pdfPage]);
+
+  const borrowTotalPages =
+    Math.ceil(filteredBorrows.length / ITEMS_PER_PAGE) || 1;
+  const pdfTotalPages = Math.ceil(pdfSubmissions.length / ITEMS_PER_PAGE) || 1;
+
+  // Reset page when filters change
+  useMemo(() => setBorrowPage(1), [borrowSearch, borrowFilter]);
 
   return (
     <div className="space-y-10">
@@ -223,14 +241,17 @@ export default function HistoryClient({ transactions, pdfSubmissions }: Props) {
                     <th className="text-left py-3 px-4 lg:px-6 font-semibold text-[#4e4033] ink-text">
                       Copy ID
                     </th>
+                    <th className="text-left py-3 px-4 lg:px-6 font-semibold text-[#4e4033] ink-text">
+                      Type
+                    </th>
                     <th className="text-left py-3 px-4 lg:px-6 font-semibold text-[#4e4033] ink-text whitespace-nowrap">
-                      Borrowed
+                      Requested
                     </th>
                     <th className="text-left py-3 px-4 lg:px-6 font-semibold text-[#4e4033] ink-text whitespace-nowrap">
                       Due
                     </th>
                     <th className="text-left py-3 px-4 lg:px-6 font-semibold text-[#4e4033] ink-text whitespace-nowrap">
-                      Returned
+                      Completed
                     </th>
                     <th className="text-left py-3 px-4 lg:px-6 font-semibold text-[#4e4033] ink-text">
                       Status
@@ -238,11 +259,11 @@ export default function HistoryClient({ transactions, pdfSubmissions }: Props) {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredBorrows.map((tx, i) => (
+                  {paginatedBorrows.map((tx, i) => (
                     <tr
                       key={tx.id}
                       className={`hover:bg-[#f0e4d2] transition-colors ${
-                        i < filteredBorrows.length - 1
+                        i < paginatedBorrows.length - 1
                           ? "border-b border-[#c5b59d]"
                           : ""
                       }`}
@@ -261,6 +282,14 @@ export default function HistoryClient({ transactions, pdfSubmissions }: Props) {
                         <span className="font-mono text-xs text-[#3d2f1f] bg-[#ede3d5] border border-[#c5b59d] px-2 py-0.5 rounded-sm">
                           {tx.copy_id}
                         </span>
+                      </td>
+                      <td className="py-3 px-4 lg:px-6">
+                        <StatusBadge
+                          tone={tx.type === "borrow" ? "info" : "accent"}
+                          size="xs"
+                        >
+                          {tx.type}
+                        </StatusBadge>
                       </td>
                       <td className="py-3 px-4 lg:px-6 text-xs text-[#5c4f42] ink-text whitespace-nowrap">
                         {formatDate(tx.request_date)}
@@ -289,11 +318,35 @@ export default function HistoryClient({ transactions, pdfSubmissions }: Props) {
           )}
         </div>
 
-        {/* Count footer */}
-        <p className="text-xs text-[#6a5c4e] ink-text text-right">
-          Showing {filteredBorrows.length} of {borrowTransactions.length} borrow
-          records
-        </p>
+        {/* Pagination controls */}
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-xs text-[#6a5c4e] ink-text">
+            Showing {(borrowPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
+            {Math.min(borrowPage * ITEMS_PER_PAGE, filteredBorrows.length)} of{" "}
+            {filteredBorrows.length} records
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setBorrowPage((p) => Math.max(1, p - 1))}
+              disabled={borrowPage === 1}
+              className="px-3 py-1.5 border border-[#8a7966] rounded-sm text-xs font-semibold text-[#4e4033] hover:bg-[#eadcca] transition-colors disabled:opacity-50 disabled:cursor-not-allowed ink-text"
+            >
+              Previous
+            </button>
+            <span className="text-xs text-[#6a5c4e] font-medium min-w-[3rem] text-center ink-text">
+              {borrowPage} / {borrowTotalPages}
+            </span>
+            <button
+              onClick={() =>
+                setBorrowPage((p) => Math.min(borrowTotalPages, p + 1))
+              }
+              disabled={borrowPage === borrowTotalPages}
+              className="px-3 py-1.5 border border-[#8a7966] rounded-sm text-xs font-semibold text-[#4e4033] hover:bg-[#eadcca] transition-colors disabled:opacity-50 disabled:cursor-not-allowed ink-text"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       </section>
 
       {/* ── Section 2: PDF Reading Reports ──────────────────────── */}
@@ -327,11 +380,11 @@ export default function HistoryClient({ transactions, pdfSubmissions }: Props) {
                   </tr>
                 </thead>
                 <tbody>
-                  {pdfSubmissions.map((pdf, i) => (
+                  {paginatedPdfs.map((pdf, i) => (
                     <tr
                       key={pdf.id}
                       className={`hover:bg-[#f0e4d2] transition-colors ${
-                        i < pdfSubmissions.length - 1
+                        i < paginatedPdfs.length - 1
                           ? "border-b border-[#c5b59d]"
                           : ""
                       }`}
@@ -378,6 +431,38 @@ export default function HistoryClient({ transactions, pdfSubmissions }: Props) {
             </div>
           )}
         </div>
+
+        {/* PDF Pagination controls */}
+        {pdfSubmissions.length > 0 && (
+          <div className="flex items-center justify-between mt-4">
+            <p className="text-xs text-[#6a5c4e] ink-text">
+              Showing {(pdfPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
+              {Math.min(pdfPage * ITEMS_PER_PAGE, pdfSubmissions.length)} of{" "}
+              {pdfSubmissions.length} reports
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPdfPage((p) => Math.max(1, p - 1))}
+                disabled={pdfPage === 1}
+                className="px-3 py-1.5 border border-[#8a7966] rounded-sm text-xs font-semibold text-[#4e4033] hover:bg-[#eadcca] transition-colors disabled:opacity-50 disabled:cursor-not-allowed ink-text"
+              >
+                Previous
+              </button>
+              <span className="text-xs text-[#6a5c4e] font-medium min-w-[3rem] text-center ink-text">
+                {pdfPage} / {pdfTotalPages}
+              </span>
+              <button
+                onClick={() =>
+                  setPdfPage((p) => Math.min(pdfTotalPages, p + 1))
+                }
+                disabled={pdfPage === pdfTotalPages}
+                className="px-3 py-1.5 border border-[#8a7966] rounded-sm text-xs font-semibold text-[#4e4033] hover:bg-[#eadcca] transition-colors disabled:opacity-50 disabled:cursor-not-allowed ink-text"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </section>
     </div>
   );

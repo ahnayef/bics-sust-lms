@@ -49,11 +49,7 @@ export default async function DashboardUserProfilePage({
     year: "numeric",
   });
 
-  const locationParts = [
-    profile.upazila?.name,
-    profile.district?.name,
-    profile.division?.name,
-  ].filter(Boolean);
+  const locationParts = [profile.thana?.name].filter(Boolean);
 
   const syllabusPercent =
     stats && stats.syllabusTotal > 0

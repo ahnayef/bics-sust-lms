@@ -4,7 +4,6 @@
   "private": true,
   "packageManager": "bun@latest",
   "scripts": {
-    "fetch-geo": "bun scripts/fetch-geo-cache.ts",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

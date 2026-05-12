@@ -1,20 +1,8 @@
 export type UserRole = "member" | "moderator" | "admin";
 export type UserRank = "None" | "Member" | "Associate" | "Supporter";
 
-export interface Division {
+export interface Thana {
   id: string;
-  name: string;
-}
-
-export interface District {
-  id: string;
-  division_id: string;
-  name: string;
-}
-
-export interface Upazila {
-  id: string;
-  district_id: string;
   name: string;
 }
 
@@ -26,12 +14,8 @@ export interface Profile {
   phone: string | null;
   avatar_url: string | null;
   rank: UserRank;
-  division_id: string | null;
-  district_id: string | null;
-  upazila_id: string | null;
-  division?: Division;
-  district?: District;
-  upazila?: Upazila;
+  thana_id: string | null;
+  thana?: Thana;
   role: UserRole;
   is_verified: boolean;
   profile_completed: boolean;

@@ -5,36 +5,20 @@
 -- ============================================================
 
 -- ============================================================
--- Bangladesh Administrative Hierarchy
+-- Thanas (flat list for member location — managed in dashboard)
 -- ============================================================
 
-create table if not exists public.divisions (
-  id   text primary key,  -- e.g. "1", "2" from bdapis
+create table if not exists public.thanas (
+  id   uuid primary key default gen_random_uuid(),
   name text not null unique
 );
 
-create table if not exists public.districts (
-  id          text primary key,
-  division_id text not null references public.divisions(id) on delete cascade,
-  name        text not null
-);
-
-create table if not exists public.upazilas (
-  id          text primary key,
-  district_id text not null references public.districts(id) on delete cascade,
-  name        text not null
-);
-
--- Seed: 8 divisions
-insert into public.divisions (id, name) values
-  ('1','Chattagram'), ('2','Rajshahi'), ('3','Khulna'),
-  ('4','Barisal'), ('5','Sylhet'), ('6','Dhaka'),
-  ('7','Rangpur'), ('8','Mymensingh')
-on conflict (id) do nothing;
-
--- Districts and upazilas are NOT seeded here.
--- Run: bun fetch-geo   (scripts/fetch-geo-cache.ts)
--- to populate all 64 districts + ~495 upazilas from bdapis.vercel.app.
+-- Sample rows for local/dev (optional; production may start empty)
+insert into public.thanas (name) values
+  ('Akhalia Thana'),
+  ('Zindabazar Thana'),
+  ('Amberkhana Thana')
+on conflict (name) do nothing;
 
 -- ============================================================
 -- Profiles
@@ -49,9 +33,7 @@ create table if not exists public.profiles (
   avatar_url        text,
   rank              text not null default 'None'
                       check (rank in ('None','Member','Associate','Supporter')),
-  division_id       text references public.divisions(id),
-  district_id       text references public.districts(id),
-  upazila_id        text references public.upazilas(id),
+  thana_id          uuid references public.thanas(id) on delete set null,
   role              text not null default 'member'
                       check (role in ('member','moderator','admin')),
   is_verified          boolean not null default false,
@@ -67,6 +49,7 @@ create table if not exists public.profiles (
 
 create table if not exists public.books (
   id          uuid primary key default gen_random_uuid(),
+  short_id    text not null unique default substr(md5(random()::text), 1, 6),
   title       text not null,
   author      text not null,
   is_syllabus boolean not null default false,
@@ -179,9 +162,7 @@ create trigger transactions_updated_at
 -- Row Level Security
 -- ============================================================
 
-alter table public.divisions     enable row level security;
-alter table public.districts     enable row level security;
-alter table public.upazilas      enable row level security;
+alter table public.thanas        enable row level security;
 alter table public.profiles      enable row level security;
 alter table public.books         enable row level security;
 alter table public.copies        enable row level security;
@@ -189,18 +170,26 @@ alter table public.transactions  enable row level security;
 alter table public.pdf_submissions enable row level security;
 alter table public.settings      enable row level security;
 
--- ── Geo: public read ────────────────────────────────────────────────────────
-create policy "Public read divisions" on public.divisions for select using (true);
-create policy "Public read districts" on public.districts for select using (true);
-create policy "Public read upazilas"  on public.upazilas  for select using (true);
+-- ── Thanas: public read; mods/admins manage ─────────────────────────────────
+create policy "Public read thanas" on public.thanas for select using (true);
 
--- Upazilas: admins can insert/update/delete
-create policy "Admins manage upazilas insert" on public.upazilas for insert
-  with check (exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'));
-create policy "Admins manage upazilas update" on public.upazilas for update
-  using (exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'));
-create policy "Admins manage upazilas delete" on public.upazilas for delete
-  using (exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'));
+create policy "Mods and admins insert thanas" on public.thanas for insert
+  with check (exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role in ('admin', 'moderator')
+  ));
+
+create policy "Mods and admins update thanas" on public.thanas for update
+  using (exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role in ('admin', 'moderator')
+  ));
+
+create policy "Mods and admins delete thanas" on public.thanas for delete
+  using (exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role in ('admin', 'moderator')
+  ));
 
 -- ── Profiles ────────────────────────────────────────────────────────────────
 -- NOTE: Never query the profiles table inside a profiles RLS policy —
@@ -341,6 +330,7 @@ create policy "Admins insert settings"
 -- MIGRATIONS (run these if upgrading an existing database)
 -- ============================================================
 -- alter table public.profiles add column if not exists avatar_url text;
+-- alter table public.books add column if not exists short_id text not null unique default substr(md5(random()::text), 1, 6);
 -- create table if not exists public.books ( ... );   -- see above
 -- create table if not exists public.copies ( ... );
 -- create table if not exists public.transactions ( ... );
@@ -376,6 +366,10 @@ create index if not exists idx_books_is_syllabus
 
 create index if not exists idx_profiles_role
   on public.profiles(role);
+
+create index if not exists idx_profiles_thana_id
+  on public.profiles(thana_id)
+  where thana_id is not null;
 
 -- ============================================================
 -- Additional settings

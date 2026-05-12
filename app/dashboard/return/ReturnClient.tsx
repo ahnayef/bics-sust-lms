@@ -176,9 +176,7 @@ export default function ReturnClient({
                 (dueDate !== null && dueDate < today);
               const overdueDays =
                 isOverdue && dueDate
-                  ? Math.floor(
-                      (today.getTime() - dueDate.getTime()) / 86400000,
-                    )
+                  ? Math.floor((today.getTime() - dueDate.getTime()) / 86400000)
                   : 0;
 
               const bookTitle = txn.book?.title ?? "Unknown Book";

@@ -1,4 +1,4 @@
-import { getClaims } from "@/server/user";
+import { getClaims, shellHintsFromClaims } from "@/server/user";
 import { getProfile } from "@/server/geo";
 import DashboardShell from "./DashboardShell";
 import { Suspense } from "react";
@@ -45,10 +45,12 @@ async function DashboardLayoutAsync({
   children: React.ReactNode;
 }) {
   const claims = await getClaims();
-  const profile = claims ? await getProfile(claims.sub) : null;
-  const userRole = profile?.role ?? "member";
-  const userName = profile?.full_name ?? claims?.email ?? "User";
-  const userAvatar = profile?.avatar_url ?? null;
+  const profile = claims ? await getProfile(claims.sub as string) : null;
+  const hints = shellHintsFromClaims(claims);
+
+  const userRole = profile?.role ?? hints.role ?? "member";
+  const userName = profile?.full_name ?? hints.displayName ?? "User";
+  const userAvatar = profile?.avatar_url ?? hints.avatarUrl ?? null;
 
   return (
     <DashboardShell

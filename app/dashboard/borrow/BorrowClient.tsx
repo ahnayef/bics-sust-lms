@@ -15,6 +15,7 @@ import type { Copy } from "@/types/library";
 interface CompletedBook {
   bookId: string;
   completedOn: string;
+  copyId: string;
 }
 
 interface Props {
@@ -219,7 +220,7 @@ export default function BorrowClient({
               </div>
             </div>
             <Link
-              href="/dashboard/profile"
+              href="/dashboard"
               className="inline-block px-6 py-2 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] transition-colors ink-text"
             >
               Go to Profile
@@ -334,8 +335,9 @@ export default function BorrowClient({
                         Completed on{" "}
                         {new Date(
                           alreadyCompletedBook.completedOn,
-                        ).toLocaleDateString()}
-                        . You can still borrow another copy if needed.
+                        ).toLocaleDateString()}{" "}
+                        (Copy ID: {alreadyCompletedBook.copyId}). You can still
+                        borrow another copy if needed.
                       </p>
                     </div>
                   </div>

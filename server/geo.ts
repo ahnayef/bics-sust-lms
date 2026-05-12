@@ -7,14 +7,31 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
-import type { Profile, Division, District, Upazila } from "@/types/profile";
-import {
-  cachedDivisions,
-  cachedDistricts,
-  cachedUpazilas,
-} from "@/lib/geo-cache";
+import type { Profile, Thana } from "@/types/profile";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type GeoSource = "supabase" | "local-cache" | "unavailable";
+export type GeoSource = "supabase" | "unavailable";
+
+/** Avoid PostgREST embed (`thana:thanas`) — it can fail and null the whole row. */
+const PROFILE_ROW_SELECT =
+  "id, username, full_name, email, phone, avatar_url, rank, role, is_verified, profile_completed, hide_sensitive_info, created_at, updated_at, thana_id";
+
+async function attachThana(
+  supabase: SupabaseClient,
+  row: Record<string, unknown>,
+): Promise<Profile> {
+  const thanaId = row.thana_id as string | null | undefined;
+  let thana: Thana | undefined;
+  if (thanaId) {
+    const { data: t } = await supabase
+      .from("thanas")
+      .select("id, name")
+      .eq("id", thanaId)
+      .maybeSingle();
+    if (t) thana = t as Thana;
+  }
+  return { ...(row as object), thana } as Profile;
+}
 
 export interface GeoResult<T> {
   data: T[];
@@ -38,14 +55,12 @@ export async function getProfile(userId?: string): Promise<Profile | null> {
 
   const { data, error } = await supabase
     .from("profiles")
-    .select(
-      "id, username, full_name, email, phone, avatar_url, rank, role, is_verified, profile_completed, hide_sensitive_info, created_at, updated_at, division_id, district_id, upazila_id, division:divisions(id,name), district:districts(id,division_id,name), upazila:upazilas(id,district_id,name)",
-    )
+    .select(PROFILE_ROW_SELECT)
     .eq("id", resolvedId)
     .single();
 
   if (error || !data) return null;
-  return data as unknown as Profile;
+  return attachThana(supabase, data as Record<string, unknown>);
 }
 
 export async function getProfileByUsername(
@@ -54,14 +69,12 @@ export async function getProfileByUsername(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("profiles")
-    .select(
-      "id, username, full_name, email, phone, avatar_url, rank, role, is_verified, profile_completed, hide_sensitive_info, created_at, updated_at, division_id, district_id, upazila_id, division:divisions(id,name), district:districts(id,division_id,name), upazila:upazilas(id,district_id,name)",
-    )
-    .ilike("username", username) // case-insensitive exact match
+    .select(PROFILE_ROW_SELECT)
+    .ilike("username", username)
     .single();
 
   if (error || !data) return null;
-  return data as unknown as Profile;
+  return attachThana(supabase, data as Record<string, unknown>);
 }
 
 export async function getModeratorsAndAdmin(): Promise<Profile[]> {
@@ -76,7 +89,6 @@ export async function getModeratorsAndAdmin(): Promise<Profile[]> {
 
   if (error || !data) return [];
 
-  // Sort: admin(s) first, then moderators
   return (data as Profile[]).sort((a, b) => {
     if (a.role === "admin" && b.role !== "admin") return -1;
     if (a.role !== "admin" && b.role === "admin") return 1;
@@ -99,81 +111,18 @@ export async function checkUsernameAvailable(
 }
 
 // ---------------------------------------------------------------------------
-// Geo reads
+// Thana list (flat)
 // ---------------------------------------------------------------------------
 
-export async function getDivisions(): Promise<GeoResult<Division>> {
-  // Fast path: local JSON cache loaded at module init — no Supabase call needed.
-  if (cachedDivisions.length > 0) {
-    return {
-      data: [...cachedDivisions].sort((a, b) => a.name.localeCompare(b.name)),
-      source: "local-cache",
-    };
-  }
-
-  // Slow path: cache not populated yet (first run before `bun fetch-geo`).
+export async function getThanas(): Promise<GeoResult<Thana>> {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("divisions")
+    .from("thanas")
     .select("id, name")
     .order("name", { ascending: true });
 
   if (!error && data && data.length > 0) {
-    return { data: data as Division[], source: "supabase" };
-  }
-
-  return { data: [], source: "unavailable" };
-}
-
-export async function getDistrictsByDivision(
-  divisionId: string,
-): Promise<GeoResult<District>> {
-  // Fast path: local cache is always sorted and filtered in memory.
-  const fromCache = cachedDistricts
-    .filter((d) => d.division_id === divisionId)
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  if (fromCache.length > 0) {
-    return { data: fromCache, source: "local-cache" };
-  }
-
-  // Slow path: fall back to Supabase when local cache is empty.
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("districts")
-    .select("id, division_id, name")
-    .eq("division_id", divisionId)
-    .order("name", { ascending: true });
-
-  if (!error && data && data.length > 0) {
-    return { data: data as District[], source: "supabase" };
-  }
-
-  return { data: [], source: "unavailable" };
-}
-
-export async function getUpazilasByDistrict(
-  districtId: string,
-): Promise<GeoResult<Upazila>> {
-  // Fast path: local cache filtered in memory.
-  const fromCache = cachedUpazilas
-    .filter((u) => u.district_id === districtId)
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  if (fromCache.length > 0) {
-    return { data: fromCache, source: "local-cache" };
-  }
-
-  // Slow path: Supabase when local cache is empty.
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("upazilas")
-    .select("id, district_id, name")
-    .eq("district_id", districtId)
-    .order("name", { ascending: true });
-
-  if (!error && data && data.length > 0) {
-    return { data: data as Upazila[], source: "supabase" };
+    return { data: data as Thana[], source: "supabase" };
   }
 
   return { data: [], source: "unavailable" };

@@ -291,11 +291,30 @@ async function loadUsersCached(): Promise<UserWithStats[]> {
   const { data: profiles } = await supabase
     .from("profiles")
     .select(
-      "id, full_name, username, email, avatar_url, rank, role, is_verified, profile_completed, created_at, updated_at, phone, division_id, district_id, upazila_id, division:divisions(id,name), district:districts(id,name), upazila:upazilas(id,name)",
+      "id, full_name, username, email, avatar_url, rank, role, is_verified, profile_completed, created_at, updated_at, phone, thana_id",
     )
     .order("created_at", { ascending: false });
 
   if (!profiles || profiles.length === 0) return [];
+
+  const thanaIds = [
+    ...new Set(
+      profiles
+        .map((p) => (p as { thana_id?: string | null }).thana_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+
+  const thanaById = new Map<string, { id: string; name: string }>();
+  if (thanaIds.length > 0) {
+    const { data: thanaRows } = await supabase
+      .from("thanas")
+      .select("id, name")
+      .in("id", thanaIds);
+    for (const t of thanaRows ?? []) {
+      thanaById.set(t.id, t);
+    }
+  }
 
   const ids = profiles.map((p) => p.id);
 
@@ -368,6 +387,9 @@ async function loadUsersCached(): Promise<UserWithStats[]> {
 
     return {
       ...(profile as unknown as Profile),
+      thana: profile.thana_id
+        ? thanaById.get(profile.thana_id as string)
+        : undefined,
       syllabusCompleted: syllabusIds.size,
       syllabusTotal,
       activeBorrows,
