@@ -41,7 +41,7 @@ async function HomeContent() {
         >
           <div className="text-center border-b-2 border-double border-gray-800 pb-6 mb-6">
             <div className="newspaper-subheader mb-4">
-              BICS SUST Digital Library Platform
+              SUST Digital Library Platform
             </div>
             <h1 className="newspaper-headline">
               Library Management

@@ -1,5 +1,6 @@
 import { getClaims, shellHintsFromClaims } from "@/server/user";
 import { getProfile } from "@/server/geo";
+import { getUserNotifications } from "@/server/library";
 import DashboardShell from "./DashboardShell";
 import { Suspense } from "react";
 
@@ -51,12 +52,15 @@ async function DashboardLayoutAsync({
   const userRole = profile?.role ?? hints.role ?? "member";
   const userName = profile?.full_name ?? hints.displayName ?? "User";
   const userAvatar = profile?.avatar_url ?? hints.avatarUrl ?? null;
+  const notifications = claims?.sub ? await getUserNotifications(claims.sub) : [];
 
   return (
     <DashboardShell
+      userId={claims?.sub as string}
       userName={userName}
       userRole={userRole}
       userAvatar={userAvatar}
+      initialNotifications={notifications}
     >
       <Suspense fallback={<DashboardPageFallback />}>{children}</Suspense>
     </DashboardShell>

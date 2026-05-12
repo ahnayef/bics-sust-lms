@@ -602,3 +602,135 @@ export async function getOverviewData(): Promise<OverviewData> {
   ).toISOString();
   return loadOverviewDataCached(firstOfMonth);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Notifications & Admin Logs
+// ─────────────────────────────────────────────────────────────────────────────
+
+import type { ActionLog, NotificationItem } from "@/types/library";
+
+export async function getUserNotifications(userId: string): Promise<NotificationItem[]> {
+  const supabase = await createClient();
+
+  const [
+    { data: txs },
+    { data: pdfs },
+    { data: logs }
+  ] = await Promise.all([
+    supabase
+      .from("transactions")
+      .select("id, status, type, updated_at, request_date, rejection_reason, book:books(title)")
+      .eq("user_id", userId)
+      .in("status", ["active", "completed", "rejected", "overdue"]),
+    
+    supabase
+      .from("pdf_submissions")
+      .select("id, status, submitted_at, updated_at, rejection_reason, book:books(title)")
+      .eq("user_id", userId)
+      .in("status", ["approved", "rejected"]),
+
+    supabase
+      .from("action_logs")
+      .select("id, action_type, created_at, details")
+      .eq("target_id", userId)
+  ]);
+
+  const items: NotificationItem[] = [];
+
+  for (const tx of txs ?? []) {
+    const bookTitle = (tx as any).book?.title ?? "a book";
+    let type: NotificationItem["type"] | null = null;
+    let title = "";
+    let message = "";
+
+    if (tx.status === "active") {
+      type = "transaction_approved";
+      title = "Borrow Request Approved";
+      message = `Your request to borrow "${bookTitle}" has been approved.`;
+    } else if (tx.status === "rejected") {
+      type = "transaction_rejected";
+      title = "Borrow Request Rejected";
+      message = `Your request to borrow "${bookTitle}" was rejected.`;
+    } else if (tx.status === "completed" && tx.type === "return") {
+      type = "transaction_completed";
+      title = "Return Completed";
+      message = `Your return for "${bookTitle}" has been processed.`;
+    } else if (tx.status === "overdue") {
+      type = "transaction_overdue";
+      title = "Book Overdue";
+      message = `Your borrow for "${bookTitle}" is overdue.`;
+    }
+
+    if (type) {
+      items.push({
+        id: tx.id,
+        date: tx.updated_at ?? tx.request_date,
+        type,
+        title,
+        message,
+        reason: tx.rejection_reason,
+        link: `/dashboard/history`,
+      });
+    }
+  }
+
+  for (const pdf of pdfs ?? []) {
+    const bookTitle = (pdf as any).book?.title ?? "a book";
+    items.push({
+      id: pdf.id,
+      date: pdf.updated_at ?? pdf.submitted_at,
+      type: pdf.status === "approved" ? "pdf_approved" : "pdf_rejected",
+      title: pdf.status === "approved" ? "PDF Reading Approved" : "PDF Reading Rejected",
+      message: `Your reading submission for "${bookTitle}" was ${pdf.status}.`,
+      reason: pdf.rejection_reason,
+      link: `/dashboard/transactions?tab=pdf`,
+    });
+  }
+
+  for (const log of logs ?? []) {
+    let title = "";
+    let message = log.details ?? "Action taken on your account.";
+    let type: NotificationItem["type"] = "user_joined";
+
+    if (log.action_type === "user_verified") {
+      type = "user_verified";
+      title = "Account Verified";
+      message = `Your account has been verified.`;
+    } else if (log.action_type === "user_unverified") {
+      type = "user_unverified";
+      title = "Verification Revoked";
+      message = `Your account verification has been revoked.`;
+    } else if (log.action_type === "role_changed") {
+      type = "role_changed";
+      title = "Role Updated";
+    }
+
+    if (log.action_type !== "user_joined") {
+      items.push({
+        id: log.id,
+        date: log.created_at,
+        type,
+        title,
+        message,
+        reason: log.details,
+      });
+    }
+  }
+
+  return items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
+
+export async function getAdminLogs(days: number = 30): Promise<ActionLog[]> {
+  const supabase = await createClient();
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+
+  const { data, error } = await supabase
+    .from("action_logs")
+    .select("*, actor:profiles!actor_id(id, full_name, username), target:profiles!target_id(id, full_name, username)")
+    .gte("created_at", cutoff.toISOString())
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+  return data as unknown as ActionLog[];
+}

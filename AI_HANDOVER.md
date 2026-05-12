@@ -1,8 +1,8 @@
 # AI Handover Context & Knowledge Base
-**Project:** BICS SUST Library Management System (Next.js 15/16 Canary + Supabase)
+**Project:** SUST Library Management System (Next.js 15/16 Canary + Supabase)
 **Last Updated:** May 2026
 
-Welcome to the BICS SUST LMS! This document is meant to provide you, the next AI agent, with a significant head start. Please read this carefully before modifying the codebase.
+Welcome to the SUST LMS! This document is meant to provide you, the next AI agent, with a significant head start. Please read this carefully before modifying the codebase.
 
 ## 🚨 Critical Architecture Rules & Constraints
 1. **Next.js Versioning & Caching (`use cache`)**

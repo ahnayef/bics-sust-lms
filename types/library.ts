@@ -12,6 +12,12 @@ export type TransactionStatus =
   | "rejected";
 export type PdfSubmissionStatus = "pending" | "approved" | "rejected";
 
+export type ActionLogType =
+  | "user_joined"
+  | "user_verified"
+  | "user_unverified"
+  | "role_changed";
+
 // ── Core entities ───────────────────────────────────────────────────────────
 
 export interface Book {
@@ -81,6 +87,38 @@ export interface PdfSubmission {
   user?: Pick<Profile, "id" | "full_name" | "username" | "avatar_url">;
   book?: Pick<Book, "id" | "title" | "author" | "is_syllabus">;
   reviewer?: Pick<Profile, "id" | "full_name">;
+}
+
+export interface ActionLog {
+  id: string;
+  action_type: ActionLogType;
+  actor_id: string | null;
+  target_id: string;
+  details: string | null;
+  created_at: string;
+  // joined
+  actor?: Pick<Profile, "id" | "full_name" | "username" | "avatar_url">;
+  target?: Pick<Profile, "id" | "full_name" | "username" | "avatar_url">;
+}
+
+export interface NotificationItem {
+  id: string;
+  date: string;
+  type:
+    | "transaction_approved"
+    | "transaction_rejected"
+    | "transaction_completed"
+    | "transaction_overdue"
+    | "pdf_approved"
+    | "pdf_rejected"
+    | "user_verified"
+    | "user_unverified"
+    | "role_changed"
+    | "user_joined";
+  title: string;
+  message: string;
+  link?: string;
+  reason?: string | null;
 }
 
 // ── Aggregate / computed ─────────────────────────────────────────────────────

@@ -12,6 +12,8 @@ import {
   FaExclamationTriangle,
   FaMapMarkerAlt,
 } from "react-icons/fa";
+import "@/styles/typography.css";
+import "@/styles/components.css";
 
 interface Props {
   profile: Profile;
@@ -113,11 +115,7 @@ export default function EditProfileForm({
 
   return (
     <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap');
-        .ink-title { font-family: 'Playfair Display', Georgia, serif; }
-        .ink-text  { font-family: 'Courier Prime', 'Courier New', monospace; }
-      `}</style>
+
 
       <div
         className="p-2 sm:p-0"

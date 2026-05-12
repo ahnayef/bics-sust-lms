@@ -1,5 +1,5 @@
 -- ============================================================
--- BICS SUST LMS — Complete Database Schema
+-- SUST LMS — Complete Database Schema
 -- Run this file once on a fresh Supabase project.
 -- For existing databases, use the migration commands at the bottom.
 -- ============================================================
@@ -135,6 +135,19 @@ insert into public.settings (key, value) values
 on conflict (key) do nothing;
 
 -- ============================================================
+-- Action Logs (User verifications, role changes, system events)
+-- ============================================================
+
+create table if not exists public.action_logs (
+  id          uuid primary key default gen_random_uuid(),
+  action_type text not null,
+  actor_id    uuid references public.profiles(id) on delete set null,
+  target_id   uuid references public.profiles(id) on delete cascade,
+  details     text,
+  created_at  timestamptz default now()
+);
+
+-- ============================================================
 -- updated_at trigger function
 -- ============================================================
 
@@ -169,6 +182,7 @@ alter table public.copies        enable row level security;
 alter table public.transactions  enable row level security;
 alter table public.pdf_submissions enable row level security;
 alter table public.settings      enable row level security;
+alter table public.action_logs   enable row level security;
 
 -- ── Thanas: public read; mods/admins manage ─────────────────────────────────
 create policy "Public read thanas" on public.thanas for select using (true);
@@ -319,6 +333,21 @@ create policy "Admins update settings"
 create policy "Admins insert settings"
   on public.settings for insert
   with check (exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'));
+
+-- ── Action Logs ─────────────────────────────────────────────────────────────
+create policy "Users read own target action logs"
+  on public.action_logs for select
+  using (target_id = auth.uid() or exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role in ('admin', 'moderator')
+  ));
+
+create policy "Mods and admins insert action logs"
+  on public.action_logs for insert
+  with check (exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role in ('admin', 'moderator')
+  ));
 
 -- ============================================================
 -- Admin setup

@@ -3,25 +3,35 @@
 import { signOut } from "@/server/auth";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React from "react";
+import React, { useState } from "react";
+import "@/styles/typography.css";
+import "@/styles/components.css";
 import {
+  FaBars,
   FaBook,
   FaBookOpen,
   FaChartLine,
+  FaClipboardList,
   FaExchangeAlt,
   FaGraduationCap,
   FaHome,
   FaMapMarkerAlt,
   FaPrint,
   FaShieldAlt,
+  FaTimes,
   FaUser,
   FaUsers,
 } from "react-icons/fa";
 
+import type { NotificationItem } from "@/types/library";
+import NotificationBell from "./NotificationBell";
+
 interface DashboardShellProps {
+  userId: string;
   userName: string;
   userRole: string;
   userAvatar?: string | null;
+  initialNotifications: NotificationItem[];
   children: React.ReactNode;
 }
 
@@ -81,6 +91,12 @@ const navigationItems = [
     requiresRole: ["admin", "moderator"],
   },
   {
+    label: "Logs",
+    href: "/dashboard/logs",
+    icon: FaClipboardList,
+    requiresRole: ["admin"],
+  },
+  {
     label: "Thanas",
     href: "/dashboard/thanas",
     icon: FaMapMarkerAlt,
@@ -95,12 +111,15 @@ const navigationItems = [
 ];
 
 export default function DashboardShell({
+  userId,
   userName,
   userRole,
   userAvatar,
+  initialNotifications,
   children,
 }: DashboardShellProps) {
   const pathname = usePathname();
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const visibleNavItems = navigationItems.filter((item) =>
     item.requiresRole.includes(userRole),
@@ -114,87 +133,62 @@ export default function DashboardShell({
   };
 
   return (
-    <div className="h-screen flex overflow-hidden dashboard-shell print:h-auto print:overflow-visible print:block">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Courier+Prime:wght@400;700&display=swap');
+    <div className="relative h-screen flex overflow-hidden dashboard-shell print:h-auto print:overflow-visible print:block">
 
-        .dashboard-shell {
-          background-image:
-            linear-gradient(180deg, #eee4d3 0%, #e5d8c1 52%, #dcccb2 100%),
-            linear-gradient(92deg, rgba(88, 66, 46, 0.05), transparent 24%),
-            linear-gradient(268deg, rgba(88, 66, 46, 0.04), transparent 18%),
-            repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.008) 2px, rgba(0,0,0,.008) 4px),
-            repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,.008) 2px, rgba(0,0,0,.008) 4px),
-            url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220"><filter id="p"><feTurbulence type="fractalNoise" baseFrequency="0.78" numOctaves="4" seed="13"/></filter><rect width="220" height="220" fill="%23e5d9c4"/><rect width="220" height="220" filter="url(%23p)" opacity="0.028"/></svg>');
-        }
 
-        .ink-text {
-          font-family: 'Courier Prime', monospace;
-        }
+      {/* Mobile Backdrop */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/20 z-30 lg:hidden"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
 
-        .ink-title {
-          font-family: 'Playfair Display', serif;
-        }
-
-        .dashboard-surface {
-          background-color: #f1e7d8;
-          border: 1px solid #46372b;
-          box-shadow: inset 0 0 0 1px rgba(244, 235, 219, 0.55), 0 0 0 1px rgba(69, 55, 43, 0.2);
-        }
-
-        .tron-border {
-          position: relative;
-          overflow: hidden;
-        }
-
-        .tron-border::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          background:
-            repeating-linear-gradient(90deg, rgba(77, 59, 43, 0.24) 0 3px, transparent 3px 20px) top / 100% 1px no-repeat,
-            repeating-linear-gradient(90deg, rgba(77, 59, 43, 0.18) 0 2px, transparent 2px 18px) bottom / 100% 1px no-repeat,
-            repeating-linear-gradient(180deg, rgba(77, 59, 43, 0.18) 0 2px, transparent 2px 16px) left / 1px 100% no-repeat,
-            repeating-linear-gradient(180deg, rgba(77, 59, 43, 0.14) 0 2px, transparent 2px 20px) right / 1px 100% no-repeat;
-          opacity: 0.78;
-        }
-      `}</style>
-
-      {/* Sidebar — always visible, narrow on mobile, full on lg+ */}
-      <aside className="flex flex-col shrink-0 w-14 lg:w-64 h-screen overflow-y-auto dashboard-surface tron-border border-r border-[#5e4e3e] transition-all duration-300 print:hidden">
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-2 px-3 lg:px-6 py-[17px] border-b border-[#6d5c4a] ink-title text-[#221910] font-bold text-lg overflow-hidden"
+      {/* Sidebar Wrapper — natively holds space in the flex layout to prevent shifting */}
+      <div className="shrink-0 transition-all duration-300 print:hidden relative z-50 w-14 lg:w-64">
+        {/* The actual sidebar — absolute to the wrapper so it can float when expanded */}
+        <aside
+          className={`absolute top-0 left-0 flex flex-col shrink-0 h-screen overflow-y-auto dashboard-surface tron-border border-r border-[#5e4e3e] transition-all duration-300 ${isMobileOpen ? "w-64 shadow-2xl" : "w-14"} lg:w-64`}
         >
-          <FaBook className="w-5 h-5 lg:w-6 lg:h-6 text-[#554738] shrink-0" />
-          <span className="hidden lg:block whitespace-nowrap">
-            BICS SUST LMS
-          </span>
-        </Link>
+          <button
+            onClick={() => setIsMobileOpen(!isMobileOpen)}
+            className={`flex items-center py-[17px] border-b border-[#6d5c4a] ink-title text-[#221910] font-bold text-lg overflow-hidden hover:bg-[#ece0ce] lg:hover:bg-transparent lg:pointer-events-none transition-colors w-full text-left ${isMobileOpen ? "px-4 gap-3" : "justify-center lg:justify-start lg:px-4 lg:gap-3"}`}
+          >
+            <div className="w-5 h-5 lg:w-6 lg:h-6 shrink-0 flex items-center justify-center text-[#554738]">
+              <FaBook className="w-full h-full hidden lg:block" />
+              {isMobileOpen ? <FaTimes className="w-5 h-5 lg:hidden" /> : <FaBars className="w-4 h-4 lg:hidden" />}
+            </div>
+            <span className={`whitespace-nowrap transition-opacity ${isMobileOpen ? "block" : "hidden lg:block"}`}>
+              SUST LMS
+            </span>
+          </button>
 
-        <nav className="px-2 lg:px-4 py-4 space-y-2 pb-8">
-          {visibleNavItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 px-3 lg:px-4 py-3 rounded-sm transition-colors ink-text border overflow-hidden ${isActive(item.href)
-                  ? "bg-[#eadcc8] text-[#221910] border-[#7d6d5a]"
-                  : "text-[#4d4034] border-transparent hover:bg-[#ece0ce] hover:border-[#b59f86]"
-                  }`}
-                title={item.label}
-              >
-                <Icon className="w-4 h-4 shrink-0" />
-                <span className="hidden lg:block font-medium">
-                  {item.label}
-                </span>
-              </Link>
-            );
-          })}
-        </nav>
-      </aside>
+          <nav className="py-4 space-y-1 pb-8">
+            {visibleNavItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setIsMobileOpen(false)}
+                  className={`flex items-center py-3 transition-colors ink-text border-y border-transparent overflow-hidden ${isMobileOpen ? "px-4 gap-3" : "justify-center lg:justify-start lg:px-4 lg:gap-3"} ${isActive(item.href)
+                    ? "bg-[#eadcc8] text-[#221910] border-y-[#7d6d5a] shadow-[inset_4px_0_0_0_#4e4033]"
+                    : "text-[#4d4034] hover:bg-[#ece0ce] hover:border-y-[#b59f86]"
+                    }`}
+                  title={item.label}
+                >
+                  <div className="w-5 h-5 lg:w-6 lg:h-6 shrink-0 flex items-center justify-center">
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <span className={`font-medium whitespace-nowrap transition-opacity ${isMobileOpen ? "block" : "hidden lg:block"}`}>
+                    {item.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
+        </aside>
+      </div>
 
       {/* Main Content */}
       <main className="flex-1 min-w-0 overflow-y-auto flex flex-col print:overflow-visible">
@@ -208,9 +202,11 @@ export default function DashboardShell({
                   ? "My Profile"
                   : "Dashboard"}
             </h1>
-            <div className="flex items-center gap-3 lg:gap-6">
+            <div className="flex items-center gap-2 lg:gap-5">
+              <NotificationBell userId={userId} notifications={initialNotifications} />
+
               <Link
-                href="/dashboard"
+                href="/dashboard/profile"
                 className="flex items-center gap-2 text-sm text-[#5a4b3f] ink-text hover:text-[#221910] transition-colors"
               >
                 {userAvatar ? (

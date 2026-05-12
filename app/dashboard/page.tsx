@@ -1,13 +1,17 @@
-import { getUserStats } from "@/server/library";
+import { getUserStats, getUserNotifications } from "@/server/library";
 import { getClaims } from "@/server/user";
 import type { Transaction } from "@/types/library";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FaBook, FaHistory, FaQrcode, FaUndoAlt } from "react-icons/fa";
+import RecentNotificationsClient from "./RecentNotificationsClient";
+
 export default async function DashboardHomePage() {
   const claims = await getClaims();
   if (!claims) redirect("/login");
   const stats = await getUserStats(claims.sub);
+  const notifications = await getUserNotifications(claims.sub);
+  const recentNotifications = notifications.slice(0, 3);
   return (
     <div className="p-2 sm:p-0 max-w-3xl mx-auto space-y-6">
       {" "}
@@ -88,6 +92,9 @@ export default async function DashboardHomePage() {
           ))}{" "}
         </div>{" "}
       </section>{" "}
+
+      <RecentNotificationsClient userId={claims.sub as string} recentNotifications={recentNotifications} />
+
       <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
         {" "}
         <h2 className="text-lg font-bold text-[#221910] ink-title mb-4 border-b border-[#c9b89a] pb-2">
@@ -113,6 +120,18 @@ export default async function DashboardHomePage() {
             {stats.currentBorrows.map((tx: Transaction) => {
               const isOverdue =
                 tx.due_date && new Date(tx.due_date) < new Date();
+              
+              let isDueSoon = false;
+              let daysUntilDue = 0;
+              if (tx.due_date && !isOverdue) {
+                const diffTime = new Date(tx.due_date).getTime() - new Date().getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                if (diffDays <= 2 && diffDays >= 0) {
+                  isDueSoon = true;
+                  daysUntilDue = diffDays;
+                }
+              }
+              
               return (
                 <li
                   key={tx.id}
@@ -145,10 +164,21 @@ export default async function DashboardHomePage() {
                     </p>{" "}
                   </div>{" "}
                   <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-semibold border shrink-0 ink-text ${isOverdue ? "bg-red-50 text-red-700 border-red-300" : "bg-teal-50 text-teal-700 border-teal-300"}`}
+                    className={`inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-semibold border shrink-0 ink-text ${
+                      isOverdue 
+                        ? "bg-red-50 text-red-700 border-red-300" 
+                        : isDueSoon 
+                          ? "bg-[#fff7ed] text-[#9a3412] border-[#fdba74]" 
+                          : "bg-teal-50 text-teal-700 border-teal-300"
+                    }`}
                   >
                     {" "}
-                    {isOverdue ? "Overdue" : "Active"}{" "}
+                    {isOverdue 
+                      ? "Overdue" 
+                      : isDueSoon 
+                        ? (daysUntilDue === 0 ? "Due Today" : `Due in ${daysUntilDue} day${daysUntilDue > 1 ? 's' : ''}`)
+                        : "Active"
+                    }{" "}
                   </span>{" "}
                 </li>
               );

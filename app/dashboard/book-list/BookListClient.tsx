@@ -18,6 +18,8 @@ import {
   FaSortAmountDown,
   FaTimes,
 } from "react-icons/fa";
+import "@/styles/typography.css";
+import "@/styles/components.css";
 import type { Book, PdfSubmission } from "@/types/library";
 
 type SortKey =
@@ -231,7 +233,6 @@ export default function BookListClient({
 
   return (
     <>
-      <style>{bookListStyles}</style>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
         {/* Header */}
@@ -654,31 +655,3 @@ export default function BookListClient({
 }
 
 // ── Styles ─────────────────────────────────────────────────────────────────
-
-const bookListStyles = `
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Courier+Prime:wght@400;700&display=swap');
-
-  .ink-text { font-family: 'Courier Prime', monospace; }
-  .ink-title { font-family: 'Playfair Display', serif; }
-
-  .book-list-surface {
-    background-color: #f1e7d8;
-    border: 1px solid #46372b;
-    box-shadow: inset 0 0 0 1px rgba(244, 235, 219, 0.55), 0 0 0 1px rgba(69, 55, 43, 0.2);
-  }
-
-  .tron-border { position: relative; overflow: hidden; }
-
-  .tron-border::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background:
-      repeating-linear-gradient(90deg, rgba(77, 59, 43, 0.24) 0 3px, transparent 3px 20px) top / 100% 1px no-repeat,
-      repeating-linear-gradient(90deg, rgba(77, 59, 43, 0.18) 0 2px, transparent 2px 18px) bottom / 100% 1px no-repeat,
-      repeating-linear-gradient(180deg, rgba(77, 59, 43, 0.18) 0 2px, transparent 2px 16px) left / 1px 100% no-repeat,
-      repeating-linear-gradient(180deg, rgba(77, 59, 43, 0.14) 0 2px, transparent 2px 20px) right / 1px 100% no-repeat;
-    opacity: 0.78;
-  }
-`;

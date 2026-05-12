@@ -1,6 +1,6 @@
-# BICS SUST LMS
+# SUST LMS
 
-A Library Management System for BICS SUST, built with [Next.js](https://nextjs.org) and [Supabase](https://supabase.com).
+A Library Management System for SUST, built with [Next.js](https://nextjs.org) and [Supabase](https://supabase.com).
 
 ## Getting Started
 

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { cacheAvatarLocally } from "@/server/avatar";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -48,12 +49,15 @@ export async function GET(request: NextRequest) {
 
   // If the user has a completed profile and logged in via OAuth, refresh avatar
   if (profile?.profile_completed) {
-    const avatarUrl = data.session.user.user_metadata?.avatar_url ?? null;
-    if (avatarUrl) {
-      await supabase
-        .from("profiles")
-        .update({ avatar_url: avatarUrl })
-        .eq("id", userId);
+    const rawAvatarUrl = data.session.user.user_metadata?.avatar_url ?? null;
+    if (rawAvatarUrl) {
+      const localAvatarUrl = await cacheAvatarLocally(userId, rawAvatarUrl);
+      if (localAvatarUrl) {
+        await supabase
+          .from("profiles")
+          .update({ avatar_url: localAvatarUrl })
+          .eq("id", userId);
+      }
     }
   }
 

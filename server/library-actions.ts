@@ -7,8 +7,8 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
-import { randomBytes } from "crypto";
 import { invalidateAfterBookOrCopyMutation } from "@/server/cache-invalidation";
+import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -72,7 +72,7 @@ export async function addBook(
   if (!title) return { error: "Title is required" };
   if (!author) return { error: "Author is required" };
 
-  const short_id = randomBytes(3).toString("hex");
+  const short_id = randomBytes(3).toString("hex").toUpperCase();
 
   const { data: book, error: bookErr } = await supabase
     .from("books")
@@ -210,22 +210,45 @@ export async function addCopyOfBook(
 
   if (!book) return { error: "Book not found" };
 
-  // Auto-number: max existing copy_number + 1
-  const { data: existing } = await supabase
-    .from("copies")
-    .select("copy_number")
-    .eq("book_id", book_id)
-    .order("copy_number", { ascending: false })
-    .limit(1);
+  // Retry loop to handle concurrent modifications (race condition)
+  let attempt = 0;
+  const maxAttempts = 5;
+  let finalError = null;
 
-  const copy_number = (existing?.[0]?.copy_number ?? 0) + 1;
-  const copy_id = `QR${book.short_id}-${copy_number}`;
+  while (attempt < maxAttempts) {
+    attempt++;
 
-  const { error } = await supabase
-    .from("copies")
-    .insert({ id: copy_id, book_id, copy_number, status: "available" });
+    // Auto-number: max existing copy_number + 1
+    const { data: existing } = await supabase
+      .from("copies")
+      .select("copy_number")
+      .eq("book_id", book_id)
+      .order("copy_number", { ascending: false })
+      .limit(1);
 
-  if (error) return { error: error.message };
+    const copy_number = (existing?.[0]?.copy_number ?? 0) + 1;
+    const copy_id = `QR${book.short_id}-${copy_number}`;
+
+    const { error } = await supabase
+      .from("copies")
+      .insert({ id: copy_id, book_id, copy_number, status: "available" });
+
+    if (!error) {
+      finalError = null;
+      break;
+    }
+
+    // 23505 is PostgreSQL unique violation error code
+    if (error.code === "23505") {
+      finalError = new Error("Race condition detected, retrying...");
+      continue;
+    } else {
+      finalError = error;
+      break;
+    }
+  }
+
+  if (finalError) return { error: finalError.message || "Failed to add copy after multiple attempts" };
 
   invalidateAfterBookOrCopyMutation();
   revalidatePath("/dashboard/copies");

@@ -13,6 +13,26 @@ import { invalidateUsersAndOverview } from "@/server/cache-invalidation";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { cacheAvatarLocally } from "./avatar";
+import type { ActionLogType } from "@/types/library";
+
+// ---------------------------------------------------------------------------
+// Helper: Insert Action Log
+// ---------------------------------------------------------------------------
+async function insertActionLog(
+  supabase: any,
+  actionType: ActionLogType,
+  targetId: string,
+  actorId: string | null = null,
+  details: string | null = null
+) {
+  await supabase.from("action_logs").insert({
+    action_type: actionType,
+    target_id: targetId,
+    actor_id: actorId,
+    details,
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Validation schema
@@ -56,8 +76,10 @@ export async function setupProfile(
 
   // Read avatar from OAuth provider metadata (e.g. Google)
   const { data: userData } = await supabase.auth.getUser();
-  const avatarUrl: string | null =
+  const rawAvatarUrl: string | null =
     userData?.user?.user_metadata?.avatar_url ?? null;
+
+  const localAvatarUrl = await cacheAvatarLocally(claims.sub, rawAvatarUrl);
 
   const raw = {
     full_name: formData.get("full_name") as string,
@@ -89,7 +111,7 @@ export async function setupProfile(
     full_name,
     email: claims.email as string,
     phone: phone || null,
-    avatar_url: avatarUrl,
+    avatar_url: localAvatarUrl,
     rank,
     thana_id,
     role: "member",
@@ -98,6 +120,10 @@ export async function setupProfile(
   });
 
   if (upsertError) return { error: upsertError.message };
+
+  if (!existing) {
+    await insertActionLog(supabase, "user_joined", claims.sub);
+  }
 
   invalidateUsersAndOverview();
   redirect("/dashboard");
@@ -228,6 +254,8 @@ export async function verifyUser(userId: string): Promise<{ error?: string }> {
 
   if (error) return { error: error.message };
 
+  await insertActionLog(supabase, "user_verified", userId, claims.sub, "Moderator verified user");
+
   invalidateUsersAndOverview();
   revalidatePath(`/dashboard/users/${userId}`);
   revalidatePath("/dashboard/users");
@@ -261,6 +289,8 @@ export async function unVerifyUser(
     .eq("id", userId);
 
   if (error) return { error: error.message };
+
+  await insertActionLog(supabase, "user_unverified", userId, claims.sub, "Moderator unverified user");
 
   invalidateUsersAndOverview();
   revalidatePath(`/dashboard/users/${userId}`);
@@ -361,6 +391,9 @@ export async function promoteToModerator(
     .eq("id", target.id);
 
   if (error) return { error: error.message };
+  
+  await insertActionLog(supabase, "role_changed", target.id, claims.sub, "Promoted to moderator");
+  
   invalidateUsersAndOverview();
   return { success: `${target.full_name} is now a moderator` };
 }
@@ -400,6 +433,9 @@ export async function makeAdmin(
     .eq("id", userId);
 
   if (error) return { error: error.message };
+  
+  await insertActionLog(supabase, "role_changed", userId, claims.sub, "Promoted to admin");
+  
   invalidateUsersAndOverview();
   return { success: `${target.full_name} is now an admin` };
 }
@@ -438,6 +474,9 @@ export async function demoteModerator(
     .eq("id", userId);
 
   if (error) return { error: error.message };
+  
+  await insertActionLog(supabase, "role_changed", userId, claims.sub, "Demoted to member");
+  
   invalidateUsersAndOverview();
   return { success: `${target.full_name} has been removed as moderator` };
 }

@@ -152,13 +152,14 @@ export default async function DashboardProfilePage() {
             <div className="grid grid-cols-3 gap-2 pt-1">
               {" "}
               {[
-                { label: "Completed", value: stats.syllabusCompleted },
-                { label: "Borrowing", value: stats.activeBorrows },
-                { label: "Pending", value: stats.pendingRequests },
-              ].map(({ label, value }) => (
-                <div
+                { label: "Completed", value: stats.syllabusCompleted, filter: "completed" },
+                { label: "Borrowing", value: stats.activeBorrows, filter: "active" },
+                { label: "Pending", value: stats.pendingRequests, filter: "pending" },
+              ].map(({ label, value, filter }) => (
+                <Link
+                  href={`/dashboard/history?filter=${filter}`}
                   key={label}
-                  className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-2 text-center"
+                  className="block border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-2 text-center hover:bg-[#eadcc8] transition-colors"
                 >
                   {" "}
                   <p className="text-xl font-bold text-[#221910] ink-title leading-none">
@@ -169,7 +170,7 @@ export default async function DashboardProfilePage() {
                     {" "}
                     {label}{" "}
                   </p>{" "}
-                </div>
+                </Link>
               ))}{" "}
             </div>{" "}
           </div>{" "}

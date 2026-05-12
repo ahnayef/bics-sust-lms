@@ -6,7 +6,8 @@ import { checkUsernameAvailability, setupProfile } from "@/server/profiles";
 import type { Thana, UserRank } from "@/types/profile";
 import { useActionState, useState } from "react";
 import { FaMapMarkerAlt } from "react-icons/fa";
-
+import "@/styles/typography.css";
+import "@/styles/components.css";
 type Props = { thanas: Thana[]; geoSource: GeoSource };
 
 const RANKS: UserRank[] = ["None", "Member", "Associate", "Supporter"];
@@ -52,11 +53,7 @@ export default function SetupForm({
 
   return (
     <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap');
-        .ink-title { font-family: 'Playfair Display', Georgia, serif; }
-        .ink-text  { font-family: 'Courier Prime', 'Courier New', monospace; }
-      `}</style>
+
 
       <div
         className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 py-10 sm:py-16 bg-[#e5d9c4] relative overflow-hidden"

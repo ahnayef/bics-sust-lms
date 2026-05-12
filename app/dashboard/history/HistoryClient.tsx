@@ -2,6 +2,7 @@
 
 import StatusBadge from "@/app/components/StatusBadge";
 import type { PdfSubmission, Transaction } from "@/types/library";
+import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import {
   FaBook,
@@ -28,6 +29,7 @@ type BorrowFilter =
 interface Props {
   transactions: Transaction[];
   pdfSubmissions: PdfSubmission[];
+  initialFilter?: BorrowFilter;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -133,11 +135,20 @@ function PdfStatusBadge({ status }: { status: PdfSubmission["status"] }) {
 // Main component
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function HistoryClient({ transactions, pdfSubmissions }: Props) {
+export default function HistoryClient({ transactions, pdfSubmissions, initialFilter = "all" }: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
+
   const [borrowSearch, setBorrowSearch] = useState("");
-  const [borrowFilter, setBorrowFilter] = useState<BorrowFilter>("all");
+  const [borrowFilter, setBorrowFilter] = useState<BorrowFilter>(initialFilter);
   const [borrowPage, setBorrowPage] = useState(1);
   const [pdfPage, setPdfPage] = useState(1);
+
+  const handleFilterChange = (f: BorrowFilter) => {
+    setBorrowFilter(f);
+    if (f === "all") router.replace(pathname, { scroll: false });
+    else router.replace(`${pathname}?filter=${f}`, { scroll: false });
+  };
 
   // Show all transactions (both borrow and return)
   const borrowTransactions = transactions;
@@ -160,14 +171,32 @@ export default function HistoryClient({ transactions, pdfSubmissions }: Props) {
     return filteredBorrows.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredBorrows, borrowPage]);
 
+  const filteredPdfs = useMemo(() => {
+    const q = borrowSearch.toLowerCase().trim();
+    return pdfSubmissions.filter((pdf) => {
+      const matchesSearch =
+        !q ||
+        (pdf.book?.title ?? "").toLowerCase().includes(q);
+
+      let matchesFilter = true;
+      if (borrowFilter === "all") matchesFilter = true;
+      else if (borrowFilter === "completed") matchesFilter = pdf.status === "approved";
+      else if (borrowFilter === "pending") matchesFilter = pdf.status === "pending";
+      else if (borrowFilter === "rejected") matchesFilter = pdf.status === "rejected";
+      else matchesFilter = false; // active, overdue
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [pdfSubmissions, borrowSearch, borrowFilter]);
+
   const paginatedPdfs = useMemo(() => {
     const start = (pdfPage - 1) * ITEMS_PER_PAGE;
-    return pdfSubmissions.slice(start, start + ITEMS_PER_PAGE);
-  }, [pdfSubmissions, pdfPage]);
+    return filteredPdfs.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredPdfs, pdfPage]);
 
   const borrowTotalPages =
     Math.ceil(filteredBorrows.length / ITEMS_PER_PAGE) || 1;
-  const pdfTotalPages = Math.ceil(pdfSubmissions.length / ITEMS_PER_PAGE) || 1;
+  const pdfTotalPages = Math.ceil(filteredPdfs.length / ITEMS_PER_PAGE) || 1;
 
   // Reset page when filters change
   useMemo(() => setBorrowPage(1), [borrowSearch, borrowFilter]);
@@ -184,51 +213,49 @@ export default function HistoryClient({ transactions, pdfSubmissions }: Props) {
         </p>
       </div>
 
+      {/* ── Global Search & Filter ──────────────────────────────── */}
+      <div className="dashboard-surface tron-border rounded-sm p-4">
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Search input */}
+          <div className="relative flex-1 min-w-0">
+            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#78695a] w-3.5 h-3.5 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search by book title or copy ID…"
+              value={borrowSearch}
+              onChange={(e) => setBorrowSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-[#5a4d40] ink-text"
+            />
+          </div>
+
+          {/* Status filter pills */}
+          <div className="flex flex-wrap gap-1.5">
+            {FILTERS.map((f) => (
+              <button
+                key={f}
+                onClick={() => handleFilterChange(f)}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-sm border transition-colors ink-text ${borrowFilter === f
+                  ? "bg-[#5a4d40] text-[#f4e8d4] border-[#5a4d40]"
+                  : "bg-[#f0e4d1] text-[#4e4033] border-[#b5a490] hover:bg-[#eadcc8]"
+                  }`}
+              >
+                {FILTER_LABELS[f]}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* ── Section 1: Borrow History ───────────────────────────── */}
       <section className="space-y-4">
         <h2 className="flex items-center gap-2 text-lg font-bold text-[#2f251d] ink-title">
           <FaBook className="w-4 h-4 text-[#5c4a3a]" />
           Borrow History
           <span className="text-sm font-normal text-[#6e5e50] ink-text ml-0.5">
-            ({borrowTransactions.length})
+            ({filteredBorrows.length})
           </span>
         </h2>
 
-        {/* Search + filter bar */}
-        <div className="dashboard-surface tron-border rounded-sm p-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Search input */}
-            <div className="relative flex-1 min-w-0">
-              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#78695a] w-3.5 h-3.5 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Search by book title or copy ID…"
-                value={borrowSearch}
-                onChange={(e) => setBorrowSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-[#5a4d40] ink-text"
-              />
-            </div>
-
-            {/* Status filter pills */}
-            <div className="flex flex-wrap gap-1.5">
-              {FILTERS.map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setBorrowFilter(f)}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-sm border transition-colors ink-text ${
-                    borrowFilter === f
-                      ? "bg-[#5a4d40] text-[#f4e8d4] border-[#5a4d40]"
-                      : "bg-[#f0e4d1] text-[#4e4033] border-[#b5a490] hover:bg-[#eadcc8]"
-                  }`}
-                >
-                  {FILTER_LABELS[f]}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Borrow table */}
         <div className="dashboard-surface tron-border rounded-sm overflow-hidden">
           {filteredBorrows.length > 0 ? (
             <div className="overflow-x-auto">
@@ -262,24 +289,23 @@ export default function HistoryClient({ transactions, pdfSubmissions }: Props) {
                   {paginatedBorrows.map((tx, i) => (
                     <tr
                       key={tx.id}
-                      className={`hover:bg-[#f0e4d2] transition-colors ${
-                        i < paginatedBorrows.length - 1
-                          ? "border-b border-[#c5b59d]"
-                          : ""
-                      }`}
+                      className={`hover:bg-[#f0e4d2] transition-colors ${i < paginatedBorrows.length - 1
+                        ? "border-b border-[#c5b59d]"
+                        : ""
+                        }`}
                     >
                       <td className="py-3 px-4 lg:px-6">
                         <p className="font-medium text-[#221910] ink-title leading-snug">
                           {tx.book?.title ?? "—"}
                         </p>
                         {tx.book?.author && (
-                          <p className="text-xs text-[#5c4f42] ink-text mt-0.5">
+                          <p className="text-xs text-[#5c4f42] ink-text mt-0.5 min-w-32">
                             {tx.book.author}
                           </p>
                         )}
                       </td>
                       <td className="py-3 px-4 lg:px-6">
-                        <span className="font-mono text-xs text-[#3d2f1f] bg-[#ede3d5] border border-[#c5b59d] px-2 py-0.5 rounded-sm">
+                        <span className="font-mono text-xs text-nowrap text-[#3d2f1f] bg-[#ede3d5] border border-[#c5b59d] px-2 py-0.5 rounded-sm">
                           {tx.copy_id}
                         </span>
                       </td>
@@ -302,6 +328,11 @@ export default function HistoryClient({ transactions, pdfSubmissions }: Props) {
                       </td>
                       <td className="py-3 px-4 lg:px-6">
                         <BorrowStatusBadge status={tx.status} />
+                        {tx.rejection_reason && (
+                          <p className="text-xs text-[#7a3a30] ink-text mt-1.5 max-w-[150px]">
+                            {tx.rejection_reason}
+                          </p>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -309,10 +340,12 @@ export default function HistoryClient({ transactions, pdfSubmissions }: Props) {
               </table>
             </div>
           ) : (
-            <div className="py-12 text-center">
-              <p className="text-[#5c4f42] ink-text">No borrow records found</p>
-              <p className="text-sm text-[#7a6a5c] ink-text mt-1">
-                Try adjusting your search or filter
+            <div className="text-center py-12">
+              <p className="text-[#5c4f42] font-medium ink-text">
+                No physical borrow records found
+              </p>
+              <p className="text-xs text-[#78695a] mt-1 ink-text">
+                {borrowFilter === "all" ? "You haven't borrowed any physical books yet." : "No physical records match your filter."}
               </p>
             </div>
           )}
@@ -355,12 +388,12 @@ export default function HistoryClient({ transactions, pdfSubmissions }: Props) {
           <FaFileAlt className="w-4 h-4 text-[#5c4a3a]" />
           PDF Reading Reports
           <span className="text-sm font-normal text-[#6e5e50] ink-text ml-0.5">
-            ({pdfSubmissions.length})
+            ({filteredPdfs.length})
           </span>
         </h2>
 
         <div className="dashboard-surface tron-border rounded-sm overflow-hidden">
-          {pdfSubmissions.length > 0 ? (
+          {filteredPdfs.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -383,11 +416,10 @@ export default function HistoryClient({ transactions, pdfSubmissions }: Props) {
                   {paginatedPdfs.map((pdf, i) => (
                     <tr
                       key={pdf.id}
-                      className={`hover:bg-[#f0e4d2] transition-colors ${
-                        i < paginatedPdfs.length - 1
-                          ? "border-b border-[#c5b59d]"
-                          : ""
-                      }`}
+                      className={`hover:bg-[#f0e4d2] transition-colors ${i < paginatedPdfs.length - 1
+                        ? "border-b border-[#c5b59d]"
+                        : ""
+                        }`}
                     >
                       <td className="py-3 px-4 lg:px-6">
                         <p className="font-medium text-[#221910] ink-title leading-snug">

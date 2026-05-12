@@ -1,9 +1,8 @@
 import { AOSInit } from "@/lib/AOSInit";
-import type { Metadata } from "next";
-import { Noto_Sans_Bengali, Geist } from "next/font/google";
-import GrainOverlay from "./components/GrainOverlay";
-import "./globals.css";
 import { cn } from "@/lib/utils";
+import type { Metadata } from "next";
+import { Geist, Noto_Sans_Bengali } from "next/font/google";
+import "./globals.css";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -13,8 +12,8 @@ const notoSansBengali = Noto_Sans_Bengali({
 });
 
 export const metadata: Metadata = {
-  title: "BICS SUST LMS",
-  description: "A Library Management System for BICS SUST",
+  title: "SUST LMS",
+  description: "A Library Management System for SUST",
 };
 
 export default function RootLayout({

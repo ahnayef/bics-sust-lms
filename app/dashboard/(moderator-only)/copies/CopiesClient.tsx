@@ -126,10 +126,9 @@ const buildQrCardImage = async (copyId: string, bookTitle: string) => {
 
 interface CopyForm {
   book_id: string; // UUID of the selected book
-  copy_id: string; // QR text string
 }
 
-const EMPTY_FORM: CopyForm = { book_id: "", copy_id: "" };
+const EMPTY_FORM: CopyForm = { book_id: "" };
 
 interface Props {
   initialCopies: Copy[];
@@ -248,7 +247,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
   };
 
   const handleAdd = () => {
-    if (!formData.book_id || !formData.copy_id.trim()) return;
+    if (!formData.book_id) return;
     setPendingAction({ type: "add" });
   };
 
@@ -257,7 +256,6 @@ export default function CopiesClient({ initialCopies, books }: Props) {
     startTransition(async () => {
       const fd = new FormData();
       fd.set("book_id", formData.book_id);
-      fd.set("copy_id", formData.copy_id.trim());
       const result = await addCopyOfBook(fd);
       if (result.error) {
         showFlash("error", result.error);
@@ -594,39 +592,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                 </div>
               </div>
 
-              {/* Copy Number */}
-              <div>
-                <label className="block text-sm font-medium text-[#4f4134] mb-1">
-                  Copy Number{" "}
-                  <span className="font-normal text-[#7a6a5c]">(1–999)</span>
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  max={999}
-                  value={formData.copy_id}
-                  onChange={(e) =>
-                    setFormData({ ...formData, copy_id: e.target.value })
-                  }
-                  placeholder="e.g. 1"
-                  className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
-                />
-                <p className="text-xs text-[#6a5a4c] mt-1">
-                  {formData.copy_id &&
-                  parseInt(formData.copy_id) >= 1 &&
-                  parseInt(formData.copy_id) <= 999 ? (
-                    <>
-                      Will be stored as{" "}
-                      <span className="font-mono font-semibold">
-                        QR{String(parseInt(formData.copy_id)).padStart(3, "0")}
-                      </span>{" "}
-                      — unique across all copies.
-                    </>
-                  ) : (
-                    "Unique number for the physical copy (1–999)."
-                  )}
-                </p>
-              </div>
+
             </div>
 
             <div className="flex gap-3 mt-6">
@@ -641,10 +607,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                 onClick={handleAdd}
                 disabled={
                   isPending ||
-                  !formData.book_id ||
-                  !formData.copy_id ||
-                  parseInt(formData.copy_id) < 1 ||
-                  parseInt(formData.copy_id) > 999
+                  !formData.book_id
                 }
                 className="flex-1 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 disabled:cursor-not-allowed transition-colors font-medium ink-text"
               >
@@ -684,12 +647,11 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                 const selectedBook = books.find(
                   (b) => b.id === formData.book_id,
                 );
-                const qrId =
-                  formData.copy_id &&
-                  parseInt(formData.copy_id) >= 1 &&
-                  parseInt(formData.copy_id) <= 999
-                    ? `QR${String(parseInt(formData.copy_id)).padStart(3, "0")}`
-                    : formData.copy_id;
+                const bookCopies = copies.filter((c) => c.book_id === formData.book_id);
+                const maxCopyNum = bookCopies.reduce((max, c) => Math.max(max, c.copy_number), 0);
+                const nextCopyNum = maxCopyNum + 1;
+                const qrId = selectedBook ? `QR${selectedBook.short_id}-${nextCopyNum}` : "—";
+                
                 return (
                   <div className="space-y-1 text-sm">
                     <p>
@@ -697,7 +659,10 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                       {selectedBook?.title ?? "—"}
                     </p>
                     <p>
-                      <span className="font-semibold">QR ID:</span> {qrId}
+                      <span className="font-semibold">Expected QR ID:</span> {qrId}
+                    </p>
+                    <p className="text-xs text-[#6a5a4c] pt-1">
+                      (Automatically numbered to avoid conflicts)
                     </p>
                   </div>
                 );

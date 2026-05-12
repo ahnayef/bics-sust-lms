@@ -1,16 +1,18 @@
 "use client";
-import { useState, useMemo, useEffect, Fragment } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import QRCode from "qrcode";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import {
-  FaPrint,
-  FaSearch,
   FaBookOpen,
-  FaFilter,
-  FaTimes,
   FaCheckSquare,
+  FaFilter,
+  FaPrint,
   FaRegSquare,
+  FaSearch,
+  FaTimes,
 } from "react-icons/fa";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import "@/styles/typography.css";
+import "@/styles/components.css";
 
 interface Book {
   id: string;
@@ -60,10 +62,10 @@ export default function PrintQrClient({ books, copies }: Props) {
       const matchesType = typeFilter === "all" || (typeFilter === "syllabus" ? book.is_syllabus : !book.is_syllabus);
       const matchesAuthor = authorFilter === "all" || book.author === authorFilter;
       const bookCopies = copies.filter(c => c.book_id === book.id);
-      
-      const matchesQuery = !query || 
-        book.title.toLowerCase().includes(query) || 
-        book.author.toLowerCase().includes(query) || 
+
+      const matchesQuery = !query ||
+        book.title.toLowerCase().includes(query) ||
+        book.author.toLowerCase().includes(query) ||
         book.short_id.toLowerCase().includes(query) ||
         bookCopies.some(c => c.id.toLowerCase().includes(query));
 
@@ -157,7 +159,7 @@ export default function PrintQrClient({ books, copies }: Props) {
     }
 
     if (fillPage) {
-      const ITEMS_PER_PAGE = 20; // 5 cols * 4 rows fits with 100% safety on all margins
+      const ITEMS_PER_PAGE = 25; // 5 cols * 4 rows fits with 100% safety on all margins
       const currentLength = duplicated.length;
       if (currentLength > 0) {
         const remainder = currentLength % ITEMS_PER_PAGE;
@@ -175,29 +177,7 @@ export default function PrintQrClient({ books, copies }: Props) {
 
   return (
     <div className="space-y-4 sm:space-y-6 print:space-y-0 print:m-0 max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-4 sm:py-8">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Courier+Prime:wght@400;700&display=swap');
-        .ink-text { font-family: 'Courier Prime', monospace; }
-        .ink-title { font-family: 'Playfair Display', serif; }
-        .book-list-surface {
-          background-color: #f1e7d8;
-          border: 1px solid #46372b;
-          box-shadow: inset 0 0 0 1px rgba(244, 235, 219, 0.55), 0 0 0 1px rgba(69, 55, 43, 0.2);
-        }
-        .tron-border { position: relative; overflow: hidden; }
-        .tron-border::after {
-          content: ''; position: absolute; inset: 0; pointer-events: none;
-          background: repeating-linear-gradient(90deg, rgba(77, 59, 43, 0.24) 0 3px, transparent 3px 20px) top / 100% 1px no-repeat,
-                      repeating-linear-gradient(90deg, rgba(77, 59, 43, 0.18) 0 2px, transparent 2px 18px) bottom / 100% 1px no-repeat,
-                      repeating-linear-gradient(180deg, rgba(77, 59, 43, 0.18) 0 2px, transparent 2px 16px) left / 1px 100% no-repeat,
-                      repeating-linear-gradient(180deg, rgba(77, 59, 43, 0.14) 0 2px, transparent 2px 20px) right / 1px 100% no-repeat;
-          opacity: 0.78;
-        }
-        @media print {
-          @page { size: A4; margin: 10mm; }
-          .tron-border::after { display: none !important; }
-        }
-      `}</style>
+
 
       {/* Header */}
       <section className="book-list-surface tron-border rounded-md sm:rounded-lg p-3 sm:p-5 print:hidden">
@@ -210,9 +190,6 @@ export default function PrintQrClient({ books, copies }: Props) {
             <h1 className="text-lg sm:text-2xl font-bold text-[#221910] leading-tight ink-title">
               Print QR Codes
             </h1>
-            <p className="text-xs text-[#5c4f42] ink-text sm:text-right">
-              {selectedCopies.size} copies selected for printing
-            </p>
           </div>
         </div>
       </section>
@@ -228,9 +205,14 @@ export default function PrintQrClient({ books, copies }: Props) {
             </TabsTrigger>
             <TabsTrigger
               value="preview"
-              className="flex-1 rounded-none py-2.5 sm:py-3 px-2 sm:px-4 text-[11px] sm:text-sm font-medium ink-text text-[#5a4b3f] data-[state=active]:bg-[#f6ecdd] data-[state=active]:text-[#221910] data-[state=active]:font-bold data-[state=active]:shadow-[inset_0_-2px_0_0_#4a3d31] hover:bg-[#e4d4bf] transition-all"
+              className="flex-1 rounded-none py-2.5 sm:py-3 px-2 sm:px-4 text-[11px] sm:text-sm font-medium ink-text text-[#5a4b3f] data-[state=active]:bg-[#f6ecdd] data-[state=active]:text-[#221910] data-[state=active]:font-bold data-[state=active]:shadow-[inset_0_-2px_0_0_#4a3d31] hover:bg-[#e4d4bf] transition-all flex items-center justify-center gap-2"
             >
               Preview & Print Layout
+              {selectedCopies.size > 0 && (
+                <span className="bg-[#4a3d31] text-[#f4e8d4] px-2 py-0.5 rounded-full text-[10px] font-bold">
+                  {selectedCopies.size}
+                </span>
+              )}
             </TabsTrigger>
           </TabsList>
 
@@ -326,7 +308,7 @@ export default function PrintQrClient({ books, copies }: Props) {
 
                         return (
                           <Fragment key={book.id}>
-                            <tr 
+                            <tr
                               className="border-b border-[#d2bfa5] hover:bg-[#efe4d1] transition-colors align-top cursor-pointer"
                               onClick={() => setExpandedBookId(isExpanded ? null : book.id)}
                             >
@@ -359,7 +341,7 @@ export default function PrintQrClient({ books, copies }: Props) {
                               </td>
                               <td className="px-3 py-3 text-[#5a4b3f] text-sm">{book.copies.length}</td>
                             </tr>
-                            
+
                             {isExpanded && (
                               <tr className="bg-[#fcf8f3] border-b border-[#d2bfa5]">
                                 <td></td>
@@ -377,8 +359,8 @@ export default function PrintQrClient({ books, copies }: Props) {
                                             type="button"
                                             onClick={(e) => toggleCopySelect(e, copy.id)}
                                             className={`flex items-center gap-2 p-2 rounded-sm border transition-colors text-left
-                                              ${isSelected 
-                                                ? 'bg-[#eef5e9] border-[#8aa06f] text-[#3d5c2e]' 
+                                              ${isSelected
+                                                ? 'bg-[#eef5e9] border-[#8aa06f] text-[#3d5c2e]'
                                                 : 'bg-[#fcf8f3] border-[#e4d4bf] text-[#5b4a3c] hover:bg-[#f8f1e6]'}`}
                                           >
                                             {isSelected ? <FaCheckSquare className="w-3.5 h-3.5 shrink-0" /> : <FaRegSquare className="w-3.5 h-3.5 shrink-0" />}

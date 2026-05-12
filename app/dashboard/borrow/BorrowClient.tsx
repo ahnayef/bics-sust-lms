@@ -12,6 +12,8 @@ import {
   FaQrcode,
 } from "react-icons/fa";
 import type { Copy } from "@/types/library";
+import "@/styles/typography.css";
+import "@/styles/components.css";
 
 interface CompletedBook {
   bookId: string;
@@ -197,7 +199,7 @@ export default function BorrowClient({
 
     return (
       <>
-        <style>{borrowStyles}</style>
+        
         <div className="flex-1 flex items-center justify-center px-4 py-8">
           <div className="borrow-surface tron-border rounded-lg p-8 text-center max-w-sm w-full">
             <div className="flex justify-center mb-6">
@@ -249,7 +251,7 @@ export default function BorrowClient({
 
   return (
     <>
-      <style>{borrowStyles}</style>
+      
 
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Mode selector */}
@@ -606,36 +608,3 @@ export default function BorrowClient({
 }
 
 // ── Styles ─────────────────────────────────────────────────────────────────
-
-const borrowStyles = `
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Courier+Prime:wght@400;700&display=swap');
-
-  .ink-text { font-family: 'Courier Prime', monospace; }
-  .ink-title { font-family: 'Playfair Display', serif; }
-
-  .borrow-surface {
-    background-color: #f1e7d8;
-    border: 1px solid #46372b;
-    box-shadow: inset 0 0 0 1px rgba(244, 235, 219, 0.55), 0 0 0 1px rgba(69, 55, 43, 0.2);
-  }
-
-  .tron-border { position: relative; overflow: hidden; }
-
-  .tron-border::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background:
-      repeating-linear-gradient(90deg, rgba(77, 59, 43, 0.24) 0 3px, transparent 3px 20px) top / 100% 1px no-repeat,
-      repeating-linear-gradient(90deg, rgba(77, 59, 43, 0.18) 0 2px, transparent 2px 18px) bottom / 100% 1px no-repeat,
-      repeating-linear-gradient(180deg, rgba(77, 59, 43, 0.18) 0 2px, transparent 2px 16px) left / 1px 100% no-repeat,
-      repeating-linear-gradient(180deg, rgba(77, 59, 43, 0.14) 0 2px, transparent 2px 20px) right / 1px 100% no-repeat;
-    opacity: 0.78;
-  }
-
-  @keyframes qrScannerMove {
-    0%, 100% { transform: translateX(-50%) translateY(-100px); }
-    50% { transform: translateX(-50%) translateY(100px); }
-  }
-`;
