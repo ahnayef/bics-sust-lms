@@ -484,6 +484,8 @@ export default function TransactionsClient({
 
   function renderReturnCard(tx: Transaction) {
     const working = processingId === tx.id && isPending;
+    const originalBorrow = activeBorrowers[tx.copy_id];
+
     return (
       <article
         key={tx.id}
@@ -533,9 +535,9 @@ export default function TransactionsClient({
           </StatusBadge>
         </div>
 
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#5a4b3f]">
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#5a4b3f] sm:pl-[52px]">
           <p>Requested: {formatDate(tx.request_date)}</p>
-          <p>Borrowed on: {formatDate(tx.approved_date)}</p>
+          <p>Borrowed on: {formatDate(originalBorrow?.approved_date)}</p>
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-2 pt-3 border-t border-[#cfbba1]">
