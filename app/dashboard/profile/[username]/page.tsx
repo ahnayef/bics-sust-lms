@@ -1,8 +1,8 @@
 import { getProfileByUsername } from "@/server/geo";
 import { getUserStats } from "@/server/library";
 import { getClaims } from "@/server/user";
-import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
 import {
   FaArrowLeft,
   FaCheckCircle,
@@ -60,11 +60,11 @@ export default async function DashboardUserProfilePage({
     <div className="p-2 sm:p-0 max-w-3xl mx-auto space-y-5">
       {/* Back */}
       <Link
-        href="/dashboard"
+        href="/dashboard/profile"
         className="inline-flex items-center gap-2 text-sm text-[#5a4b3f] hover:text-[#221910] transition-colors ink-text"
       >
         <FaArrowLeft className="w-3.5 h-3.5" />
-        Back to Dashboard
+        Back to Profile
       </Link>
 
       {/* Hero */}
@@ -202,7 +202,7 @@ export default async function DashboardUserProfilePage({
                 <FaMapMarkerAlt className="w-4 h-4 text-[#7a6a5c] mt-0.5 shrink-0" />
                 <div>
                   <dt className="text-xs text-[#7a6a5c] uppercase tracking-wider mb-0.5">
-                    Location
+                    Thana
                   </dt>
                   <dd className="text-[#2b2119]">{locationParts.join(", ")}</dd>
                 </div>

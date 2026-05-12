@@ -99,7 +99,7 @@ export async function borrowBook(
   const { data: copy } = await supabase
     .from("copies")
     .select("id, book_id, status")
-    .eq("id", copy_id)
+    .ilike("id", copy_id)
     .single();
 
   if (!copy) return { error: "Copy not found" };
@@ -111,7 +111,7 @@ export async function borrowBook(
     .from("transactions")
     .select("id")
     .eq("user_id", sub)
-    .eq("copy_id", copy_id)
+    .ilike("copy_id", copy_id)
     .in("status", ["pending", "active", "overdue"])
     .limit(1);
 
@@ -159,7 +159,7 @@ export async function returnBook(
     .from("transactions")
     .select("id, book_id")
     .eq("user_id", sub)
-    .eq("copy_id", copy_id)
+    .ilike("copy_id", copy_id)
     .eq("type", "borrow")
     .in("status", ["active", "overdue"])
     .limit(1)
@@ -172,7 +172,7 @@ export async function returnBook(
     .from("transactions")
     .select("id")
     .eq("user_id", sub)
-    .eq("copy_id", copy_id)
+    .ilike("copy_id", copy_id)
     .eq("type", "return")
     .eq("status", "pending")
     .limit(1);

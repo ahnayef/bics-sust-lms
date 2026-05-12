@@ -2,6 +2,7 @@
 
 import { borrowBook, lookupCopy } from "@/server/transaction-actions";
 import { Scanner, useDevices } from "@yudiel/react-qr-scanner";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useRef, useState, useTransition } from "react";
 import {
@@ -31,6 +32,10 @@ export default function BorrowClient({
   activeBorrowCopyIds,
   completedBooks,
 }: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   // ── State ──────────────────────────────────────────────────────────────────
 
   const [copyId, setCopyId] = useState(initialCopyId);
@@ -85,6 +90,15 @@ export default function BorrowClient({
     setSelectedCopy(null);
     setUnavailableCopy(null);
     setReturnDate("");
+
+    // Update URL param
+    const params = new URLSearchParams(searchParams.toString());
+    if (upper) {
+      params.set("copyId", upper);
+    } else {
+      params.delete("copyId");
+    }
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
 
     // Only look up when the input is long enough to be a valid QR code
     if (upper.length < 5) return false;
@@ -519,8 +533,8 @@ export default function BorrowClient({
                       type="text"
                       value={copyId}
                       onChange={handleCopyIdChange}
-                      placeholder="e.g., QR001"
-                      maxLength={8}
+                      placeholder="e.g., QRA1B2C3-1"
+                      maxLength={16}
                       className="w-full px-4 py-3 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-lg focus:ring-2 focus:ring-[#5a4d40] outline-none text-lg font-mono tracking-widest"
                       autoFocus
                     />

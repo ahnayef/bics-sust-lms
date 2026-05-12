@@ -86,7 +86,7 @@ export default function Login() {
               className="text-3xl sm:text-[2.05rem] font-bold text-[#221910]"
               style={{ fontFamily: "Playfair Display, serif" }}
             >
-              BICS SUST LMS
+              SUST-LMS
             </span>
           </Link>
           <p
@@ -115,7 +115,7 @@ export default function Login() {
               className="text-[#5c4f42] text-sm mt-1"
               style={{ fontFamily: "Courier Prime, monospace" }}
             >
-              Use your university Google account to continue
+              Continue with your Google account
             </p>
           </div>
 

@@ -1,8 +1,8 @@
-import { getClaims } from "@/server/user";
 import { getProfile } from "@/server/geo";
 import { getUserStats } from "@/server/library";
-import { redirect } from "next/navigation";
+import { getClaims } from "@/server/user";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   FaCheckCircle,
   FaEdit,
@@ -217,7 +217,7 @@ export default async function DashboardProfilePage() {
                   {" "}
                   <dt className="text-xs text-[#7a6a5c] uppercase tracking-wider mb-0.5">
                     {" "}
-                    Location{" "}
+                    Thana{" "}
                   </dt>{" "}
                   <dd className="text-[#2b2119]">
                     {locationParts.join(",")}

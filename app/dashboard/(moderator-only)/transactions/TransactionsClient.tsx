@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import StatusBadge from "@/app/components/StatusBadge";
 import type { Transaction, PdfSubmission } from "@/types/library";
 import {
@@ -76,6 +77,16 @@ export default function TransactionsClient({
   pdfSubmissions,
 }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activeTab = searchParams.get("tab") || "pending";
+
+  const handleTabChange = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", value);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
   const [isPending, startTransition] = useTransition();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -146,9 +157,29 @@ export default function TransactionsClient({
     const base = transactions.filter(
       (tx) => tx.status === "completed" || tx.status === "rejected",
     );
+
+    // Map approved/rejected PDFs to look like transactions for the history table
+    const pdfToTx: Transaction[] = pdfSubmissions
+      .filter((pdf) => pdf.status === "approved" || pdf.status === "rejected")
+      .map(
+        (pdf) =>
+          ({
+            id: pdf.id,
+            user: pdf.user,
+            book: pdf.book,
+            copy_id: "—",
+            copy: null,
+            type: "PDF Report" as any, // Type override for UI
+            status: pdf.status === "approved" ? "completed" : "rejected",
+            request_date: pdf.submitted_at,
+          }) as unknown as Transaction,
+      );
+
+    const combined = [...base, ...pdfToTx];
     const q = searchTerm.toLowerCase();
+
     return sortTxns(
-      base.filter(
+      combined.filter(
         (tx) =>
           (tx.user?.full_name ?? "").toLowerCase().includes(q) ||
           (tx.book?.title ?? "").toLowerCase().includes(q) ||
@@ -156,7 +187,7 @@ export default function TransactionsClient({
       ),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transactions, searchTerm, sortBy]);
+  }, [transactions, pdfSubmissions, searchTerm, sortBy]);
 
   const summary = useMemo(
     () => ({
@@ -258,7 +289,12 @@ export default function TransactionsClient({
         <div className="flex items-start justify-between gap-2">
           <div>
             <p className="font-semibold text-[#2b2119]">
-              {tx.user?.full_name ?? "Unknown Member"}
+              <Link
+                href={`/dashboard/users/${tx.user?.id}`}
+                className="hover:underline hover:text-[#5a4b3f] transition-colors"
+              >
+                {tx.user?.full_name ?? "Unknown Member"}
+              </Link>
             </p>
             <p className="text-xs text-[#5a4b3f] mt-0.5">
               {tx.book?.title ?? "Unknown Book"}{" "}
@@ -323,7 +359,12 @@ export default function TransactionsClient({
         <div className="flex items-start justify-between gap-2">
           <div>
             <p className="font-semibold text-[#2b2119]">
-              {tx.user?.full_name ?? "Unknown Member"}
+              <Link
+                href={`/dashboard/users/${tx.user?.id}`}
+                className="hover:underline hover:text-[#5a4b3f] transition-colors"
+              >
+                {tx.user?.full_name ?? "Unknown Member"}
+              </Link>
             </p>
             <p className="text-xs text-[#5a4b3f] mt-0.5">
               {tx.book?.title ?? "Unknown Book"}{" "}
@@ -415,7 +456,7 @@ export default function TransactionsClient({
       <section
         className="dashboard-surface tron-border rounded-sm border border-[#5f4f40] overflow-hidden"
       >
-        <Tabs defaultValue="pending" className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           {/* Tab bar */}
           <TabsList className="w-full h-auto rounded-none bg-[#eadcc8] border-b border-[#7d6d5a] p-0 flex">
             <TabsTrigger
@@ -540,7 +581,12 @@ export default function TransactionsClient({
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                       <div>
                         <p className="font-semibold text-[#2b2119]">
-                          {tx.user?.full_name ?? "Unknown Member"}
+                          <Link
+                            href={`/dashboard/users/${tx.user?.id}`}
+                            className="hover:underline hover:text-[#5a4b3f] transition-colors"
+                          >
+                            {tx.user?.full_name ?? "Unknown Member"}
+                          </Link>
                         </p>
                         <p className="text-sm text-[#5a4b3f]">
                           {tx.book?.title ?? "Unknown Book"}{" "}
@@ -631,7 +677,12 @@ export default function TransactionsClient({
                         className="border-b border-[#d2bfa5] hover:bg-[#f4ebdc] transition-colors"
                       >
                         <td className="px-4 py-3 font-medium text-[#2b2119]">
-                          {tx.user?.full_name ?? "—"}
+                          <Link
+                            href={`/dashboard/users/${tx.user?.id}`}
+                            className="hover:underline hover:text-[#5a4b3f] transition-colors"
+                          >
+                            {tx.user?.full_name ?? "—"}
+                          </Link>
                         </td>
                         <td className="px-4 py-3 text-[#5a4b3f] max-w-48 truncate">
                           {tx.book?.title ?? "—"}
@@ -643,7 +694,13 @@ export default function TransactionsClient({
                         </td>
                         <td className="px-4 py-3">
                           <StatusBadge
-                            tone={tx.type === "borrow" ? "info" : "accent"}
+                            tone={
+                              tx.type === "borrow"
+                                ? "info"
+                                : tx.type === "return"
+                                  ? "accent"
+                                  : "success"
+                            }
                             size="xs"
                           >
                             {tx.type}
@@ -689,12 +746,17 @@ export default function TransactionsClient({
                       <div className="flex items-start justify-between gap-2 mb-3">
                         <div className="flex-1 min-w-0">
                           <p className="text-xs text-[#5a4b3f]">
-                            {pdf.user?.full_name ?? "Unknown"}
-                            {pdf.user?.username && (
-                              <span className="font-mono ml-1">
-                                (@{pdf.user.username})
-                              </span>
-                            )}
+                            <Link
+                              href={`/dashboard/users/${pdf.user?.id}`}
+                              className="hover:underline hover:text-[#3b3026] transition-colors"
+                            >
+                              {pdf.user?.full_name ?? "Unknown"}
+                              {pdf.user?.username && (
+                                <span className="font-mono ml-1">
+                                  (@{pdf.user.username})
+                                </span>
+                              )}
+                            </Link>
                           </p>
                           <p className="font-semibold text-[#2b2119] mt-0.5">
                             {pdf.book?.title ?? "Unknown Book"}

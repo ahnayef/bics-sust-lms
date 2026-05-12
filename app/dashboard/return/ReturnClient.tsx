@@ -395,7 +395,7 @@ export default function ReturnClient({
                   type="text"
                   value={copyId}
                   onChange={handleCopyIdChange}
-                  placeholder="e.g., QR001"
+                  placeholder="e.g., QRA1B2C3-1"
                   maxLength={20}
                   className="w-full px-4 py-3 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-lg focus:ring-2 focus:ring-[#5a4d40] focus:border-transparent outline-none text-lg font-mono tracking-widest"
                   autoFocus

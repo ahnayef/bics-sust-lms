@@ -69,7 +69,7 @@ export async function getBookByQR(copyId: string): Promise<Copy | null> {
   const { data, error } = await supabase
     .from("copies")
     .select("*, book:books(id, title, author, is_syllabus, pages, pdf_link)")
-    .eq("id", copyId)
+    .ilike("id", copyId)
     .single();
   if (error || !data) return null;
   return data as unknown as Copy;

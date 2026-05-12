@@ -1,17 +1,17 @@
 "use client";
 
-import { useActionState, useRef, useState, useMemo } from "react";
-import { updateProfileInfo } from "@/server/profiles";
+import ThanaCombobox from "@/components/ThanaCombobox";
+import ConfirmModal from "@/components/ui/confirm-modal";
 import type { GeoSource } from "@/server/geo";
+import { updateProfileInfo } from "@/server/profiles";
 import type { Profile, Thana, UserRank } from "@/types/profile";
+import Link from "next/link";
+import { useActionState, useMemo, useRef, useState } from "react";
 import {
-  FaMapMarkerAlt,
   FaArrowLeft,
   FaExclamationTriangle,
+  FaMapMarkerAlt,
 } from "react-icons/fa";
-import ThanaCombobox from "@/components/ThanaCombobox";
-import Link from "next/link";
-import ConfirmModal from "@/components/ui/confirm-modal";
 
 interface Props {
   profile: Profile;
@@ -217,7 +217,7 @@ export default function EditProfileForm({
                   autoComplete="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+880 1X XX XXXX XXX"
+                  placeholder="01919191919"
                   className={inputClass}
                 />
               </div>
@@ -243,8 +243,7 @@ export default function EditProfileForm({
                 <div className="flex items-start gap-2 mt-2 px-3 py-2 rounded-sm border border-amber-400/60 bg-amber-50/80 text-amber-800 text-xs ink-text">
                   <FaExclamationTriangle className="shrink-0 mt-0.5 w-3 h-3" />
                   <span>
-                    Saving the profile will un-verify you if you change your
-                    rank. A moderator will need to re-verify you.
+                    If you change your rank, you will be un-verified until a moderator verifies you again.
                   </span>
                 </div>
               </div>

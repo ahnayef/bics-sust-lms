@@ -1,11 +1,11 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
-import { setupProfile, checkUsernameAvailability } from "@/server/profiles";
-import type { GeoSource } from "@/server/geo";
-import type { Thana, UserRank } from "@/types/profile";
-import { FaMapMarkerAlt } from "react-icons/fa";
 import ThanaCombobox from "@/components/ThanaCombobox";
+import type { GeoSource } from "@/server/geo";
+import { checkUsernameAvailability, setupProfile } from "@/server/profiles";
+import type { Thana, UserRank } from "@/types/profile";
+import { useActionState, useState } from "react";
+import { FaMapMarkerAlt } from "react-icons/fa";
 
 type Props = { thanas: Thana[]; geoSource: GeoSource };
 
@@ -135,13 +135,12 @@ export default function SetupForm({
                   pattern="^[a-zA-Z0-9_]+$"
                   autoComplete="username"
                   placeholder="your_username"
-                  className={`${inputClass} ${
-                    usernameStatus === "unavailable" || usernameStatus === "invalid"
+                  className={`${inputClass} ${usernameStatus === "unavailable" || usernameStatus === "invalid"
                       ? "border-red-400 focus:ring-red-500"
                       : usernameStatus === "available"
-                      ? "border-[#a3b994] focus:ring-[#6b9e5e]"
-                      : ""
-                  }`}
+                        ? "border-[#a3b994] focus:ring-[#6b9e5e]"
+                        : ""
+                    }`}
                   value={username}
                   onChange={(e) => {
                     setUsername(e.target.value);
@@ -165,7 +164,7 @@ export default function SetupForm({
                   name="phone"
                   type="tel"
                   autoComplete="tel"
-                  placeholder="+880 1X XX XXXX XXX"
+                  placeholder="01919191919"
                   className={inputClass}
                 />
               </div>
