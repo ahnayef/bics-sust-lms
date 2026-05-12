@@ -1,3 +1,4 @@
+import { getProfile } from "@/server/geo";
 import { getClaims } from "@/server/user";
 import { Suspense } from "react";
 import {
@@ -22,9 +23,12 @@ export default function Home() {
 
 async function HomeContent() {
   const claims = await getClaims();
+  const profile = claims ? await getProfile(claims.sub as string) : null;
   const isLoggedIn = !!claims;
-  const ctaHref = isLoggedIn ? "/dashboard" : "/login";
-  const ctaLabel = isLoggedIn ? "Go to Dashboard" : "Get Started";
+  const isProfileComplete = profile?.profile_completed ?? false;
+
+  const ctaHref = !isLoggedIn ? "/login" : isProfileComplete ? "/dashboard" : "/setup";
+  const ctaLabel = !isLoggedIn ? "Get Started" : isProfileComplete ? "Go to Dashboard" : "Finish Setup";
   const year = new Date().getFullYear();
 
   return (

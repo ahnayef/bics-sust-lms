@@ -1,8 +1,18 @@
 import { Suspense } from "react";
-import { getThanas } from "@/server/geo";
+import { getThanas, getProfile } from "@/server/geo";
 import SetupForm from "./SetupForm";
+import { redirect } from "next/navigation";
+import { getClaims } from "@/server/user";
 
 async function SetupWithData() {
+  const claims = await getClaims();
+  if (!claims) redirect("/login");
+
+  const profile = await getProfile(claims.sub as string);
+  if (profile?.profile_completed) {
+    redirect("/dashboard");
+  }
+
   const { data: thanas, source } = await getThanas();
   return <SetupForm thanas={thanas} geoSource={source} />;
 }
