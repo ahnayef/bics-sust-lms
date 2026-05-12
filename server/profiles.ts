@@ -10,11 +10,11 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { invalidateUsersAndOverview } from "@/server/cache-invalidation";
-import { redirect } from "next/navigation";
+import type { ActionLogType } from "@/types/library";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { cacheAvatarLocally } from "./avatar";
-import type { ActionLogType } from "@/types/library";
 
 // ---------------------------------------------------------------------------
 // Helper: Insert Action Log
@@ -41,7 +41,11 @@ async function insertActionLog(
 const thanaIdRequired = z.string().uuid("Please select a thana");
 
 const profileSchema = z.object({
-  full_name: z.string().min(2, "Full name must be at least 2 characters"),
+  full_name: z
+    .string()
+    .min(2, "Full name must be at least 2 characters")
+    .max(100, "Full name must be at most 100 characters")
+    .trim(),
   username: z
     .string()
     .min(3, "Username must be at least 3 characters")
@@ -49,10 +53,15 @@ const profileSchema = z.object({
     .regex(
       /^[a-zA-Z0-9_]+$/,
       "Username may only contain letters, numbers, and underscores",
-    ),
+    )
+    .trim(),
   phone: z
     .string()
-    .regex(/^\+?[0-9\s\-]{7,15}$/, "Invalid phone number")
+    .regex(
+      /^\+?[0-9]*$/,
+      "Phone number must contain only digits and an optional '+' at the start",
+    )
+    .max(19, "Phone number must be at most 19 characters")
     .optional()
     .or(z.literal("")),
   rank: z.enum(["None", "Member", "Associate", "Supporter"], {
@@ -140,10 +149,18 @@ const optionalThanaId = z
   .pipe(z.union([z.null(), z.string().uuid()]));
 
 const profileEditSchema = z.object({
-  full_name: z.string().min(2, "Full name must be at least 2 characters"),
+  full_name: z
+    .string()
+    .min(2, "Full name must be at least 2 characters")
+    .max(100, "Full name must be at most 100 characters")
+    .trim(),
   phone: z
     .string()
-    .regex(/^\+?[0-9\s\-]{7,15}$/, "Invalid phone number")
+    .regex(
+      /^\+?[0-9]*$/,
+      "Phone number must contain only digits and an optional '+' at the start",
+    )
+    .max(19, "Phone number must be at most 19 characters")
     .optional()
     .or(z.literal("")),
   rank: z.enum(["None", "Member", "Associate", "Supporter"], {
@@ -391,9 +408,9 @@ export async function promoteToModerator(
     .eq("id", target.id);
 
   if (error) return { error: error.message };
-  
+
   await insertActionLog(supabase, "role_changed", target.id, claims.sub, "Promoted to moderator");
-  
+
   invalidateUsersAndOverview();
   return { success: `${target.full_name} is now a moderator` };
 }
@@ -433,9 +450,9 @@ export async function makeAdmin(
     .eq("id", userId);
 
   if (error) return { error: error.message };
-  
+
   await insertActionLog(supabase, "role_changed", userId, claims.sub, "Promoted to admin");
-  
+
   invalidateUsersAndOverview();
   return { success: `${target.full_name} is now an admin` };
 }
@@ -474,9 +491,9 @@ export async function demoteModerator(
     .eq("id", userId);
 
   if (error) return { error: error.message };
-  
+
   await insertActionLog(supabase, "role_changed", userId, claims.sub, "Demoted to member");
-  
+
   invalidateUsersAndOverview();
   return { success: `${target.full_name} has been removed as moderator` };
 }

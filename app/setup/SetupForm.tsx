@@ -3,11 +3,11 @@
 import ThanaCombobox from "@/components/ThanaCombobox";
 import type { GeoSource } from "@/server/geo";
 import { checkUsernameAvailability, setupProfile } from "@/server/profiles";
+import "@/styles/components.css";
+import "@/styles/typography.css";
 import type { Thana, UserRank } from "@/types/profile";
 import { useActionState, useState } from "react";
 import { FaMapMarkerAlt } from "react-icons/fa";
-import "@/styles/typography.css";
-import "@/styles/components.css";
 type Props = { thanas: Thana[]; geoSource: GeoSource };
 
 const RANKS: UserRank[] = ["None", "Member", "Associate", "Supporter"];
@@ -40,6 +40,21 @@ export default function SetupForm({
   const [usernameStatus, setUsernameStatus] = useState<
     "idle" | "checking" | "available" | "unavailable" | "invalid"
   >("idle");
+  const [phone, setPhone] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Only allow digits and + at the beginning
+    if (value === "" || /^\+?[0-9]*$/.test(value)) {
+      setPhone(value);
+      if (value.length > 19) {
+        setPhoneError("Phone number cannot exceed 19 characters");
+      } else {
+        setPhoneError("");
+      }
+    }
+  };
 
   const handleUsernameBlur = async () => {
     if (!username || username.length < 3) {
@@ -133,10 +148,10 @@ export default function SetupForm({
                   autoComplete="username"
                   placeholder="your_username"
                   className={`${inputClass} ${usernameStatus === "unavailable" || usernameStatus === "invalid"
-                      ? "border-red-400 focus:ring-red-500"
-                      : usernameStatus === "available"
-                        ? "border-[#a3b994] focus:ring-[#6b9e5e]"
-                        : ""
+                    ? "border-red-400 focus:ring-red-500"
+                    : usernameStatus === "available"
+                      ? "border-[#a3b994] focus:ring-[#6b9e5e]"
+                      : ""
                     }`}
                   value={username}
                   onChange={(e) => {
@@ -152,18 +167,36 @@ export default function SetupForm({
               </div>
 
               <div>
-                <label htmlFor="phone" className={labelClass}>
-                  Phone Number{" "}
-                  <span className="text-[#7a6a5c] font-normal">(optional)</span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="phone" className={labelClass}>
+                    Phone Number{" "}
+                    <span className="text-[#7a6a5c] font-normal">(optional)</span>
+                    {phone.length > 0 && (
+                      <span className="ml-2 text-[10px] text-[#7a6a5c] font-normal opacity-70">
+                        ({phone.length} chars)
+                      </span>
+                    )}
+                  </label>
+                  {phoneError && (
+                    <span className="text-xs text-red-600 font-semibold ink-text">
+                      Too long
+                    </span>
+                  )}
+                </div>
                 <input
                   id="phone"
                   name="phone"
                   type="tel"
                   autoComplete="tel"
                   placeholder="01919191919"
-                  className={inputClass}
+                  className={`${inputClass} ${phoneError ? "border-red-400 focus:ring-red-500" : ""
+                    }`}
+                  value={phone}
+                  onChange={handlePhoneChange}
                 />
+                {phoneError && (
+                  <p className="mt-1 text-xs text-red-600 ink-text">{phoneError}</p>
+                )}
               </div>
 
               <div>
@@ -236,7 +269,7 @@ export default function SetupForm({
               <div className="pt-2">
                 <button
                   type="submit"
-                  disabled={isPending || thanas.length === 0}
+                  disabled={isPending || thanas.length === 0 || !!phoneError}
                   className="w-full py-3 px-6 bg-[#3f3328] text-[#f4e8d4] font-semibold rounded-sm hover:bg-[#221910] active:scale-[0.98] transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed ink-title text-base tracking-wide"
                   style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
                 >
