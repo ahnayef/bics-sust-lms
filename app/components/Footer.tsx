@@ -17,12 +17,14 @@ export default function Footer({ year }: { year?: number }) {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* About */}
           <div>
-            <h3
-              className="font-bold text-2xl mb-4"
-              style={{ fontFamily: "Playfair Display, serif" }}
-            >
-              SUST LMS
-            </h3>
+            <Link href="/">
+              <h3
+                className="font-bold text-2xl mb-4 hover:text-[#2f2924] transition-colors"
+                style={{ fontFamily: "Playfair Display, serif" }}
+              >
+                SUST LMS
+              </h3>
+            </Link>
             <p
               className="text-sm leading-relaxed text-[#5a4d40]"
               style={{ fontFamily: "Courier Prime, monospace" }}
@@ -52,7 +54,7 @@ export default function Footer({ year }: { year?: number }) {
               </li>
               <li>
                 <Link
-                  href="#contact"
+                  href="/contact"
                   className="text-[#4e4237] hover:text-[#2f2924] transition-colors"
                   style={{ fontFamily: "Courier Prime, monospace" }}
                 >

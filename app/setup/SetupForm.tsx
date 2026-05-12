@@ -6,6 +6,7 @@ import { checkUsernameAvailability, setupProfile } from "@/server/profiles";
 import "@/styles/components.css";
 import "@/styles/typography.css";
 import type { Thana, UserRank } from "@/types/profile";
+import Link from "next/link";
 import { useActionState, useState } from "react";
 import { FaMapMarkerAlt } from "react-icons/fa";
 type Props = { thanas: Thana[]; geoSource: GeoSource };
@@ -84,6 +85,24 @@ export default function SetupForm({
         />
 
         <div className="relative w-full max-w-lg">
+          {/* Wordmark */}
+          <div className="text-center mb-7 sm:mb-8">
+            <Link href="/" className="inline-block">
+              <span
+                className="text-3xl sm:text-[2.05rem] font-bold text-[#221910]"
+                style={{ fontFamily: "Playfair Display, serif" }}
+              >
+                SUST-LMS
+              </span>
+            </Link>
+            <p
+              className="text-[#5c4f42] text-sm mt-2"
+              style={{ fontFamily: "Courier Prime, monospace" }}
+            >
+              Library Management System
+            </p>
+          </div>
+
           <div className="text-center mb-8">
             <h1
               className="text-3xl sm:text-4xl font-bold text-[#221910] ink-title mb-2"

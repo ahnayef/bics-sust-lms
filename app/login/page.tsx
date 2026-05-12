@@ -1,9 +1,9 @@
 "use client";
 
 import { signInWithGoogle } from "@/server/auth";
-import Link from "next/link";
-import "@/styles/typography.css";
 import "@/styles/components.css";
+import "@/styles/typography.css";
+import Link from "next/link";
 
 export default function Login() {
   return (
@@ -99,7 +99,7 @@ export default function Login() {
             <p>
               Need help?{" "}
               <Link
-                href="#"
+                href="/contact"
                 className="text-[#3b2f24] font-semibold hover:underline"
               >
                 Contact Support

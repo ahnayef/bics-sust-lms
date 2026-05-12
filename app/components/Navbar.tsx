@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 interface NavbarProps {
@@ -9,9 +10,12 @@ interface NavbarProps {
 
 export default function Navbar({ isLoggedIn = false }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
 
   const ctaHref = isLoggedIn ? "/dashboard" : "/login";
   const ctaLabel = isLoggedIn ? "Dashboard" : "Sign In";
+
+  const logoHref = pathname.startsWith("/dashboard") ? "/dashboard" : "/";
 
   return (
     <nav
@@ -26,7 +30,7 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link
-            href={isLoggedIn ? "/dashboard" : "/"}
+            href={logoHref}
             className="flex flex-col items-start leading-none"
           >
             <span
@@ -45,24 +49,20 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            {!isLoggedIn && (
-              <>
-                <Link
-                  href="#features"
-                  className="text-[#2c2520] hover:text-black font-semibold tracking-wide text-sm transition-colors"
-                  style={{ fontFamily: "Courier Prime, monospace" }}
-                >
-                  Features
-                </Link>
-                <Link
-                  href="#contact"
-                  className="text-[#2c2520] hover:text-black font-semibold tracking-wide text-sm transition-colors"
-                  style={{ fontFamily: "Courier Prime, monospace" }}
-                >
-                  Contact
-                </Link>
-              </>
-            )}
+            <Link
+              href="/#features"
+              className="text-[#2c2520] hover:text-black font-semibold tracking-wide text-sm transition-colors"
+              style={{ fontFamily: "Courier Prime, monospace" }}
+            >
+              Features
+            </Link>
+            <Link
+              href="/contact"
+              className="text-[#2c2520] hover:text-black font-semibold tracking-wide text-sm transition-colors"
+              style={{ fontFamily: "Courier Prime, monospace" }}
+            >
+              Contact
+            </Link>
           </div>
 
           {/* CTA Button */}
@@ -110,26 +110,22 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
         {/* Mobile Navigation */}
         {isOpen && (
           <div className="md:hidden pb-4 pt-2 space-y-2 border-t border-[#3c342d]">
-            {!isLoggedIn && (
-              <>
-                <Link
-                  href="#features"
-                  className="block px-4 py-2 text-[#2c2520] hover:bg-[#d9cbb7] tracking-wide font-semibold"
-                  style={{ fontFamily: "Courier Prime, monospace" }}
-                  onClick={() => setIsOpen(false)}
-                >
-                  Features
-                </Link>
-                <Link
-                  href="#contact"
-                  className="block px-4 py-2 text-[#2c2520] hover:bg-[#d9cbb7] tracking-wide font-semibold"
-                  style={{ fontFamily: "Courier Prime, monospace" }}
-                  onClick={() => setIsOpen(false)}
-                >
-                  Contact
-                </Link>
-              </>
-            )}
+            <Link
+              href="/#features"
+              className="block px-4 py-2 text-[#2c2520] hover:bg-[#d9cbb7] tracking-wide font-semibold"
+              style={{ fontFamily: "Courier Prime, monospace" }}
+              onClick={() => setIsOpen(false)}
+            >
+              Features
+            </Link>
+            <Link
+              href="/contact"
+              className="block px-4 py-2 text-[#2c2520] hover:bg-[#d9cbb7] tracking-wide font-semibold"
+              style={{ fontFamily: "Courier Prime, monospace" }}
+              onClick={() => setIsOpen(false)}
+            >
+              Contact
+            </Link>
             <Link
               href={ctaHref}
               className="block px-4 py-2 bg-[#6d6053] text-[#f3ebdd] font-semibold tracking-wide hover:bg-[#5b5045]"

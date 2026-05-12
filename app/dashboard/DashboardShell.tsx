@@ -151,9 +151,10 @@ export default function DashboardShell({
         <aside
           className={`absolute top-0 left-0 flex flex-col shrink-0 h-screen overflow-y-auto dashboard-surface tron-border border-r border-[#5e4e3e] transition-all duration-300 ${isMobileOpen ? "w-64 shadow-2xl" : "w-14"} lg:w-64`}
         >
-          <button
-            onClick={() => setIsMobileOpen(!isMobileOpen)}
-            className={`flex items-center py-[17px] border-b border-[#6d5c4a] ink-title text-[#221910] font-bold text-lg overflow-hidden hover:bg-[#ece0ce] lg:hover:bg-transparent lg:pointer-events-none transition-colors w-full text-left ${isMobileOpen ? "px-4 gap-3" : "justify-center lg:justify-start lg:px-4 lg:gap-3"}`}
+          <Link
+            href="/dashboard"
+            onClick={() => setIsMobileOpen(false)}
+            className={`flex items-center py-[17px] border-b border-[#6d5c4a] ink-title text-[#221910] font-bold text-lg overflow-hidden hover:bg-[#ece0ce] transition-colors w-full text-left ${isMobileOpen ? "px-4 gap-3" : "justify-center lg:justify-start lg:px-4 lg:gap-3"}`}
           >
             <div className="w-5 h-5 lg:w-6 lg:h-6 shrink-0 flex items-center justify-center text-[#554738]">
               <FaBook className="w-full h-full hidden lg:block" />
@@ -162,7 +163,7 @@ export default function DashboardShell({
             <span className={`whitespace-nowrap transition-opacity ${isMobileOpen ? "block" : "hidden lg:block"}`}>
               SUST LMS
             </span>
-          </button>
+          </Link>
 
           <nav className="py-4 space-y-1 pb-8">
             {visibleNavItems.map((item) => {
