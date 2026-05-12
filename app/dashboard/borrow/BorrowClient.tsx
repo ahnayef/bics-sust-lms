@@ -177,6 +177,7 @@ export default function BorrowClient({
     startTransition(async () => {
       const fd = new FormData();
       fd.set("copy_id", selectedCopy.id);
+      fd.set("due_date", returnDate);
       const result = await borrowBook(fd);
       if (result.error) {
         setError(result.error);

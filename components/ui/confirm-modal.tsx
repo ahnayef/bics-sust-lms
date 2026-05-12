@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
 import { FaTimes } from "react-icons/fa";
 
 interface ConfirmModalProps {
@@ -37,6 +37,15 @@ export default function ConfirmModal({
   danger = false,
   loading = false,
 }: ConfirmModalProps) {
+  useEffect(() => {
+    if (!open) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   return (
@@ -90,11 +99,10 @@ export default function ConfirmModal({
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className={`flex-1 py-2.5 rounded-sm font-medium ink-text transition-colors disabled:opacity-50 disabled:cursor-not-allowed border ${
-              danger
+            className={`flex-1 py-2.5 rounded-sm font-medium ink-text transition-colors disabled:opacity-50 disabled:cursor-not-allowed border ${danger
                 ? "bg-[#8b5c4a] text-[#f6ecdd] border-[#6b4437] hover:bg-[#6b4437]"
                 : "bg-[#3f3328] text-[#f4e8d4] border-[#4e4033] hover:bg-[#4a3d31]"
-            }`}
+              }`}
           >
             {loading ? "Working…" : confirmLabel}
           </button>

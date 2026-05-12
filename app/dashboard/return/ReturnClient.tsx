@@ -24,6 +24,7 @@ export default function ReturnClient({
 }: ReturnClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   // Global feedback
   const [error, setError] = useState("");
@@ -42,13 +43,15 @@ export default function ReturnClient({
 
   // ── Shared return logic ─────────────────────────────────────────────────────
 
-  function handleReturn(targetCopyId: string, bookTitle: string) {
+  function handleReturn(targetCopyId: string, bookTitle: string, transactionId?: string) {
     setError("");
     setSuccess("");
+    setProcessingId(transactionId || targetCopyId);
     startTransition(async () => {
       const fd = new FormData();
       fd.set("copy_id", targetCopyId);
       const result = await returnBook(fd);
+      setProcessingId(null);
       if (result.error) {
         setError(result.error);
       } else {
@@ -121,8 +124,8 @@ export default function ReturnClient({
   // the current borrows list so the success message is meaningful.
   const scannedBorrow = scannedCopyId
     ? currentBorrows.find(
-        (b) => b.copy_id.toUpperCase() === scannedCopyId.toUpperCase(),
-      )
+      (b) => b.copy_id.toUpperCase() === scannedCopyId.toUpperCase(),
+    )
     : null;
   const scannedBookTitle = scannedBorrow?.book?.title ?? scannedCopyId ?? "";
 
@@ -189,10 +192,10 @@ export default function ReturnClient({
               });
               const dueDateStr = dueDate
                 ? dueDate.toLocaleDateString("en-GB", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  })
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })
                 : "—";
 
               return (
@@ -246,11 +249,11 @@ export default function ReturnClient({
 
                     {/* Return button */}
                     <button
-                      onClick={() => handleReturn(txn.copy_id, bookTitle)}
+                      onClick={() => handleReturn(txn.copy_id, bookTitle, txn.id)}
                       disabled={isPending}
                       className="shrink-0 px-4 py-2 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text text-sm"
                     >
-                      {isPending ? "…" : "Return"}
+                      {processingId === txn.id && isPending ? "…" : "Return"}
                     </button>
                   </div>
                 </div>
@@ -270,22 +273,20 @@ export default function ReturnClient({
         <div className="flex gap-2 mb-4 dashboard-surface tron-border rounded-lg p-1">
           <button
             onClick={() => setInputMode("qr")}
-            className={`flex-1 px-3 sm:px-4 py-2 rounded font-medium transition-colors text-sm sm:text-base ink-text ${
-              inputMode === "qr"
-                ? "bg-[#5a4d40] text-[#f6ede1]"
-                : "text-[#4e4033] hover:bg-[#eadcca]"
-            }`}
+            className={`flex-1 px-3 sm:px-4 py-2 rounded font-medium transition-colors text-sm sm:text-base ink-text ${inputMode === "qr"
+              ? "bg-[#5a4d40] text-[#f6ede1]"
+              : "text-[#4e4033] hover:bg-[#eadcca]"
+              }`}
           >
             <FaQrcode className="inline w-4 h-4 mr-2" />
             Scan QR
           </button>
           <button
             onClick={() => setInputMode("manual")}
-            className={`flex-1 px-3 sm:px-4 py-2 rounded font-medium transition-colors text-sm sm:text-base ink-text ${
-              inputMode === "manual"
-                ? "bg-[#5a4d40] text-[#f6ede1]"
-                : "text-[#4e4033] hover:bg-[#eadcca]"
-            }`}
+            className={`flex-1 px-3 sm:px-4 py-2 rounded font-medium transition-colors text-sm sm:text-base ink-text ${inputMode === "manual"
+              ? "bg-[#5a4d40] text-[#f6ede1]"
+              : "text-[#4e4033] hover:bg-[#eadcca]"
+              }`}
           >
             <FaKeyboard className="inline w-4 h-4 mr-2" />
             Enter ID
@@ -442,7 +443,7 @@ export default function ReturnClient({
                   disabled={isPending}
                   className="flex-1 px-3 py-2 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text text-sm"
                 >
-                  {isPending ? "Submitting…" : "Confirm Return"}
+                  {processingId === scannedCopyId && isPending ? "Submitting…" : "Confirm Return"}
                 </button>
               </div>
             </div>

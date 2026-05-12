@@ -1,9 +1,11 @@
 "use client";
 
 import StatusBadge from "@/app/components/StatusBadge";
+import ConfirmModal from "@/components/ui/confirm-modal";
 import { addCopyOfBook, removeCopyOfBook } from "@/server/library-actions";
 import type { Book, Copy, CopyStatus } from "@/types/library";
 import NextImage from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -15,7 +17,6 @@ import {
   FaTimes,
   FaTrash,
 } from "react-icons/fa";
-import ConfirmModal from "@/components/ui/confirm-modal";
 
 type StatusFilter = "all" | CopyStatus;
 
@@ -163,6 +164,18 @@ export default function CopiesClient({ initialCopies, books }: Props) {
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(
     null,
   );
+
+  useEffect(() => {
+    if (!showAddModal && !qrModalCopyId) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        closeModal();
+        closeQrModal();
+      }
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [showAddModal, qrModalCopyId]);
 
   // Sync when server re-renders after router.refresh()
   useEffect(() => {
@@ -349,11 +362,10 @@ export default function CopiesClient({ initialCopies, books }: Props) {
       {/* Flash notification */}
       {flash && (
         <div
-          className={`fixed top-4 right-4 z-[200] px-4 py-3 rounded-sm border text-sm font-medium ink-text shadow-lg transition-all ${
-            flash.type === "success"
-              ? "bg-[#e8f5e8] border-[#6b9e6b] text-[#2a4a2a]"
-              : "bg-[#f5e8e8] border-[#9e6b6b] text-[#4a2a2a]"
-          }`}
+          className={`fixed top-4 right-4 z-[200] px-4 py-3 rounded-sm border text-sm font-medium ink-text shadow-lg transition-all ${flash.type === "success"
+            ? "bg-[#e8f5e8] border-[#6b9e6b] text-[#2a4a2a]"
+            : "bg-[#f5e8e8] border-[#9e6b6b] text-[#4a2a2a]"
+            }`}
         >
           {flash.text}
         </div>
@@ -488,10 +500,23 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                     <StatusBadge tone="muted">{copy.copy_number}</StatusBadge>
                   </td>
                   <td className="px-4 sm:px-6 py-3">
-                    <StatusBadge tone={getStatusBadgeTone(copy.status)}>
-                      {copy.status.charAt(0).toUpperCase() +
-                        copy.status.slice(1)}
-                    </StatusBadge>
+                    <div className="space-y-1">
+                      <StatusBadge tone={getStatusBadgeTone(copy.status)}>
+                        {copy.status.charAt(0).toUpperCase() +
+                          copy.status.slice(1)}
+                      </StatusBadge>
+                      {copy.status === "borrowed" && copy.borrower && (
+                        <p className="text-[10px] text-[#5a4b3f] ink-text">
+                          by{" "}
+                          <Link
+                            href={`/dashboard/users/${copy.borrower.id}`}
+                            className="font-semibold underline hover:text-[#2b2119]"
+                          >
+                            {copy.borrower.full_name}
+                          </Link>
+                        </p>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 sm:px-6 py-3">
                     <div className="flex items-center gap-2">
@@ -528,9 +553,13 @@ export default function CopiesClient({ initialCopies, books }: Props) {
 
       {/* Add copy modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-4 z-80">
+        <div
+          className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-4 z-80"
+          onClick={(e) => e.target === e.currentTarget && closeModal()}
+        >
           <div
             className="dashboard-surface tron-border rounded-sm max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3 mb-4">
               <h2 className="text-xl font-bold text-[#221910] ink-title">
@@ -651,7 +680,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                 const maxCopyNum = bookCopies.reduce((max, c) => Math.max(max, c.copy_number), 0);
                 const nextCopyNum = maxCopyNum + 1;
                 const qrId = selectedBook ? `QR${selectedBook.short_id}-${nextCopyNum}` : "—";
-                
+
                 return (
                   <div className="space-y-1 text-sm">
                     <p>
@@ -679,9 +708,13 @@ export default function CopiesClient({ initialCopies, books }: Props) {
 
       {/* QR modal */}
       {qrModalCopyId && (
-        <div className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-4 z-80">
+        <div
+          className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-4 z-80"
+          onClick={(e) => e.target === e.currentTarget && closeQrModal()}
+        >
           <div
             className="dashboard-surface tron-border rounded-sm max-w-md w-full p-4"
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3 mb-3">
               <div>

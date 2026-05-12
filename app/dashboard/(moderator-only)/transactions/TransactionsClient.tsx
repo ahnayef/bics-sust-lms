@@ -1,20 +1,22 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import StatusBadge from "@/app/components/StatusBadge";
-import type { Transaction, PdfSubmission } from "@/types/library";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getRelativeTime } from "@/lib/utils";
 import {
   allowBorrowRequest,
-  rejectBorrowRequest,
-  approveReturnRequest,
-  rejectReturnRequest,
   approvePdfReport,
+  approveReturnRequest,
+  rejectBorrowRequest,
   rejectPdfReport,
+  rejectReturnRequest,
 } from "@/server/transaction-actions";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { FaCheck, FaClock, FaFileAlt, FaSearch, FaTimes } from "react-icons/fa";
+import type { PdfSubmission, Transaction } from "@/types/library";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { FaCheck, FaClock, FaExclamationTriangle, FaFileAlt, FaSearch, FaTimes } from "react-icons/fa";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -94,41 +96,85 @@ export default function TransactionsClient({
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [dueDates, setDueDates] = useState<Record<string, string>>({});
   const [rejectTarget, setRejectTarget] = useState<RejectTarget | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
 
+  useEffect(() => {
+    if (!rejectTarget) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeRejectModal();
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [rejectTarget]);
+
   // ── Derived lists ──────────────────────────────────────────────────────────
 
   const pendingBorrows = useMemo(
     () =>
       transactions.filter(
-        (tx) => tx.status === "pending" && tx.type === "borrow",
+        (tx) =>
+          tx.status === "pending" &&
+          tx.type === "borrow" &&
+          !hiddenIds.has(tx.id),
       ),
-    [transactions],
+    [transactions, hiddenIds],
   );
 
   const pendingReturns = useMemo(
     () =>
       transactions.filter(
-        (tx) => tx.status === "pending" && tx.type === "return",
+        (tx) =>
+          tx.status === "pending" &&
+          tx.type === "return" &&
+          !hiddenIds.has(tx.id),
       ),
-    [transactions],
+    [transactions, hiddenIds],
   );
 
   const pendingPdfs = useMemo(
-    () => pdfSubmissions.filter((s) => s.status === "pending"),
-    [pdfSubmissions],
+    () =>
+      pdfSubmissions.filter(
+        (s) => s.status === "pending" && !hiddenIds.has(s.id),
+      ),
+    [pdfSubmissions, hiddenIds],
   );
+
+  // Group pending borrows by copy_id to detect conflicts and identify members
+  const copyConflicts = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    pendingBorrows.forEach((tx) => {
+      const name = tx.user?.full_name || "Unknown Member";
+      if (!map[tx.copy_id]) map[tx.copy_id] = [];
+      map[tx.copy_id].push(name);
+    });
+    return map;
+  }, [pendingBorrows]);
+
+  // Map of copy_id to the transaction currently holding it (active/overdue)
+  const activeBorrowers = useMemo(() => {
+    const map: Record<string, Transaction> = {};
+    transactions.forEach((tx) => {
+      if (
+        tx.type === "borrow" &&
+        (tx.status === "active" || tx.status === "overdue")
+      ) {
+        map[tx.copy_id] = tx;
+      }
+    });
+    return map;
+  }, [transactions]);
 
   function sortTxns(list: Transaction[]): Transaction[] {
     return [...list].sort((a, b) =>
       sortBy === "member"
         ? (a.user?.full_name ?? "").localeCompare(b.user?.full_name ?? "")
         : new Date(b.request_date).getTime() -
-          new Date(a.request_date).getTime(),
+        new Date(a.request_date).getTime(),
     );
   }
 
@@ -210,13 +256,19 @@ export default function TransactionsClient({
       if (result.error) {
         setErrorMsg(result.error);
       } else {
+        // Optimistically hide the processed item
+        setHiddenIds((prev) => {
+          const next = new Set(prev);
+          next.add(id);
+          return next;
+        });
         router.refresh();
       }
     });
   }
 
   function handleApproveBorrow(tx: Transaction) {
-    const due = dueDates[tx.id] ?? defaultDueDate();
+    const due = dueDates[tx.id] ?? tx.due_date ?? defaultDueDate();
     runAction(tx.id, async () => {
       const fd = new FormData();
       fd.set("transaction_id", tx.id);
@@ -280,31 +332,112 @@ export default function TransactionsClient({
 
   function renderBorrowCard(tx: Transaction) {
     const working = processingId === tx.id && isPending;
-    const due = dueDates[tx.id] ?? defaultDueDate();
+    const due = dueDates[tx.id] ?? tx.due_date ?? defaultDueDate();
+    const otherRequesters = (copyConflicts[tx.copy_id] || []).filter(
+      (name) => name !== (tx.user?.full_name || "Unknown Member"),
+    );
+    const hasConflict = otherRequesters.length > 0;
+
+    const currentBorrower = activeBorrowers[tx.copy_id];
+    const isUnavailable = !!currentBorrower;
+
     return (
       <article
         key={tx.id}
-        className="border border-[#b9a58b] rounded-sm bg-[#f6ecdd] p-4 ink-text"
+        className={`border rounded-sm p-4 ink-text ${isUnavailable
+          ? "border-[#b0665c] bg-[#f8e7e3] opacity-90 shadow-[inset_4px_0_0_0_#b0665c]"
+          : hasConflict
+            ? "border-[#c49b6b] bg-[#f8f1e6] shadow-[inset_4px_0_0_0_#c49b6b]"
+            : "border-[#b9a58b] bg-[#f6ecdd]"
+          }`}
       >
         <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="font-semibold text-[#2b2119]">
-              <Link
-                href={`/dashboard/users/${tx.user?.id}`}
-                className="hover:underline hover:text-[#5a4b3f] transition-colors"
-              >
-                {tx.user?.full_name ?? "Unknown Member"}
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            {/* Profile Photo */}
+            <div className="shrink-0">
+              <Link href={`/dashboard/users/${tx.user?.id}`}>
+                <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[#cfbba1] bg-[#ece0ce] hover:border-[#8b5c4a] transition-colors">
+                  {tx.user?.avatar_url ? (
+                    <Image
+                      src={tx.user.avatar_url}
+                      alt={tx.user.full_name || ""}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-[#8b5c4a] font-bold text-sm">
+                      {(tx.user?.full_name || "?").charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
               </Link>
-            </p>
-            <p className="text-xs text-[#5a4b3f] mt-0.5">
-              {tx.book?.title ?? "Unknown Book"}{" "}
-              <span className="font-mono">({tx.copy?.id ?? tx.copy_id})</span>
-            </p>
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="font-semibold text-[#2b2119] truncate">
+                  <Link
+                    href={`/dashboard/users/${tx.user?.id}`}
+                    className="hover:underline hover:text-[#5a4b3f] transition-colors"
+                  >
+                    {tx.user?.full_name ?? "Unknown Member"}
+                  </Link>
+                </p>
+                {isUnavailable ? (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#8b5c4a] text-[#f6ecdd] uppercase tracking-wider">
+                    Unavailable
+                  </span>
+                ) : (
+                  hasConflict && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#8b5c4a] text-[#f6ecdd] uppercase tracking-wider">
+                      Conflict
+                    </span>
+                  )
+                )}
+              </div>
+              <p className="text-xs text-[#5a4b3f] mt-0.5 truncate">
+                {tx.book?.title ?? "Unknown Book"}{" "}
+                <span className="font-mono text-[10px] opacity-70">({tx.copy?.id ?? tx.copy_id})</span>
+              </p>
+            </div>
           </div>
-          <StatusBadge tone="info" size="xs" className="shrink-0">
+          <StatusBadge tone={isUnavailable ? "danger" : "info"} size="xs" className="shrink-0">
             Borrow
           </StatusBadge>
         </div>
+
+        {isUnavailable ? (
+          <div className="mt-2 p-2 bg-[#f2d8d3] border border-[#d6a59e] rounded-sm text-[10px] text-[#7d2d23] font-medium space-y-1">
+            <div className="flex items-center gap-1.5">
+              <FaExclamationTriangle className="w-3 h-3 shrink-0" />
+              <span>
+                Currently borrowed by{" "}
+                <Link
+                  href={`/dashboard/users/${currentBorrower.user?.id}`}
+                  className="font-bold underline hover:text-[#5a1d17]"
+                >
+                  {currentBorrower.user?.full_name}
+                </Link>
+              </span>
+            </div>
+            <p className="pl-4.5">
+              Due back on:{" "}
+              <span className="font-bold">
+                {formatDate(currentBorrower.due_date)}
+              </span>
+            </p>
+          </div>
+        ) : (
+          hasConflict && (
+            <div className="mt-2 text-[10px] text-[#8b5c4a] font-medium flex items-center gap-1">
+              <FaExclamationTriangle className="w-3 h-3" />
+              <span>
+                Also requested by:{" "}
+                <span className="font-bold">{otherRequesters.join(", ")}</span>
+              </span>
+            </div>
+          )
+        )}
 
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#5a4b3f]">
           <p>Requested: {formatDate(tx.request_date)}</p>
@@ -327,12 +460,12 @@ export default function TransactionsClient({
 
         <div className="mt-4 grid grid-cols-2 gap-2 pt-3 border-t border-[#cfbba1]">
           <button
-            disabled={working}
+            disabled={working || isUnavailable}
             onClick={() => handleApproveBorrow(tx)}
             className="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-[#f6ecdd] bg-[#4a7c59] hover:bg-[#3d6447] rounded-sm transition-colors border border-[#3d6447] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FaCheck className="w-3.5 h-3.5" />
-            {working ? "Working…" : "Approve"}
+            {working ? "Working…" : isUnavailable ? "Unavailable" : "Approve"}
           </button>
           <button
             disabled={working}
@@ -357,19 +490,43 @@ export default function TransactionsClient({
         className="border border-[#b9a58b] rounded-sm bg-[#f6ecdd] p-4 ink-text"
       >
         <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="font-semibold text-[#2b2119]">
-              <Link
-                href={`/dashboard/users/${tx.user?.id}`}
-                className="hover:underline hover:text-[#5a4b3f] transition-colors"
-              >
-                {tx.user?.full_name ?? "Unknown Member"}
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            {/* Profile Photo */}
+            <div className="shrink-0">
+              <Link href={`/dashboard/users/${tx.user?.id}`}>
+                <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[#cfbba1] bg-[#ece0ce] hover:border-[#8b5c4a] transition-colors">
+                  {tx.user?.avatar_url ? (
+                    <Image
+                      src={tx.user.avatar_url}
+                      alt={tx.user.full_name || ""}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-[#8b5c4a] font-bold text-sm">
+                      {(tx.user?.full_name || "?").charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
               </Link>
-            </p>
-            <p className="text-xs text-[#5a4b3f] mt-0.5">
-              {tx.book?.title ?? "Unknown Book"}{" "}
-              <span className="font-mono">({tx.copy?.id ?? tx.copy_id})</span>
-            </p>
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-[#2b2119] truncate">
+                <Link
+                  href={`/dashboard/users/${tx.user?.id}`}
+                  className="hover:underline hover:text-[#5a4b3f] transition-colors"
+                >
+                  {tx.user?.full_name ?? "Unknown Member"}
+                </Link>
+              </p>
+              <p className="text-xs text-[#5a4b3f] mt-0.5 truncate">
+                {tx.book?.title ?? "Unknown Book"}{" "}
+                <span className="font-mono text-[10px] opacity-70">
+                  ({tx.copy?.id ?? tx.copy_id})
+                </span>
+              </p>
+            </div>
           </div>
           <StatusBadge tone="accent" size="xs" className="shrink-0">
             Return
@@ -578,32 +735,55 @@ export default function TransactionsClient({
                     key={tx.id}
                     className="border border-[#b9a58b] rounded-sm bg-[#f6ecdd] p-4 ink-text"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                      <div>
-                        <p className="font-semibold text-[#2b2119]">
-                          <Link
-                            href={`/dashboard/users/${tx.user?.id}`}
-                            className="hover:underline hover:text-[#5a4b3f] transition-colors"
-                          >
-                            {tx.user?.full_name ?? "Unknown Member"}
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        {/* Profile Photo */}
+                        <div className="shrink-0">
+                          <Link href={`/dashboard/users/${tx.user?.id}`}>
+                            <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[#cfbba1] bg-[#ece0ce] hover:border-[#8b5c4a] transition-colors">
+                              {tx.user?.avatar_url ? (
+                                <Image
+                                  src={tx.user.avatar_url}
+                                  alt={tx.user.full_name || ""}
+                                  fill
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-[#8b5c4a] font-bold text-sm">
+                                  {(tx.user?.full_name || "?").charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                            </div>
                           </Link>
-                        </p>
-                        <p className="text-sm text-[#5a4b3f]">
-                          {tx.book?.title ?? "Unknown Book"}{" "}
-                          <span className="font-mono">
-                            ({tx.copy?.id ?? tx.copy_id})
-                          </span>
-                        </p>
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-[#2b2119] truncate">
+                            <Link
+                              href={`/dashboard/users/${tx.user?.id}`}
+                              className="hover:underline hover:text-[#5a4b3f] transition-colors"
+                            >
+                              {tx.user?.full_name ?? "Unknown Member"}
+                            </Link>
+                          </p>
+                          <p className="text-sm text-[#5a4b3f] truncate">
+                            {tx.book?.title ?? "Unknown Book"}{" "}
+                            <span className="font-mono text-[10px] opacity-70">
+                              ({tx.copy?.id ?? tx.copy_id})
+                            </span>
+                          </p>
+                        </div>
                       </div>
                       <StatusBadge
                         tone={tx.status === "overdue" ? "danger" : "info"}
                         size="xs"
                         icon={FaClock}
+                        className="self-start sm:self-center"
                       >
                         {tx.status === "overdue" ? "Overdue" : "Active"}
                       </StatusBadge>
                     </div>
-                    <div className="mt-2 text-xs text-[#5a4b3f] grid grid-cols-1 sm:grid-cols-2 gap-1">
+                    <div className="mt-2 text-xs text-[#5a4b3f] grid grid-cols-1 sm:grid-cols-2 gap-1 sm:pl-[52px]">
                       <p>Requested: {formatDate(tx.request_date)}</p>
                       <p
                         className={
@@ -677,18 +857,39 @@ export default function TransactionsClient({
                         className="border-b border-[#d2bfa5] hover:bg-[#f4ebdc] transition-colors"
                       >
                         <td className="px-4 py-3 font-medium text-[#2b2119]">
-                          <Link
-                            href={`/dashboard/users/${tx.user?.id}`}
-                            className="hover:underline hover:text-[#5a4b3f] transition-colors"
-                          >
-                            {tx.user?.full_name ?? "—"}
-                          </Link>
+                          <div className="flex items-center gap-2">
+                            {/* Profile Photo */}
+                            <div className="shrink-0">
+                              <Link href={`/dashboard/users/${tx.user?.id}`}>
+                                <div className="relative w-6 h-6 rounded-full overflow-hidden border border-[#cfbba1] bg-[#ece0ce] hover:border-[#8b5c4a] transition-colors">
+                                  {tx.user?.avatar_url ? (
+                                    <Image
+                                      src={tx.user.avatar_url}
+                                      alt={tx.user.full_name || ""}
+                                      fill
+                                      className="object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-[#8b5c4a] font-bold text-[10px]">
+                                      {(tx.user?.full_name || "?").charAt(0).toUpperCase()}
+                                    </div>
+                                  )}
+                                </div>
+                              </Link>
+                            </div>
+                            <Link
+                              href={`/dashboard/users/${tx.user?.id}`}
+                              className="hover:underline hover:text-[#5a4b3f] transition-colors truncate"
+                            >
+                              {tx.user?.full_name ?? "—"}
+                            </Link>
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-[#5a4b3f] max-w-48 truncate">
                           {tx.book?.title ?? "—"}
                         </td>
                         <td className="px-4 py-3">
-                          <span className="font-mono text-xs bg-[#efe4d1] text-[#3f3328] border border-[#8f7f6c] px-2 py-1 rounded-sm">
+                          <span className="font-mono text-[10px] bg-[#efe4d1] text-[#3f3328] border border-[#8f7f6c] px-2 py-1 rounded-sm">
                             {tx.copy?.id ?? tx.copy_id}
                           </span>
                         </td>
@@ -717,7 +918,19 @@ export default function TransactionsClient({
                           </StatusBadge>
                         </td>
                         <td className="px-4 py-3 text-[#5a4b3f] whitespace-nowrap">
-                          {formatDate(tx.request_date)}
+                          <span
+                            className="text-xs border-b border-dashed border-[#bfa687] cursor-help"
+                            title={new Date(tx.request_date).toLocaleString("en-GB", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                              hour: "numeric",
+                              minute: "2-digit",
+                              hour12: true
+                            })}
+                          >
+                            {getRelativeTime(tx.request_date)}
+                          </span>
                         </td>
                       </tr>
                     ))
@@ -744,37 +957,61 @@ export default function TransactionsClient({
                       className="border border-[#b9a58b] rounded-sm bg-[#f6ecdd] p-4 ink-text"
                     >
                       <div className="flex items-start justify-between gap-2 mb-3">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs text-[#5a4b3f]">
-                            <Link
-                              href={`/dashboard/users/${pdf.user?.id}`}
-                              className="hover:underline hover:text-[#3b3026] transition-colors"
-                            >
-                              {pdf.user?.full_name ?? "Unknown"}
-                              {pdf.user?.username && (
-                                <span className="font-mono ml-1">
-                                  (@{pdf.user.username})
-                                </span>
-                              )}
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          {/* Profile Photo */}
+                          <div className="shrink-0">
+                            <Link href={`/dashboard/users/${pdf.user?.id}`}>
+                              <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[#cfbba1] bg-[#ece0ce] hover:border-[#8b5c4a] transition-colors">
+                                {pdf.user?.avatar_url ? (
+                                  <Image
+                                    src={pdf.user.avatar_url}
+                                    alt={pdf.user.full_name || ""}
+                                    fill
+                                    className="object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-[#8b5c4a] font-bold text-sm">
+                                    {(pdf.user?.full_name || "?").charAt(0).toUpperCase()}
+                                  </div>
+                                )}
+                              </div>
                             </Link>
-                          </p>
-                          <p className="font-semibold text-[#2b2119] mt-0.5">
-                            {pdf.book?.title ?? "Unknown Book"}
-                          </p>
-                          {pdf.read_date && (
-                            <p className="text-xs text-[#5a4b3f] mt-1">
-                              Read:{" "}
-                              {new Date(pdf.read_date).toLocaleDateString()}
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-[#5a4b3f] truncate">
+                              <Link
+                                href={`/dashboard/users/${pdf.user?.id}`}
+                                className="hover:underline hover:text-[#3b3026] transition-colors"
+                              >
+                                {pdf.user?.full_name ?? "Unknown"}
+                                {pdf.user?.username && (
+                                  <span className="font-mono ml-1">
+                                    (@{pdf.user.username})
+                                  </span>
+                                )}
+                              </Link>
                             </p>
-                          )}
-                          <p className="text-xs text-[#5a4b3f]">
-                            Submitted: {formatDate(pdf.submitted_at)}
-                          </p>
-                          {pdf.note && (
-                            <p className="text-xs text-[#6a5a4c] mt-2 italic">
-                              &ldquo;{pdf.note}&rdquo;
+                            <p className="font-semibold text-[#2b2119] mt-0.5 truncate">
+                              {pdf.book?.title ?? "Unknown Book"}
                             </p>
-                          )}
+                            <div className="mt-1 space-y-0.5">
+                              {pdf.read_date && (
+                                <p className="text-[10px] text-[#5a4b3f]">
+                                  Read:{" "}
+                                  {new Date(pdf.read_date).toLocaleDateString()}
+                                </p>
+                              )}
+                              <p className="text-[10px] text-[#5a4b3f]">
+                                Submitted: {formatDate(pdf.submitted_at)}
+                              </p>
+                            </div>
+                            {pdf.note && (
+                              <p className="text-xs text-[#6a5a4c] mt-2 italic line-clamp-2">
+                                &ldquo;{pdf.note}&rdquo;
+                              </p>
+                            )}
+                          </div>
                         </div>
                         <StatusBadge
                           tone="accent"

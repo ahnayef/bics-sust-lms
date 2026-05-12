@@ -100,11 +100,29 @@ async function loadCopiesCached(): Promise<Copy[]> {
   const supabase = createServiceClient();
   const { data, error } = await supabase
     .from("copies")
-    .select("*, book:books(id, title, author, is_syllabus)")
+    .select(`
+      *,
+      book:books(id, title, author, is_syllabus),
+      active_borrow:transactions(
+        user:profiles!user_id(id, full_name)
+      )
+    `)
+    .eq("active_borrow.type", "borrow")
+    .in("active_borrow.status", ["active", "overdue"])
     .order("book_id")
     .order("copy_number");
+
   if (error || !data) return [];
-  return data as unknown as Copy[];
+
+  // Flatten the join: take the first active borrower if it exists
+  return data.map((row: any) => {
+    const { active_borrow, ...copy } = row;
+    const borrower =
+      active_borrow && active_borrow.length > 0
+        ? active_borrow[0].user
+        : null;
+    return { ...copy, borrower };
+  }) as unknown as Copy[];
 }
 
 /** All copies with their parent book info. */

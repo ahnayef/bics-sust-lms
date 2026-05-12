@@ -1,9 +1,9 @@
+import { getClaims, shellHintsFromClaims } from "@/server/user";
 import { getProfile } from "@/server/geo";
 import { getUserNotifications } from "@/server/library";
-import { getClaims, shellHintsFromClaims } from "@/server/user";
-import { redirect } from "next/navigation";
-import { Suspense } from "react";
 import DashboardShell from "./DashboardShell";
+import { Suspense } from "react";
+import { redirect } from "next/navigation";
 
 function DashboardRootFallback() {
   return (

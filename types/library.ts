@@ -46,6 +46,11 @@ export interface Copy {
     Book,
     "id" | "title" | "author" | "is_syllabus" | "pages" | "pdf_link"
   >;
+  // computed
+  borrower?: {
+    id: string;
+    full_name: string;
+  } | null;
 }
 
 export interface Transaction {

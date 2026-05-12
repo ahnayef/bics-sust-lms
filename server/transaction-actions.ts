@@ -26,8 +26,8 @@ import {
   invalidateAfterTransactionMutation,
 } from "@/server/cache-invalidation";
 import { getBookByQR } from "@/server/library";
-import { revalidatePath } from "next/cache";
 import type { Copy } from "@/types/library";
+import { revalidatePath } from "next/cache";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Auth helpers
@@ -127,6 +127,7 @@ export async function borrowBook(
     book_id: copy.book_id,
     type: "borrow",
     status: "pending",
+    due_date: (formData.get("due_date") as string) || null,
   });
 
   if (error) return { error: error.message };
@@ -230,6 +231,23 @@ export async function allowBorrowRequest(
   if (!txn) return { error: "Transaction not found" };
   if (txn.type !== "borrow") return { error: "Not a borrow request" };
   if (txn.status !== "pending") return { error: "Transaction is not pending" };
+
+  // Double-check copy availability at the moment of approval
+  const { data: currentCopy, error: copyCheckErr } = await supabase
+    .from("copies")
+    .select("status")
+    .eq("id", txn.copy_id)
+    .single();
+
+  if (copyCheckErr || !currentCopy) {
+    return { error: "Could not verify copy status" };
+  }
+
+  if (currentCopy.status !== "available") {
+    return {
+      error: `This copy is no longer available (current status: ${currentCopy.status}).`,
+    };
+  }
 
   const { error: txnErr } = await supabase
     .from("transactions")
