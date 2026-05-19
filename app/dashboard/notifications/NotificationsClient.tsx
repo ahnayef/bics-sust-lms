@@ -8,6 +8,7 @@ import {
   FaTimesCircle, 
   FaExclamationTriangle, 
   FaInfoCircle,
+  FaMapMarkerAlt,
   FaShieldAlt,
   FaUserCheck,
   FaUserTimes,
@@ -46,6 +47,8 @@ export default function NotificationsClient({ userId, notifications }: Props) {
         return <FaShieldAlt className="text-purple-600 w-5 h-5 mt-0.5" />;
       case "user_joined":
         return <FaUserPlus className="text-green-600 w-5 h-5 mt-0.5" />;
+      case "thana_deleted":
+        return <FaMapMarkerAlt className="text-orange-600 w-5 h-5 mt-0.5" />;
       default:
         return <FaInfoCircle className="text-gray-600 w-5 h-5 mt-0.5" />;
     }

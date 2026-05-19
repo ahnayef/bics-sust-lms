@@ -6,6 +6,7 @@ import {
   FaCheckCircle,
   FaExclamationTriangle,
   FaInfoCircle,
+  FaMapMarkerAlt,
   FaShieldAlt,
   FaTimesCircle,
   FaUserCheck,
@@ -42,6 +43,8 @@ export default function RecentNotificationsClient({ userId, recentNotifications 
         return <FaShieldAlt className="text-purple-600 w-4 h-4 mt-0.5" />;
       case "user_joined":
         return <FaUserPlus className="text-green-600 w-4 h-4 mt-0.5" />;
+      case "thana_deleted":
+        return <FaMapMarkerAlt className="text-orange-600 w-4 h-4 mt-0.5" />;
       default:
         return <FaInfoCircle className="text-gray-600 w-4 h-4 mt-0.5" />;
     }

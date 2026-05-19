@@ -8,14 +8,9 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { invalidateAfterBookOrCopyMutation } from "@/server/cache-invalidation";
+import { logActionError } from "@/server/error-log";
 import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-// No more formatCopyId needed, IDs are auto-generated as QR{book-id}-{copyNumber}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Auth helper
@@ -80,8 +75,11 @@ export async function addBook(
     .select("id, short_id")
     .single();
 
-  if (bookErr || !book)
-    return { error: bookErr?.message ?? "Failed to add book" };
+  if (bookErr || !book) {
+    const msg = bookErr?.message ?? "Failed to add book";
+    logActionError("addBook", msg, auth.sub);
+    return { error: msg };
+  }
 
   if (first_copy_raw) {
     const first_copy_id = `QR${book.short_id}-1`;
@@ -90,12 +88,11 @@ export async function addBook(
       .insert({ id: first_copy_id, book_id: book.id, copy_number: 1 });
 
     if (copyErr) {
+      const msg = `Book added but failed to create first copy: ${copyErr.message}`;
+      logActionError("addBook", msg, auth.sub);
       invalidateAfterBookOrCopyMutation();
       revalidatePath("/dashboard/books");
-      return {
-        bookId: book.id,
-        error: `Book added but failed to create first copy: ${copyErr.message}`,
-      };
+      return { bookId: book.id, error: msg };
     }
   }
 
@@ -135,7 +132,10 @@ export async function editBook(
     .update({ title, author, is_syllabus, pages, pdf_link })
     .eq("id", id);
 
-  if (error) return { error: error.message };
+  if (error) {
+    logActionError("editBook", error.message, auth.sub);
+    return { error: error.message };
+  }
 
   invalidateAfterBookOrCopyMutation();
   revalidatePath("/dashboard/books");
@@ -168,13 +168,16 @@ export async function removeBook(
     .limit(1);
 
   if (borrowed && borrowed.length > 0) {
-    return {
-      error: "Cannot delete: one or more copies are currently borrowed",
-    };
+    const msg = "Cannot delete: one or more copies are currently borrowed";
+    logActionError("removeBook", msg, auth.sub);
+    return { error: msg };
   }
 
   const { error } = await supabase.from("books").delete().eq("id", id);
-  if (error) return { error: error.message };
+  if (error) {
+    logActionError("removeBook", error.message, auth.sub);
+    return { error: error.message };
+  }
 
   invalidateAfterBookOrCopyMutation();
   revalidatePath("/dashboard/books");
@@ -248,7 +251,11 @@ export async function addCopyOfBook(
     }
   }
 
-  if (finalError) return { error: finalError.message || "Failed to add copy after multiple attempts" };
+  if (finalError) {
+    const msg = finalError.message || "Failed to add copy after multiple attempts";
+    logActionError("addCopyOfBook", msg, auth.sub);
+    return { error: msg };
+  }
 
   invalidateAfterBookOrCopyMutation();
   revalidatePath("/dashboard/copies");
@@ -280,11 +287,16 @@ export async function removeCopyOfBook(
 
   if (!copy) return { error: "Copy not found" };
   if (copy.status === "borrowed") {
-    return { error: "Cannot remove a copy that is currently borrowed" };
+    const msg = "Cannot remove a copy that is currently borrowed";
+    logActionError("removeCopyOfBook", msg, auth.sub);
+    return { error: msg };
   }
 
   const { error } = await supabase.from("copies").delete().eq("id", copy_id);
-  if (error) return { error: error.message };
+  if (error) {
+    logActionError("removeCopyOfBook", error.message, auth.sub);
+    return { error: error.message };
+  }
 
   invalidateAfterBookOrCopyMutation();
   revalidatePath("/dashboard/copies");

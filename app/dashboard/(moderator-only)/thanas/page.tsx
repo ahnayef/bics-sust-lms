@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import ThanaAddForm from "./ThanaAddForm";
-import { ThanaChip } from "./ThanaChip";
+import ThanasClient from "./ThanasClient";
 
 export default async function ThanasPage() {
   const supabase = await createClient();
@@ -34,17 +34,7 @@ export default async function ThanasPage() {
         <h2 className="text-sm font-semibold uppercase tracking-wide text-[#5c4f42] ink-text">
           All thanas
         </h2>
-        {list.length === 0 ? (
-          <p className="text-sm text-[#6a5a4c] ink-text">
-            No thanas yet — add one above.
-          </p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {list.map((t) => (
-              <ThanaChip key={t.id} id={t.id} name={t.name} />
-            ))}
-          </div>
-        )}
+        <ThanasClient thanas={list} />
       </section>
     </div>
   );

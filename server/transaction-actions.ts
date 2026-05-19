@@ -3,21 +3,6 @@
 /**
  * server/transaction-actions.ts — Server Actions for the borrow/return workflow
  * and PDF self-report management.
- *
- * Borrow flow:
- *   borrowBook()          → transaction(type=borrow, status=pending)
- *   allowBorrowRequest()  → status=active,  copy=borrowed
- *   rejectBorrowRequest() → status=rejected
- *
- * Return flow:
- *   returnBook()            → transaction(type=return, status=pending)
- *   approveReturnRequest()  → both transactions=completed, copy=available
- *   rejectReturnRequest()   → return transaction=rejected
- *
- * PDF reports:
- *   submitPdfReport()  → pdf_submission(status=pending)
- *   approvePdfReport() → status=approved
- *   rejectPdfReport()  → status=rejected
  */
 
 import { createClient } from "@/lib/supabase/server";
@@ -25,6 +10,7 @@ import {
   invalidateAfterPdfMutation,
   invalidateAfterTransactionMutation,
 } from "@/server/cache-invalidation";
+import { logActionError } from "@/server/error-log";
 import { getBookByQR } from "@/server/library";
 import type { Copy } from "@/types/library";
 import { revalidatePath } from "next/cache";
@@ -58,14 +44,9 @@ async function requireModOrAdmin() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Copy lookup (used by the borrow UI to resolve a QR/ID to book info)
+// Copy lookup
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Look up a copy by its QR/ID text and return it with nested book data.
- * Called client-side during the borrow flow so we avoid exposing the full
- * copies table — callers only learn what they need for a borrow request.
- */
 export async function lookupCopy(
   copyId: string,
 ): Promise<{ copy: Copy | null; error?: string }> {
@@ -81,11 +62,6 @@ export async function lookupCopy(
 // User-facing borrow / return
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * User requests to borrow a specific copy.
- *
- * FormData: copy_id (QR text)
- */
 export async function borrowBook(
   formData: FormData,
 ): Promise<{ error?: string }> {
@@ -106,7 +82,6 @@ export async function borrowBook(
   if (copy.status !== "available")
     return { error: "This copy is not available" };
 
-  // Block duplicate requests
   const { data: dup } = await supabase
     .from("transactions")
     .select("id")
@@ -130,7 +105,10 @@ export async function borrowBook(
     due_date: (formData.get("due_date") as string) || null,
   });
 
-  if (error) return { error: error.message };
+  if (error) {
+    logActionError("borrowBook", error.message, sub);
+    return { error: error.message };
+  }
 
   invalidateAfterTransactionMutation();
   revalidatePath("/dashboard/transactions");
@@ -140,11 +118,6 @@ export async function borrowBook(
   return {};
 }
 
-/**
- * User requests to return a copy they have borrowed.
- *
- * FormData: copy_id (QR text)
- */
 export async function returnBook(
   formData: FormData,
 ): Promise<{ error?: string }> {
@@ -155,7 +128,6 @@ export async function returnBook(
   const copy_id = (formData.get("copy_id") as string)?.trim();
   if (!copy_id) return { error: "Copy ID is required" };
 
-  // Verify the user has an active borrow for this copy
   const { data: borrow } = await supabase
     .from("transactions")
     .select("id, book_id")
@@ -168,7 +140,6 @@ export async function returnBook(
 
   if (!borrow) return { error: "No active borrow found for this copy" };
 
-  // Block duplicate return requests
   const { data: dupReturn } = await supabase
     .from("transactions")
     .select("id")
@@ -190,7 +161,10 @@ export async function returnBook(
     status: "pending",
   });
 
-  if (error) return { error: error.message };
+  if (error) {
+    logActionError("returnBook", error.message, sub);
+    return { error: error.message };
+  }
 
   invalidateAfterTransactionMutation();
   revalidatePath("/dashboard/transactions");
@@ -204,12 +178,6 @@ export async function returnBook(
 // Moderator / admin — borrow approval
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Approve a pending borrow request.
- * Sets the transaction to "active" and marks the copy as "borrowed".
- *
- * FormData: transaction_id (UUID), due_date (YYYY-MM-DD, optional)
- */
 export async function allowBorrowRequest(
   formData: FormData,
 ): Promise<{ error?: string }> {
@@ -232,7 +200,6 @@ export async function allowBorrowRequest(
   if (txn.type !== "borrow") return { error: "Not a borrow request" };
   if (txn.status !== "pending") return { error: "Transaction is not pending" };
 
-  // Double-check copy availability at the moment of approval
   const { data: currentCopy, error: copyCheckErr } = await supabase
     .from("copies")
     .select("status")
@@ -259,15 +226,21 @@ export async function allowBorrowRequest(
     })
     .eq("id", transaction_id);
 
-  if (txnErr) return { error: txnErr.message };
+  if (txnErr) {
+    logActionError("allowBorrowRequest", txnErr.message, sub);
+    return { error: txnErr.message };
+  }
 
   const { error: copyErr } = await supabase
     .from("copies")
     .update({ status: "borrowed" })
     .eq("id", txn.copy_id);
 
-  if (copyErr)
-    return { error: `Approved but copy update failed: ${copyErr.message}` };
+  if (copyErr) {
+    const msg = `Approved but copy update failed: ${copyErr.message}`;
+    logActionError("allowBorrowRequest", msg, sub);
+    return { error: msg };
+  }
 
   invalidateAfterTransactionMutation();
   revalidatePath("/dashboard/transactions");
@@ -277,11 +250,6 @@ export async function allowBorrowRequest(
   return {};
 }
 
-/**
- * Reject a pending borrow request.
- *
- * FormData: transaction_id (UUID), rejection_reason (optional)
- */
 export async function rejectBorrowRequest(
   formData: FormData,
 ): Promise<{ error?: string }> {
@@ -307,7 +275,10 @@ export async function rejectBorrowRequest(
     .update({ status: "rejected", rejection_reason, reviewed_by: sub })
     .eq("id", transaction_id);
 
-  if (error) return { error: error.message };
+  if (error) {
+    logActionError("rejectBorrowRequest", error.message, sub);
+    return { error: error.message };
+  }
 
   invalidateAfterTransactionMutation();
   revalidatePath("/dashboard/transactions");
@@ -318,13 +289,6 @@ export async function rejectBorrowRequest(
 // Moderator / admin — return approval
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Approve a pending return request.
- * Marks the return transaction as "completed", resolves the original borrow
- * transaction, and frees the copy back to "available".
- *
- * FormData: transaction_id (UUID)
- */
 export async function approveReturnRequest(
   formData: FormData,
 ): Promise<{ error?: string }> {
@@ -347,7 +311,6 @@ export async function approveReturnRequest(
 
   const now = new Date().toISOString();
 
-  // Complete the return transaction
   const { error: returnErr } = await supabase
     .from("transactions")
     .update({
@@ -358,9 +321,11 @@ export async function approveReturnRequest(
     })
     .eq("id", transaction_id);
 
-  if (returnErr) return { error: returnErr.message };
+  if (returnErr) {
+    logActionError("approveReturnRequest", returnErr.message, sub);
+    return { error: returnErr.message };
+  }
 
-  // Complete the original borrow transaction (active/overdue → completed)
   const { error: borrowErr } = await supabase
     .from("transactions")
     .update({ status: "completed", return_date: now })
@@ -370,23 +335,19 @@ export async function approveReturnRequest(
     .in("status", ["active", "overdue"]);
 
   if (borrowErr) {
-    // Non-fatal: the return is already recorded; log and continue.
-    console.error(
-      "[approveReturnRequest] borrow update failed:",
-      borrowErr.message,
-    );
+    logActionError("approveReturnRequest", `borrow update failed: ${borrowErr.message}`, sub);
   }
 
-  // Free the copy
   const { error: copyErr } = await supabase
     .from("copies")
     .update({ status: "available" })
     .eq("id", txn.copy_id);
 
-  if (copyErr)
-    return {
-      error: `Return approved but copy update failed: ${copyErr.message}`,
-    };
+  if (copyErr) {
+    const msg = `Return approved but copy update failed: ${copyErr.message}`;
+    logActionError("approveReturnRequest", msg, sub);
+    return { error: msg };
+  }
 
   invalidateAfterTransactionMutation();
   revalidatePath("/dashboard/transactions");
@@ -396,11 +357,6 @@ export async function approveReturnRequest(
   return {};
 }
 
-/**
- * Reject a pending return request (e.g. book not in acceptable condition).
- *
- * FormData: transaction_id (UUID), rejection_reason (optional)
- */
 export async function rejectReturnRequest(
   formData: FormData,
 ): Promise<{ error?: string }> {
@@ -426,7 +382,10 @@ export async function rejectReturnRequest(
     .update({ status: "rejected", rejection_reason, reviewed_by: sub })
     .eq("id", transaction_id);
 
-  if (error) return { error: error.message };
+  if (error) {
+    logActionError("rejectReturnRequest", error.message, sub);
+    return { error: error.message };
+  }
 
   invalidateAfterTransactionMutation();
   revalidatePath("/dashboard/transactions");
@@ -437,11 +396,6 @@ export async function rejectReturnRequest(
 // PDF reading self-reports
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * User submits a PDF reading report for a book they read digitally.
- *
- * FormData: book_id (UUID), read_date (YYYY-MM-DD, optional), note (optional)
- */
 export async function submitPdfReport(
   formData: FormData,
 ): Promise<{ error?: string }> {
@@ -455,7 +409,6 @@ export async function submitPdfReport(
 
   if (!book_id) return { error: "Book ID is required" };
 
-  // Block duplicate pending/approved submissions for the same book
   const { data: dup } = await supabase
     .from("pdf_submissions")
     .select("id")
@@ -478,7 +431,10 @@ export async function submitPdfReport(
     status: "pending",
   });
 
-  if (error) return { error: error.message };
+  if (error) {
+    logActionError("submitPdfReport", error.message, sub);
+    return { error: error.message };
+  }
 
   invalidateAfterPdfMutation();
   revalidatePath("/dashboard/transactions");
@@ -487,11 +443,6 @@ export async function submitPdfReport(
   return {};
 }
 
-/**
- * Approve a PDF reading report.
- *
- * FormData: submission_id (UUID)
- */
 export async function approvePdfReport(
   formData: FormData,
 ): Promise<{ error?: string }> {
@@ -512,18 +463,16 @@ export async function approvePdfReport(
     .eq("id", submission_id)
     .eq("status", "pending");
 
-  if (error) return { error: error.message };
+  if (error) {
+    logActionError("approvePdfReport", error.message, sub);
+    return { error: error.message };
+  }
 
   invalidateAfterPdfMutation();
   revalidatePath("/dashboard/transactions");
   return {};
 }
 
-/**
- * Reject a PDF reading report with a reason.
- *
- * FormData: submission_id (UUID), rejection_reason (optional)
- */
 export async function rejectPdfReport(
   formData: FormData,
 ): Promise<{ error?: string }> {
@@ -546,7 +495,10 @@ export async function rejectPdfReport(
     .eq("id", submission_id)
     .eq("status", "pending");
 
-  if (error) return { error: error.message };
+  if (error) {
+    logActionError("rejectPdfReport", error.message, sub);
+    return { error: error.message };
+  }
 
   invalidateAfterPdfMutation();
   revalidatePath("/dashboard/transactions");

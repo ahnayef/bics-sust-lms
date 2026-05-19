@@ -16,7 +16,9 @@ export type ActionLogType =
   | "user_joined"
   | "user_verified"
   | "user_unverified"
-  | "role_changed";
+  | "role_changed"
+  | "thana_deleted"
+  | "error";
 
 // ── Core entities ───────────────────────────────────────────────────────────
 
@@ -120,6 +122,7 @@ export interface NotificationItem {
     | "user_verified"
     | "user_unverified"
     | "role_changed"
+    | "thana_deleted"
     | "user_joined";
   title: string;
   message: string;
@@ -133,6 +136,7 @@ export interface UserStats {
   syllabusCompleted: number;
   syllabusTotal: number;
   activeBorrows: number;
+  overdueBorrows: number;
   pendingRequests: number;
   currentBorrows: Transaction[];
 }
@@ -141,6 +145,7 @@ export interface UserWithStats extends Profile {
   syllabusCompleted: number;
   syllabusTotal: number;
   activeBorrows: number;
+  overdueBorrows: number;
   pendingRequests: number;
 }
 

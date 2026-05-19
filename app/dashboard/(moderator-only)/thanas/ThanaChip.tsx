@@ -3,15 +3,16 @@
 import { startTransition, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaCheck, FaPencilAlt, FaTimes, FaTrash } from "react-icons/fa";
-import { deleteThana, modifyThana } from "@/server/geo-actions";
+import { deleteThana, getThanaRefCount, modifyThana } from "@/server/geo-actions";
 import ConfirmModal from "@/components/ui/confirm-modal";
 
 interface ThanaChipProps {
   id: string;
   name: string;
+  onFlash: (type: "success" | "error", text: string) => void;
 }
 
-export function ThanaChip({ id, name }: ThanaChipProps) {
+export function ThanaChip({ id, name, onFlash }: ThanaChipProps) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -19,18 +20,38 @@ export function ThanaChip({ id, name }: ThanaChipProps) {
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [refCount, setRefCount] = useState<number | null>(null);
+
+  async function handleDeleteClick() {
+    setRefCount(null);
+    setDeleteOpen(true);
+    const count = await getThanaRefCount(id);
+    setRefCount(count);
+  }
 
   function handleDeleteConfirm() {
     setDeleteLoading(true);
     const fd = new FormData();
     fd.append("id", id);
     startTransition(async () => {
-      await deleteThana(fd);
+      const result = await deleteThana(fd);
       setDeleteLoading(false);
       setDeleteOpen(false);
+      if (result?.error) {
+        onFlash("error", result.error);
+        return;
+      }
+      onFlash("success", `Thana "${name}" deleted.`);
       router.refresh();
     });
   }
+
+  const deleteDescription =
+    refCount === null
+      ? "Checking references..."
+      : refCount > 0
+        ? `${refCount} member profile(s) currently reference this thana. Their thana will be set to none. This cannot be undone.`
+        : "No profiles reference this thana. This cannot be undone.";
 
   const [renameOpen, setRenameOpen] = useState(false);
   const [pendingName, setPendingName] = useState("");
@@ -50,10 +71,15 @@ export function ThanaChip({ id, name }: ThanaChipProps) {
     fd.append("id", id);
     fd.append("name", pendingName);
     startTransition(async () => {
-      await modifyThana(fd);
+      const result = await modifyThana(fd);
       setRenameLoading(false);
       setRenameOpen(false);
+      if (result?.error) {
+        onFlash("error", result.error);
+        return;
+      }
       setEditing(false);
+      onFlash("success", `Thana renamed to "${pendingName}".`);
       router.refresh();
     });
   }
@@ -124,7 +150,7 @@ export function ThanaChip({ id, name }: ThanaChipProps) {
         </button>
         <button
           type="button"
-          onClick={() => setDeleteOpen(true)}
+          onClick={handleDeleteClick}
           className="text-[#7a5a4a] hover:text-[#5a2a1a] transition-colors"
           aria-label={`Remove ${name}`}
         >
@@ -139,7 +165,7 @@ export function ThanaChip({ id, name }: ThanaChipProps) {
         }}
         onConfirm={handleDeleteConfirm}
         title="Delete Thana"
-        description="This cannot be undone. If any member profiles reference this thana, deletion will be blocked automatically."
+        description={deleteDescription}
         preview={name}
         danger={true}
         confirmLabel="Delete"

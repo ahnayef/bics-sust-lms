@@ -9,6 +9,7 @@ import {
   FaArrowRight,
   FaCheckCircle,
   FaClock,
+  FaExclamationTriangle,
 } from "react-icons/fa";
 import UserActions from "./UserActions";
 
@@ -148,7 +149,7 @@ export default async function UserProfilePage({
           </div>
 
           {/* Quick borrow counts */}
-          <div className="grid grid-cols-2 gap-3 pt-1">
+          <div className="grid grid-cols-3 gap-3 pt-1">
             <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
               <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1 ink-text">
                 Active Borrows
@@ -157,6 +158,25 @@ export default async function UserProfilePage({
                 {stats.activeBorrows}
               </p>
             </div>
+            {stats.overdueBorrows > 0 ? (
+              <div className="border border-[#c4614a] bg-[#fdf0ec] rounded-sm p-3">
+                <p className="text-[11px] uppercase tracking-[0.08em] text-[#8b2c1a] mb-1 ink-text">
+                  Overdue
+                </p>
+                <p className="text-2xl font-bold text-[#9b3a25] ink-title leading-none">
+                  {stats.overdueBorrows}
+                </p>
+              </div>
+            ) : (
+              <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
+                <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1 ink-text">
+                  Overdue
+                </p>
+                <p className="text-2xl font-bold text-[#221910] ink-title leading-none">
+                  0
+                </p>
+              </div>
+            )}
             <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
               <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1 ink-text">
                 Pending Requests
@@ -166,6 +186,55 @@ export default async function UserProfilePage({
               </p>
             </div>
           </div>
+
+          {/* Current borrows list */}
+          {stats.currentBorrows.length > 0 && (
+            <div className="pt-2">
+              <h3 className="text-sm font-semibold text-[#3b3026] ink-title mb-2 uppercase tracking-[0.06em]">
+                Currently Borrowed
+              </h3>
+              <div className="space-y-2">
+                {stats.currentBorrows.map((tx) => {
+                  const isOverdue = tx.status === "overdue" || (tx.due_date && new Date(tx.due_date) < new Date());
+                  const daysOver = tx.due_date
+                    ? Math.max(0, Math.floor((Date.now() - new Date(tx.due_date).getTime()) / 86_400_000))
+                    : 0;
+                  return (
+                    <div
+                      key={tx.id}
+                      className={`flex items-center justify-between p-3 border rounded-sm text-sm ${
+                        isOverdue
+                          ? "border-[#c4614a] bg-[#fdf0ec]"
+                          : "border-[#b9a58b] bg-[#f6ecdd]"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        {isOverdue && (
+                          <FaExclamationTriangle className="w-3.5 h-3.5 text-[#c4614a] shrink-0" />
+                        )}
+                        <div className="min-w-0">
+                          <p className="font-medium text-[#2b2119] truncate ink-text">
+                            {tx.book?.title ?? "Unknown book"}
+                          </p>
+                          <p className="text-xs text-[#5a4b3f] ink-text">
+                            Copy #{tx.copy?.copy_number ?? "?"}
+                            {tx.due_date && (
+                              <> &middot; Due {new Date(tx.due_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      {isOverdue && daysOver > 0 && (
+                        <span className="text-xs font-bold text-[#9b3a25] shrink-0 ml-2">
+                          {daysOver}d overdue
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

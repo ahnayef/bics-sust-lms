@@ -10,6 +10,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { invalidateUsersAndOverview } from "@/server/cache-invalidation";
+import { logActionError } from "@/server/error-log";
 import type { ActionLogType } from "@/types/library";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -128,7 +129,10 @@ export async function setupProfile(
     profile_completed: true,
   });
 
-  if (upsertError) return { error: upsertError.message };
+  if (upsertError) {
+    logActionError("setupProfile", upsertError.message, claims.sub);
+    return { error: upsertError.message };
+  }
 
   if (!existing) {
     await insertActionLog(supabase, "user_joined", claims.sub);
@@ -215,7 +219,10 @@ export async function updateProfileInfo(
     })
     .eq("id", claims.sub);
 
-  if (updateError) return { error: updateError.message };
+  if (updateError) {
+    logActionError("updateProfileInfo", updateError.message, claims.sub);
+    return { error: updateError.message };
+  }
 
   invalidateUsersAndOverview();
   redirect("/dashboard/profile");

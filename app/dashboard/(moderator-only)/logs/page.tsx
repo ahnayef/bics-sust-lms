@@ -19,7 +19,7 @@ export default async function AdminLogsPage({
     .eq("id", claims.sub)
     .single();
 
-  if (caller?.role !== "admin") {
+  if (caller?.role !== "admin" && caller?.role !== "moderator") {
     redirect("/dashboard");
   }
 

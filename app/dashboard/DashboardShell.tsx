@@ -95,7 +95,7 @@ const navigationItems = [
     label: "Logs",
     href: "/dashboard/logs",
     icon: FaClipboardList,
-    requiresRole: ["admin"],
+    requiresRole: ["admin", "moderator"],
   },
   {
     label: "Thanas",
@@ -165,21 +165,47 @@ export default function DashboardShell({
             </span>
           </Link>
 
-          <nav className="py-4 space-y-1 pb-8">
+          <nav className="py-4 pb-8">
             {visibleNavItems.map((item) => {
               const Icon = item.icon;
+              const active = isActive(item.href);
+
+              // Determine "flavor" based on role requirements
+              const isAdminOnly = item.requiresRole.length === 1 && item.requiresRole[0] === "admin";
+              const isModeratorStaff = item.requiresRole.includes("moderator") && !item.requiresRole.includes("member");
+
+              let itemClasses = "";
+              let iconClasses = "";
+
+              if (isAdminOnly) {
+                // Admin Only: Subtle wine/terracotta tint
+                itemClasses = active
+                  ? "bg-[#eadcd8] text-[#7d2d23] border-y-[#b0665c] shadow-[inset_4px_0_0_0_#b0665c]"
+                  : "bg-[#f1ebe6]/70 text-[#5a4b3f] hover:bg-[#e9dad5] hover:border-y-[#d6a59e]";
+                iconClasses = active ? "text-[#7d2d23]" : "text-[#9d5c4d]";
+              } else if (isModeratorStaff) {
+                // Moderator/Staff: Subtle green tint
+                itemClasses = active
+                  ? "bg-[#d3decb] text-[#2d4a35] border-y-[#4a7c59] shadow-[inset_4px_0_0_0_#4a7c59]"
+                  : "bg-[#ecf1e9]/40 text-[#5a4b3f] hover:bg-[#e1eadc] hover:border-y-[#c8d6c7]";
+                iconClasses = active ? "text-[#2d4a35]" : "text-[#4a7c59]";
+              } else {
+                // General: Default parchment/tan
+                itemClasses = active
+                  ? "bg-[#eadcc8] text-[#221910] border-y-[#7d6d5a] shadow-[inset_4px_0_0_0_#4e4033]"
+                  : "text-[#4d4034] hover:bg-[#ece0ce] hover:border-y-[#b59f86]";
+                iconClasses = active ? "text-[#221910]" : "text-[#554738]";
+              }
+
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsMobileOpen(false)}
-                  className={`flex items-center py-3 transition-colors ink-text border-y border-transparent overflow-hidden ${isMobileOpen ? "px-4 gap-3" : "justify-center lg:justify-start lg:px-4 lg:gap-3"} ${isActive(item.href)
-                    ? "bg-[#eadcc8] text-[#221910] border-y-[#7d6d5a] shadow-[inset_4px_0_0_0_#4e4033]"
-                    : "text-[#4d4034] hover:bg-[#ece0ce] hover:border-y-[#b59f86]"
-                    }`}
+                  className={`flex items-center py-3 transition-colors ink-text border-y border-transparent overflow-hidden ${isMobileOpen ? "px-4 gap-3" : "justify-center lg:justify-start lg:px-4 lg:gap-3"} ${itemClasses}`}
                   title={item.label}
                 >
-                  <div className="w-5 h-5 lg:w-6 lg:h-6 shrink-0 flex items-center justify-center">
+                  <div className={`w-5 h-5 lg:w-6 lg:h-6 shrink-0 flex items-center justify-center ${iconClasses}`}>
                     <Icon className="w-4 h-4" />
                   </div>
                   <span className={`font-medium whitespace-nowrap transition-opacity ${isMobileOpen ? "block" : "hidden lg:block"}`}>

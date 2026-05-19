@@ -13,7 +13,7 @@ import {
   FaTimesCircle,
 } from "react-icons/fa";
 
-type Tab = "all" | "verified" | "unverified";
+type Tab = "all" | "verified" | "unverified" | "overdue";
 type SortField = "joinDate" | "progress" | "rank";
 type SortDir = "asc" | "desc";
 type RankFilter = "all" | "None" | "Supporter" | "Associate" | "Member";
@@ -78,12 +78,18 @@ export default function UsersClient({ users }: Props) {
     () => users.filter((u) => !u.is_verified),
     [users],
   );
+  const overdueUsers = useMemo(
+    () => users.filter((u) => u.overdueBorrows > 0),
+    [users],
+  );
   const baseUsers =
     tab === "verified"
       ? verifiedUsers
       : tab === "unverified"
         ? unverifiedUsers
-        : users;
+        : tab === "overdue"
+          ? overdueUsers
+          : users;
 
   const filteredUsers = useMemo(() => {
     const query = searchTerm.toLowerCase().trim();
@@ -122,6 +128,7 @@ export default function UsersClient({ users }: Props) {
     all: users.length,
     verified: verifiedUsers.length,
     unverified: unverifiedUsers.length,
+    overdue: overdueUsers.length,
   };
 
   const selectClass =
@@ -172,23 +179,25 @@ export default function UsersClient({ users }: Props) {
         </div>
       </section>
 
-      <div className="flex border-b border-[#b9a58b] gap-0">
-        {(["all", "verified", "unverified"] as const).map((t) => (
+      <div className="flex border-b border-[#b9a58b] gap-0 overflow-x-auto">
+        {(["all", "verified", "unverified", "overdue"] as const).map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => setTab(t)}
-            className={`px-4 sm:px-6 py-2.5 text-sm font-medium ink-text transition-colors flex items-center gap-2 border-b-2 -mb-px cursor-pointer ${tab === t
-                ? "border-[#5a4d40] text-[#2b2119]"
-                : "border-transparent text-[#6a5a4c] hover:text-[#2b2119] hover:border-[#b9a58b]"
+            className={`flex-1 shrink-0 whitespace-nowrap px-3 sm:px-6 py-2.5 text-xs sm:text-sm font-medium ink-text transition-colors flex items-center justify-center gap-1.5 border-b-[3px] -mb-px cursor-pointer ${tab === t
+                ? "border-[#3f3328] text-[#221910] font-bold bg-[#f6ecdd]"
+                : "border-transparent text-[#6a5a4c] hover:text-[#2b2119] hover:bg-[#ece0ce]"
               }`}
           >
             {t === "all"
               ? "All Users"
               : t === "verified"
                 ? "✓ Verified"
-                : "✗ Unverified"}
-            <span className="px-1.5 py-0.5 text-[10px] rounded-sm bg-[#e4d4bf] text-[#4f4134]">
+                : t === "unverified"
+                  ? "✗ Unverified"
+                  : "⚠ Overdue"}
+            <span className="px-1.5 py-0.5 text-[10px] rounded-sm bg-[#e4d4bf] text-[#4f4134] shrink-0">
               {tabCounts[t]}
             </span>
           </button>
@@ -383,6 +392,14 @@ export default function UsersClient({ users }: Props) {
                           {user.activeBorrows}
                         </span>
                       </p>
+                      {user.overdueBorrows > 0 && (
+                        <p>
+                          Overdue:{" "}
+                          <span className="font-semibold text-[#9b3a25]">
+                            {user.overdueBorrows}
+                          </span>
+                        </p>
+                      )}
                       <p>
                         Pending:{" "}
                         <span className="font-semibold text-[#2b2119]">
@@ -423,7 +440,9 @@ export default function UsersClient({ users }: Props) {
               ? "users"
               : tab === "verified"
                 ? "verified users"
-                : "unverified users"}
+                : tab === "unverified"
+                  ? "unverified users"
+                  : "users with overdue books"}
           </div>
         )}
       </section>

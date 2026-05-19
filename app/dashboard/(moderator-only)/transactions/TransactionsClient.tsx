@@ -64,7 +64,7 @@ function todayStr(): string {
 function CountBadge({ n }: { n: number }) {
   if (n === 0) return null;
   return (
-    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#5a4d40] text-[#f4e8d4] text-[10px] font-bold leading-none ml-1">
+    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#5a4d40] text-[#f4e8d4] text-[10px] font-bold leading-none ml-1 shrink-0">
       {n}
     </span>
   );
@@ -617,31 +617,32 @@ export default function TransactionsClient({
       >
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           {/* Tab bar */}
-          <TabsList className="w-full h-auto rounded-none bg-[#eadcc8] border-b border-[#7d6d5a] p-0 flex">
+          <TabsList className="w-full h-auto rounded-none bg-[#eadcc8] border-b border-[#7d6d5a] p-0 flex overflow-x-auto overflow-y-hidden justify-start">
             <TabsTrigger
               value="pending"
-              className="flex-1 rounded-none py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium ink-text text-[#5a4b3f] border-r border-[#c5b090] data-[state=active]:bg-[#f0e3cf] data-[state=active]:text-[#221910] data-[state=active]:font-semibold data-[state=active]:shadow-none hover:bg-[#ece0ce] transition-colors"
+              className="shrink-0 whitespace-nowrap rounded-none py-3 px-4 sm:px-5 text-xs sm:text-sm font-medium ink-text text-[#6a5a4c] border-b-[3px] border-transparent data-[state=active]:border-[#3f3328] data-[state=active]:bg-[#f6ecdd] data-[state=active]:text-[#221910] data-[state=active]:font-bold data-[state=active]:shadow-none hover:bg-[#ece0ce] transition-colors"
             >
-              Pending{" "}
+              Pending
               <CountBadge n={pendingBorrows.length + pendingReturns.length} />
             </TabsTrigger>
             <TabsTrigger
               value="active"
-              className="flex-1 rounded-none py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium ink-text text-[#5a4b3f] border-r border-[#c5b090] data-[state=active]:bg-[#f0e3cf] data-[state=active]:text-[#221910] data-[state=active]:font-semibold data-[state=active]:shadow-none hover:bg-[#ece0ce] transition-colors"
+              className="shrink-0 whitespace-nowrap rounded-none py-3 px-4 sm:px-5 text-xs sm:text-sm font-medium ink-text text-[#6a5a4c] border-b-[3px] border-transparent data-[state=active]:border-[#3f3328] data-[state=active]:bg-[#f6ecdd] data-[state=active]:text-[#221910] data-[state=active]:font-bold data-[state=active]:shadow-none hover:bg-[#ece0ce] transition-colors"
             >
-              Active <CountBadge n={summary.active + summary.overdue} />
+              Active
+              <CountBadge n={summary.active + summary.overdue} />
             </TabsTrigger>
             <TabsTrigger
               value="history"
-              className="flex-1 rounded-none py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium ink-text text-[#5a4b3f] border-r border-[#c5b090] data-[state=active]:bg-[#f0e3cf] data-[state=active]:text-[#221910] data-[state=active]:font-semibold data-[state=active]:shadow-none hover:bg-[#ece0ce] transition-colors"
+              className="shrink-0 whitespace-nowrap rounded-none py-3 px-4 sm:px-5 text-xs sm:text-sm font-medium ink-text text-[#6a5a4c] border-b-[3px] border-transparent data-[state=active]:border-[#3f3328] data-[state=active]:bg-[#f6ecdd] data-[state=active]:text-[#221910] data-[state=active]:font-bold data-[state=active]:shadow-none hover:bg-[#ece0ce] transition-colors"
             >
               History
             </TabsTrigger>
             <TabsTrigger
               value="pdf"
-              className="flex-1 rounded-none py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium ink-text text-[#5a4b3f] data-[state=active]:bg-[#f0e3cf] data-[state=active]:text-[#221910] data-[state=active]:font-semibold data-[state=active]:shadow-none hover:bg-[#ece0ce] transition-colors flex items-center justify-center gap-1.5"
+              className="shrink-0 whitespace-nowrap rounded-none py-3 px-4 sm:px-5 text-xs sm:text-sm font-medium ink-text text-[#6a5a4c] border-b-[3px] border-transparent data-[state=active]:border-[#3f3328] data-[state=active]:bg-[#f6ecdd] data-[state=active]:text-[#221910] data-[state=active]:font-bold data-[state=active]:shadow-none hover:bg-[#ece0ce] transition-colors"
             >
-              <FaFileAlt className="w-3.5 h-3.5 shrink-0" />
+              <FaFileAlt className="w-3 h-3 shrink-0" />
               <span className="hidden sm:inline">PDF Reports</span>
               <span className="sm:hidden">PDF</span>
               <CountBadge n={pendingPdfs.length} />
@@ -649,7 +650,7 @@ export default function TransactionsClient({
           </TabsList>
 
           {/* ── Pending ── */}
-          <TabsContent value="pending" className="p-4 sm:p-6 mt-0">
+          <TabsContent value="pending" className="p-3 sm:p-6 mt-0">
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
               <section className="space-y-3">
                 <header className="flex items-center justify-between">
@@ -690,17 +691,17 @@ export default function TransactionsClient({
           </TabsContent>
 
           {/* ── Active ── */}
-          <TabsContent value="active" className="p-4 sm:p-6 mt-0 space-y-4">
+          <TabsContent value="active" className="p-3 sm:p-6 mt-0 space-y-4">
             {/* Search + filters */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-              <div className="relative lg:col-span-2">
+            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-2 sm:gap-3">
+              <div className="relative sm:col-span-2">
                 <FaSearch className="absolute left-3 top-2.5 text-[#7a6a5a]" />
                 <input
                   type="text"
                   placeholder="Search member, book, or copy ID…"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text"
+                  className="w-full pl-9 pr-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
                 />
               </div>
               <div className="flex gap-2">
@@ -709,7 +710,7 @@ export default function TransactionsClient({
                   onChange={(e) =>
                     setStatusFilter(e.target.value as StatusFilter)
                   }
-                  className="w-full px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text"
+                  className="w-full px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
                 >
                   <option value="all">All</option>
                   <option value="active">Active</option>
@@ -718,7 +719,7 @@ export default function TransactionsClient({
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as SortKey)}
-                  className="w-full px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text"
+                  className="w-full px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
                 >
                   <option value="date">Newest</option>
                   <option value="member">Member</option>
@@ -735,12 +736,12 @@ export default function TransactionsClient({
                 activeTransactions.map((tx) => (
                   <article
                     key={tx.id}
-                    className="border border-[#b9a58b] rounded-sm bg-[#f6ecdd] p-4 ink-text"
+                    className="border border-[#b9a58b] rounded-sm bg-[#f6ecdd] p-3 sm:p-4 ink-text"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
                         {/* Profile Photo */}
-                        <div className="shrink-0">
+                        <div className="shrink-0 hidden sm:block">
                           <Link href={`/dashboard/users/${tx.user?.id}`}>
                             <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[#cfbba1] bg-[#ece0ce] hover:border-[#8b5c4a] transition-colors">
                               {tx.user?.avatar_url ? (
@@ -760,7 +761,7 @@ export default function TransactionsClient({
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-[#2b2119] truncate">
+                          <p className="font-semibold text-[#2b2119] truncate text-sm">
                             <Link
                               href={`/dashboard/users/${tx.user?.id}`}
                               className="hover:underline hover:text-[#5a4b3f] transition-colors"
@@ -768,7 +769,7 @@ export default function TransactionsClient({
                               {tx.user?.full_name ?? "Unknown Member"}
                             </Link>
                           </p>
-                          <p className="text-sm text-[#5a4b3f] truncate">
+                          <p className="text-xs text-[#5a4b3f] truncate">
                             {tx.book?.title ?? "Unknown Book"}{" "}
                             <span className="font-mono text-[10px] opacity-70">
                               ({tx.copy?.id ?? tx.copy_id})
@@ -780,12 +781,12 @@ export default function TransactionsClient({
                         tone={tx.status === "overdue" ? "danger" : "info"}
                         size="xs"
                         icon={FaClock}
-                        className="self-start sm:self-center"
+                        className="shrink-0"
                       >
                         {tx.status === "overdue" ? "Overdue" : "Active"}
                       </StatusBadge>
                     </div>
-                    <div className="mt-2 text-xs text-[#5a4b3f] grid grid-cols-1 sm:grid-cols-2 gap-1 sm:pl-[52px]">
+                    <div className="mt-2 text-xs text-[#5a4b3f] flex flex-wrap gap-x-4 gap-y-1 sm:pl-[52px]">
                       <p>Requested: {formatDate(tx.request_date)}</p>
                       <p
                         className={
@@ -804,22 +805,22 @@ export default function TransactionsClient({
           </TabsContent>
 
           {/* ── History ── */}
-          <TabsContent value="history" className="p-4 sm:p-6 mt-0 space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-              <div className="relative lg:col-span-2">
+          <TabsContent value="history" className="p-3 sm:p-6 mt-0 space-y-4">
+            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-2 sm:gap-3">
+              <div className="relative sm:col-span-2">
                 <FaSearch className="absolute left-3 top-2.5 text-[#7a6a5a]" />
                 <input
                   type="text"
                   placeholder="Search member, book, or copy ID…"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text"
+                  className="w-full pl-9 pr-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
                 />
               </div>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortKey)}
-                className="px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text"
+                className="px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
               >
                 <option value="date">Newest</option>
                 <option value="member">Member Name</option>
@@ -943,7 +944,7 @@ export default function TransactionsClient({
           </TabsContent>
 
           {/* ── PDF Reports ── */}
-          <TabsContent value="pdf" className="p-4 sm:p-6 mt-0">
+          <TabsContent value="pdf" className="p-3 sm:p-6 mt-0">
             {pendingPdfs.length === 0 ? (
               <div className="p-10 text-center border border-[#b9a58b] rounded-sm text-[#6a5a4c] ink-text">
                 <FaFileAlt className="w-10 h-10 mx-auto mb-3 opacity-40" />

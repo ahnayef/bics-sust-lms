@@ -6,6 +6,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { invalidateUsersDirectory } from "@/server/cache-invalidation";
+import { logActionError } from "@/server/error-log";
 import { revalidatePath } from "next/cache";
 
 async function requireModOrAdmin(): Promise<
@@ -41,11 +42,25 @@ export async function addThana(
   const supabase = await createClient();
   const { error } = await supabase.from("thanas").insert({ name });
 
-  if (error) return { error: error.message };
+  if (error) {
+    logActionError("addThana", error.message, auth.sub);
+    return { error: error.message };
+  }
 
   invalidateUsersDirectory();
   revalidatePath("/dashboard/thanas");
   return {};
+}
+
+export async function getThanaRefCount(
+  thanaId: string,
+): Promise<number> {
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("profiles")
+    .select("id", { count: "exact", head: true })
+    .eq("thana_id", thanaId);
+  return count ?? 0;
 }
 
 /** FormData: id (uuid) */
@@ -59,17 +74,34 @@ export async function deleteThana(
   const id = formData.get("id") as string;
   if (!id) return { error: "Thana ID is required" };
 
-  const { count } = await supabase
+  const { data: thana } = await supabase
+    .from("thanas")
+    .select("name")
+    .eq("id", id)
+    .single();
+
+  const { data: affectedProfiles } = await supabase
     .from("profiles")
-    .select("id", { count: "exact", head: true })
+    .select("id")
     .eq("thana_id", id);
 
-  if (count && count > 0) {
-    return { error: `Cannot delete: ${count} profile(s) reference this thana` };
+  const { error } = await supabase.from("thanas").delete().eq("id", id);
+  if (error) {
+    logActionError("deleteThana", error.message, auth.sub);
+    return { error: error.message };
   }
 
-  const { error } = await supabase.from("thanas").delete().eq("id", id);
-  if (error) return { error: error.message };
+  if (affectedProfiles && affectedProfiles.length > 0) {
+    const thanaName = thana?.name ?? "your thana";
+    await supabase.from("action_logs").insert(
+      affectedProfiles.map((p) => ({
+        action_type: "thana_deleted" as const,
+        target_id: p.id,
+        actor_id: auth.sub,
+        details: `The thana "${thanaName}" has been removed. Please update your profile to select a new thana.`,
+      })),
+    );
+  }
 
   invalidateUsersDirectory();
   revalidatePath("/dashboard/thanas");
@@ -92,7 +124,10 @@ export async function modifyThana(
 
   const { error } = await supabase.from("thanas").update({ name }).eq("id", id);
 
-  if (error) return { error: error.message };
+  if (error) {
+    logActionError("modifyThana", error.message, auth.sub);
+    return { error: error.message };
+  }
 
   invalidateUsersDirectory();
   revalidatePath("/dashboard/thanas");

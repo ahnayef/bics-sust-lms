@@ -6,7 +6,8 @@
  */
 
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { cacheLife, cacheTag } from "next/cache";
+import { applyCacheLife } from "@/lib/cache";
+import { cacheTag } from "next/cache";
 import { cookies } from "next/headers";
 import type {
   Book,
@@ -34,7 +35,7 @@ import type { Profile } from "@/types/profile";
 async function loadBooksCached(): Promise<Book[]> {
   "use cache";
   cacheTag("books");
-  cacheLife("max");
+  applyCacheLife("max");
 
   const supabase = createServiceClient();
   const { data, error } = await supabase
@@ -95,7 +96,7 @@ export async function bookStatus(
 async function loadCopiesCached(): Promise<Copy[]> {
   "use cache";
   cacheTag("copies");
-  cacheLife("max");
+  applyCacheLife("max");
 
   const supabase = createServiceClient();
   const { data, error } = await supabase
@@ -145,7 +146,7 @@ async function loadTransactionsCached(
 ): Promise<Transaction[]> {
   "use cache";
   cacheTag("transactions");
-  cacheLife("max");
+  applyCacheLife("max");
 
   const supabase = createServiceClient();
   let query = supabase
@@ -196,7 +197,7 @@ async function loadPdfSubmissionsCached(
 ): Promise<PdfSubmission[]> {
   "use cache";
   cacheTag("pdf-submissions");
-  cacheLife("max");
+  applyCacheLife("max");
 
   const supabase = createServiceClient();
   let query = supabase
@@ -232,12 +233,10 @@ export async function getPdfSubmissions(
 export async function getUserStats(userId: string): Promise<UserStats> {
   const supabase = await createClient();
 
-  const { data: setting } = await supabase
-    .from("settings")
-    .select("value")
-    .eq("key", "syllabus_total")
-    .single();
-  const syllabusTotal = parseInt(setting?.value ?? "80", 10);
+  const { count: syllabusTotal } = await supabase
+    .from("books")
+    .select("id", { count: "exact", head: true })
+    .eq("is_syllabus", true);
 
   // Active + overdue borrows (what they currently have)
   const { data: activeBorrows } = await supabase
@@ -282,10 +281,15 @@ export async function getUserStats(userId: string): Promise<UserStats> {
       syllabusIds.add(ps.book_id);
   }
 
+  const now = new Date();
   return {
     syllabusCompleted: syllabusIds.size,
-    syllabusTotal,
+    syllabusTotal: syllabusTotal ?? 0,
     activeBorrows: activeBorrows?.length ?? 0,
+    overdueBorrows: (activeBorrows ?? []).filter((t) => {
+      const tx = t as unknown as Transaction;
+      return tx.status === "overdue" || (tx.due_date && new Date(tx.due_date) < now);
+    }).length,
     pendingRequests: pendingCount ?? 0,
     currentBorrows: (activeBorrows ?? []) as unknown as Transaction[],
   };
@@ -302,7 +306,7 @@ export async function getUserStats(userId: string): Promise<UserStats> {
 async function loadUsersCached(): Promise<UserWithStats[]> {
   "use cache";
   cacheTag("users");
-  cacheLife("max");
+  applyCacheLife("max");
 
   const supabase = createServiceClient();
 
@@ -336,17 +340,15 @@ async function loadUsersCached(): Promise<UserWithStats[]> {
 
   const ids = profiles.map((p) => p.id);
 
-  const { data: setting } = await supabase
-    .from("settings")
-    .select("value")
-    .eq("key", "syllabus_total")
-    .single();
-  const syllabusTotal = parseInt(setting?.value ?? "80", 10);
+  const { count: syllabusTotal } = await supabase
+    .from("books")
+    .select("id", { count: "exact", head: true })
+    .eq("is_syllabus", true);
 
   // Batch: active/overdue borrow counts
   const { data: activeTxns } = await supabase
     .from("transactions")
-    .select("user_id")
+    .select("user_id, status, due_date")
     .in("user_id", ids)
     .eq("type", "borrow")
     .in("status", ["active", "overdue"]);
@@ -373,9 +375,14 @@ async function loadUsersCached(): Promise<UserWithStats[]> {
     .in("user_id", ids)
     .eq("status", "approved");
 
+  const now = new Date();
   return profiles.map((profile): UserWithStats => {
-    const activeBorrows = (activeTxns ?? []).filter(
+    const userActiveTxns = (activeTxns ?? []).filter(
       (t) => t.user_id === profile.id,
+    );
+    const activeBorrows = userActiveTxns.length;
+    const overdueBorrows = userActiveTxns.filter(
+      (t) => t.status === "overdue" || (t.due_date && new Date(t.due_date) < now),
     ).length;
     const pendingRequests = (pendingTxns ?? []).filter(
       (t) => t.user_id === profile.id,
@@ -409,8 +416,9 @@ async function loadUsersCached(): Promise<UserWithStats[]> {
         ? thanaById.get(profile.thana_id as string)
         : undefined,
       syllabusCompleted: syllabusIds.size,
-      syllabusTotal,
+      syllabusTotal: syllabusTotal ?? 0,
       activeBorrows,
+      overdueBorrows,
       pendingRequests,
     };
   });
@@ -438,7 +446,7 @@ async function loadOverviewDataCached(
 ): Promise<OverviewData> {
   "use cache";
   cacheTag("overview");
-  cacheLife("max");
+  applyCacheLife("minutes");
 
   const supabase = createServiceClient();
 
@@ -519,7 +527,13 @@ async function loadOverviewDataCached(
 
   // Partition open transactions
   const allOpen = openTransactions ?? [];
-  const overdueItems = allOpen.filter((t) => t.status === "overdue");
+  const now = new Date();
+  const overdueItems = allOpen.filter(
+    (t) =>
+      t.type === "borrow" &&
+      (t.status === "overdue" ||
+        (t.status === "active" && t.due_date && new Date(t.due_date) < now)),
+  );
   const pendingBorrows = allOpen.filter(
     (t) => t.type === "borrow" && t.status === "pending",
   );
@@ -527,7 +541,10 @@ async function loadOverviewDataCached(
     (t) => t.type === "return" && t.status === "pending",
   );
   const activeBorrows = allOpen.filter(
-    (t) => t.status === "active" || t.status === "overdue",
+    (t) =>
+      t.status === "active" ||
+      t.status === "overdue" ||
+      (t.status === "active" && t.due_date && new Date(t.due_date) < now),
   );
 
   // Aggregate top borrowers
@@ -610,8 +627,6 @@ async function loadOverviewDataCached(
 }
 
 export async function getOverviewData(): Promise<OverviewData> {
-  // Request data must be read before `new Date()` in prerender-sensitive trees
-  // (Cache Components); `cookies()` marks this path as dynamic.
   await cookies();
   const firstOfMonth = new Date(
     new Date().getFullYear(),
@@ -651,6 +666,7 @@ export async function getUserNotifications(userId: string): Promise<Notification
       .from("action_logs")
       .select("id, action_type, created_at, details")
       .eq("target_id", userId)
+      .neq("action_type", "error")
   ]);
 
   const items: NotificationItem[] = [];
@@ -721,6 +737,10 @@ export async function getUserNotifications(userId: string): Promise<Notification
     } else if (log.action_type === "role_changed") {
       type = "role_changed";
       title = "Role Updated";
+    } else if (log.action_type === "thana_deleted") {
+      type = "thana_deleted";
+      title = "Thana Removed";
+      message = log.details ?? "Your thana has been removed. Please update your profile.";
     }
 
     if (log.action_type !== "user_joined") {
