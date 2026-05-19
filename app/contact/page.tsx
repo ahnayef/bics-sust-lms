@@ -6,7 +6,7 @@ import Navbar from "../components/Navbar";
 export default async function ContactPage() {
   "use cache";
   cacheTag("year");
-  cacheLife("days");
+  cacheLife("days" as any);
   const year = new Date().getFullYear();
   return (
     <div className="min-h-screen bg-[#e8dcc8]">

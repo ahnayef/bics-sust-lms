@@ -13,6 +13,7 @@ export function applyCacheLife(profile: "max" | "minutes" | "hours" | "days" | "
   } else if (typeof CACHE_MODE === "number") {
     cacheLife({ revalidate: CACHE_MODE, expire: CACHE_MODE * 2 });
   } else {
-    cacheLife(profile);
+    // Cast to any to bypass strict Next.js 16 type overloads that might only expect objects
+    cacheLife(profile as any);
   }
 }

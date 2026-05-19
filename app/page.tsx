@@ -17,7 +17,7 @@ import Navbar from "./components/Navbar";
 async function getCachedYear() {
   "use cache";
   cacheTag("year");
-  cacheLife("days");
+  cacheLife("days" as any);
   return new Date().getFullYear();
 }
 
