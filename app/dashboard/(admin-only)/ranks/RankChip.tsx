@@ -1,18 +1,19 @@
 "use client";
 
 import ConfirmModal from "@/components/ui/confirm-modal";
-import { deleteThana, getThanaRefCount, modifyThana } from "@/server/geo-actions";
+import { RankBadge } from "@/components/ui/rank-badge";
+import { deleteRank, getRankRefCount, modifyRank } from "@/server/rank-actions";
 import { useRouter } from "next/navigation";
 import { startTransition, useRef, useState } from "react";
 import { FaCheck, FaPencilAlt, FaTimes, FaTrash } from "react-icons/fa";
 
-interface ThanaChipProps {
+interface RankChipProps {
   id: string;
   name: string;
   onFlash: (type: "success" | "error", text: string) => void;
 }
 
-export function ThanaChip({ id, name, onFlash }: ThanaChipProps) {
+export function RankChip({ id, name, onFlash }: RankChipProps) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -25,7 +26,7 @@ export function ThanaChip({ id, name, onFlash }: ThanaChipProps) {
   async function handleDeleteClick() {
     setRefCount(null);
     setDeleteOpen(true);
-    const count = await getThanaRefCount(id);
+    const count = await getRankRefCount(id);
     setRefCount(count);
   }
 
@@ -34,24 +35,30 @@ export function ThanaChip({ id, name, onFlash }: ThanaChipProps) {
     const fd = new FormData();
     fd.append("id", id);
     startTransition(async () => {
-      const result = await deleteThana(fd);
+      const result = await deleteRank(fd);
       setDeleteLoading(false);
       setDeleteOpen(false);
       if (result?.error) {
         onFlash("error", result.error);
         return;
       }
-      onFlash("success", `Thana "${name}" deleted.`);
+      onFlash("success", `Rank "${name}" deleted.`);
       router.refresh();
     });
   }
 
   const deleteDescription =
-    refCount === null
-      ? "Checking references..."
-      : refCount > 0
-        ? <span><b className="text-[#221910] font-bold">{refCount}</b> member profile(s) currently reference this thana. Their thana will be set to none. This cannot be undone.</span>
-        : <span>No profile references this thana. This cannot be undone.</span>;
+    refCount === null ? (
+      "Checking references..."
+    ) : refCount > 0 ? (
+      <span>
+        <b className="text-[#221910] font-bold">{refCount}</b> profile(s)
+        currently reference this rank. Their rank will be set to <b>None</b>.
+        This cannot be undone.
+      </span>
+    ) : (
+      "No profile references this rank. This cannot be undone."
+    );
 
   const [renameOpen, setRenameOpen] = useState(false);
   const [pendingName, setPendingName] = useState("");
@@ -71,7 +78,7 @@ export function ThanaChip({ id, name, onFlash }: ThanaChipProps) {
     fd.append("id", id);
     fd.append("name", pendingName);
     startTransition(async () => {
-      const result = await modifyThana(fd);
+      const result = await modifyRank(fd);
       setRenameLoading(false);
       setRenameOpen(false);
       if (result?.error) {
@@ -79,7 +86,7 @@ export function ThanaChip({ id, name, onFlash }: ThanaChipProps) {
         return;
       }
       setEditing(false);
-      onFlash("success", `Thana renamed to "${pendingName}".`);
+      onFlash("success", `Rank renamed to "${pendingName}".`);
       router.refresh();
     });
   }
@@ -127,7 +134,7 @@ export function ThanaChip({ id, name, onFlash }: ThanaChipProps) {
             if (!renameLoading) setRenameOpen(false);
           }}
           onConfirm={handleRenameConfirm}
-          title="Rename Thana"
+          title="Rename Rank"
           preview={`Renaming from '${name}' to '${pendingName}'`}
           confirmLabel="Rename"
           loading={renameLoading}
@@ -138,24 +145,26 @@ export function ThanaChip({ id, name, onFlash }: ThanaChipProps) {
 
   return (
     <>
-      <div className="inline-flex items-center gap-1.5 px-3 py-1 text-xs border border-[#c4ae8e] bg-[#f6ecdd] rounded-sm text-[#3b3026] ink-text">
-        {name}
-        <button
-          type="button"
-          onClick={() => setEditing(true)}
-          className="text-[#7a5a4a] hover:text-[#5a2a1a] transition-colors ml-0.5"
-          aria-label={`Rename ${name}`}
-        >
-          <FaPencilAlt className="w-2.5 h-2.5" />
-        </button>
-        <button
-          type="button"
-          onClick={handleDeleteClick}
-          className="text-[#7a5a4a] hover:text-[#5a2a1a] transition-colors"
-          aria-label={`Remove ${name}`}
-        >
-          <FaTrash className="w-2.5 h-2.5" />
-        </button>
+      <div className="group relative flex items-center gap-2 pl-1 pr-3 py-1.5 border border-[#c4ae8e] bg-[#f6ecdd] rounded-sm text-[#3b3026] ink-text shadow-sm hover:border-[#b0906a] transition-all">
+        <RankBadge name={name} className="border-none bg-transparent p-0" />
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-1">
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="text-[#7a5a4a] hover:text-[#5a2a1a] transition-colors"
+            aria-label={`Rename ${name}`}
+          >
+            <FaPencilAlt className="w-2.5 h-2.5" />
+          </button>
+          <button
+            type="button"
+            onClick={handleDeleteClick}
+            className="text-[#7a5a4a] hover:text-[#5a2a1a] transition-colors"
+            aria-label={`Remove ${name}`}
+          >
+            <FaTrash className="w-2.5 h-2.5" />
+          </button>
+        </div>
       </div>
 
       <ConfirmModal
@@ -164,7 +173,7 @@ export function ThanaChip({ id, name, onFlash }: ThanaChipProps) {
           if (!deleteLoading) setDeleteOpen(false);
         }}
         onConfirm={handleDeleteConfirm}
-        title="Delete Thana"
+        title="Delete Rank"
         description={deleteDescription}
         preview={name}
         danger={true}

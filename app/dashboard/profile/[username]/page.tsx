@@ -1,3 +1,4 @@
+import { RankBadge } from "@/components/ui/rank-badge";
 import { getProfileByUsername } from "@/server/geo";
 import { getUserStats } from "@/server/library";
 import { getClaims } from "@/server/user";
@@ -107,11 +108,7 @@ export default async function DashboardUserProfilePage({
                 <FaShieldAlt className="w-3 h-3" />
                 {roleLabels[profile.role]}
               </span>
-              {profile.rank !== "None" && (
-                <span className="inline-flex items-center px-2.5 py-1 rounded-sm text-xs font-semibold border bg-[#ede0cc] text-[#4a3825] border-[#b59f86] ink-text">
-                  {profile.rank}
-                </span>
-              )}
+              <RankBadge name={profile.rank?.name} />
               {profile.is_verified ? (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-sm text-xs font-semibold border bg-[#eef5e9] text-[#3d5c2e] border-[#a3b994] ink-text">
                   <FaCheckCircle className="w-3 h-3" /> Verified

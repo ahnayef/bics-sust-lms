@@ -77,7 +77,7 @@ export async function addBook(
 
   if (bookErr || !book) {
     const msg = bookErr?.message ?? "Failed to add book";
-    logActionError("addBook", msg, auth.sub);
+    logActionError("addBook", msg, auth.sub, { title, author });
     return { error: msg };
   }
 
@@ -89,7 +89,7 @@ export async function addBook(
 
     if (copyErr) {
       const msg = `Book added but failed to create first copy: ${copyErr.message}`;
-      logActionError("addBook", msg, auth.sub);
+      logActionError("addBook", msg, auth.sub, { bookId: book.id, first_copy_id });
       invalidateAfterBookOrCopyMutation();
       revalidatePath("/dashboard/books");
       return { bookId: book.id, error: msg };
@@ -133,7 +133,7 @@ export async function editBook(
     .eq("id", id);
 
   if (error) {
-    logActionError("editBook", error.message, auth.sub);
+    logActionError("editBook", error.message, auth.sub, { id, title });
     return { error: error.message };
   }
 
@@ -169,13 +169,13 @@ export async function removeBook(
 
   if (borrowed && borrowed.length > 0) {
     const msg = "Cannot delete: one or more copies are currently borrowed";
-    logActionError("removeBook", msg, auth.sub);
+    logActionError("removeBook", msg, auth.sub, { bookId: id });
     return { error: msg };
   }
 
   const { error } = await supabase.from("books").delete().eq("id", id);
   if (error) {
-    logActionError("removeBook", error.message, auth.sub);
+    logActionError("removeBook", error.message, auth.sub, { bookId: id });
     return { error: error.message };
   }
 
@@ -183,6 +183,19 @@ export async function removeBook(
   revalidatePath("/dashboard/books");
   revalidatePath("/dashboard/copies");
   return {};
+}
+
+/**
+ * Returns the number of active/pending transactions for a book.
+ */
+export async function getBookRefCount(bookId: string): Promise<number> {
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("transactions")
+    .select("id", { count: "exact", head: true })
+    .eq("book_id", bookId)
+    .in("status", ["pending", "active", "overdue"]);
+  return count ?? 0;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -261,6 +274,19 @@ export async function addCopyOfBook(
   revalidatePath("/dashboard/copies");
   revalidatePath("/dashboard/books");
   return {};
+}
+
+/**
+ * Returns the number of active/pending transactions for a specific copy.
+ */
+export async function getCopyRefCount(copyId: string): Promise<number> {
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("transactions")
+    .select("id", { count: "exact", head: true })
+    .eq("copy_id", copyId)
+    .in("status", ["pending", "active", "overdue"]);
+  return count ?? 0;
 }
 
 /**

@@ -1,15 +1,15 @@
 "use server";
 
 /**
- * server/geo-actions.ts — Server Actions for flat thana list management.
+ * server/rank-actions.ts — Server Actions for dynamic rank management.
  */
 
 import { createClient } from "@/lib/supabase/server";
-import { invalidateUsersDirectory } from "@/server/cache-invalidation";
+import { invalidateUsersAndOverview } from "@/server/cache-invalidation";
 import { logActionError } from "@/server/error-log";
 import { revalidatePath } from "next/cache";
 
-async function requireModOrAdmin(): Promise<
+async function requireAdmin(): Promise<
   { error: string } | { sub: string }
 > {
   const supabase = await createClient();
@@ -23,59 +23,59 @@ async function requireModOrAdmin(): Promise<
     .eq("id", sub)
     .single();
 
-  if (!profile || !["admin", "moderator"].includes(profile.role)) {
-    return { error: "Only moderators and admins can manage thanas" };
+  if (!profile || profile.role !== "admin") {
+    return { error: "Only admins can manage ranks" };
   }
   return { sub };
 }
 
 /** FormData: name (text) */
-export async function addThana(
+export async function addRank(
   formData: FormData,
 ): Promise<{ error?: string }> {
-  const auth = await requireModOrAdmin();
+  const auth = await requireAdmin();
   if ("error" in auth) return auth;
 
   const name = (formData.get("name") as string)?.trim();
   if (!name) return { error: "Name is required" };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("thanas").insert({ name });
+  const { error } = await supabase.from("ranks").insert({ name });
 
   if (error) {
-    logActionError("addThana", error.message, auth.sub, { name });
+    logActionError("addRank", error.message, auth.sub, { name });
     return { error: error.message };
   }
 
-  invalidateUsersDirectory();
-  revalidatePath("/dashboard/thanas");
+  invalidateUsersAndOverview();
+  revalidatePath("/dashboard/ranks");
   return {};
 }
 
-export async function getThanaRefCount(
-  thanaId: string,
+export async function getRankRefCount(
+  rankId: string,
 ): Promise<number> {
   const supabase = await createClient();
   const { count } = await supabase
     .from("profiles")
     .select("id", { count: "exact", head: true })
-    .eq("thana_id", thanaId);
+    .eq("rank_id", rankId);
   return count ?? 0;
 }
 
 /** FormData: id (uuid) */
-export async function deleteThana(
+export async function deleteRank(
   formData: FormData,
 ): Promise<{ error?: string }> {
-  const auth = await requireModOrAdmin();
+  const auth = await requireAdmin();
   if ("error" in auth) return auth;
 
   const supabase = await createClient();
   const id = formData.get("id") as string;
-  if (!id) return { error: "Thana ID is required" };
+  if (!id) return { error: "Rank ID is required" };
 
-  const { data: thana } = await supabase
-    .from("thanas")
+  const { data: rank } = await supabase
+    .from("ranks")
     .select("name")
     .eq("id", id)
     .single();
@@ -83,53 +83,53 @@ export async function deleteThana(
   const { data: affectedProfiles } = await supabase
     .from("profiles")
     .select("id")
-    .eq("thana_id", id);
+    .eq("rank_id", id);
 
-  const { error } = await supabase.from("thanas").delete().eq("id", id);
+  const { error } = await supabase.from("ranks").delete().eq("id", id);
   if (error) {
-    logActionError("deleteThana", error.message, auth.sub, { id });
+    logActionError("deleteRank", error.message, auth.sub, { id });
     return { error: error.message };
   }
 
   if (affectedProfiles && affectedProfiles.length > 0) {
-    const thanaName = thana?.name ?? "your thana";
+    const rankName = rank?.name ?? "your rank";
     await supabase.from("action_logs").insert(
       affectedProfiles.map((p) => ({
-        action_type: "thana_deleted" as const,
+        action_type: "rank_deleted",
         target_id: p.id,
         actor_id: auth.sub,
-        details: `The thana "${thanaName}" has been removed. Please update your profile to select a new thana.`,
+        details: `The rank "${rankName}" has been removed. Your rank has been set to None.`,
       })),
     );
   }
 
-  invalidateUsersDirectory();
-  revalidatePath("/dashboard/thanas");
+  invalidateUsersAndOverview();
+  revalidatePath("/dashboard/ranks");
   return {};
 }
 
 /** FormData: id (uuid), name (text) */
-export async function modifyThana(
+export async function modifyRank(
   formData: FormData,
 ): Promise<{ error?: string }> {
-  const auth = await requireModOrAdmin();
+  const auth = await requireAdmin();
   if ("error" in auth) return auth;
 
   const supabase = await createClient();
   const id = formData.get("id") as string;
   const name = (formData.get("name") as string)?.trim();
 
-  if (!id) return { error: "Thana ID is required" };
+  if (!id) return { error: "Rank ID is required" };
   if (!name) return { error: "Name is required" };
 
-  const { error } = await supabase.from("thanas").update({ name }).eq("id", id);
+  const { error } = await supabase.from("ranks").update({ name }).eq("id", id);
 
   if (error) {
-    logActionError("modifyThana", error.message, auth.sub, { id, name });
+    logActionError("modifyRank", error.message, auth.sub, { id, name });
     return { error: error.message };
   }
 
-  invalidateUsersDirectory();
-  revalidatePath("/dashboard/thanas");
+  invalidateUsersAndOverview();
+  revalidatePath("/dashboard/ranks");
   return {};
 }

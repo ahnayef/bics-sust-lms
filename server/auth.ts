@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { logActionError } from "@/server/error-log";
 
 export async function signInWithGoogle() {
   const headersList = await headers();
@@ -25,6 +26,7 @@ export async function signInWithGoogle() {
   });
 
   if (error) {
+    logActionError("signInWithGoogle", error.message);
     redirect("/login?error=oauth");
   }
 

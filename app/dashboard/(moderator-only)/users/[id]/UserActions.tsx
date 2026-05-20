@@ -1,10 +1,12 @@
 "use client";
 
 import ConfirmModal from "@/components/ui/confirm-modal";
-import { unVerifyUser, verifyUser, makeAdmin } from "@/server/profiles";
+import { RankBadge } from "@/components/ui/rank-badge";
+import { changeUserRank, makeAdmin, unVerifyUser, verifyUser } from "@/server/profiles";
+import type { Rank } from "@/types/profile";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import { FaCheckCircle, FaTimesCircle, FaUserTag } from "react-icons/fa";
 
 interface Props {
   userId: string;
@@ -12,6 +14,8 @@ interface Props {
   userName: string;
   userRole: string;
   isAdmin: boolean;
+  currentRankId: string | null;
+  availableRanks: Rank[];
 }
 
 export default function UserActions({
@@ -20,11 +24,15 @@ export default function UserActions({
   userName,
   userRole,
   isAdmin,
+  currentRankId,
+  availableRanks,
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [showUnverifyModal, setShowUnverifyModal] = useState(false);
+  const [showRankModal, setShowRankModal] = useState(false);
+  const [selectedRankId, setSelectedRankId] = useState<string | null>(currentRankId);
   const [actionError, setActionError] = useState<string | null>(null);
   const [showMakeAdminModal1, setShowMakeAdminModal1] = useState(false);
   const [showMakeAdminModal2, setShowMakeAdminModal2] = useState(false);
@@ -49,6 +57,18 @@ export default function UserActions({
         setActionError(result.error);
       }
       setShowUnverifyModal(false);
+      router.refresh();
+    });
+  };
+
+  const handleRankChange = () => {
+    setActionError(null);
+    startTransition(async () => {
+      const result = await changeUserRank(userId, selectedRankId === "none" ? null : selectedRankId);
+      if (result?.error) {
+        setActionError(result.error);
+      }
+      setShowRankModal(false);
       router.refresh();
     });
   };
@@ -96,6 +116,18 @@ export default function UserActions({
           Unverify User
         </button>
 
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => setShowRankModal(true)}
+            disabled={isPending}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#f6ecdd] text-[#3b3026] border border-[#8a7966] rounded-sm hover:bg-[#eadcc8] transition-colors font-medium text-sm ink-text disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <FaUserTag className="w-4 h-4" />
+            Change Rank
+          </button>
+        )}
+
         {isAdmin && userRole !== "admin" && (
           <button
             type="button"
@@ -107,6 +139,38 @@ export default function UserActions({
           </button>
         )}
       </div>
+
+      <ConfirmModal
+        open={showRankModal}
+        onClose={() => setShowRankModal(false)}
+        onConfirm={handleRankChange}
+        title="Change Member Rank"
+        description={
+          <div className="space-y-4 pt-1">
+            <p className="text-sm text-[#5a4b3f] ink-text">
+              Select a new rank for <b>{userName}</b>. Changing the rank will keep the user verified.
+            </p>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-[#7a6a5c] uppercase font-bold">Preview:</span>
+              <RankBadge name={availableRanks.find(r => r.id === selectedRankId)?.name ?? "None"} />
+            </div>
+            <select
+              value={selectedRankId ?? "none"}
+              onChange={(e) => setSelectedRankId(e.target.value)}
+              className="w-full px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
+            >
+              <option value="none">None</option>
+              {availableRanks.map((rank) => (
+                <option key={rank.id} value={rank.id}>
+                  {rank.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        }
+        confirmLabel="Update Rank"
+        loading={isPending}
+      />
 
       <ConfirmModal
         open={showVerifyModal}

@@ -106,7 +106,7 @@ export async function borrowBook(
   });
 
   if (error) {
-    logActionError("borrowBook", error.message, sub);
+    logActionError("borrowBook", error.message, sub, { copy_id, book_id: copy.book_id });
     return { error: error.message };
   }
 
@@ -162,7 +162,7 @@ export async function returnBook(
   });
 
   if (error) {
-    logActionError("returnBook", error.message, sub);
+    logActionError("returnBook", error.message, sub, { copy_id, book_id: borrow.book_id });
     return { error: error.message };
   }
 
@@ -227,7 +227,7 @@ export async function allowBorrowRequest(
     .eq("id", transaction_id);
 
   if (txnErr) {
-    logActionError("allowBorrowRequest", txnErr.message, sub);
+    logActionError("allowBorrowRequest", txnErr.message, sub, { transaction_id, due_date });
     return { error: txnErr.message };
   }
 
@@ -238,7 +238,7 @@ export async function allowBorrowRequest(
 
   if (copyErr) {
     const msg = `Approved but copy update failed: ${copyErr.message}`;
-    logActionError("allowBorrowRequest", msg, sub);
+    logActionError("allowBorrowRequest", msg, sub, { transaction_id, copy_id: txn.copy_id });
     return { error: msg };
   }
 
@@ -276,7 +276,7 @@ export async function rejectBorrowRequest(
     .eq("id", transaction_id);
 
   if (error) {
-    logActionError("rejectBorrowRequest", error.message, sub);
+    logActionError("rejectBorrowRequest", error.message, sub, { transaction_id });
     return { error: error.message };
   }
 
@@ -322,7 +322,7 @@ export async function approveReturnRequest(
     .eq("id", transaction_id);
 
   if (returnErr) {
-    logActionError("approveReturnRequest", returnErr.message, sub);
+    logActionError("approveReturnRequest", returnErr.message, sub, { transaction_id });
     return { error: returnErr.message };
   }
 
@@ -335,7 +335,7 @@ export async function approveReturnRequest(
     .in("status", ["active", "overdue"]);
 
   if (borrowErr) {
-    logActionError("approveReturnRequest", `borrow update failed: ${borrowErr.message}`, sub);
+    logActionError("approveReturnRequest", `borrow update failed: ${borrowErr.message}`, sub, { userId: txn.user_id, copyId: txn.copy_id });
   }
 
   const { error: copyErr } = await supabase
@@ -345,7 +345,7 @@ export async function approveReturnRequest(
 
   if (copyErr) {
     const msg = `Return approved but copy update failed: ${copyErr.message}`;
-    logActionError("approveReturnRequest", msg, sub);
+    logActionError("approveReturnRequest", msg, sub, { transaction_id, copy_id: txn.copy_id });
     return { error: msg };
   }
 
@@ -383,7 +383,7 @@ export async function rejectReturnRequest(
     .eq("id", transaction_id);
 
   if (error) {
-    logActionError("rejectReturnRequest", error.message, sub);
+    logActionError("rejectReturnRequest", error.message, sub, { transaction_id });
     return { error: error.message };
   }
 
@@ -432,7 +432,7 @@ export async function submitPdfReport(
   });
 
   if (error) {
-    logActionError("submitPdfReport", error.message, sub);
+    logActionError("submitPdfReport", error.message, sub, { book_id });
     return { error: error.message };
   }
 
@@ -464,7 +464,7 @@ export async function approvePdfReport(
     .eq("status", "pending");
 
   if (error) {
-    logActionError("approvePdfReport", error.message, sub);
+    logActionError("approvePdfReport", error.message, sub, { submission_id });
     return { error: error.message };
   }
 
@@ -496,7 +496,7 @@ export async function rejectPdfReport(
     .eq("status", "pending");
 
   if (error) {
-    logActionError("rejectPdfReport", error.message, sub);
+    logActionError("rejectPdfReport", error.message, sub, { submission_id });
     return { error: error.message };
   }
 

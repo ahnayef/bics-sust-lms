@@ -5,22 +5,23 @@
  * All mutations live in server/library-actions.ts and server/transaction-actions.ts.
  */
 
-import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { applyCacheLife } from "@/lib/cache";
-import { cacheTag } from "next/cache";
-import { cookies } from "next/headers";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { logActionError } from "@/server/error-log";
 import type {
   Book,
   Copy,
   OverviewData,
-  PopularBook,
   PdfSubmission,
+  PopularBook,
   TopMember,
   Transaction,
   UserStats,
   UserWithStats,
 } from "@/types/library";
 import type { Profile } from "@/types/profile";
+import { cacheTag } from "next/cache";
+import { cookies } from "next/headers";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Books
@@ -42,7 +43,10 @@ async function loadBooksCached(): Promise<Book[]> {
     .from("books")
     .select("*, copies(id, copy_number, status)")
     .order("title");
-  if (error || !data) return [];
+  if (error || !data) {
+    if (error) logActionError("loadBooksCached", error.message);
+    return [];
+  }
   return data as unknown as Book[];
 }
 
@@ -60,7 +64,12 @@ export async function getBook(id: string): Promise<Book | null> {
     )
     .eq("id", id)
     .single();
-  if (error || !data) return null;
+  if (error || !data) {
+    if (error && error.code !== "PGRST116") {
+      logActionError("getBook", error.message, null, { bookId: id });
+    }
+    return null;
+  }
   return data as unknown as Book;
 }
 
@@ -72,7 +81,12 @@ export async function getBookByQR(copyId: string): Promise<Copy | null> {
     .select("*, book:books(id, title, author, is_syllabus, pages, pdf_link)")
     .ilike("id", copyId)
     .single();
-  if (error || !data) return null;
+  if (error || !data) {
+    if (error && error.code !== "PGRST116") {
+      logActionError("getBookByQR", error.message, null, { copyId });
+    }
+    return null;
+  }
   return data as unknown as Copy;
 }
 
@@ -113,7 +127,10 @@ async function loadCopiesCached(): Promise<Copy[]> {
     .order("book_id")
     .order("copy_number");
 
-  if (error || !data) return [];
+  if (error || !data) {
+    if (error) logActionError("loadCopiesCached", error.message);
+    return [];
+  }
 
   // Flatten the join: take the first active borrower if it exists
   return data.map((row: any) => {
@@ -165,7 +182,10 @@ async function loadTransactionsCached(
   if (filters.userId) query = query.eq("user_id", filters.userId);
 
   const { data, error } = await query;
-  if (error || !data) return [];
+  if (error || !data) {
+    if (error) logActionError("loadTransactionsCached", error.message, null, { filters });
+    return [];
+  }
   return data as unknown as Transaction[];
 }
 
@@ -313,11 +333,18 @@ async function loadUsersCached(): Promise<UserWithStats[]> {
   const { data: profiles } = await supabase
     .from("profiles")
     .select(
-      "id, full_name, username, email, avatar_url, rank, role, is_verified, profile_completed, created_at, updated_at, phone, thana_id",
+      "id, full_name, username, email, avatar_url, role, is_verified, profile_completed, created_at, updated_at, phone, thana_id, rank_id",
     )
     .order("created_at", { ascending: false });
 
   if (!profiles || profiles.length === 0) return [];
+
+  // Fetch all ranks to map rank_id
+  const { data: ranks } = await supabase.from("ranks").select("id, name");
+  const rankById = new Map<string, { id: string; name: string }>();
+  for (const r of ranks ?? []) {
+    rankById.set(r.id, r);
+  }
 
   const thanaIds = [
     ...new Set(
@@ -414,6 +441,9 @@ async function loadUsersCached(): Promise<UserWithStats[]> {
       ...(profile as unknown as Profile),
       thana: profile.thana_id
         ? thanaById.get(profile.thana_id as string)
+        : undefined,
+      rank: (profile as any).rank_id
+        ? rankById.get((profile as any).rank_id as string)
         : undefined,
       syllabusCompleted: syllabusIds.size,
       syllabusTotal: syllabusTotal ?? 0,
@@ -655,7 +685,7 @@ export async function getUserNotifications(userId: string): Promise<Notification
       .select("id, status, type, updated_at, request_date, rejection_reason, book:books(title)")
       .eq("user_id", userId)
       .in("status", ["active", "completed", "rejected", "overdue"]),
-    
+
     supabase
       .from("pdf_submissions")
       .select("id, status, submitted_at, updated_at, rejection_reason, book:books(title)")

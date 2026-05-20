@@ -5,13 +5,11 @@ import type { GeoSource } from "@/server/geo";
 import { checkUsernameAvailability, setupProfile } from "@/server/profiles";
 import "@/styles/components.css";
 import "@/styles/typography.css";
-import type { Thana, UserRank } from "@/types/profile";
+import type { Thana, Rank } from "@/types/profile";
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { FaMapMarkerAlt } from "react-icons/fa";
-type Props = { thanas: Thana[]; geoSource: GeoSource };
-
-const RANKS: UserRank[] = ["None", "Member", "Associate", "Supporter"];
+type Props = { thanas: Thana[]; ranks: Rank[]; geoSource: GeoSource };
 
 const inputClass =
   "w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none ink-text";
@@ -28,6 +26,7 @@ async function setupProfileAction(
 
 export default function SetupForm({
   thanas,
+  ranks,
   geoSource: initialGeoSource,
 }: Props) {
   const [state, formAction, isPending] = useActionState(
@@ -219,12 +218,12 @@ export default function SetupForm({
               </div>
 
               <div>
-                <label htmlFor="rank" className={labelClass}>
+                <label htmlFor="rank_id" className={labelClass}>
                   Rank <span className="text-red-500">*</span>
                 </label>
                 <select
-                  id="rank"
-                  name="rank"
+                  id="rank_id"
+                  name="rank_id"
                   required
                   defaultValue=""
                   className={inputClass}
@@ -232,9 +231,10 @@ export default function SetupForm({
                   <option value="" disabled>
                     Select your rank
                   </option>
-                  {RANKS.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
+                  <option value="none">None</option>
+                  {ranks.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
                     </option>
                   ))}
                 </select>

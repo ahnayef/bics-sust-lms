@@ -8,7 +8,7 @@ interface ConfirmModalProps {
   onClose: () => void;
   onConfirm: () => void;
   title: string;
-  description?: string;
+  description?: ReactNode;
   /** A preview card showing exactly what will change */
   preview?: ReactNode;
   confirmLabel?: string;
@@ -74,7 +74,7 @@ export default function ConfirmModal({
 
         <div className="px-6 py-5 space-y-4">
           {description && (
-            <p className="text-sm text-[#5a4b3f] ink-text">{description}</p>
+            <div className="text-sm text-[#5a4b3f] ink-text">{description}</div>
           )}
 
           {/* Preview of what will happen */}

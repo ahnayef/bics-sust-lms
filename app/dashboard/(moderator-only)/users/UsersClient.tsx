@@ -1,5 +1,6 @@
 "use client";
 
+import { RankBadge } from "@/components/ui/rank-badge";
 import type { UserWithStats } from "@/types/library";
 import Image from "next/image";
 import Link from "next/link";
@@ -16,14 +17,6 @@ import {
 type Tab = "all" | "verified" | "unverified" | "overdue";
 type SortField = "joinDate" | "progress" | "rank";
 type SortDir = "asc" | "desc";
-type RankFilter = "all" | "None" | "Supporter" | "Associate" | "Member";
-
-const RANK_ORDER: Record<string, number> = {
-  None: 0,
-  Supporter: 1,
-  Associate: 2,
-  Member: 3,
-};
 
 interface Props {
   users: UserWithStats[];
@@ -55,10 +48,20 @@ function VerificationBadge({ verified }: { verified: boolean }) {
 export default function UsersClient({ users }: Props) {
   const [tab, setTab] = useState<Tab>("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [rankFilter, setRankFilter] = useState<RankFilter>("all");
+  const [rankFilter, setRankFilter] = useState<string>("all");
   const [thanaFilter, setThanaFilter] = useState<string>("all");
   const [sortField, setSortField] = useState<SortField>("joinDate");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  const uniqueRanks = useMemo(() => {
+    const ranks = new Map<string, string>();
+    for (const u of users) {
+      if (u.rank?.id) {
+        ranks.set(u.rank.id, u.rank.name);
+      }
+    }
+    return Array.from(ranks.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [users]);
 
   const uniqueThanas = useMemo(() => {
     const thanas = new Map<string, string>();
@@ -101,7 +104,13 @@ export default function UsersClient({ users }: Props) {
         !user.username.toLowerCase().includes(query)
       )
         return false;
-      if (rankFilter !== "all" && user.rank !== rankFilter) return false;
+      if (rankFilter !== "all") {
+        if (rankFilter === "None") {
+          if (user.rank?.id) return false;
+        } else {
+          if (user.rank?.id !== rankFilter) return false;
+        }
+      }
       if (thanaFilter !== "all" && user.thana?.id !== thanaFilter) return false;
       return true;
     });
@@ -118,7 +127,9 @@ export default function UsersClient({ users }: Props) {
           b.syllabusTotal > 0 ? b.syllabusCompleted / b.syllabusTotal : 0;
         cmp = pa - pb;
       } else if (sortField === "rank") {
-        cmp = (RANK_ORDER[a.rank] ?? 0) - (RANK_ORDER[b.rank] ?? 0);
+        const ra = a.rank?.name ?? "None";
+        const rb = b.rank?.name ?? "None";
+        cmp = ra.localeCompare(rb);
       }
       return sortDir === "asc" ? cmp : -cmp;
     });
@@ -179,15 +190,15 @@ export default function UsersClient({ users }: Props) {
         </div>
       </section>
 
-      <div className="flex border-b border-[#b9a58b] gap-0 overflow-x-auto">
+      <div className="flex border-b border-[#b9a58b] gap-0 overflow-x-auto overflow-y-hidden">
         {(["all", "verified", "unverified", "overdue"] as const).map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => setTab(t)}
             className={`flex-1 shrink-0 whitespace-nowrap px-3 sm:px-6 py-2.5 text-xs sm:text-sm font-medium ink-text transition-colors flex items-center justify-center gap-1.5 border-b-[3px] -mb-px cursor-pointer ${tab === t
-                ? "border-[#3f3328] text-[#221910] font-bold bg-[#f6ecdd]"
-                : "border-transparent text-[#6a5a4c] hover:text-[#2b2119] hover:bg-[#ece0ce]"
+              ? "border-[#3f3328] text-[#221910] font-bold bg-[#f6ecdd]"
+              : "border-transparent text-[#6a5a4c] hover:text-[#2b2119] hover:bg-[#ece0ce]"
               }`}
           >
             {t === "all"
@@ -258,14 +269,16 @@ export default function UsersClient({ users }: Props) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <select
             value={rankFilter}
-            onChange={(e) => setRankFilter(e.target.value as RankFilter)}
+            onChange={(e) => setRankFilter(e.target.value)}
             className={selectClass}
           >
             <option value="all">All Ranks</option>
             <option value="None">None</option>
-            <option value="Supporter">Supporter</option>
-            <option value="Associate">Associate</option>
-            <option value="Member">Member</option>
+            {uniqueRanks.map(([id, name]) => (
+              <option key={id} value={id}>
+                {name}
+              </option>
+            ))}
           </select>
 
           <select
@@ -361,9 +374,7 @@ export default function UsersClient({ users }: Props) {
                     </td>
 
                     <td className="px-4 sm:px-6 py-3">
-                      <span className="inline-block px-2.5 py-1 text-xs font-semibold rounded-sm border border-[#b9a58b] bg-[#f6ecdd] text-[#4f4134] ink-text">
-                        {user.rank}
-                      </span>
+                      <RankBadge name={user.rank?.name} />
                     </td>
 
                     <td className="px-4 sm:px-6 py-3 min-w-48">

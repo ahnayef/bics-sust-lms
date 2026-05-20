@@ -104,12 +104,39 @@ const navigationItems = [
     requiresRole: ["admin", "moderator"],
   },
   {
+    label: "Ranks",
+    href: "/dashboard/ranks",
+    icon: FaShieldAlt,
+    requiresRole: ["admin"],
+  },
+  {
     label: "Print QR",
     href: "/dashboard/print-qr",
     icon: FaPrint,
     requiresRole: ["admin", "moderator"],
   },
 ];
+
+const ADMIN_COLOR = {
+  active: "bg-[#dbe6f1] text-[#234b7d] border-y-[#5c8ab0] shadow-[inset_4px_0_0_0_#5c8ab0]",
+  inactive: "bg-[#e6ebf1]/70 text-[#3f4b5a] hover:bg-[#d5dee9] hover:border-y-[#9eb0d6]",
+  iconActive: "text-[#234b7d]",
+  iconInactive: "text-[#4d719d]",
+};
+
+const MODERATOR_COLOR = {
+  active: "bg-[#d3decb] text-[#2d4a35] border-y-[#4a7c59] shadow-[inset_4px_0_0_0_#4a7c59]",
+  inactive: "bg-[#ecf1e9]/40 text-[#5a4b3f] hover:bg-[#e1eadc] hover:border-y-[#c8d6c7]",
+  iconActive: "text-[#2d4a35]",
+  iconInactive: "text-[#4a7c59]",
+};
+
+const GENERAL_COLOR = {
+  active: "bg-[#eadcc8] text-[#221910] border-y-[#7d6d5a] shadow-[inset_4px_0_0_0_#4e4033]",
+  inactive: "text-[#4d4034] hover:bg-[#ece0ce] hover:border-y-[#b59f86]",
+  iconActive: "text-[#221910]",
+  iconInactive: "text-[#554738]",
+};
 
 export default function DashboardShell({
   userId,
@@ -178,23 +205,17 @@ export default function DashboardShell({
               let iconClasses = "";
 
               if (isAdminOnly) {
-                // Admin Only: Subtle wine/terracotta tint
-                itemClasses = active
-                  ? "bg-[#eadcd8] text-[#7d2d23] border-y-[#b0665c] shadow-[inset_4px_0_0_0_#b0665c]"
-                  : "bg-[#f1ebe6]/70 text-[#5a4b3f] hover:bg-[#e9dad5] hover:border-y-[#d6a59e]";
-                iconClasses = active ? "text-[#7d2d23]" : "text-[#9d5c4d]";
+                // Admin Only: Subtle bluish tint
+                itemClasses = active ? ADMIN_COLOR.active : ADMIN_COLOR.inactive;
+                iconClasses = active ? ADMIN_COLOR.iconActive : ADMIN_COLOR.iconInactive;
               } else if (isModeratorStaff) {
                 // Moderator/Staff: Subtle green tint
-                itemClasses = active
-                  ? "bg-[#d3decb] text-[#2d4a35] border-y-[#4a7c59] shadow-[inset_4px_0_0_0_#4a7c59]"
-                  : "bg-[#ecf1e9]/40 text-[#5a4b3f] hover:bg-[#e1eadc] hover:border-y-[#c8d6c7]";
-                iconClasses = active ? "text-[#2d4a35]" : "text-[#4a7c59]";
+                itemClasses = active ? MODERATOR_COLOR.active : MODERATOR_COLOR.inactive;
+                iconClasses = active ? MODERATOR_COLOR.iconActive : MODERATOR_COLOR.iconInactive;
               } else {
                 // General: Default parchment/tan
-                itemClasses = active
-                  ? "bg-[#eadcc8] text-[#221910] border-y-[#7d6d5a] shadow-[inset_4px_0_0_0_#4e4033]"
-                  : "text-[#4d4034] hover:bg-[#ece0ce] hover:border-y-[#b59f86]";
-                iconClasses = active ? "text-[#221910]" : "text-[#554738]";
+                itemClasses = active ? GENERAL_COLOR.active : GENERAL_COLOR.inactive;
+                iconClasses = active ? GENERAL_COLOR.iconActive : GENERAL_COLOR.iconInactive;
               }
 
               return (

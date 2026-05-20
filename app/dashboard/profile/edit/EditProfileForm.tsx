@@ -2,11 +2,12 @@
 
 import ThanaCombobox from "@/components/ThanaCombobox";
 import ConfirmModal from "@/components/ui/confirm-modal";
+import { RankBadge } from "@/components/ui/rank-badge";
 import type { GeoSource } from "@/server/geo";
 import { updateProfileInfo } from "@/server/profiles";
 import "@/styles/components.css";
 import "@/styles/typography.css";
-import type { Profile, Thana, UserRank } from "@/types/profile";
+import type { Profile, Rank, Thana } from "@/types/profile";
 import Image from "next/image";
 import Link from "next/link";
 import { useActionState, useMemo, useRef, useState } from "react";
@@ -19,10 +20,9 @@ import {
 interface Props {
   profile: Profile;
   thanas: Thana[];
+  ranks: Rank[];
   geoSource: GeoSource;
 }
-
-const RANKS: UserRank[] = ["None", "Member", "Associate", "Supporter"];
 
 const inputClass =
   "w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none ink-text";
@@ -40,6 +40,7 @@ async function updateProfileAction(
 export default function EditProfileForm({
   profile,
   thanas,
+  ranks,
   geoSource: initialGeoSource,
 }: Props) {
   const [state, formAction, isPending] = useActionState(
@@ -49,7 +50,7 @@ export default function EditProfileForm({
 
   const [fullName, setFullName] = useState(profile.full_name);
   const [phone, setPhone] = useState(profile.phone ?? "");
-  const [rank, setRank] = useState<UserRank>(profile.rank);
+  const [rankId, setRankId] = useState<string | null>(profile.rank_id);
 
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -70,7 +71,8 @@ export default function EditProfileForm({
     formRef.current?.requestSubmit();
   }
 
-  const rankChanged = rank !== profile.rank;
+  const rankChanged = rankId !== profile.rank_id;
+  const currentRankName = ranks.find(r => r.id === rankId)?.name ?? "None";
 
   const thanaOptions = useMemo(
     () => [{ id: "", name: "— Not set —" } as Thana, ...thanas],
@@ -92,11 +94,9 @@ export default function EditProfileForm({
       <p>
         <span className="text-[#7a6a5c]">Phone:</span> {phone || "(none)"}
       </p>
-      <p>
+      <p className="flex items-center gap-2">
         <span className="text-[#7a6a5c]">Rank:</span>{" "}
-        <span className={rankChanged ? "font-semibold text-amber-700" : ""}>
-          {rank}
-        </span>
+        <RankBadge name={currentRankName} className={rankChanged ? "border-amber-500 bg-amber-50" : ""} />
       </p>
       <p>
         <span className="text-[#7a6a5c]">Thana:</span> {selectedThanaLabel}
@@ -224,20 +224,21 @@ export default function EditProfileForm({
               </div>
 
               <div>
-                <label htmlFor="rank" className={labelClass}>
+                <label htmlFor="rank_id" className={labelClass}>
                   Rank <span className="text-red-500">*</span>
                 </label>
                 <select
-                  id="rank"
-                  name="rank"
+                  id="rank_id"
+                  name="rank_id"
                   required
-                  value={rank}
-                  onChange={(e) => setRank(e.target.value as UserRank)}
+                  value={rankId ?? "none"}
+                  onChange={(e) => setRankId(e.target.value === "none" ? null : e.target.value)}
                   className={inputClass}
                 >
-                  {RANKS.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
+                  <option value="none">None</option>
+                  {ranks.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
                     </option>
                   ))}
                 </select>

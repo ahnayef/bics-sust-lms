@@ -2,7 +2,7 @@
 
 import StatusBadge from "@/app/components/StatusBadge";
 import ConfirmModal from "@/components/ui/confirm-modal";
-import { addCopyOfBook, removeCopyOfBook } from "@/server/library-actions";
+import { addCopyOfBook, getCopyRefCount, removeCopyOfBook } from "@/server/library-actions";
 import type { Book, Copy, CopyStatus } from "@/types/library";
 import NextImage from "next/image";
 import Link from "next/link";
@@ -164,6 +164,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(
     null,
   );
+  const [refCount, setRefCount] = useState<number | null>(null);
 
   useEffect(() => {
     if (!showAddModal && !qrModalCopyId) return;
@@ -280,13 +281,16 @@ export default function CopiesClient({ initialCopies, books }: Props) {
     });
   };
 
-  const handleDelete = (copyId: string) => {
+  const handleDelete = async (copyId: string) => {
     const copy = copies.find((c) => c.id === copyId);
+    setRefCount(null);
     setPendingAction({
       type: "delete",
       copyId,
       bookTitle: copy?.book?.title ?? "Unknown",
     });
+    const count = await getCopyRefCount(copyId);
+    setRefCount(count);
   };
 
   const confirmDelete = () => {
@@ -655,9 +659,19 @@ export default function CopiesClient({ initialCopies, books }: Props) {
           onConfirm={pendingAction.type === "add" ? confirmAdd : confirmDelete}
           title={pendingAction.type === "add" ? "Add Copy" : "Remove Copy"}
           description={
-            pendingAction.type === "delete"
-              ? "This permanently removes the physical copy from the system."
-              : undefined
+            pendingAction?.type === "delete" ? (
+              refCount === null ? (
+                "Checking references..."
+              ) : refCount > 0 ? (
+                <span>
+                  <b className="text-[#221910] font-bold">{refCount}</b> active or
+                  pending transaction(s) currently reference this copy. This
+                  cannot be undone.
+                </span>
+              ) : (
+                "No active references found. This cannot be undone."
+              )
+            ) : undefined
           }
           preview={
             pendingAction.type === "delete" ? (

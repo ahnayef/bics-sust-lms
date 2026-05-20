@@ -65,9 +65,7 @@ const profileSchema = z.object({
     .max(19, "Phone number must be at most 19 characters")
     .optional()
     .or(z.literal("")),
-  rank: z.enum(["None", "Member", "Associate", "Supporter"], {
-    error: "Rank must be None, Member, Associate, or Supporter",
-  }),
+  rank_id: z.string().uuid().nullable().optional(),
   thana_id: thanaIdRequired,
 });
 
@@ -95,7 +93,7 @@ export async function setupProfile(
     full_name: formData.get("full_name") as string,
     username: formData.get("username") as string,
     phone: (formData.get("phone") as string | null) ?? "",
-    rank: formData.get("rank") as string,
+    rank_id: (formData.get("rank_id") as string) || null,
     thana_id: formData.get("thana_id") as string,
   };
 
@@ -104,7 +102,7 @@ export async function setupProfile(
     return { error: parsed.error.issues[0]?.message ?? "Validation error" };
   }
 
-  const { full_name, username, phone, rank, thana_id } = parsed.data;
+  const { full_name, username, phone, rank_id, thana_id } = parsed.data;
 
   const { data: existing } = await supabase
     .from("profiles")
@@ -122,7 +120,7 @@ export async function setupProfile(
     email: claims.email as string,
     phone: phone || null,
     avatar_url: localAvatarUrl,
-    rank,
+    rank_id,
     thana_id,
     role: "member",
     is_verified: false,
@@ -130,7 +128,7 @@ export async function setupProfile(
   });
 
   if (upsertError) {
-    logActionError("setupProfile", upsertError.message, claims.sub);
+    logActionError("setupProfile", upsertError.message, claims.sub, { raw });
     return { error: upsertError.message };
   }
 
@@ -167,9 +165,7 @@ const profileEditSchema = z.object({
     .max(19, "Phone number must be at most 19 characters")
     .optional()
     .or(z.literal("")),
-  rank: z.enum(["None", "Member", "Associate", "Supporter"], {
-    error: "Invalid rank",
-  }),
+  rank_id: z.string().uuid().nullable().optional(),
   thana_id: optionalThanaId,
   hide_sensitive_info: z.boolean().optional(),
 });
@@ -185,7 +181,7 @@ export async function updateProfileInfo(
   const raw = {
     full_name: formData.get("full_name") as string,
     phone: (formData.get("phone") as string | null) ?? "",
-    rank: formData.get("rank") as string,
+    rank_id: (formData.get("rank_id") as string) || null,
     thana_id: (formData.get("thana_id") as string | null) ?? "",
     hide_sensitive_info: formData.get("hide_sensitive_info") === "true",
   };
@@ -195,24 +191,24 @@ export async function updateProfileInfo(
     return { error: parsed.error.issues[0]?.message ?? "Validation error" };
   }
 
-  const { full_name, phone, rank, thana_id, hide_sensitive_info } =
+  const { full_name, phone, rank_id, thana_id, hide_sensitive_info } =
     parsed.data;
 
   // Detect rank change → strip verification
   const { data: current } = await supabase
     .from("profiles")
-    .select("rank")
+    .select("rank_id")
     .eq("id", claims.sub)
     .single();
 
-  const rankChanged = current?.rank !== rank;
+  const rankChanged = current?.rank_id !== rank_id;
 
   const { error: updateError } = await supabase
     .from("profiles")
     .update({
       full_name,
       phone: phone || null,
-      rank,
+      rank_id,
       thana_id,
       hide_sensitive_info: hide_sensitive_info ?? false,
       ...(rankChanged ? { is_verified: false } : {}),
@@ -220,7 +216,7 @@ export async function updateProfileInfo(
     .eq("id", claims.sub);
 
   if (updateError) {
-    logActionError("updateProfileInfo", updateError.message, claims.sub);
+    logActionError("updateProfileInfo", updateError.message, claims.sub, { raw });
     return { error: updateError.message };
   }
 
@@ -276,7 +272,10 @@ export async function verifyUser(userId: string): Promise<{ error?: string }> {
     statusText,
   });
 
-  if (error) return { error: error.message };
+  if (error) {
+    logActionError("verifyUser", error.message, claims.sub, { userId });
+    return { error: error.message };
+  }
 
   await insertActionLog(supabase, "user_verified", userId, claims.sub, "Moderator verified user");
 
@@ -312,7 +311,10 @@ export async function unVerifyUser(
     .update({ is_verified: false })
     .eq("id", userId);
 
-  if (error) return { error: error.message };
+  if (error) {
+    logActionError("unVerifyUser", error.message, claims.sub, { userId });
+    return { error: error.message };
+  }
 
   await insertActionLog(supabase, "user_unverified", userId, claims.sub, "Moderator unverified user");
 
@@ -414,12 +416,48 @@ export async function promoteToModerator(
     .update({ role: "moderator" })
     .eq("id", target.id);
 
-  if (error) return { error: error.message };
+  if (error) {
+    logActionError("promoteToModerator", error.message, claims.sub, { targetId: target.id });
+    return { error: error.message };
+  }
 
   await insertActionLog(supabase, "role_changed", target.id, claims.sub, "Promoted to moderator");
 
   invalidateUsersAndOverview();
-  return { success: `${target.full_name} is now a moderator` };
+  return { success: `${target.full_name} is now a member` };
+}
+
+export async function changeUserRank(
+  userId: string,
+  rankId: string | null,
+): Promise<{ error?: string; success?: string }> {
+  const supabase = await createClient();
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const claims = claimsData?.claims;
+  if (!claims?.sub) return { error: "Not authenticated" };
+
+  const { data: callerProfile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", claims.sub)
+    .single();
+
+  if (callerProfile?.role !== "admin") {
+    return { error: "Only admins can change user ranks" };
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ rank_id: rankId })
+    .eq("id", userId);
+
+  if (error) {
+    logActionError("changeUserRank", error.message, claims.sub, { userId, rankId });
+    return { error: error.message };
+  }
+
+  invalidateUsersAndOverview();
+  return { success: "Rank updated successfully" };
 }
 
 export async function makeAdmin(
@@ -456,7 +494,10 @@ export async function makeAdmin(
     .update({ role: "admin" })
     .eq("id", userId);
 
-  if (error) return { error: error.message };
+  if (error) {
+    logActionError("makeAdmin", error.message, claims.sub, { userId });
+    return { error: error.message };
+  }
 
   await insertActionLog(supabase, "role_changed", userId, claims.sub, "Promoted to admin");
 
@@ -497,7 +538,10 @@ export async function demoteModerator(
     .update({ role: "member" })
     .eq("id", userId);
 
-  if (error) return { error: error.message };
+  if (error) {
+    logActionError("demoteModerator", error.message, claims.sub, { userId });
+    return { error: error.message };
+  }
 
   await insertActionLog(supabase, "role_changed", userId, claims.sub, "Demoted to member");
 

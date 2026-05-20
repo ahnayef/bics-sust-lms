@@ -1,7 +1,11 @@
 export type UserRole = "member" | "moderator" | "admin";
-export type UserRank = "None" | "Member" | "Associate" | "Supporter";
 
 export interface Thana {
+  id: string;
+  name: string;
+}
+
+export interface Rank {
   id: string;
   name: string;
 }
@@ -13,7 +17,8 @@ export interface Profile {
   email: string;
   phone: string | null;
   avatar_url: string | null;
-  rank: UserRank;
+  rank_id: string | null;
+  rank?: Rank;
   thana_id: string | null;
   thana?: Thana;
   role: UserRole;

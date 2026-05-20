@@ -1,3 +1,4 @@
+import { RankBadge } from "@/components/ui/rank-badge";
 import { getProfile } from "@/server/geo";
 import { getUserStats } from "@/server/library";
 import { getClaims } from "@/server/user";
@@ -92,12 +93,7 @@ export default async function DashboardProfilePage() {
                   <FaShieldAlt className="w-3 h-3" />{" "}
                   {roleLabels[profile.role]}{" "}
                 </span>{" "}
-                {profile.rank !== "None" && (
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-sm text-xs font-semibold border bg-[#ede0cc] text-[#4a3825] border-[#b59f86] ink-text">
-                    {" "}
-                    {profile.rank}{" "}
-                  </span>
-                )}{" "}
+                <RankBadge name={profile.rank?.name} />{" "}
               </div>{" "}
               <p className="text-xs text-[#7a6a5c] ink-text mt-3">
                 {" "}

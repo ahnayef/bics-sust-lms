@@ -1,4 +1,5 @@
-import { getProfile } from "@/server/geo";
+import { RankBadge } from "@/components/ui/rank-badge";
+import { getProfile, getRanks } from "@/server/geo";
 import { getUserStats } from "@/server/library";
 import { moderatorPermissions } from "@/server/profiles";
 import Image from "next/image";
@@ -29,10 +30,11 @@ export default async function UserProfilePage({
 }) {
   const { id } = await params;
 
-  const [profile, stats, perms] = await Promise.all([
+  const [profile, stats, perms, ranksResponse] = await Promise.all([
     getProfile(id),
     getUserStats(id),
     moderatorPermissions(),
+    getRanks(),
   ]);
 
   if (!profile) {
@@ -202,11 +204,10 @@ export default async function UserProfilePage({
                   return (
                     <div
                       key={tx.id}
-                      className={`flex items-center justify-between p-3 border rounded-sm text-sm ${
-                        isOverdue
-                          ? "border-[#c4614a] bg-[#fdf0ec]"
-                          : "border-[#b9a58b] bg-[#f6ecdd]"
-                      }`}
+                      className={`flex items-center justify-between p-3 border rounded-sm text-sm ${isOverdue
+                        ? "border-[#c4614a] bg-[#fdf0ec]"
+                        : "border-[#b9a58b] bg-[#f6ecdd]"
+                        }`}
                     >
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         {isOverdue && (
@@ -269,9 +270,7 @@ export default async function UserProfilePage({
             <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1">
               Rank
             </p>
-            <p className="text-sm font-semibold text-[#221910]">
-              {profile.rank}
-            </p>
+            <RankBadge name={profile.rank?.name} />
           </div>
 
           <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
@@ -321,6 +320,8 @@ export default async function UserProfilePage({
           userName={profile.full_name}
           userRole={profile.role}
           isAdmin={perms.role === "admin"}
+          currentRankId={profile.rank_id}
+          availableRanks={ranksResponse.data}
         />
       </div>
     </div>
