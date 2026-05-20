@@ -2,15 +2,20 @@
 
 /**
  * server/profiles.ts — Server Actions only (form submissions, mutations).
- *
- * Data-fetching helpers (getProfile, getThanas, etc.) live in server/geo.ts
- * so they can be called directly from Server Components without the "use server"
- * restriction that turns everything into POST-only Server Actions.
  */
 
-import { createClient } from "@/lib/supabase/server";
+import { USER_ROLES } from "@/lib/constants";
+import { requireAuth } from "@/server/auth-utils";
 import { invalidateUsersAndOverview } from "@/server/cache-invalidation";
-import { logActionError } from "@/server/error-log";
+import {
+  createActionLog,
+  getProfileByEmail,
+  getProfileById,
+  getProfileByUsername,
+  getProfileByUsernameExcludingId,
+  updateProfile,
+  upsertProfile,
+} from "@/server/db-access";
 import type { ActionLogType } from "@/types/library";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -21,13 +26,12 @@ import { cacheAvatarLocally } from "./avatar";
 // Helper: Insert Action Log
 // ---------------------------------------------------------------------------
 async function insertActionLog(
-  supabase: any,
   actionType: ActionLogType,
   targetId: string,
   actorId: string | null = null,
   details: string | null = null
 ) {
-  await supabase.from("action_logs").insert({
+  await createActionLog({
     action_type: actionType,
     target_id: targetId,
     actor_id: actorId,
@@ -39,7 +43,18 @@ async function insertActionLog(
 // Validation schema
 // ---------------------------------------------------------------------------
 
-const thanaIdRequired = z.string().uuid("Please select a thana");
+/**
+ * Helper for fields that can be a UUID, null, or empty string/special value.
+ * Safely converts "none" or empty strings to null before UUID validation.
+ */
+const optionalUuid = z
+  .preprocess((val) => {
+    if (typeof val !== "string") return val;
+    const trimmed = val.trim();
+    if (trimmed === "" || trimmed.toLowerCase() === "none") return null;
+    return trimmed;
+  }, z.string().uuid().nullable())
+  .optional();
 
 const profileSchema = z.object({
   full_name: z
@@ -65,8 +80,8 @@ const profileSchema = z.object({
     .max(19, "Phone number must be at most 19 characters")
     .optional()
     .or(z.literal("")),
-  rank_id: z.string().uuid().nullable().optional(),
-  thana_id: thanaIdRequired,
+  rank_id: optionalUuid,
+  thana_id: z.string().uuid("Please select a valid thana"),
 });
 
 // ---------------------------------------------------------------------------
@@ -76,79 +91,60 @@ const profileSchema = z.object({
 export async function setupProfile(
   formData: FormData,
 ): Promise<{ error: string } | void> {
-  const supabase = await createClient();
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const claims = claimsData?.claims;
+  try {
+    const user = await requireAuth();
 
-  if (!claims?.sub) redirect("/login");
+    // Read avatar from OAuth provider metadata (e.g. Google)
+    const rawAvatarUrl: string | null = (user as any).user_metadata?.avatar_url ?? null;
 
-  // Read avatar from OAuth provider metadata (e.g. Google)
-  const { data: userData } = await supabase.auth.getUser();
-  const rawAvatarUrl: string | null =
-    userData?.user?.user_metadata?.avatar_url ?? null;
+    const localAvatarUrl = await cacheAvatarLocally(user.id, rawAvatarUrl);
 
-  const localAvatarUrl = await cacheAvatarLocally(claims.sub, rawAvatarUrl);
+    const raw = {
+      full_name: formData.get("full_name") as string,
+      username: formData.get("username") as string,
+      phone: (formData.get("phone") as string | null) ?? "",
+      rank_id: formData.get("rank_id"),
+      thana_id: formData.get("thana_id"),
+    };
 
-  const raw = {
-    full_name: formData.get("full_name") as string,
-    username: formData.get("username") as string,
-    phone: (formData.get("phone") as string | null) ?? "",
-    rank_id: (formData.get("rank_id") as string) || null,
-    thana_id: formData.get("thana_id") as string,
-  };
+    const validated = profileSchema.parse(raw);
 
-  const parsed = profileSchema.safeParse(raw);
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Validation error" };
+    // Check username uniqueness
+    const existing = await getProfileByUsernameExcludingId(validated.username, user.id);
+    if (existing) {
+      return { error: "Username is already taken" };
+    }
+
+    const isFirstTime = !(await getProfileById(user.id));
+
+    await upsertProfile({
+      id: user.id,
+      email: user.email!,
+      full_name: validated.full_name,
+      username: validated.username,
+      phone: validated.phone || null,
+      rank_id: validated.rank_id,
+      thana_id: validated.thana_id,
+      avatar_url: localAvatarUrl,
+      role: USER_ROLES.MEMBER,
+      is_verified: false,
+      profile_completed: true,
+    });
+
+    if (isFirstTime) {
+      await insertActionLog("user_joined", user.id);
+    }
+
+    invalidateUsersAndOverview();
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return { error: error.issues[0]?.message || "Validation error" };
+    }
+    return { error: error.message || "Failed to setup profile" };
   }
 
-  const { full_name, username, phone, rank_id, thana_id } = parsed.data;
-
-  const { data: existing } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("username", username)
-    .neq("id", claims.sub)
-    .maybeSingle();
-
-  if (existing) return { error: "Username already taken" };
-
-  const { error: upsertError } = await supabase.from("profiles").upsert({
-    id: claims.sub,
-    username,
-    full_name,
-    email: claims.email as string,
-    phone: phone || null,
-    avatar_url: localAvatarUrl,
-    rank_id,
-    thana_id,
-    role: "member",
-    is_verified: false,
-    profile_completed: true,
-  });
-
-  if (upsertError) {
-    logActionError("setupProfile", upsertError.message, claims.sub, { raw });
-    return { error: upsertError.message };
-  }
-
-  if (!existing) {
-    await insertActionLog(supabase, "user_joined", claims.sub);
-  }
-
-  invalidateUsersAndOverview();
   redirect("/dashboard");
 }
-
-// ---------------------------------------------------------------------------
-// updateProfileInfo — edit-only action (username & avatar are immutable)
-// Rank change automatically strips is_verified.
-// ---------------------------------------------------------------------------
-
-const optionalThanaId = z
-  .string()
-  .transform((s) => (s.trim() === "" ? null : s.trim()))
-  .pipe(z.union([z.null(), z.string().uuid()]));
 
 const profileEditSchema = z.object({
   full_name: z
@@ -165,170 +161,94 @@ const profileEditSchema = z.object({
     .max(19, "Phone number must be at most 19 characters")
     .optional()
     .or(z.literal("")),
-  rank_id: z.string().uuid().nullable().optional(),
-  thana_id: optionalThanaId,
+  rank_id: optionalUuid,
+  thana_id: optionalUuid,
   hide_sensitive_info: z.boolean().optional(),
 });
 
 export async function updateProfileInfo(
   formData: FormData,
 ): Promise<{ error: string } | void> {
-  const supabase = await createClient();
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const claims = claimsData?.claims;
-  if (!claims?.sub) redirect("/login");
+  try {
+    const user = await requireAuth();
 
-  const raw = {
-    full_name: formData.get("full_name") as string,
-    phone: (formData.get("phone") as string | null) ?? "",
-    rank_id: (formData.get("rank_id") as string) || null,
-    thana_id: (formData.get("thana_id") as string | null) ?? "",
-    hide_sensitive_info: formData.get("hide_sensitive_info") === "true",
-  };
+    const raw = {
+      full_name: formData.get("full_name") as string,
+      phone: (formData.get("phone") as string | null) ?? "",
+      rank_id: formData.get("rank_id"),
+      thana_id: formData.get("thana_id"),
+      hide_sensitive_info: formData.get("hide_sensitive_info") === "true",
+    };
 
-  const parsed = profileEditSchema.safeParse(raw);
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Validation error" };
-  }
+    const validated = profileEditSchema.parse(raw);
 
-  const { full_name, phone, rank_id, thana_id, hide_sensitive_info } =
-    parsed.data;
+    const current = await getProfileById(user.id);
+    const rankChanged = current?.rank_id !== validated.rank_id;
 
-  // Detect rank change → strip verification
-  const { data: current } = await supabase
-    .from("profiles")
-    .select("rank_id")
-    .eq("id", claims.sub)
-    .single();
-
-  const rankChanged = current?.rank_id !== rank_id;
-
-  const { error: updateError } = await supabase
-    .from("profiles")
-    .update({
-      full_name,
-      phone: phone || null,
-      rank_id,
-      thana_id,
-      hide_sensitive_info: hide_sensitive_info ?? false,
+    await updateProfile(user.id, {
+      full_name: validated.full_name,
+      phone: validated.phone || null,
+      rank_id: validated.rank_id,
+      thana_id: validated.thana_id,
+      hide_sensitive_info: validated.hide_sensitive_info ?? false,
       ...(rankChanged ? { is_verified: false } : {}),
-    })
-    .eq("id", claims.sub);
+    });
 
-  if (updateError) {
-    logActionError("updateProfileInfo", updateError.message, claims.sub, { raw });
-    return { error: updateError.message };
+    invalidateUsersAndOverview();
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return { error: error.issues[0]?.message || "Validation error" };
+    }
+    return { error: error.message || "Failed to update profile info" };
   }
 
-  invalidateUsersAndOverview();
   redirect("/dashboard/profile");
 }
 
-export async function verifyUser(userId: string): Promise<{ error?: string }> {
-  console.log("[verifyUser] called with userId:", userId);
-
-  const supabase = await createClient();
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const claims = claimsData?.claims;
-
-  console.log("[verifyUser] caller sub:", claims?.sub ?? "(none)");
-
-  if (!claims?.sub) return { error: "Not authenticated" };
-
-  const { data: callerProfile, error: profileError } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", claims.sub)
-    .single();
-
-  console.log(
-    "[verifyUser] callerProfile:",
-    callerProfile,
-    "profileError:",
-    profileError,
-  );
-
-  if (!callerProfile || !["admin", "moderator"].includes(callerProfile.role)) {
-    return { error: "Insufficient permissions" };
-  }
-
-  const {
-    data: updateData,
-    error,
-    count,
-    status,
-    statusText,
-  } = await supabase
-    .from("profiles")
-    .update({ is_verified: true })
-    .eq("id", userId)
-    .select();
-
-  console.log("[verifyUser] update result:", {
-    updateData,
-    error,
-    count,
-    status,
-    statusText,
-  });
-
-  if (error) {
-    logActionError("verifyUser", error.message, claims.sub, { userId });
-    return { error: error.message };
-  }
-
-  await insertActionLog(supabase, "user_verified", userId, claims.sub, "Moderator verified user");
-
-  invalidateUsersAndOverview();
-  revalidatePath(`/dashboard/users/${userId}`);
-  revalidatePath("/dashboard/users");
-  return {};
-}
-
-export async function unVerifyUser(
+export async function verifyUser(
   userId: string,
-): Promise<{ error?: string }> {
-  const supabase = await createClient();
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const claims = claimsData?.claims;
-  if (!claims?.sub) return { error: "Not authenticated" };
+): Promise<{ error?: string; success?: string }> {
+  try {
+    const user = await requireAuth();
+    const callerProfile = await getProfileById(user.id);
+    if (callerProfile?.role !== USER_ROLES.ADMIN && callerProfile?.role !== USER_ROLES.MODERATOR)
+      return { error: "Only admins and moderators can verify users" };
 
-  const { data: callerProfile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", claims.sub)
-    .single();
+    await updateProfile(userId, { is_verified: true });
+    await insertActionLog("user_verified", userId, user.id);
 
-  if (
-    !callerProfile ||
-    !(callerProfile.role === "admin" || callerProfile.role === "moderator")
-  ) {
-    return { error: "Insufficient permissions" };
+    invalidateUsersAndOverview();
+    revalidatePath(`/dashboard/users/${userId}`);
+    revalidatePath("/dashboard/users");
+    return { success: "User verified" };
+  } catch (error: any) {
+    console.error("verifyUser error:", error);
+    return { error: error.message || "Failed to verify user" };
   }
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ is_verified: false })
-    .eq("id", userId);
-
-  if (error) {
-    logActionError("unVerifyUser", error.message, claims.sub, { userId });
-    return { error: error.message };
-  }
-
-  await insertActionLog(supabase, "user_unverified", userId, claims.sub, "Moderator unverified user");
-
-  invalidateUsersAndOverview();
-  revalidatePath(`/dashboard/users/${userId}`);
-  revalidatePath("/dashboard/users");
-  return {};
 }
 
-/**
- * moderatorPermissions — returns the set of actions the current user is
- * allowed to perform, based on their role. Useful for conditional UI rendering
- * and API guards without repeating role checks everywhere.
- */
+export async function unverifyUser(
+  userId: string,
+): Promise<{ error?: string; success?: string }> {
+  try {
+    const user = await requireAuth();
+    const callerProfile = await getProfileById(user.id);
+    if (callerProfile?.role !== USER_ROLES.ADMIN && callerProfile?.role !== USER_ROLES.MODERATOR)
+      return { error: "Only admins and moderators can unverify users" };
+
+    await updateProfile(userId, { is_verified: false });
+    await insertActionLog("user_unverified", userId, user.id);
+
+    invalidateUsersAndOverview();
+    revalidatePath(`/dashboard/users/${userId}`);
+    revalidatePath("/dashboard/users");
+    return { success: "User unverified" };
+  } catch (error: any) {
+    console.error("unverifyUser error:", error);
+    return { error: error.message || "Failed to unverify user" };
+  }
+}
+
 export async function moderatorPermissions(): Promise<{
   canManageBooks: boolean;
   canManageCopies: boolean;
@@ -339,10 +259,25 @@ export async function moderatorPermissions(): Promise<{
   canManageThanas: boolean;
   role: string;
 }> {
-  const supabase = await createClient();
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const claims = claimsData?.claims;
-  if (!claims?.sub) {
+  try {
+    const user = await requireAuth();
+    const profile = await getProfileById(user.id);
+
+    const role = profile?.role ?? USER_ROLES.MEMBER;
+    const isMod = role === USER_ROLES.MODERATOR || role === USER_ROLES.ADMIN;
+    const isAdminRole = role === USER_ROLES.ADMIN;
+
+    return {
+      canManageBooks: isMod,
+      canManageCopies: isMod,
+      canApproveTransactions: isMod,
+      canVerifyUsers: isMod,
+      canManageUsers: isMod,
+      canManageModerators: isAdminRole,
+      canManageThanas: isMod,
+      role,
+    };
+  } catch {
     return {
       canManageBooks: false,
       canManageCopies: false,
@@ -351,214 +286,149 @@ export async function moderatorPermissions(): Promise<{
       canManageUsers: false,
       canManageModerators: false,
       canManageThanas: false,
-      role: "member",
+      role: USER_ROLES.MEMBER,
     };
   }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", claims.sub)
-    .single();
-
-  const role = profile?.role ?? "member";
-  const isMod = role === "moderator" || role === "admin";
-  const isAdmin = role === "admin";
-
-  return {
-    canManageBooks: isMod,
-    canManageCopies: isMod,
-    canApproveTransactions: isMod,
-    canVerifyUsers: isMod,
-    canManageUsers: isMod,
-    canManageModerators: isAdmin,
-    canManageThanas: isMod,
-    role,
-  };
 }
-
-/** Alias kept for backward compatibility — prefer promoteToModerator. */
-export const makeModerator = promoteToModerator;
 
 export async function promoteToModerator(
   formData: FormData,
 ): Promise<{ error?: string; success?: string }> {
-  const supabase = await createClient();
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const claims = claimsData?.claims;
-  if (!claims?.sub) return { error: "Not authenticated" };
+  try {
+    const user = await requireAuth();
+    const callerProfile = await getProfileById(user.id);
+    if (callerProfile?.role !== USER_ROLES.ADMIN)
+      return { error: "Only admins can promote moderators" };
 
-  const { data: callerProfile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", claims.sub)
-    .single();
-  if (callerProfile?.role !== "admin")
-    return { error: "Only admins can promote moderators" };
+    const email = (formData.get("email") as string)?.trim().toLowerCase();
+    if (!email) return { error: "Email is required" };
 
-  const email = (formData.get("email") as string)?.trim().toLowerCase();
-  if (!email) return { error: "Email is required" };
+    const targetProfile = await getProfileByEmail(email);
 
-  const { data: target } = await supabase
-    .from("profiles")
-    .select("id, full_name, role")
-    .eq("email", email)
-    .single();
+    if (!targetProfile) return { error: "No user found with that email" };
+    if (targetProfile.role === USER_ROLES.ADMIN)
+      return { error: "Cannot change role of an admin" };
+    if (targetProfile.role === USER_ROLES.MODERATOR)
+      return { error: "User is already a moderator" };
 
-  if (!target) return { error: "No user found with that email" };
-  if (target.role === "admin")
-    return { error: "Cannot change role of an admin" };
-  if (target.role === "moderator")
-    return { error: "User is already a moderator" };
+    await updateProfile(targetProfile.id, { role: USER_ROLES.MODERATOR });
+    await insertActionLog("role_changed", targetProfile.id, user.id, "Promoted to moderator");
 
-  const { error } = await supabase
-    .from("profiles")
-    .update({ role: "moderator" })
-    .eq("id", target.id);
-
-  if (error) {
-    logActionError("promoteToModerator", error.message, claims.sub, { targetId: target.id });
+    invalidateUsersAndOverview();
+    return { success: `${targetProfile.full_name} is now a moderator` };
+  } catch (error: any) {
     return { error: error.message };
   }
-
-  await insertActionLog(supabase, "role_changed", target.id, claims.sub, "Promoted to moderator");
-
-  invalidateUsersAndOverview();
-  return { success: `${target.full_name} is now a member` };
 }
 
 export async function changeUserRank(
   userId: string,
   rankId: string | null,
 ): Promise<{ error?: string; success?: string }> {
-  const supabase = await createClient();
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const claims = claimsData?.claims;
-  if (!claims?.sub) return { error: "Not authenticated" };
+  try {
+    const user = await requireAuth();
+    const callerProfile = await getProfileById(user.id);
 
-  const { data: callerProfile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", claims.sub)
-    .single();
+    if (callerProfile?.role !== USER_ROLES.ADMIN) {
+      return { error: "Only admins can change user ranks" };
+    }
 
-  if (callerProfile?.role !== "admin") {
-    return { error: "Only admins can change user ranks" };
-  }
+    await updateProfile(userId, { rank_id: rankId });
 
-  const { error } = await supabase
-    .from("profiles")
-    .update({ rank_id: rankId })
-    .eq("id", userId);
-
-  if (error) {
-    logActionError("changeUserRank", error.message, claims.sub, { userId, rankId });
+    invalidateUsersAndOverview();
+    return { success: "Rank updated successfully" };
+  } catch (error: any) {
     return { error: error.message };
   }
-
-  invalidateUsersAndOverview();
-  return { success: "Rank updated successfully" };
 }
 
 export async function makeAdmin(
   formData: FormData,
 ): Promise<{ error?: string; success?: string }> {
-  const supabase = await createClient();
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const claims = claimsData?.claims;
-  if (!claims?.sub) return { error: "Not authenticated" };
+  try {
+    const user = await requireAuth();
+    const callerProfile = await getProfileById(user.id);
+    if (callerProfile?.role !== USER_ROLES.ADMIN)
+      return { error: "Only admins can promote users to admin" };
 
-  const { data: callerProfile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", claims.sub)
-    .single();
-  if (callerProfile?.role !== "admin")
-    return { error: "Only admins can promote users to admin" };
+    const userId = formData.get("userId") as string;
+    if (!userId) return { error: "User ID is required" };
 
-  const userId = formData.get("userId") as string;
-  if (!userId) return { error: "User ID is required" };
+    const targetProfile = await getProfileById(userId);
+    if (!targetProfile) return { error: "User not found" };
+    if (targetProfile.role === USER_ROLES.ADMIN)
+      return { error: "User is already an admin" };
 
-  const { data: target } = await supabase
-    .from("profiles")
-    .select("id, full_name, role")
-    .eq("id", userId)
-    .single();
+    await updateProfile(userId, { role: USER_ROLES.ADMIN });
+    await insertActionLog("role_changed", userId, user.id, "Promoted to admin");
 
-  if (!target) return { error: "User not found" };
-  if (target.role === "admin")
-    return { error: "User is already an admin" };
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ role: "admin" })
-    .eq("id", userId);
-
-  if (error) {
-    logActionError("makeAdmin", error.message, claims.sub, { userId });
+    invalidateUsersAndOverview();
+    return { success: `${targetProfile.full_name} is now an admin` };
+  } catch (error: any) {
     return { error: error.message };
   }
-
-  await insertActionLog(supabase, "role_changed", userId, claims.sub, "Promoted to admin");
-
-  invalidateUsersAndOverview();
-  return { success: `${target.full_name} is now an admin` };
 }
 
 export async function demoteModerator(
   formData: FormData,
 ): Promise<{ error?: string; success?: string }> {
-  const supabase = await createClient();
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const claims = claimsData?.claims;
-  if (!claims?.sub) return { error: "Not authenticated" };
+  try {
+    const user = await requireAuth();
+    const callerProfile = await getProfileById(user.id);
+    if (callerProfile?.role !== USER_ROLES.ADMIN)
+      return { error: "Only admins can demote moderators" };
 
-  const { data: callerProfile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", claims.sub)
-    .single();
-  if (callerProfile?.role !== "admin")
-    return { error: "Only admins can demote moderators" };
+    const userId = formData.get("userId") as string;
+    if (!userId) return { error: "User ID is required" };
 
-  const userId = formData.get("userId") as string;
-  if (!userId) return { error: "User ID is required" };
+    const targetProfile = await getProfileById(userId);
 
-  const { data: target } = await supabase
-    .from("profiles")
-    .select("id, full_name, role")
-    .eq("id", userId)
-    .single();
+    if (!targetProfile) return { error: "User not found" };
+    if (targetProfile.role !== USER_ROLES.MODERATOR) return { error: "User is not a moderator" };
 
-  if (!target) return { error: "User not found" };
-  if (target.role !== "moderator") return { error: "User is not a moderator" };
+    await updateProfile(userId, { role: USER_ROLES.MEMBER });
+    await insertActionLog("role_changed", userId, user.id, "Demoted to member");
 
-  const { error } = await supabase
-    .from("profiles")
-    .update({ role: "member" })
-    .eq("id", userId);
-
-  if (error) {
-    logActionError("demoteModerator", error.message, claims.sub, { userId });
+    invalidateUsersAndOverview();
+    return { success: `${targetProfile.full_name} has been removed as moderator` };
+  } catch (error: any) {
     return { error: error.message };
   }
-
-  await insertActionLog(supabase, "role_changed", userId, claims.sub, "Demoted to member");
-
-  invalidateUsersAndOverview();
-  return { success: `${target.full_name} has been removed as moderator` };
 }
+
+export async function demoteFromAdminAction(
+  formData: FormData,
+): Promise<{ error?: string; success?: string }> {
+  try {
+    const user = await requireAuth();
+    const callerProfile = await getProfileById(user.id);
+    if (callerProfile?.role !== USER_ROLES.ADMIN)
+      return { error: "Only admins can demote admins" };
+
+    const userId = formData.get("userId") as string;
+    if (!userId) return { error: "User ID is required" };
+
+    if (userId === user.id) return { error: "You cannot demote yourself" };
+
+    const targetProfile = await getProfileById(userId);
+    if (!targetProfile) return { error: "User not found" };
+
+    await updateProfile(userId, { role: USER_ROLES.MEMBER });
+    await insertActionLog("role_changed", userId, user.id, "Demoted to member");
+
+    invalidateUsersAndOverview();
+    return { success: `${targetProfile.full_name} is now a member` };
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}
+
+export const makeModerator = promoteToModerator;
 
 export async function checkUsernameAvailability(username: string): Promise<"available" | "unavailable" | "invalid"> {
   const parsed = profileSchema.shape.username.safeParse(username);
   if (!parsed.success) return "invalid";
 
-  const supabase = await createClient();
-  const { data: existing } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("username", username)
-    .maybeSingle();
-
+  const existing = await getProfileByUsername(username);
   return existing ? "unavailable" : "available";
 }

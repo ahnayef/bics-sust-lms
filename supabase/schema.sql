@@ -13,12 +13,15 @@ create table if not exists public.thanas (
   name text not null unique
 );
 
--- Sample rows for local/dev (optional; production may start empty)
-insert into public.thanas (name) values
-  ('Akhalia Thana'),
-  ('Zindabazar Thana'),
-  ('Amberkhana Thana')
-on conflict (name) do nothing;
+create table if not exists public.ranks (
+  id   uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  created_at timestamptz default now()
+);
+
+-- Sample rows
+insert into public.thanas (name) values ('Akhalia Thana'), ('Zindabazar Thana'), ('Amberkhana Thana') on conflict do nothing;
+insert into public.ranks (name) values ('Quran'), ('Hadith'), ('Books') on conflict do nothing;
 
 -- ============================================================
 -- Profiles
@@ -31,8 +34,7 @@ create table if not exists public.profiles (
   email             text not null,
   phone             text,
   avatar_url        text,
-  rank              text not null default 'None'
-                      check (rank in ('None','Member','Associate','Supporter')),
+  rank_id           uuid references public.ranks(id) on delete set null,
   thana_id          uuid references public.thanas(id) on delete set null,
   role              text not null default 'member'
                       check (role in ('member','moderator','admin')),
@@ -176,6 +178,7 @@ create trigger transactions_updated_at
 -- ============================================================
 
 alter table public.thanas        enable row level security;
+alter table public.ranks         enable row level security;
 alter table public.profiles      enable row level security;
 alter table public.books         enable row level security;
 alter table public.copies        enable row level security;
@@ -184,109 +187,68 @@ alter table public.pdf_submissions enable row level security;
 alter table public.settings      enable row level security;
 alter table public.action_logs   enable row level security;
 
--- ── Thanas: public read; mods/admins manage ─────────────────────────────────
+-- Helper function to get the current user's role without recursion
+create or replace function public.get_my_role()
+returns text
+language plpgsql
+security definer
+stable
+as $$
+begin
+  return (select role from public.profiles where id = auth.uid());
+end;
+$$;
+
+-- ── Thanas & Ranks ──────────────────────────────────────────────────────────
 create policy "Public read thanas" on public.thanas for select using (true);
+create policy "Public read ranks" on public.ranks for select using (true);
 
-create policy "Mods and admins insert thanas" on public.thanas for insert
-  with check (exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role in ('admin', 'moderator')
-  ));
+create policy "Mods and admins manage thanas" on public.thanas
+  for all using (public.get_my_role() in ('admin', 'moderator'));
 
-create policy "Mods and admins update thanas" on public.thanas for update
-  using (exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role in ('admin', 'moderator')
-  ));
-
-create policy "Mods and admins delete thanas" on public.thanas for delete
-  using (exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role in ('admin', 'moderator')
-  ));
+create policy "Admins manage ranks" on public.ranks
+  for all using (public.get_my_role() = 'admin');
 
 -- ── Profiles ────────────────────────────────────────────────────────────────
--- NOTE: Never query the profiles table inside a profiles RLS policy —
--- that causes infinite recursion. Use auth.jwt() or auth.uid() = id only.
-
 create policy "Users can view own profile"
   on public.profiles for select using (auth.uid() = id);
-
-create policy "Users can insert own profile"
-  on public.profiles for insert with check (auth.uid() = id);
 
 create policy "Users can update own profile"
   on public.profiles for update using (auth.uid() = id);
 
--- Admins & mods can read all profiles (role read from JWT — requires Custom JWT Hook)
--- See: https://supabase.com/docs/guides/auth/custom-claims-and-role-based-access-control
 create policy "Admins and moderators view all profiles"
   on public.profiles for select
-  using (auth.uid() = id or (auth.jwt() ->> 'role') in ('admin','moderator'));
+  using (public.get_my_role() in ('admin','moderator'));
 
--- Any signed-in user can view any profile (needed for /profile/{username})
 create policy "Authenticated users can view any profile"
   on public.profiles for select using (auth.uid() is not null);
+
+create policy "Admins and mods can update any profile"
+  on public.profiles for update
+  using (public.get_my_role() in ('admin', 'moderator'));
 
 -- ── Books ───────────────────────────────────────────────────────────────────
 create policy "Authenticated users read books"
   on public.books for select using (auth.uid() is not null);
 
-create policy "Mods and admins insert books"
-  on public.books for insert
-  with check (exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role in ('admin','moderator')
-  ));
-
-create policy "Mods and admins update books"
-  on public.books for update
-  using (exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role in ('admin','moderator')
-  ));
-
-create policy "Mods and admins delete books"
-  on public.books for delete
-  using (exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role in ('admin','moderator')
-  ));
+create policy "Mods and admins manage books"
+  on public.books for all
+  using (public.get_my_role() in ('admin','moderator'));
 
 -- ── Copies ──────────────────────────────────────────────────────────────────
 create policy "Authenticated users read copies"
   on public.copies for select using (auth.uid() is not null);
 
-create policy "Mods and admins insert copies"
-  on public.copies for insert
-  with check (exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role in ('admin','moderator')
-  ));
-
-create policy "Mods and admins update copies"
-  on public.copies for update
-  using (exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role in ('admin','moderator')
-  ));
-
-create policy "Mods and admins delete copies"
-  on public.copies for delete
-  using (exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role in ('admin','moderator')
-  ));
+create policy "Mods and admins manage copies"
+  on public.copies for all
+  using (public.get_my_role() in ('admin','moderator'));
 
 -- ── Transactions ─────────────────────────────────────────────────────────────
 create policy "Users see own transactions, mods see all"
   on public.transactions for select
   using (
     auth.uid() = user_id
-    or exists (
-      select 1 from public.profiles
-      where id = auth.uid() and role in ('admin','moderator')
-    )
+    or public.get_my_role() in ('admin','moderator')
   );
 
 create policy "Users create own transactions"
@@ -295,20 +257,14 @@ create policy "Users create own transactions"
 
 create policy "Mods and admins update transactions"
   on public.transactions for update
-  using (exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role in ('admin','moderator')
-  ));
+  using (public.get_my_role() in ('admin','moderator'));
 
 -- ── PDF Submissions ──────────────────────────────────────────────────────────
 create policy "Users see own submissions, mods see all"
   on public.pdf_submissions for select
   using (
     auth.uid() = user_id
-    or exists (
-      select 1 from public.profiles
-      where id = auth.uid() and role in ('admin','moderator')
-    )
+    or public.get_my_role() in ('admin','moderator')
   );
 
 create policy "Users insert own submissions"
@@ -317,37 +273,24 @@ create policy "Users insert own submissions"
 
 create policy "Mods and admins update submissions"
   on public.pdf_submissions for update
-  using (exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role in ('admin','moderator')
-  ));
+  using (public.get_my_role() in ('admin','moderator'));
 
 -- ── Settings ─────────────────────────────────────────────────────────────────
 create policy "Authenticated users read settings"
   on public.settings for select using (auth.uid() is not null);
 
-create policy "Admins update settings"
-  on public.settings for update
-  using (exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'));
-
-create policy "Admins insert settings"
-  on public.settings for insert
-  with check (exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'));
+create policy "Admins manage settings"
+  on public.settings for all
+  using (public.get_my_role() = 'admin');
 
 -- ── Action Logs ─────────────────────────────────────────────────────────────
 create policy "Users read own target action logs"
   on public.action_logs for select
-  using (target_id = auth.uid() or exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role in ('admin', 'moderator')
-  ));
+  using (target_id = auth.uid() or public.get_my_role() in ('admin', 'moderator'));
 
 create policy "Mods and admins insert action logs"
   on public.action_logs for insert
-  with check (exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role in ('admin', 'moderator')
-  ));
+  with check (public.get_my_role() in ('admin', 'moderator'));
 
 -- ============================================================
 -- Admin setup

@@ -6,7 +6,14 @@
  */
 
 import { applyCacheLife } from "@/lib/cache";
+import { db } from "@/lib/db";
+import * as schema from "@/lib/db/schema";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import {
+  getBookWithCopies,
+  getCopyByQR,
+  getCopyStatus,
+} from "@/server/db-access";
 import { logActionError } from "@/server/error-log";
 import type {
   Book,
@@ -20,6 +27,7 @@ import type {
   UserWithStats,
 } from "@/types/library";
 import type { Profile } from "@/types/profile";
+import { asc } from "drizzle-orm";
 import { cacheTag } from "next/cache";
 import { cookies } from "next/headers";
 
@@ -38,15 +46,19 @@ async function loadBooksCached(): Promise<Book[]> {
   cacheTag("books");
   applyCacheLife("max");
 
-  const supabase = createServiceClient();
-  const { data, error } = await supabase
-    .from("books")
-    .select("*, copies(id, copy_number, status)")
-    .order("title");
-  if (error || !data) {
-    if (error) logActionError("loadBooksCached", error.message);
-    return [];
-  }
+  const data = await db.query.books.findMany({
+    with: {
+      copies: {
+        columns: {
+          id: true,
+          copy_number: true,
+          status: true,
+        },
+      },
+    },
+    orderBy: [asc(schema.books.title)],
+  });
+
   return data as unknown as Book[];
 }
 
@@ -56,37 +68,15 @@ export async function getBooks(): Promise<Book[]> {
 
 /** Single book with all copies. */
 export async function getBook(id: string): Promise<Book | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("books")
-    .select(
-      "*, copies(id, copy_number, status, book_id, created_at, updated_at)",
-    )
-    .eq("id", id)
-    .single();
-  if (error || !data) {
-    if (error && error.code !== "PGRST116") {
-      logActionError("getBook", error.message, null, { bookId: id });
-    }
-    return null;
-  }
+  const data = await getBookWithCopies(id);
+  if (!data) return null;
   return data as unknown as Book;
 }
 
 /** Look up a single copy (with its parent book) by QR code. */
 export async function getBookByQR(copyId: string): Promise<Copy | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("copies")
-    .select("*, book:books(id, title, author, is_syllabus, pages, pdf_link)")
-    .ilike("id", copyId)
-    .single();
-  if (error || !data) {
-    if (error && error.code !== "PGRST116") {
-      logActionError("getBookByQR", error.message, null, { copyId });
-    }
-    return null;
-  }
+  const data = await getCopyByQR(copyId);
+  if (!data) return null;
   return data as unknown as Copy;
 }
 
@@ -94,13 +84,8 @@ export async function getBookByQR(copyId: string): Promise<Copy | null> {
 export async function bookStatus(
   copyId: string,
 ): Promise<Copy["status"] | null> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("copies")
-    .select("status")
-    .eq("id", copyId)
-    .single();
-  return (data?.status as Copy["status"]) ?? null;
+  const status = await getCopyStatus(copyId);
+  return (status as Copy["status"]) ?? null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

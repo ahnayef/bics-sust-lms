@@ -5,11 +5,25 @@
  * and PDF self-report management.
  */
 
+import { COPY_STATUS, TRANSACTION_STATUS, USER_ROLES } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/server";
 import {
   invalidateAfterPdfMutation,
   invalidateAfterTransactionMutation,
 } from "@/server/cache-invalidation";
+import {
+  createPdfSubmission,
+  createTransaction,
+  getCopyById,
+  getDuplicatePdfSubmission,
+  getDuplicateTransaction,
+  getProfileById,
+  getTransactionById,
+  updateBorrowStatus,
+  updateCopy,
+  updatePdfSubmission,
+  updateTransaction,
+} from "@/server/db-access";
 import { logActionError } from "@/server/error-log";
 import { getBookByQR } from "@/server/library";
 import type { Copy } from "@/types/library";
@@ -25,19 +39,14 @@ async function getCaller() {
   const sub = data?.claims?.sub;
   if (!sub) return null;
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", sub)
-    .single();
-
-  return { sub, role: (profile?.role ?? "member") as string, supabase };
+  const profile = await getProfileById(sub);
+  return { sub, role: (profile?.role ?? USER_ROLES.MEMBER) as string, supabase };
 }
 
 async function requireModOrAdmin() {
   const caller = await getCaller();
   if (!caller) return { error: "Not authenticated" as string };
-  if (!["admin", "moderator"].includes(caller.role)) {
+  if (![USER_ROLES.ADMIN, USER_ROLES.MODERATOR].includes(caller.role as any)) {
     return { error: "Insufficient permissions" as string };
   }
   return caller;
@@ -68,44 +77,37 @@ export async function borrowBook(
   const caller = await getCaller();
   if (!caller) return { error: "Not authenticated" };
 
-  const { sub, supabase } = caller;
+  const { sub } = caller;
   const copy_id = (formData.get("copy_id") as string)?.trim();
   if (!copy_id) return { error: "Copy ID is required" };
 
-  const { data: copy } = await supabase
-    .from("copies")
-    .select("id, book_id, status")
-    .ilike("id", copy_id)
-    .single();
-
+  const copy = await getCopyById(copy_id);
   if (!copy) return { error: "Copy not found" };
-  if (copy.status !== "available")
+  if (copy.status !== COPY_STATUS.AVAILABLE)
     return { error: "This copy is not available" };
 
-  const { data: dup } = await supabase
-    .from("transactions")
-    .select("id")
-    .eq("user_id", sub)
-    .ilike("copy_id", copy_id)
-    .in("status", ["pending", "active", "overdue"])
-    .limit(1);
+  const dup = await getDuplicateTransaction(sub, copy_id, [
+    TRANSACTION_STATUS.PENDING,
+    TRANSACTION_STATUS.ACTIVE,
+    TRANSACTION_STATUS.OVERDUE,
+  ]);
 
-  if (dup && dup.length > 0) {
+  if (dup) {
     return {
       error: "You already have an active or pending request for this copy",
     };
   }
 
-  const { error } = await supabase.from("transactions").insert({
-    user_id: sub,
-    copy_id,
-    book_id: copy.book_id,
-    type: "borrow",
-    status: "pending",
-    due_date: (formData.get("due_date") as string) || null,
-  });
-
-  if (error) {
+  try {
+    await createTransaction({
+      user_id: sub,
+      copy_id: copy_id,
+      book_id: copy.book_id,
+      type: "borrow",
+      status: TRANSACTION_STATUS.PENDING,
+      due_date: (formData.get("due_date") as string) || null,
+    });
+  } catch (error: any) {
     logActionError("borrowBook", error.message, sub, { copy_id, book_id: copy.book_id });
     return { error: error.message };
   }
@@ -124,44 +126,34 @@ export async function returnBook(
   const caller = await getCaller();
   if (!caller) return { error: "Not authenticated" };
 
-  const { sub, supabase } = caller;
+  const { sub } = caller;
   const copy_id = (formData.get("copy_id") as string)?.trim();
   if (!copy_id) return { error: "Copy ID is required" };
 
-  const { data: borrow } = await supabase
-    .from("transactions")
-    .select("id, book_id")
-    .eq("user_id", sub)
-    .ilike("copy_id", copy_id)
-    .eq("type", "borrow")
-    .in("status", ["active", "overdue"])
-    .limit(1)
-    .maybeSingle();
+  const borrow = await getDuplicateTransaction(sub, copy_id, [
+    TRANSACTION_STATUS.ACTIVE,
+    TRANSACTION_STATUS.OVERDUE,
+  ]);
 
   if (!borrow) return { error: "No active borrow found for this copy" };
 
-  const { data: dupReturn } = await supabase
-    .from("transactions")
-    .select("id")
-    .eq("user_id", sub)
-    .ilike("copy_id", copy_id)
-    .eq("type", "return")
-    .eq("status", "pending")
-    .limit(1);
+  const dupReturn = await getDuplicateTransaction(sub, copy_id, [
+    TRANSACTION_STATUS.PENDING,
+  ]);
 
-  if (dupReturn && dupReturn.length > 0) {
+  if (dupReturn && dupReturn.type === "return") {
     return { error: "You already have a pending return request for this copy" };
   }
 
-  const { error } = await supabase.from("transactions").insert({
-    user_id: sub,
-    copy_id,
-    book_id: borrow.book_id,
-    type: "return",
-    status: "pending",
-  });
-
-  if (error) {
+  try {
+    await createTransaction({
+      user_id: sub,
+      copy_id: copy_id,
+      book_id: borrow.book_id,
+      type: "return",
+      status: TRANSACTION_STATUS.PENDING,
+    });
+  } catch (error: any) {
     logActionError("returnBook", error.message, sub, { copy_id, book_id: borrow.book_id });
     return { error: error.message };
   }
@@ -184,62 +176,42 @@ export async function allowBorrowRequest(
   const auth = await requireModOrAdmin();
   if ("error" in auth) return auth;
 
-  const { sub, supabase } = auth;
+  const { sub } = auth;
   const transaction_id = formData.get("transaction_id") as string;
   const due_date = (formData.get("due_date") as string) || null;
 
   if (!transaction_id) return { error: "Transaction ID is required" };
 
-  const { data: txn } = await supabase
-    .from("transactions")
-    .select("id, copy_id, type, status")
-    .eq("id", transaction_id)
-    .single();
+  const txn = await getTransactionById(transaction_id);
 
   if (!txn) return { error: "Transaction not found" };
   if (txn.type !== "borrow") return { error: "Not a borrow request" };
-  if (txn.status !== "pending") return { error: "Transaction is not pending" };
+  if (txn.status !== TRANSACTION_STATUS.PENDING) return { error: "Transaction is not pending" };
 
-  const { data: currentCopy, error: copyCheckErr } = await supabase
-    .from("copies")
-    .select("status")
-    .eq("id", txn.copy_id)
-    .single();
+  const currentCopy = await getCopyById(txn.copy_id);
 
-  if (copyCheckErr || !currentCopy) {
+  if (!currentCopy) {
     return { error: "Could not verify copy status" };
   }
 
-  if (currentCopy.status !== "available") {
+  if (currentCopy.status !== COPY_STATUS.AVAILABLE) {
     return {
       error: `This copy is no longer available (current status: ${currentCopy.status}).`,
     };
   }
 
-  const { error: txnErr } = await supabase
-    .from("transactions")
-    .update({
-      status: "active",
-      approved_date: new Date().toISOString(),
-      due_date,
+  try {
+    await updateTransaction(transaction_id, {
+      status: TRANSACTION_STATUS.ACTIVE,
+      approved_date: new Date(),
+      due_date: due_date,
       reviewed_by: sub,
-    })
-    .eq("id", transaction_id);
+    });
 
-  if (txnErr) {
-    logActionError("allowBorrowRequest", txnErr.message, sub, { transaction_id, due_date });
-    return { error: txnErr.message };
-  }
-
-  const { error: copyErr } = await supabase
-    .from("copies")
-    .update({ status: "borrowed" })
-    .eq("id", txn.copy_id);
-
-  if (copyErr) {
-    const msg = `Approved but copy update failed: ${copyErr.message}`;
-    logActionError("allowBorrowRequest", msg, sub, { transaction_id, copy_id: txn.copy_id });
-    return { error: msg };
+    await updateCopy(txn.copy_id, { status: COPY_STATUS.BORROWED });
+  } catch (error: any) {
+    logActionError("allowBorrowRequest", error.message, sub, { transaction_id, due_date });
+    return { error: error.message };
   }
 
   invalidateAfterTransactionMutation();
@@ -256,26 +228,23 @@ export async function rejectBorrowRequest(
   const auth = await requireModOrAdmin();
   if ("error" in auth) return auth;
 
-  const { sub, supabase } = auth;
+  const { sub } = auth;
   const transaction_id = formData.get("transaction_id") as string;
   const rejection_reason = (formData.get("rejection_reason") as string) || null;
 
-  const { data: txn } = await supabase
-    .from("transactions")
-    .select("id, type, status")
-    .eq("id", transaction_id)
-    .single();
+  const txn = await getTransactionById(transaction_id);
 
   if (!txn) return { error: "Transaction not found" };
   if (txn.type !== "borrow") return { error: "Not a borrow request" };
-  if (txn.status !== "pending") return { error: "Transaction is not pending" };
+  if (txn.status !== TRANSACTION_STATUS.PENDING) return { error: "Transaction is not pending" };
 
-  const { error } = await supabase
-    .from("transactions")
-    .update({ status: "rejected", rejection_reason, reviewed_by: sub })
-    .eq("id", transaction_id);
-
-  if (error) {
+  try {
+    await updateTransaction(transaction_id, {
+      status: TRANSACTION_STATUS.REJECTED,
+      rejection_reason: rejection_reason,
+      reviewed_by: sub,
+    });
+  } catch (error: any) {
     logActionError("rejectBorrowRequest", error.message, sub, { transaction_id });
     return { error: error.message };
   }
@@ -295,58 +264,31 @@ export async function approveReturnRequest(
   const auth = await requireModOrAdmin();
   if ("error" in auth) return auth;
 
-  const { sub, supabase } = auth;
+  const { sub } = auth;
   const transaction_id = formData.get("transaction_id") as string;
   if (!transaction_id) return { error: "Transaction ID is required" };
 
-  const { data: txn } = await supabase
-    .from("transactions")
-    .select("id, copy_id, user_id, book_id, type, status")
-    .eq("id", transaction_id)
-    .single();
+  const txn = await getTransactionById(transaction_id);
 
   if (!txn) return { error: "Transaction not found" };
   if (txn.type !== "return") return { error: "Not a return request" };
-  if (txn.status !== "pending") return { error: "Transaction is not pending" };
+  if (txn.status !== TRANSACTION_STATUS.PENDING) return { error: "Transaction is not pending" };
 
-  const now = new Date().toISOString();
+  const now = new Date();
 
-  const { error: returnErr } = await supabase
-    .from("transactions")
-    .update({
-      status: "completed",
+  try {
+    await updateTransaction(transaction_id, {
+      status: TRANSACTION_STATUS.COMPLETED,
       approved_date: now,
       return_date: now,
       reviewed_by: sub,
-    })
-    .eq("id", transaction_id);
+    });
 
-  if (returnErr) {
-    logActionError("approveReturnRequest", returnErr.message, sub, { transaction_id });
-    return { error: returnErr.message };
-  }
-
-  const { error: borrowErr } = await supabase
-    .from("transactions")
-    .update({ status: "completed", return_date: now })
-    .eq("user_id", txn.user_id)
-    .eq("copy_id", txn.copy_id)
-    .eq("type", "borrow")
-    .in("status", ["active", "overdue"]);
-
-  if (borrowErr) {
-    logActionError("approveReturnRequest", `borrow update failed: ${borrowErr.message}`, sub, { userId: txn.user_id, copyId: txn.copy_id });
-  }
-
-  const { error: copyErr } = await supabase
-    .from("copies")
-    .update({ status: "available" })
-    .eq("id", txn.copy_id);
-
-  if (copyErr) {
-    const msg = `Return approved but copy update failed: ${copyErr.message}`;
-    logActionError("approveReturnRequest", msg, sub, { transaction_id, copy_id: txn.copy_id });
-    return { error: msg };
+    await updateBorrowStatus(txn.user_id, txn.copy_id, TRANSACTION_STATUS.COMPLETED, now);
+    await updateCopy(txn.copy_id, { status: COPY_STATUS.AVAILABLE });
+  } catch (error: any) {
+    logActionError("approveReturnRequest", error.message, sub, { transaction_id });
+    return { error: error.message };
   }
 
   invalidateAfterTransactionMutation();
@@ -363,26 +305,23 @@ export async function rejectReturnRequest(
   const auth = await requireModOrAdmin();
   if ("error" in auth) return auth;
 
-  const { sub, supabase } = auth;
+  const { sub } = auth;
   const transaction_id = formData.get("transaction_id") as string;
   const rejection_reason = (formData.get("rejection_reason") as string) || null;
 
-  const { data: txn } = await supabase
-    .from("transactions")
-    .select("id, type, status")
-    .eq("id", transaction_id)
-    .single();
+  const txn = await getTransactionById(transaction_id);
 
   if (!txn) return { error: "Transaction not found" };
   if (txn.type !== "return") return { error: "Not a return request" };
-  if (txn.status !== "pending") return { error: "Transaction is not pending" };
+  if (txn.status !== TRANSACTION_STATUS.PENDING) return { error: "Transaction is not pending" };
 
-  const { error } = await supabase
-    .from("transactions")
-    .update({ status: "rejected", rejection_reason, reviewed_by: sub })
-    .eq("id", transaction_id);
-
-  if (error) {
+  try {
+    await updateTransaction(transaction_id, {
+      status: TRANSACTION_STATUS.REJECTED,
+      rejection_reason: rejection_reason,
+      reviewed_by: sub,
+    });
+  } catch (error: any) {
     logActionError("rejectReturnRequest", error.message, sub, { transaction_id });
     return { error: error.message };
   }
@@ -402,36 +341,30 @@ export async function submitPdfReport(
   const caller = await getCaller();
   if (!caller) return { error: "Not authenticated" };
 
-  const { sub, supabase } = caller;
+  const { sub } = caller;
   const book_id = formData.get("book_id") as string;
   const read_date = (formData.get("read_date") as string) || null;
   const note = (formData.get("note") as string)?.trim() || null;
 
   if (!book_id) return { error: "Book ID is required" };
 
-  const { data: dup } = await supabase
-    .from("pdf_submissions")
-    .select("id")
-    .eq("user_id", sub)
-    .eq("book_id", book_id)
-    .in("status", ["pending", "approved"])
-    .limit(1);
+  const dup = await getDuplicatePdfSubmission(sub, book_id);
 
-  if (dup && dup.length > 0) {
+  if (dup) {
     return {
       error: "You already have a pending or approved report for this book",
     };
   }
 
-  const { error } = await supabase.from("pdf_submissions").insert({
-    user_id: sub,
-    book_id,
-    read_date,
-    note,
-    status: "pending",
-  });
-
-  if (error) {
+  try {
+    await createPdfSubmission({
+      user_id: sub,
+      book_id: book_id,
+      read_date: read_date,
+      note,
+      status: TRANSACTION_STATUS.PENDING,
+    });
+  } catch (error: any) {
     logActionError("submitPdfReport", error.message, sub, { book_id });
     return { error: error.message };
   }
@@ -449,21 +382,17 @@ export async function approvePdfReport(
   const auth = await requireModOrAdmin();
   if ("error" in auth) return auth;
 
-  const { sub, supabase } = auth;
+  const { sub } = auth;
   const submission_id = formData.get("submission_id") as string;
   if (!submission_id) return { error: "Submission ID is required" };
 
-  const { error } = await supabase
-    .from("pdf_submissions")
-    .update({
+  try {
+    await updatePdfSubmission(submission_id, {
       status: "approved",
-      reviewed_at: new Date().toISOString(),
+      reviewed_at: new Date(),
       reviewed_by: sub,
-    })
-    .eq("id", submission_id)
-    .eq("status", "pending");
-
-  if (error) {
+    });
+  } catch (error: any) {
     logActionError("approvePdfReport", error.message, sub, { submission_id });
     return { error: error.message };
   }
@@ -479,23 +408,19 @@ export async function rejectPdfReport(
   const auth = await requireModOrAdmin();
   if ("error" in auth) return auth;
 
-  const { sub, supabase } = auth;
+  const { sub } = auth;
   const submission_id = formData.get("submission_id") as string;
   const rejection_reason = (formData.get("rejection_reason") as string) || null;
   if (!submission_id) return { error: "Submission ID is required" };
 
-  const { error } = await supabase
-    .from("pdf_submissions")
-    .update({
+  try {
+    await updatePdfSubmission(submission_id, {
       status: "rejected",
-      reviewed_at: new Date().toISOString(),
+      reviewed_at: new Date(),
       reviewed_by: sub,
-      rejection_reason,
-    })
-    .eq("id", submission_id)
-    .eq("status", "pending");
-
-  if (error) {
+      rejection_reason: rejection_reason,
+    });
+  } catch (error: any) {
     logActionError("rejectPdfReport", error.message, sub, { submission_id });
     return { error: error.message };
   }

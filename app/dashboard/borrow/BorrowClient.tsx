@@ -7,7 +7,7 @@ import type { Copy } from "@/types/library";
 import { Scanner, useDevices } from "@yudiel/react-qr-scanner";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import {
   FaCheck,
   FaExclamationTriangle,
@@ -90,12 +90,13 @@ export default function BorrowClient({
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   const resetLookup = () => {
-    setCopyId("");
+    // Keep copyId so the user can edit it
     setSelectedCopy(null);
     setUnavailableCopy(null);
     setError("");
     setReturnDate("");
     setScanPaused(false);
+    setInputMode("manual"); // Switch to manual so they can edit the ID
 
     const params = new URLSearchParams(searchParams.toString());
     params.delete("copyId");
@@ -161,6 +162,39 @@ export default function BorrowClient({
       return false;
     }
   };
+
+  // ── Synchronization ────────────────────────────────────────────────────────
+
+  // Sync state with props from server
+  useEffect(() => {
+    if (initialCopyId) {
+      setCopyId(initialCopyId);
+      setInputMode("manual");
+    }
+    if (initialCopy) {
+      if (initialCopy.status === "available") {
+        setSelectedCopy(initialCopy);
+        setUnavailableCopy(null);
+        setError("");
+        const d = new Date();
+        d.setDate(d.getDate() + 14);
+        setReturnDate(d.toISOString().split("T")[0]);
+      } else {
+        setUnavailableCopy(initialCopy);
+        setSelectedCopy(null);
+        setError(
+          initialCopy.status === "damaged"
+            ? "This copy is marked as damaged and cannot be borrowed."
+            : "This copy is currently borrowed and not available.",
+        );
+      }
+    } else if (initialCopyId) {
+      // If we have an ID but no initialCopy was passed, try to fetch it
+      if (!selectedCopy && !unavailableCopy && !error && !isLookingUp) {
+        performLookup(initialCopyId);
+      }
+    }
+  }, [initialCopyId, initialCopy]);
 
   const handleCopyIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.toUpperCase().trim();
@@ -318,6 +352,188 @@ export default function BorrowClient({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* ── Scanner / input ────────────────────────────────────────────── */}
+          <div className="borrow-surface tron-border rounded-lg p-6">
+            {inputMode === "qr" ? (
+              <div className="space-y-4">
+                {/* Camera selector */}
+                {!selectedCopy && (
+                  <label className="block">
+                    <p className="text-sm font-medium text-[#4e4033] mb-2 ink-text">
+                      Select Camera
+                    </p>
+                    <select
+                      value={deviceId ?? ""}
+                      onChange={(e) => setDeviceId(e.target.value || undefined)}
+                      className="w-full px-4 py-2 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-lg focus:ring-2 focus:ring-[#5a4d40] outline-none ink-text"
+                      disabled={scannerInitialized}
+                    >
+                      <option value="">Default Camera</option>
+                      {devices.map((device, i) => (
+                        <option key={i} value={device.deviceId}>
+                          {device.label || `Camera ${i + 1}`}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+
+                {!scannerInitialized && !selectedCopy && (
+                  <button
+                    type="button"
+                    onClick={requestCameraPermission}
+                    className="w-full px-4 py-3 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] transition-colors ink-text"
+                  >
+                    {cameraPermissionDenied
+                      ? "Camera Permission Denied — Try Again"
+                      : "Start QR Scanner"}
+                  </button>
+                )}
+
+                {/* Scanner */}
+                {!selectedCopy && (
+                  <div className="relative max-w-md mx-auto">
+                    <div className="relative bg-[#1f1812] rounded-sm shadow-lg aspect-square overflow-clip">
+                      <Scanner
+                        formats={["qr_code"]}
+                        constraints={{ deviceId }}
+                        onScan={handleScan}
+                        onError={(err) => {
+                          const s = JSON.stringify(err).toLowerCase();
+                          if (
+                            s.includes("permission") ||
+                            s.includes("notallowed")
+                          ) {
+                            setCameraPermissionDenied(true);
+                            setScannerInitialized(false);
+                          }
+                        }}
+                        styles={{
+                          container: { width: "100%", aspectRatio: "1" },
+                          video: { objectFit: "cover" },
+                        }}
+                        components={{
+                          onOff: false,
+                          torch: true,
+                          zoom: true,
+                          finder: false,
+                        }}
+                        allowMultiple={false}
+                        scanDelay={2000}
+                        paused={scanPaused}
+                      />
+                      <div className="absolute inset-0 pointer-events-none">
+                        <div
+                          className="absolute left-1/2 top-1/2 -translate-x-1/2 w-full h-0.5 bg-red-500 opacity-75"
+                          style={{ animation: "qrScannerMove 2s infinite" }}
+                        />
+                      </div>
+                    </div>
+                    {/* Corner brackets */}
+                    {[
+                      "-top-1 -left-1 w-6 h-1.5",
+                      "-top-1 -left-1 w-1.5 h-6",
+                      "-top-1 -right-1 w-6 h-1.5",
+                      "-top-1 -right-1 w-1.5 h-6",
+                      "-bottom-1 -left-1 w-6 h-1.5",
+                      "-bottom-1 -left-1 w-1.5 h-6",
+                      "-bottom-1 -right-1 w-6 h-1.5",
+                      "-bottom-1 -right-1 w-1.5 h-6",
+                    ].map((cls, i) => (
+                      <div
+                        key={i}
+                        className={`absolute ${cls} bg-[#3d3024] pointer-events-none`}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {!selectedCopy && (
+                  <p className="text-xs text-[#5c4f42] text-center ink-text">
+                    {isLookingUp
+                      ? "Looking up copy…"
+                      : "Position the QR code within the frame"}
+                  </p>
+                )}
+
+                {!selectedCopy && (
+                  <div className="space-y-2">
+                    {scanPaused ? (
+                      <button
+                        type="button"
+                        onClick={() => setScanPaused(false)}
+                        className="w-full px-4 py-2 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] transition-colors ink-text"
+                      >
+                        Resume Scanning
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setScannerInitialized(false)}
+                        className="w-full px-4 py-2 bg-[#7b6d5f] text-[#f6ede1] rounded-lg font-medium hover:bg-[#6a5d50] transition-colors ink-text"
+                      >
+                        Stop Scanner
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {selectedCopy && (
+                  <button
+                    type="button"
+                    onClick={resetLookup}
+                    className="w-full px-4 py-3 border border-[#7b6d5f] text-[#4e4033] rounded-lg font-medium hover:bg-[#eadcca] transition-colors ink-text"
+                  >
+                    Scan Another
+                  </button>
+                )}
+              </div>
+            ) : (
+              /* Manual entry */
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="block">
+                    <p className="text-sm font-medium text-[#4e4033] mb-2 ink-text">
+                      Copy ID
+                    </p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={copyId}
+                        onChange={handleCopyIdChange}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleManualCheck(e as any);
+                          }
+                        }}
+                        placeholder="e.g., QRA1B2C3-1"
+                        maxLength={16}
+                        className="flex-1 px-4 py-3 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-lg focus:ring-2 focus:ring-[#5a4d40] outline-none text-lg font-mono tracking-widest"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={handleManualCheck}
+                        disabled={isLookingUp || copyId.length < 5}
+                        className="px-6 py-3 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text whitespace-nowrap"
+                      >
+                        {isLookingUp ? "Checking…" : "Check ID"}
+                      </button>
+                    </div>
+                  </label>
+                </div>
+                {!selectedCopy && (
+                  <p className="text-xs text-[#6f6256] ink-text">
+                    {isLookingUp
+                      ? "Looking up copy…"
+                      : "Enter the copy ID printed on the book card."}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* ── Book details (shown when a valid copy is resolved) ─────────── */}
           {selectedCopy && (
             <div className="space-y-4">
@@ -421,13 +637,6 @@ export default function BorrowClient({
               {/* Actions */}
               <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
                 <button
-                  type="button"
-                  onClick={resetLookup}
-                  className="flex-1 px-4 py-3 border border-[#7b6d5f] text-[#4e4033] rounded-lg font-medium hover:bg-[#eadcca] transition-colors ink-text"
-                >
-                  Scan Another
-                </button>
-                <button
                   type="submit"
                   disabled={!returnDate || isPending}
                   className="flex-1 px-4 py-3 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text"
@@ -435,168 +644,6 @@ export default function BorrowClient({
                   {isPending ? "Submitting…" : "Confirm Borrow Request"}
                 </button>
               </div>
-            </div>
-          )}
-
-          {/* ── Scanner / input (shown when no copy selected) ─────────────── */}
-          {!selectedCopy && (
-            <div className="borrow-surface tron-border rounded-lg p-6">
-              {inputMode === "qr" ? (
-                <div className="space-y-4">
-                  {/* Camera selector */}
-                  <label className="block">
-                    <p className="text-sm font-medium text-[#4e4033] mb-2 ink-text">
-                      Select Camera
-                    </p>
-                    <select
-                      value={deviceId ?? ""}
-                      onChange={(e) => setDeviceId(e.target.value || undefined)}
-                      className="w-full px-4 py-2 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-lg focus:ring-2 focus:ring-[#5a4d40] outline-none ink-text"
-                      disabled={scannerInitialized}
-                    >
-                      <option value="">Default Camera</option>
-                      {devices.map((device, i) => (
-                        <option key={i} value={device.deviceId}>
-                          {device.label || `Camera ${i + 1}`}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  {!scannerInitialized && (
-                    <button
-                      type="button"
-                      onClick={requestCameraPermission}
-                      className="w-full px-4 py-3 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] transition-colors ink-text"
-                    >
-                      {cameraPermissionDenied
-                        ? "Camera Permission Denied — Try Again"
-                        : "Start QR Scanner"}
-                    </button>
-                  )}
-
-                  {/* Scanner */}
-                  <div className="relative max-w-md mx-auto">
-                    <div className="relative bg-[#1f1812] rounded-sm shadow-lg aspect-square overflow-clip">
-                      <Scanner
-                        formats={["qr_code"]}
-                        constraints={{ deviceId }}
-                        onScan={handleScan}
-                        onError={(err) => {
-                          const s = JSON.stringify(err).toLowerCase();
-                          if (
-                            s.includes("permission") ||
-                            s.includes("notallowed")
-                          ) {
-                            setCameraPermissionDenied(true);
-                            setScannerInitialized(false);
-                          }
-                        }}
-                        styles={{
-                          container: { width: "100%", aspectRatio: "1" },
-                          video: { objectFit: "cover" },
-                        }}
-                        components={{
-                          onOff: false,
-                          torch: true,
-                          zoom: true,
-                          finder: false,
-                        }}
-                        allowMultiple={false}
-                        scanDelay={2000}
-                        paused={scanPaused}
-                      />
-                      <div className="absolute inset-0 pointer-events-none">
-                        <div
-                          className="absolute left-1/2 top-1/2 -translate-x-1/2 w-full h-0.5 bg-red-500 opacity-75"
-                          style={{ animation: "qrScannerMove 2s infinite" }}
-                        />
-                      </div>
-                    </div>
-                    {/* Corner brackets */}
-                    {[
-                      "-top-1 -left-1 w-6 h-1.5",
-                      "-top-1 -left-1 w-1.5 h-6",
-                      "-top-1 -right-1 w-6 h-1.5",
-                      "-top-1 -right-1 w-1.5 h-6",
-                      "-bottom-1 -left-1 w-6 h-1.5",
-                      "-bottom-1 -left-1 w-1.5 h-6",
-                      "-bottom-1 -right-1 w-6 h-1.5",
-                      "-bottom-1 -right-1 w-1.5 h-6",
-                    ].map((cls, i) => (
-                      <div
-                        key={i}
-                        className={`absolute ${cls} bg-[#3d3024] pointer-events-none`}
-                      />
-                    ))}
-                  </div>
-
-                  <p className="text-xs text-[#5c4f42] text-center ink-text">
-                    {isLookingUp
-                      ? "Looking up copy…"
-                      : "Position the QR code within the frame"}
-                  </p>
-
-                  {scanPaused ? (
-                    <button
-                      type="button"
-                      onClick={() => setScanPaused(false)}
-                      className="w-full px-4 py-2 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] transition-colors ink-text"
-                    >
-                      Resume Scanning
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setScannerInitialized(false)}
-                      className="w-full px-4 py-2 bg-[#7b6d5f] text-[#f6ede1] rounded-lg font-medium hover:bg-[#6a5d50] transition-colors ink-text"
-                    >
-                      Stop Scanner
-                    </button>
-                  )}
-                </div>
-              ) : (
-                /* Manual entry */
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="block">
-                      <p className="text-sm font-medium text-[#4e4033] mb-2 ink-text">
-                        Copy ID
-                      </p>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={copyId}
-                          onChange={handleCopyIdChange}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              handleManualCheck(e as any);
-                            }
-                          }}
-                          placeholder="e.g., QRA1B2C3-1"
-                          maxLength={16}
-                          className="flex-1 px-4 py-3 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-lg focus:ring-2 focus:ring-[#5a4d40] outline-none text-lg font-mono tracking-widest"
-                          autoFocus
-                        />
-                        <button
-                          type="button"
-                          onClick={handleManualCheck}
-                          disabled={isLookingUp || copyId.length < 5}
-                          className="px-6 py-3 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text whitespace-nowrap"
-                        >
-                          {isLookingUp ? "Checking…" : "Check ID"}
-                        </button>
-                      </div>
-                    </label>
-                  </div>
-                  <p className="text-xs text-[#6f6256] ink-text">
-                    {isLookingUp
-                      ? "Looking up copy…"
-                      : "Enter the copy ID printed on the book card."}
-                  </p>
-                </div>
-              )}
             </div>
           )}
 

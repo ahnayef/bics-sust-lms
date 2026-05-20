@@ -1,3 +1,4 @@
+import { TRANSACTION_STATUS_COLORS } from "@/lib/constants";
 import { getOverviewData } from "@/server/library";
 import type {
   PdfSubmission,
@@ -113,13 +114,7 @@ function SectionHeader({
 }
 
 function StatusPill({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    active: "border-[#7aaa7a] bg-[#e8f0e8] text-[#2d5a2d]",
-    overdue: "border-[#d0604a] bg-[#fce8e4] text-[#8b2c1a]",
-    pending: "border-[#d4a44e] bg-[#fef3e2] text-[#7a5219]",
-    completed: "border-[#8aa06f] bg-[#e8efdf] text-[#384d24]",
-    rejected: "border-[#b09898] bg-[#f5f0f0] text-[#5a3a3a]",
-  };
+  const styles = TRANSACTION_STATUS_COLORS as Record<string, string>;
   return (
     <span
       className={`inline-block px-2 py-0.5 text-[11px] font-semibold border rounded-sm ink-text capitalize ${styles[status] ?? "border-[#b9a58b] bg-[#f6ecdd] text-[#4f4134]"}`}

@@ -50,7 +50,21 @@ export default function EditProfileForm({
 
   const [fullName, setFullName] = useState(profile.full_name);
   const [phone, setPhone] = useState(profile.phone ?? "");
+  const [phoneError, setPhoneError] = useState("");
   const [rankId, setRankId] = useState<string | null>(profile.rank_id);
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Only allow digits and + at the beginning
+    if (value === "" || /^\+?[0-9]*$/.test(value)) {
+      setPhone(value);
+      if (value.length > 19) {
+        setPhoneError("Phone number cannot exceed 19 characters");
+      } else {
+        setPhoneError("");
+      }
+    }
+  };
 
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -190,14 +204,20 @@ export default function EditProfileForm({
               )}
 
               <div>
-                <label htmlFor="full_name" className={labelClass}>
-                  Full Name <span className="text-red-500">*</span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="full_name" className={labelClass}>
+                    Full Name <span className="text-red-500">*</span>
+                  </label>
+                  <span className="text-[10px] text-[#7a6a5c] font-normal opacity-70">
+                    ({fullName.length}/100)
+                  </span>
+                </div>
                 <input
                   id="full_name"
                   name="full_name"
                   type="text"
                   required
+                  maxLength={100}
                   autoComplete="name"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
@@ -207,20 +227,41 @@ export default function EditProfileForm({
               </div>
 
               <div>
-                <label htmlFor="phone" className={labelClass}>
-                  Phone Number{" "}
-                  <span className="text-[#7a6a5c] font-normal">(optional)</span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="phone" className={labelClass}>
+                    Phone Number{" "}
+                    <span className="text-[#7a6a5c] font-normal">
+                      (optional)
+                    </span>
+                    {phone.length > 0 && (
+                      <span className="ml-2 text-[10px] text-[#7a6a5c] font-normal opacity-70">
+                        ({phone.length}/19)
+                      </span>
+                    )}
+                  </label>
+                  {phoneError && (
+                    <span className="text-xs text-red-600 font-semibold ink-text">
+                      Too long
+                    </span>
+                  )}
+                </div>
                 <input
                   id="phone"
                   name="phone"
                   type="tel"
                   autoComplete="tel"
+                  maxLength={19}
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={handlePhoneChange}
                   placeholder="01919191919"
-                  className={inputClass}
+                  className={`${inputClass} ${phoneError ? "border-red-400 focus:ring-red-500" : ""
+                    }`}
                 />
+                {phoneError && (
+                  <p className="mt-1 text-xs text-red-600 ink-text">
+                    {phoneError}
+                  </p>
+                )}
               </div>
 
               <div>

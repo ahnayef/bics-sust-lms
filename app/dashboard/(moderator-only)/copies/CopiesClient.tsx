@@ -2,7 +2,11 @@
 
 import StatusBadge from "@/app/components/StatusBadge";
 import ConfirmModal from "@/components/ui/confirm-modal";
-import { addCopyOfBook, getCopyRefCount, removeCopyOfBook } from "@/server/library-actions";
+import {
+  addCopyOfBook,
+  getBookRefCount,
+  removeCopy,
+} from "@/server/library-actions";
 import type { Book, Copy, CopyStatus } from "@/types/library";
 import NextImage from "next/image";
 import Link from "next/link";
@@ -289,7 +293,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
       copyId,
       bookTitle: copy?.book?.title ?? "Unknown",
     });
-    const count = await getCopyRefCount(copyId);
+    const count = await getBookRefCount(copyId);
     setRefCount(count);
   };
 
@@ -301,7 +305,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
     startTransition(async () => {
       const fd = new FormData();
       fd.set("copy_id", copyId);
-      const result = await removeCopyOfBook(fd);
+      const result = await removeCopy(fd);
       if (result.error) {
         showFlash("error", result.error);
       } else {

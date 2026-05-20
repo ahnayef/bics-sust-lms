@@ -5,7 +5,7 @@ import type { GeoSource } from "@/server/geo";
 import { checkUsernameAvailability, setupProfile } from "@/server/profiles";
 import "@/styles/components.css";
 import "@/styles/typography.css";
-import type { Thana, Rank } from "@/types/profile";
+import type { Rank, Thana } from "@/types/profile";
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { FaMapMarkerAlt } from "react-icons/fa";
@@ -36,6 +36,7 @@ export default function SetupForm({
 
   const [selectedThana, setSelectedThana] = useState("");
   const [geoSource, setGeoSource] = useState<GeoSource>(initialGeoSource);
+  const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [usernameStatus, setUsernameStatus] = useState<
     "idle" | "checking" | "available" | "unavailable" | "invalid"
@@ -123,17 +124,25 @@ export default function SetupForm({
               )}
 
               <div>
-                <label htmlFor="full_name" className={labelClass}>
-                  Full Name <span className="text-red-500">*</span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="full_name" className={labelClass}>
+                    Full Name <span className="text-red-500">*</span>
+                  </label>
+                  <span className="text-[10px] text-[#7a6a5c] font-normal opacity-70">
+                    ({fullName.length}/100)
+                  </span>
+                </div>
                 <input
                   id="full_name"
                   name="full_name"
                   type="text"
                   required
+                  maxLength={100}
                   autoComplete="name"
                   placeholder="Your full name"
                   className={inputClass}
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
                 />
               </div>
 
@@ -142,6 +151,11 @@ export default function SetupForm({
                   <label htmlFor="username" className={labelClass}>
                     Username <span className="text-red-500">*</span>
                   </label>
+                  {username.length > 0 && (
+                    <span className="ml-2 text-[10px] text-[#7a6a5c] font-normal opacity-70">
+                      ({username.length}/30)
+                    </span>
+                  )}
                   {usernameStatus === "checking" && (
                     <span className="text-xs text-[#7a6a5c] ink-text">Checking...</span>
                   )}
@@ -191,7 +205,7 @@ export default function SetupForm({
                     <span className="text-[#7a6a5c] font-normal">(optional)</span>
                     {phone.length > 0 && (
                       <span className="ml-2 text-[10px] text-[#7a6a5c] font-normal opacity-70">
-                        ({phone.length} chars)
+                        ({phone.length}/19)
                       </span>
                     )}
                   </label>
@@ -206,6 +220,7 @@ export default function SetupForm({
                   name="phone"
                   type="tel"
                   autoComplete="tel"
+                  maxLength={19}
                   placeholder="01919191919"
                   className={`${inputClass} ${phoneError ? "border-red-400 focus:ring-red-500" : ""
                     }`}

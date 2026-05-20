@@ -24,96 +24,99 @@ import {
   FaUsers,
 } from "react-icons/fa";
 
+import { UserRole } from "@/lib/constants";
 import type { NotificationItem } from "@/types/library";
 import NotificationBell from "./NotificationBell";
 
 interface DashboardShellProps {
   userId: string;
   userName: string;
-  userRole: string;
+  userRole: UserRole;
   userAvatar?: string | null;
   initialNotifications: NotificationItem[];
   children: React.ReactNode;
 }
+
+import { USER_ROLES } from "@/lib/constants";
 
 const navigationItems = [
   {
     label: "Dashboard",
     href: "/dashboard",
     icon: FaHome,
-    requiresRole: ["admin", "moderator", "member"],
+    requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR, USER_ROLES.MEMBER],
   },
   {
     label: "My Profile",
     href: "/dashboard/profile",
     icon: FaUser,
-    requiresRole: ["admin", "moderator", "member"],
+    requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR, USER_ROLES.MEMBER],
   },
   {
     label: "Book List",
     href: "/dashboard/book-list",
     icon: FaBookOpen,
-    requiresRole: ["admin", "moderator", "member"],
+    requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR, USER_ROLES.MEMBER],
   },
   {
     label: "Overview",
     href: "/dashboard/overview",
     icon: FaChartLine,
-    requiresRole: ["admin", "moderator"],
+    requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
   },
   {
     label: "Moderators",
     href: "/dashboard/moderators",
     icon: FaShieldAlt,
-    requiresRole: ["admin"],
+    requiresRole: [USER_ROLES.ADMIN],
   },
   {
     label: "Users",
     href: "/dashboard/users",
     icon: FaUsers,
-    requiresRole: ["admin", "moderator"],
+    requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
   },
   {
     label: "Books",
     href: "/dashboard/books",
     icon: FaBook,
-    requiresRole: ["admin", "moderator"],
+    requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
   },
   {
     label: "Copies",
     href: "/dashboard/copies",
     icon: FaGraduationCap,
-    requiresRole: ["admin", "moderator"],
+    requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
   },
   {
     label: "Transactions",
     href: "/dashboard/transactions",
     icon: FaExchangeAlt,
-    requiresRole: ["admin", "moderator"],
+    requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
   },
   {
     label: "Logs",
     href: "/dashboard/logs",
     icon: FaClipboardList,
-    requiresRole: ["admin", "moderator"],
+    requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
   },
   {
     label: "Thanas",
     href: "/dashboard/thanas",
     icon: FaMapMarkerAlt,
-    requiresRole: ["admin", "moderator"],
+    requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
   },
   {
     label: "Ranks",
     href: "/dashboard/ranks",
     icon: FaShieldAlt,
-    requiresRole: ["admin"],
+    requiresRole: [USER_ROLES.ADMIN],
   },
   {
     label: "Print QR",
     href: "/dashboard/print-qr",
     icon: FaPrint,
-    requiresRole: ["admin", "moderator"],
+    requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
   },
 ];
 
@@ -198,8 +201,8 @@ export default function DashboardShell({
               const active = isActive(item.href);
 
               // Determine "flavor" based on role requirements
-              const isAdminOnly = item.requiresRole.length === 1 && item.requiresRole[0] === "admin";
-              const isModeratorStaff = item.requiresRole.includes("moderator") && !item.requiresRole.includes("member");
+              const isAdminOnly = item.requiresRole.length === 1 && item.requiresRole[0] === USER_ROLES.ADMIN;
+              const isModeratorStaff = item.requiresRole.includes(USER_ROLES.MODERATOR) && !item.requiresRole.includes(USER_ROLES.MEMBER);
 
               let itemClasses = "";
               let iconClasses = "";
@@ -264,6 +267,7 @@ export default function DashboardShell({
                     alt={userName}
                     width={28}
                     height={28}
+                    priority
                     className="w-7 h-7 rounded-full object-cover border border-[#8a7966]"
                   />
                 ) : (

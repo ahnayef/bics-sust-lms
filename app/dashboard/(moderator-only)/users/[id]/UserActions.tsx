@@ -2,7 +2,14 @@
 
 import ConfirmModal from "@/components/ui/confirm-modal";
 import { RankBadge } from "@/components/ui/rank-badge";
-import { changeUserRank, makeAdmin, unVerifyUser, verifyUser } from "@/server/profiles";
+import {
+  changeUserRank,
+  demoteFromAdminAction,
+  demoteModerator,
+  makeAdmin,
+  unverifyUser,
+  verifyUser,
+} from "@/server/profiles";
 import type { Rank } from "@/types/profile";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -36,6 +43,8 @@ export default function UserActions({
   const [actionError, setActionError] = useState<string | null>(null);
   const [showMakeAdminModal1, setShowMakeAdminModal1] = useState(false);
   const [showMakeAdminModal2, setShowMakeAdminModal2] = useState(false);
+  const [showDemoteModModal, setShowDemoteModModal] = useState(false);
+  const [showDemoteAdminModal, setShowDemoteAdminModal] = useState(false);
 
   const handleVerify = () => {
     setActionError(null);
@@ -52,7 +61,7 @@ export default function UserActions({
   const handleUnverify = () => {
     setActionError(null);
     startTransition(async () => {
-      const result = await unVerifyUser(userId);
+      const result = await unverifyUser(userId);
       if (result?.error) {
         setActionError(result.error);
       }
@@ -83,6 +92,34 @@ export default function UserActions({
         setActionError(result.error);
       }
       setShowMakeAdminModal2(false);
+      router.refresh();
+    });
+  };
+
+  const handleDemoteModerator = () => {
+    setActionError(null);
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("userId", userId);
+      const result = await demoteModerator(fd);
+      if (result?.error) {
+        setActionError(result.error);
+      }
+      setShowDemoteModModal(false);
+      router.refresh();
+    });
+  };
+
+  const handleDemoteAdmin = () => {
+    setActionError(null);
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("userId", userId);
+      const result = await demoteFromAdminAction(fd);
+      if (result?.error) {
+        setActionError(result.error);
+      }
+      setShowDemoteAdminModal(false);
       router.refresh();
     });
   };
@@ -136,6 +173,28 @@ export default function UserActions({
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#8b2b2b] text-[#f4e8d4] border border-[#6b2222] rounded-sm hover:bg-[#a63333] transition-colors font-medium text-sm ink-text disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Make Admin
+          </button>
+        )}
+
+        {isAdmin && userRole === "moderator" && (
+          <button
+            type="button"
+            onClick={() => setShowDemoteModModal(true)}
+            disabled={isPending}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#f6ecdd] text-red-700 border border-red-300 rounded-sm hover:bg-red-50 transition-colors font-medium text-sm ink-text disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Demote to Member
+          </button>
+        )}
+
+        {isAdmin && userRole === "admin" && (
+          <button
+            type="button"
+            onClick={() => setShowDemoteAdminModal(true)}
+            disabled={isPending}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#f6ecdd] text-red-700 border border-red-300 rounded-sm hover:bg-red-50 transition-colors font-medium text-sm ink-text disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Demote Admin
           </button>
         )}
       </div>
@@ -218,6 +277,30 @@ export default function UserActions({
         preview={`Target User: ${userName}`}
         danger={true}
         confirmLabel="Yes, Make Admin"
+        loading={isPending}
+      />
+
+      <ConfirmModal
+        open={showDemoteModModal}
+        onClose={() => setShowDemoteModModal(false)}
+        onConfirm={handleDemoteModerator}
+        title="Demote Moderator"
+        description="This will remove moderator privileges and revert them to a regular member."
+        preview={`Target User: ${userName}`}
+        danger={true}
+        confirmLabel="Demote to Member"
+        loading={isPending}
+      />
+
+      <ConfirmModal
+        open={showDemoteAdminModal}
+        onClose={() => setShowDemoteAdminModal(false)}
+        onConfirm={handleDemoteAdmin}
+        title="Demote Admin"
+        description="This will remove admin privileges and revert them to a regular member."
+        preview={`Target User: ${userName}`}
+        danger={true}
+        confirmLabel="Demote to Member"
         loading={isPending}
       />
     </>
