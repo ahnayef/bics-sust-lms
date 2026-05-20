@@ -1,9 +1,12 @@
 "use client";
 
 import { borrowBook, lookupCopy } from "@/server/transaction-actions";
+import "@/styles/components.css";
+import "@/styles/typography.css";
+import type { Copy } from "@/types/library";
 import { Scanner, useDevices } from "@yudiel/react-qr-scanner";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import {
   FaCheck,
@@ -11,9 +14,6 @@ import {
   FaKeyboard,
   FaQrcode,
 } from "react-icons/fa";
-import type { Copy } from "@/types/library";
-import "@/styles/typography.css";
-import "@/styles/components.css";
 
 interface CompletedBook {
   bookId: string;
@@ -55,13 +55,17 @@ export default function BorrowClient({
     }
     return "";
   });
-  const [error, setError] = useState(
-    initialCopy && initialCopy.status !== "available"
-      ? initialCopy.status === "damaged"
+  const [error, setError] = useState(() => {
+    if (initialCopyId && !initialCopy) {
+      return "Copy not found. Check the ID and try again.";
+    }
+    if (initialCopy && initialCopy.status !== "available") {
+      return initialCopy.status === "damaged"
         ? "This copy is marked as damaged and cannot be borrowed."
-        : "This copy is currently borrowed and not available."
-      : "",
-  );
+        : "This copy is currently borrowed and not available.";
+    }
+    return "";
+  });
   const [success, setSuccess] = useState(false);
   const [inputMode, setInputMode] = useState<"qr" | "manual">(
     initialCopyId ? "manual" : "qr",
@@ -83,73 +87,107 @@ export default function BorrowClient({
     ? completedBooks.find((b) => b.bookId === selectedCopy.book!.id)
     : null;
 
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  const resetLookup = () => {
+    setCopyId("");
+    setSelectedCopy(null);
+    setUnavailableCopy(null);
+    setError("");
+    setReturnDate("");
+    setScanPaused(false);
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("copyId");
+    router.replace(pathname, { scroll: false });
+  };
+
   // ── Copy lookup ────────────────────────────────────────────────────────────
 
-  const processCopyId = async (value: string): Promise<boolean> => {
+  const performLookup = async (value: string): Promise<boolean> => {
     const upper = value.toUpperCase().trim();
-    setCopyId(upper);
+    if (!upper) return false;
+
     setError("");
     setSelectedCopy(null);
     setUnavailableCopy(null);
     setReturnDate("");
+    setIsLookingUp(true);
 
     // Update URL param
     const params = new URLSearchParams(searchParams.toString());
-    if (upper) {
-      params.set("copyId", upper);
-    } else {
-      params.delete("copyId");
-    }
+    params.set("copyId", upper);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
 
-    // Only look up when the input is long enough to be a valid QR code
-    if (upper.length < 5) return false;
-
     const thisLookup = ++lookupCounterRef.current;
-    setIsLookingUp(true);
+    try {
+      const { copy, error: lookupError } = await lookupCopy(upper);
 
-    const { copy, error: lookupError } = await lookupCopy(upper);
+      // Discard if a newer lookup has already started
+      if (thisLookup !== lookupCounterRef.current) return false;
 
-    setIsLookingUp(false);
-    // Discard if a newer lookup has already started
-    if (thisLookup !== lookupCounterRef.current) return false;
+      setIsLookingUp(false);
 
-    if (!copy) {
-      setError(lookupError ?? "Copy not found. Check the ID and try again.");
+      if (!copy) {
+        setError(lookupError ?? "Copy not found. Check the ID and try again.");
+        return false;
+      }
+
+      if (copy.status !== "available") {
+        setUnavailableCopy(copy);
+        setError(
+          copy.status === "damaged"
+            ? "This copy is marked as damaged and cannot be borrowed."
+            : "This copy is currently borrowed and not available.",
+        );
+        return false;
+      }
+
+      if (activeBorrowCopyIds.includes(upper)) {
+        setError("You already have an active or pending request for this copy.");
+        return false;
+      }
+
+      setSelectedCopy(copy);
+      const d = new Date();
+      d.setDate(d.getDate() + 14);
+      setReturnDate(d.toISOString().split("T")[0]);
+      return true;
+    } catch (err) {
+      if (thisLookup === lookupCounterRef.current) {
+        setIsLookingUp(false);
+        setError("An error occurred while looking up the copy.");
+      }
       return false;
     }
-
-    if (copy.status !== "available") {
-      setUnavailableCopy(copy);
-      setError(
-        copy.status === "damaged"
-          ? "This copy is marked as damaged and cannot be borrowed."
-          : "This copy is currently borrowed and not available.",
-      );
-      return false;
-    }
-
-    if (activeBorrowCopyIds.includes(upper)) {
-      setError("You already have an active or pending request for this copy.");
-      return false;
-    }
-
-    setSelectedCopy(copy);
-    const d = new Date();
-    d.setDate(d.getDate() + 14);
-    setReturnDate(d.toISOString().split("T")[0]);
-    return true;
   };
 
   const handleCopyIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    processCopyId(e.target.value);
+    const val = e.target.value.toUpperCase().trim();
+    setCopyId(val);
+    // Clear results when typing
+    if (selectedCopy || unavailableCopy || error) {
+      setSelectedCopy(null);
+      setUnavailableCopy(null);
+      setError("");
+    }
+  };
+
+  const handleManualCheck = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (copyId.length < 5) {
+      setError("ID too short. Check the ID and try again.");
+      return;
+    }
+    performLookup(copyId);
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleScan = (detectedCodes: any[]) => {
     if (detectedCodes.length > 0 && !isLookingUp) {
       const scannedValue = detectedCodes[0].rawValue.trim();
-      processCopyId(scannedValue).then((valid) => {
+      setCopyId(scannedValue.toUpperCase());
+      performLookup(scannedValue).then((valid) => {
         if (valid) setScanPaused(true);
       });
     }
@@ -200,7 +238,7 @@ export default function BorrowClient({
 
     return (
       <>
-        
+
         <div className="flex-1 flex items-center justify-center px-4 py-8">
           <div className="borrow-surface tron-border rounded-lg p-8 text-center max-w-sm w-full">
             <div className="flex justify-center mb-6">
@@ -252,29 +290,27 @@ export default function BorrowClient({
 
   return (
     <>
-      
+
 
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Mode selector */}
         <div className="flex gap-2 mb-6 borrow-surface tron-border rounded-lg p-1">
           <button
             onClick={() => setInputMode("qr")}
-            className={`flex-1 px-4 py-2 rounded font-medium transition-colors ink-text ${
-              inputMode === "qr"
-                ? "bg-[#5a4d40] text-[#f6ede1]"
-                : "text-[#4e4033] hover:bg-[#eadcca]"
-            }`}
+            className={`flex-1 px-4 py-2 rounded font-medium transition-colors ink-text ${inputMode === "qr"
+              ? "bg-[#5a4d40] text-[#f6ede1]"
+              : "text-[#4e4033] hover:bg-[#eadcca]"
+              }`}
           >
             <FaQrcode className="inline w-4 h-4 mr-2" />
             Scan QR
           </button>
           <button
             onClick={() => setInputMode("manual")}
-            className={`flex-1 px-4 py-2 rounded font-medium transition-colors ink-text ${
-              inputMode === "manual"
-                ? "bg-[#5a4d40] text-[#f6ede1]"
-                : "text-[#4e4033] hover:bg-[#eadcca]"
-            }`}
+            className={`flex-1 px-4 py-2 rounded font-medium transition-colors ink-text ${inputMode === "manual"
+              ? "bg-[#5a4d40] text-[#f6ede1]"
+              : "text-[#4e4033] hover:bg-[#eadcca]"
+              }`}
           >
             <FaKeyboard className="inline w-4 h-4 mr-2" />
             Enter ID
@@ -386,13 +422,7 @@ export default function BorrowClient({
               <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
                 <button
                   type="button"
-                  onClick={() => {
-                    setSelectedCopy(null);
-                    setCopyId("");
-                    setReturnDate("");
-                    setScanPaused(false);
-                    setError("");
-                  }}
+                  onClick={resetLookup}
                   className="flex-1 px-4 py-3 border border-[#7b6d5f] text-[#4e4033] rounded-lg font-medium hover:bg-[#eadcca] transition-colors ink-text"
                 >
                   Scan Another
@@ -528,20 +558,38 @@ export default function BorrowClient({
               ) : (
                 /* Manual entry */
                 <div className="space-y-4">
-                  <label className="block">
-                    <p className="text-sm font-medium text-[#4e4033] mb-2 ink-text">
-                      Copy ID
-                    </p>
-                    <input
-                      type="text"
-                      value={copyId}
-                      onChange={handleCopyIdChange}
-                      placeholder="e.g., QRA1B2C3-1"
-                      maxLength={16}
-                      className="w-full px-4 py-3 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-lg focus:ring-2 focus:ring-[#5a4d40] outline-none text-lg font-mono tracking-widest"
-                      autoFocus
-                    />
-                  </label>
+                  <div className="space-y-2">
+                    <label className="block">
+                      <p className="text-sm font-medium text-[#4e4033] mb-2 ink-text">
+                        Copy ID
+                      </p>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={copyId}
+                          onChange={handleCopyIdChange}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleManualCheck(e as any);
+                            }
+                          }}
+                          placeholder="e.g., QRA1B2C3-1"
+                          maxLength={16}
+                          className="flex-1 px-4 py-3 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-lg focus:ring-2 focus:ring-[#5a4d40] outline-none text-lg font-mono tracking-widest"
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={handleManualCheck}
+                          disabled={isLookingUp || copyId.length < 5}
+                          className="px-6 py-3 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text whitespace-nowrap"
+                        >
+                          {isLookingUp ? "Checking…" : "Check ID"}
+                        </button>
+                      </div>
+                    </label>
+                  </div>
                   <p className="text-xs text-[#6f6256] ink-text">
                     {isLookingUp
                       ? "Looking up copy…"
