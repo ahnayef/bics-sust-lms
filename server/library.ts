@@ -17,6 +17,8 @@ import {
 import { logActionError } from "@/server/error-log";
 import type {
   Book,
+  Category,
+  CategoryProgress,
   Copy,
   OverviewData,
   PdfSubmission,
@@ -24,7 +26,7 @@ import type {
   TopMember,
   Transaction,
   UserStats,
-  UserWithStats,
+  UserWithStats
 } from "@/types/library";
 import type { Profile } from "@/types/profile";
 import { asc } from "drizzle-orm";
@@ -48,6 +50,7 @@ async function loadBooksCached(): Promise<Book[]> {
 
   const data = await db.query.books.findMany({
     with: {
+      category: true,
       copies: {
         columns: {
           id: true,
@@ -64,6 +67,17 @@ async function loadBooksCached(): Promise<Book[]> {
 
 export async function getBooks(): Promise<Book[]> {
   return loadBooksCached();
+}
+
+/** All categories. */
+export async function getCategories(): Promise<Category[]> {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from("categories")
+    .select("*")
+    .order("name");
+  if (error || !data) return [];
+  return data as unknown as Category[];
 }
 
 /** Single book with all copies. */
@@ -238,10 +252,77 @@ export async function getPdfSubmissions(
 export async function getUserStats(userId: string): Promise<UserStats> {
   const supabase = await createClient();
 
-  const { count: syllabusTotal } = await supabase
+  // 1. Fetch all categories that count in progress
+  const { data: categories } = await supabase
+    .from("categories")
+    .select("id, name")
+    .eq("count_in_progress", true);
+
+  const categoryIds = (categories ?? []).map((c) => c.id);
+
+  // 2. Fetch total books per category
+  const { data: categoryTotals } = await supabase
     .from("books")
-    .select("id", { count: "exact", head: true })
-    .eq("is_syllabus", true);
+    .select("category_id")
+    .in("category_id", categoryIds);
+
+  const totalPerCategory = new Map<string, number>();
+  for (const b of categoryTotals ?? []) {
+    if (b.category_id) {
+      totalPerCategory.set(
+        b.category_id,
+        (totalPerCategory.get(b.category_id) ?? 0) + 1,
+      );
+    }
+  }
+
+  // 3. Fetch completed books (transactions + PDF)
+  const { data: completedBorrows } = await supabase
+    .from("transactions")
+    .select("book_id, book:books!book_id(category_id)")
+    .eq("user_id", userId)
+    .eq("type", "borrow")
+    .eq("status", "completed");
+
+  const { data: approvedPdfs } = await supabase
+    .from("pdf_submissions")
+    .select("book_id, book:books!book_id(category_id)")
+    .eq("user_id", userId)
+    .eq("status", "approved");
+
+  // Map to track unique completed books per category
+  const completedIdsPerCategory = new Map<string, Set<string>>();
+  for (const c of categories ?? []) {
+    completedIdsPerCategory.set(c.id, new Set());
+  }
+
+  const addBookToProgress = (b: any) => {
+    if (
+      b.book?.category_id &&
+      completedIdsPerCategory.has(b.book.category_id)
+    ) {
+      completedIdsPerCategory.get(b.book.category_id)!.add(b.book_id);
+    }
+  };
+
+  completedBorrows?.forEach(addBookToProgress);
+  approvedPdfs?.forEach(addBookToProgress);
+
+  const categoryProgress: CategoryProgress[] = (categories ?? []).map((c) => ({
+    categoryId: c.id,
+    categoryName: c.name,
+    completed: completedIdsPerCategory.get(c.id)?.size ?? 0,
+    total: totalPerCategory.get(c.id) ?? 0,
+  }));
+
+  // Legacy syllabus support
+  const syllabusCat = (categories ?? []).find((c) => c.name === "Syllabus");
+  const syllabusCompleted = syllabusCat
+    ? (completedIdsPerCategory.get(syllabusCat.id)?.size ?? 0)
+    : 0;
+  const syllabusTotal = syllabusCat
+    ? (totalPerCategory.get(syllabusCat.id) ?? 0)
+    : 0;
 
   // Active + overdue borrows (what they currently have)
   const { data: activeBorrows } = await supabase
@@ -260,40 +341,18 @@ export async function getUserStats(userId: string): Promise<UserStats> {
     .eq("user_id", userId)
     .eq("status", "pending");
 
-  // Completed physical borrows (to count syllabus progress)
-  const { data: completedBorrows } = await supabase
-    .from("transactions")
-    .select("book_id, book:books!book_id(is_syllabus)")
-    .eq("user_id", userId)
-    .eq("type", "borrow")
-    .eq("status", "completed");
-
-  // Approved PDF submissions
-  const { data: approvedPdfs } = await supabase
-    .from("pdf_submissions")
-    .select("book_id, book:books!book_id(is_syllabus)")
-    .eq("user_id", userId)
-    .eq("status", "approved");
-
-  // Union: unique syllabus book_ids completed
-  const syllabusIds = new Set<string>();
-  for (const t of completedBorrows ?? []) {
-    if ((t as { book?: { is_syllabus?: boolean } }).book?.is_syllabus)
-      syllabusIds.add(t.book_id);
-  }
-  for (const ps of approvedPdfs ?? []) {
-    if ((ps as { book?: { is_syllabus?: boolean } }).book?.is_syllabus)
-      syllabusIds.add(ps.book_id);
-  }
-
   const now = new Date();
   return {
-    syllabusCompleted: syllabusIds.size,
-    syllabusTotal: syllabusTotal ?? 0,
+    syllabusCompleted,
+    syllabusTotal,
+    categoryProgress,
     activeBorrows: activeBorrows?.length ?? 0,
     overdueBorrows: (activeBorrows ?? []).filter((t) => {
       const tx = t as unknown as Transaction;
-      return tx.status === "overdue" || (tx.due_date && new Date(tx.due_date) < now);
+      return (
+        tx.status === "overdue" ||
+        (tx.due_date && new Date(tx.due_date) < now)
+      );
     }).length,
     pendingRequests: pendingCount ?? 0,
     currentBorrows: (activeBorrows ?? []) as unknown as Transaction[],
@@ -352,10 +411,32 @@ async function loadUsersCached(): Promise<UserWithStats[]> {
 
   const ids = profiles.map((p) => p.id);
 
-  const { count: syllabusTotal } = await supabase
+  // Fetch categories for progress tracking
+  const { data: categories } = await supabase
+    .from("categories")
+    .select("id, name")
+    .eq("count_in_progress", true);
+  const progressCategories = categories ?? [];
+
+  // Fetch total books per category
+  const { data: categoryTotals } = await supabase
     .from("books")
-    .select("id", { count: "exact", head: true })
-    .eq("is_syllabus", true);
+    .select("category_id");
+  const totalPerCategory = new Map<string, number>();
+  for (const b of categoryTotals ?? []) {
+    if (b.category_id) {
+      totalPerCategory.set(
+        b.category_id,
+        (totalPerCategory.get(b.category_id) ?? 0) + 1,
+      );
+    }
+  }
+
+  // Legacy syllabus total
+  const syllabusCat = progressCategories.find((c) => c.name === "Syllabus");
+  const syllabusTotal = syllabusCat
+    ? (totalPerCategory.get(syllabusCat.id) ?? 0)
+    : 0;
 
   // Batch: active/overdue borrow counts
   const { data: activeTxns } = await supabase
@@ -372,18 +453,18 @@ async function loadUsersCached(): Promise<UserWithStats[]> {
     .in("user_id", ids)
     .eq("status", "pending");
 
-  // Batch: completed syllabus borrows
+  // Batch: completed borrows with category info
   const { data: completedBorrows } = await supabase
     .from("transactions")
-    .select("user_id, book_id, book:books!book_id(is_syllabus)")
+    .select("user_id, book_id, book:books!book_id(category_id)")
     .in("user_id", ids)
     .eq("type", "borrow")
     .eq("status", "completed");
 
-  // Batch: approved PDF submissions for syllabus books
+  // Batch: approved PDF submissions with category info
   const { data: approvedPdfs } = await supabase
     .from("pdf_submissions")
-    .select("user_id, book_id, book:books!book_id(is_syllabus)")
+    .select("user_id, book_id, book:books!book_id(category_id)")
     .in("user_id", ids)
     .eq("status", "approved");
 
@@ -392,35 +473,46 @@ async function loadUsersCached(): Promise<UserWithStats[]> {
     const userActiveTxns = (activeTxns ?? []).filter(
       (t) => t.user_id === profile.id,
     );
-    const activeBorrows = userActiveTxns.length;
-    const overdueBorrows = userActiveTxns.filter(
-      (t) => t.status === "overdue" || (t.due_date && new Date(t.due_date) < now),
+    const activeBorrowsCount = userActiveTxns.length;
+    const overdueBorrowsCount = userActiveTxns.filter(
+      (t) =>
+        t.status === "overdue" || (t.due_date && new Date(t.due_date) < now),
     ).length;
-    const pendingRequests = (pendingTxns ?? []).filter(
+    const pendingRequestsCount = (pendingTxns ?? []).filter(
       (t) => t.user_id === profile.id,
     ).length;
 
-    const syllabusIds = new Set<string>();
-    for (const t of completedBorrows ?? []) {
-      const row = t as {
-        user_id: string;
-        book_id: string;
-        book?: { is_syllabus?: boolean };
-      };
-      if (row.user_id === profile.id && row.book?.is_syllabus) {
-        syllabusIds.add(row.book_id);
-      }
+    // Calculate progress per category
+    const completedIdsPerCategory = new Map<string, Set<string>>();
+    for (const c of progressCategories) {
+      completedIdsPerCategory.set(c.id, new Set());
     }
-    for (const ps of approvedPdfs ?? []) {
-      const row = ps as {
-        user_id: string;
-        book_id: string;
-        book?: { is_syllabus?: boolean };
-      };
-      if (row.user_id === profile.id && row.book?.is_syllabus) {
-        syllabusIds.add(row.book_id);
+
+    const processItem = (row: any) => {
+      if (
+        row.user_id === profile.id &&
+        row.book?.category_id &&
+        completedIdsPerCategory.has(row.book.category_id)
+      ) {
+        completedIdsPerCategory.get(row.book.category_id)!.add(row.book_id);
       }
-    }
+    };
+
+    completedBorrows?.forEach(processItem);
+    approvedPdfs?.forEach(processItem);
+
+    const categoryProgress: CategoryProgress[] = progressCategories.map(
+      (c) => ({
+        categoryId: c.id,
+        categoryName: c.name,
+        completed: completedIdsPerCategory.get(c.id)?.size ?? 0,
+        total: totalPerCategory.get(c.id) ?? 0,
+      }),
+    );
+
+    const syllabusCompleted = syllabusCat
+      ? (completedIdsPerCategory.get(syllabusCat.id)?.size ?? 0)
+      : 0;
 
     return {
       ...(profile as unknown as Profile),
@@ -430,11 +522,12 @@ async function loadUsersCached(): Promise<UserWithStats[]> {
       rank: (profile as any).rank_id
         ? rankById.get((profile as any).rank_id as string)
         : undefined,
-      syllabusCompleted: syllabusIds.size,
-      syllabusTotal: syllabusTotal ?? 0,
-      activeBorrows,
-      overdueBorrows,
-      pendingRequests,
+      syllabusCompleted,
+      syllabusTotal,
+      categoryProgress,
+      activeBorrows: activeBorrowsCount,
+      overdueBorrows: overdueBorrowsCount,
+      pendingRequests: pendingRequestsCount,
     };
   });
 }

@@ -40,6 +40,7 @@ interface DashboardShellProps {
 }
 
 import { USER_ROLES } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 export default function DashboardShell({
   userId,
@@ -116,6 +117,12 @@ export default function DashboardShell({
       requiresRole: [USER_ROLES.ADMIN],
     },
     {
+      label: t.dashboard.sidebar.categories,
+      href: "/dashboard/categories",
+      icon: FaClipboardList,
+      requiresRole: [USER_ROLES.ADMIN],
+    },
+    {
       label: t.dashboard.sidebar.logs,
       href: "/dashboard/logs",
       icon: FaClipboardList,
@@ -182,13 +189,14 @@ export default function DashboardShell({
       {/* Sidebar Wrapper — natively holds space in the flex layout to prevent shifting */}
       <div className="shrink-0 transition-all duration-300 print:hidden relative z-50 w-14 lg:w-64">
         {/* The actual sidebar — absolute to the wrapper so it can float when expanded */}
+        {/* NOTE FROM DEV: DO NOT CHANGE THE RANDOM py-5 AND md:py-4 CLASSES, THEY ARE MUST FOR THINGS TO BE PROPERLY ALIGNED! */}
         <aside
           className={`absolute top-0 left-0 flex flex-col shrink-0 h-screen overflow-y-auto dashboard-surface tron-border border-r border-[#5e4e3e] transition-all duration-300 ${isMobileOpen ? "w-64 shadow-2xl" : "w-14"} lg:w-64`}
         >
           <div className={`flex items-center border-b border-[#6d5c4a] overflow-hidden hover:bg-[#ece0ce] transition-colors w-full ${isMobileOpen ? "px-4" : "justify-center lg:justify-start lg:px-4"}`}>
             <button
               onClick={() => setIsMobileOpen(!isMobileOpen)}
-              className="py-[17px] shrink-0 flex items-center justify-center text-[#554738] lg:hidden"
+              className={cn("shrink-0 flex items-center justify-center text-[#554738] lg:hidden", isMobileOpen ? "py-[18px]" : "py-5")}
             >
               {isMobileOpen ? <FaTimes className="w-5 h-5" /> : <FaBars className="w-4 h-4" />}
             </button>
@@ -196,10 +204,10 @@ export default function DashboardShell({
             <Link
               href="/dashboard"
               onClick={() => setIsMobileOpen(false)}
-              className={`flex items-center py-[17px] ink-title text-[#221910] font-bold text-lg gap-3 ${isMobileOpen ? "block" : "hidden lg:flex"}`}
+              className={`flex items-center md:py-4 ink-title text-[#221910] font-bold text-lg gap-3 ${isMobileOpen ? "block" : "hidden lg:flex"}`}
             >
               <FaBook className="w-5 h-5 lg:w-6 lg:h-6 shrink-0 hidden lg:block text-[#554738]" />
-              <span className="whitespace-nowrap transition-opacity">
+              <span className="ml-3 whitespace-nowrap transition-opacity">
                 SUST LMS
               </span>
             </Link>
@@ -243,7 +251,7 @@ export default function DashboardShell({
                   <div className={`w-5 h-5 lg:w-6 lg:h-6 shrink-0 flex items-center justify-center ${iconClasses}`}>
                     <Icon className="w-4 h-4" />
                   </div>
-                  <span className={`font-medium whitespace-nowrap transition-opacity ${isMobileOpen ? "block" : "hidden lg:block"}`}>
+                  <span className={`font-medium whitespace-nowrap transition-opacity ${isMobileOpen ? "block text-sm" : "hidden lg:block"}`}>
                     {item.label}
                   </span>
                 </Link>

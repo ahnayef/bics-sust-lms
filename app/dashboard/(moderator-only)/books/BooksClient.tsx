@@ -3,17 +3,18 @@ import StatusBadge from "@/app/components/StatusBadge";
 import ConfirmModal from "@/components/ui/confirm-modal";
 import { useTranslation } from "@/lib/i18n/context";
 import { addBook, editBook, getBookRefCount, removeBook } from "@/server/library-actions";
-import type { Book } from "@/types/library";
+import type { Book, Category } from "@/types/library";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { FaDownload, FaEdit, FaPlus, FaSearch, FaTimes, FaTrash } from "react-icons/fa";
 
-type BookTypeFilter = "all" | "syllabus" | "additional";
+type BookTypeFilter = "all" | string;
 
 interface BookForm {
   id: string;
   title: string;
   author: string;
+  category_id: string;
   is_syllabus: boolean;
   pages: string;
   pdf_link: string;
@@ -24,6 +25,7 @@ const EMPTY_FORM: BookForm = {
   id: "",
   title: "",
   author: "",
+  category_id: "",
   is_syllabus: true,
   pages: "",
   pdf_link: "",
@@ -32,6 +34,7 @@ const EMPTY_FORM: BookForm = {
 
 interface Props {
   initialBooks: Book[];
+  categories: Category[];
 }
 
 type PendingAction =
@@ -39,7 +42,7 @@ type PendingAction =
   | { type: "update" }
   | { type: "delete"; id: string; title: string; author: string };
 
-export default function BooksClient({ initialBooks }: Props) {
+export default function BooksClient({ initialBooks, categories }: Props) {
   const router = useRouter();
   const { t } = useTranslation();
   const [isPending, startTransition] = useTransition();
@@ -80,8 +83,8 @@ export default function BooksClient({ initialBooks }: Props) {
   const counts = useMemo(
     () => ({
       total: books.length,
-      syllabus: books.filter((b) => b.is_syllabus).length,
-      additional: books.filter((b) => !b.is_syllabus).length,
+      syllabus: books.filter((b) => b.category?.name === "Syllabus").length,
+      additional: books.filter((b) => b.category?.name === "Additional").length,
       copies: books.reduce((sum, b) => sum + (b.copies?.length ?? 0), 0),
     }),
     [books],
@@ -94,15 +97,17 @@ export default function BooksClient({ initialBooks }: Props) {
         book.title.toLowerCase().includes(query) ||
         book.author.toLowerCase().includes(query);
       const matchesType =
-        typeFilter === "all" ||
-        (typeFilter === "syllabus" ? book.is_syllabus : !book.is_syllabus);
+        typeFilter === "all" || book.category_id === typeFilter;
       return matchesSearch && matchesType;
     });
   }, [books, searchTerm, typeFilter]);
 
   const openAddModal = () => {
     setEditingId(null);
-    setFormData(EMPTY_FORM);
+    setFormData({
+      ...EMPTY_FORM,
+      category_id: categories.find((c) => c.name === "Syllabus")?.id || "",
+    });
     setShowAddModal(true);
   };
 
@@ -117,6 +122,7 @@ export default function BooksClient({ initialBooks }: Props) {
       const fd = new FormData();
       fd.set("title", formData.title.trim());
       fd.set("author", formData.author.trim());
+      fd.set("category_id", formData.category_id);
       fd.set("is_syllabus", formData.is_syllabus ? "true" : "false");
       if (formData.pages) fd.set("pages", formData.pages);
       if (formData.pdf_link.trim()) fd.set("pdf_link", formData.pdf_link.trim());
@@ -140,6 +146,7 @@ export default function BooksClient({ initialBooks }: Props) {
       id: book.id,
       title: book.title,
       author: book.author,
+      category_id: book.category_id ?? "",
       is_syllabus: book.is_syllabus,
       pages: book.pages?.toString() ?? "",
       pdf_link: book.pdf_link ?? "",
@@ -161,6 +168,7 @@ export default function BooksClient({ initialBooks }: Props) {
       fd.set("id", formData.id);
       fd.set("title", formData.title.trim());
       fd.set("author", formData.author.trim());
+      fd.set("category_id", formData.category_id);
       fd.set("is_syllabus", formData.is_syllabus ? "true" : "false");
       if (formData.pages) fd.set("pages", formData.pages);
       if (formData.pdf_link.trim()) fd.set("pdf_link", formData.pdf_link.trim());
@@ -305,16 +313,25 @@ export default function BooksClient({ initialBooks }: Props) {
             />
           </div>
           <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
-            {(["all", "syllabus", "additional"] as const).map((f) => (
+            <button
+              onClick={() => setTypeFilter("all")}
+              className={`px-4 py-2 rounded-sm text-xs font-bold whitespace-nowrap border transition-all ${typeFilter === "all"
+                ? "bg-[#3f3328] text-[#f4e8d4] border-[#3f3328]"
+                : "bg-[#f6ecdd] text-[#5c4f42] border-[#b9a58b] hover:bg-[#ece0ce]"
+                }`}
+            >
+              {t.books.filters.all}
+            </button>
+            {categories.map((c) => (
               <button
-                key={f}
-                onClick={() => setTypeFilter(f)}
-                className={`px-4 py-2 rounded-sm text-xs font-bold whitespace-nowrap border transition-all ${typeFilter === f
+                key={c.id}
+                onClick={() => setTypeFilter(c.id)}
+                className={`px-4 py-2 rounded-sm text-xs font-bold whitespace-nowrap border transition-all ${typeFilter === c.id
                   ? "bg-[#3f3328] text-[#f4e8d4] border-[#3f3328]"
                   : "bg-[#f6ecdd] text-[#5c4f42] border-[#b9a58b] hover:bg-[#ece0ce]"
                   }`}
               >
-                {t.books.filters[f]}
+                {c.name}
               </button>
             ))}
           </div>
@@ -368,7 +385,7 @@ export default function BooksClient({ initialBooks }: Props) {
                   </td>
                   <td className="px-4 sm:px-6 py-3">
                     <StatusBadge tone="neutral">
-                      {book.is_syllabus ? t.books.filters.syllabus : t.books.filters.additional}
+                      {book.category?.name ?? (book.is_syllabus ? t.books.filters.syllabus : t.books.filters.additional)}
                     </StatusBadge>
                   </td>
                   <td className="px-4 sm:px-6 py-3">
@@ -473,17 +490,20 @@ export default function BooksClient({ initialBooks }: Props) {
                   {t.books.modal.labels.type} *
                 </label>
                 <select
-                  value={formData.is_syllabus ? "syllabus" : "additional"}
+                  value={formData.category_id}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      is_syllabus: e.target.value === "syllabus",
+                      category_id: e.target.value,
                     })
                   }
                   className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
                 >
-                  <option value="syllabus">{t.books.modal.types.syllabus}</option>
-                  <option value="additional">{t.books.modal.types.additional}</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>

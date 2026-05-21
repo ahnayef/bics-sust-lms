@@ -1,13 +1,13 @@
+import { relations, sql } from "drizzle-orm";
 import {
+  boolean,
+  date,
+  integer,
   pgTable,
   text,
-  uuid,
-  boolean,
   timestamp,
-  integer,
-  date,
+  uuid,
 } from "drizzle-orm/pg-core";
-import { sql, relations } from "drizzle-orm";
 
 export const thanas = pgTable("thanas", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -27,6 +27,19 @@ export const ranksRelations = relations(ranks, ({ many }) => ({
   profiles: many(profiles),
 }));
 
+export const categories = pgTable("categories", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull().unique(),
+  count_in_progress: boolean("count_in_progress").notNull().default(false),
+  created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  profiles: many(profiles),
+  books: many(books),
+}));
+
 export const profiles = pgTable("profiles", {
   id: uuid("id").primaryKey(), // References auth.users(id)
   username: text("username").notNull().unique(),
@@ -36,6 +49,9 @@ export const profiles = pgTable("profiles", {
   avatar_url: text("avatar_url"),
   rank_id: uuid("rank_id").references(() => ranks.id, { onDelete: "set null" }),
   thana_id: uuid("thana_id").references(() => thanas.id, {
+    onDelete: "set null",
+  }),
+  category_id: uuid("category_id").references(() => categories.id, {
     onDelete: "set null",
   }),
   role: text("role").notNull().default("member"),
@@ -55,6 +71,10 @@ export const profilesRelations = relations(profiles, ({ one, many }) => ({
     fields: [profiles.rank_id],
     references: [ranks.id],
   }),
+  category: one(categories, {
+    fields: [profiles.category_id],
+    references: [categories.id],
+  }),
   transactions: many(transactions),
   pdf_submissions: many(pdfSubmissions),
   action_logs_as_actor: many(actionLogs, { relationName: "actor" }),
@@ -69,6 +89,9 @@ export const books = pgTable("books", {
     .default(sql`substr(md5(random()::text), 1, 6)`),
   title: text("title").notNull(),
   author: text("author").notNull(),
+  category_id: uuid("category_id").references(() => categories.id, {
+    onDelete: "set null",
+  }),
   is_syllabus: boolean("is_syllabus").notNull().default(false),
   pages: integer("pages"),
   pdf_link: text("pdf_link"),
@@ -76,7 +99,11 @@ export const books = pgTable("books", {
   updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
-export const booksRelations = relations(books, ({ many }) => ({
+export const booksRelations = relations(books, ({ one, many }) => ({
+  category: one(categories, {
+    fields: [books.category_id],
+    references: [categories.id],
+  }),
   copies: many(copies),
   transactions: many(transactions),
   pdf_submissions: many(pdfSubmissions),

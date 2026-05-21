@@ -21,9 +21,12 @@ export const users = {
     allRanks: "সব পদবী",
     allThanas: "সব থানা",
     noRank: "পদবী নেই",
+    progressCategory: {
+      all: "সিলেবাসের অগ্রগতি",
+    },
     sortBy: {
       joinDate: "যোগদানের তারিখ",
-      progress: "সিলেবাসের অগ্রগতি",
+      progress: "অগ্রগতি",
       rank: "পদবী",
     },
     reset: "ফিল্টার রিসেট করুন",

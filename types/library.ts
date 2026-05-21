@@ -27,13 +27,30 @@ export interface Book {
   short_id: string;
   title: string;
   author: string;
+  category_id: string | null;
   is_syllabus: boolean;
   pages: number | null;
   pdf_link: string | null;
   created_at: string;
   updated_at: string;
   // joined
+  category?: Category;
   copies?: Copy[];
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  count_in_progress: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CategoryProgress {
+  categoryId: string;
+  categoryName: string;
+  completed: number;
+  total: number;
 }
 
 export interface Copy {
@@ -135,6 +152,7 @@ export interface NotificationItem {
 export interface UserStats {
   syllabusCompleted: number;
   syllabusTotal: number;
+  categoryProgress: CategoryProgress[];
   activeBorrows: number;
   overdueBorrows: number;
   pendingRequests: number;
@@ -144,6 +162,7 @@ export interface UserStats {
 export interface UserWithStats extends Profile {
   syllabusCompleted: number;
   syllabusTotal: number;
+  categoryProgress: CategoryProgress[];
   activeBorrows: number;
   overdueBorrows: number;
   pendingRequests: number;

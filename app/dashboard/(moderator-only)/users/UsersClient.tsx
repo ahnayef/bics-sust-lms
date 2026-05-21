@@ -5,14 +5,15 @@ import { useTranslation } from "@/lib/i18n/context";
 import type { UserWithStats } from "@/types/library";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   FaCheckCircle,
   FaChevronDown,
-  FaChevronUp,
   FaSearch,
+  FaSortAmountDown,
+  FaSortAmountUp,
   FaTimes,
-  FaTimesCircle,
+  FaTimesCircle
 } from "react-icons/fa";
 
 type Tab = "all" | "verified" | "unverified" | "overdue";
@@ -49,12 +50,41 @@ function VerificationBadge({ verified }: { verified: boolean }) {
 
 export default function UsersClient({ users }: Props) {
   const { t, language } = useTranslation();
+  const progressCategories = useMemo(() => {
+    const categories = new Map<string, string>();
+    for (const u of users) {
+      if (u.categoryProgress) {
+        for (const cp of u.categoryProgress) {
+          categories.set(cp.categoryId, cp.categoryName);
+        }
+      }
+    }
+    // Sort so Syllabus is first, then alphabetical
+    return Array.from(categories.entries()).sort((a, b) => {
+      if (a[1] === "Syllabus") return -1;
+      if (b[1] === "Syllabus") return 1;
+      return a[1].localeCompare(b[1]);
+    });
+  }, [users]);
+
+  const syllabusId = useMemo(() => {
+    return progressCategories.find((c) => c[1] === "Syllabus")?.[0] ?? "all";
+  }, [progressCategories]);
+
   const [tab, setTab] = useState<Tab>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [rankFilter, setRankFilter] = useState<string>("all");
   const [thanaFilter, setThanaFilter] = useState<string>("all");
+  const [progressCategoryFilter, setProgressCategoryFilter] = useState<string>("all");
   const [sortField, setSortField] = useState<SortField>("joinDate");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  // Set default category to Syllabus once categories are loaded
+  useEffect(() => {
+    if (progressCategoryFilter === "all" && syllabusId !== "all") {
+      setProgressCategoryFilter(syllabusId);
+    }
+  }, [syllabusId, progressCategoryFilter]);
 
   const uniqueRanks = useMemo(() => {
     const ranks = new Map<string, string>();
@@ -124,10 +154,18 @@ export default function UsersClient({ users }: Props) {
         cmp =
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       } else if (sortField === "progress") {
-        const pa =
-          a.syllabusTotal > 0 ? a.syllabusCompleted / a.syllabusTotal : 0;
-        const pb =
-          b.syllabusTotal > 0 ? b.syllabusCompleted / b.syllabusTotal : 0;
+        let pa = 0;
+        let pb = 0;
+
+        if (progressCategoryFilter === "all") {
+          pa = a.syllabusTotal > 0 ? a.syllabusCompleted / a.syllabusTotal : 0;
+          pb = b.syllabusTotal > 0 ? b.syllabusCompleted / b.syllabusTotal : 0;
+        } else {
+          const cpa = a.categoryProgress?.find((c) => c.categoryId === progressCategoryFilter);
+          const cpb = b.categoryProgress?.find((c) => c.categoryId === progressCategoryFilter);
+          pa = cpa && cpa.total > 0 ? cpa.completed / cpa.total : 0;
+          pb = cpb && cpb.total > 0 ? cpb.completed / cpb.total : 0;
+        }
         cmp = pa - pb;
       } else if (sortField === "rank") {
         const ra = a.rank?.name ?? t.users.filters.noRank;
@@ -146,12 +184,22 @@ export default function UsersClient({ users }: Props) {
   };
 
   const selectClass =
-    "px-3 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm cursor-pointer";
+    "px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm cursor-pointer hover:bg-[#ece0ce] transition-colors appearance-none pr-8 relative";
+
+  const SelectWrapper = ({ children, icon: Icon }: { children: React.ReactNode, icon?: any }) => (
+    <div className="relative group">
+      {children}
+      <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#8a7966] group-hover:text-[#5a4b3f] transition-colors">
+        <FaChevronDown className="w-3 h-3" />
+      </div>
+    </div>
+  );
 
   const hasActiveFilters =
     searchTerm !== "" ||
     rankFilter !== "all" ||
     thanaFilter !== "all" ||
+    progressCategoryFilter !== syllabusId ||
     sortField !== "joinDate" ||
     sortDir !== "desc";
 
@@ -159,6 +207,7 @@ export default function UsersClient({ users }: Props) {
     setSearchTerm("");
     setRankFilter("all");
     setThanaFilter("all");
+    setProgressCategoryFilter(syllabusId);
     setSortField("joinDate");
     setSortDir("desc");
   };
@@ -215,8 +264,8 @@ export default function UsersClient({ users }: Props) {
 
       <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
         <div className="p-4 sm:p-5 border-b border-[#7d6d5a] bg-[#eadcc8]/40 space-y-4">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="relative flex-1">
+          <div className="flex flex-col gap-4">
+            <div className="relative w-full">
               <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a7966] w-4 h-4" />
               <input
                 type="text"
@@ -227,54 +276,73 @@ export default function UsersClient({ users }: Props) {
               />
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <select
-                value={rankFilter}
-                onChange={(e) => setRankFilter(e.target.value)}
-                className={selectClass}
-              >
-                <option value="all">{t.users.filters.allRanks}</option>
-                <option value="None">{t.users.filters.noRank}</option>
-                {uniqueRanks.map(([id, name]) => (
-                  <option key={id} value={id}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={thanaFilter}
-                onChange={(e) => setThanaFilter(e.target.value)}
-                className={selectClass}
-              >
-                <option value="all">{t.users.filters.allThanas}</option>
-                {uniqueThanas.map(([id, name]) => (
-                  <option key={id} value={id}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-
-              <div className="flex items-center gap-2 border border-[#8a7966] bg-[#f6ecdd] rounded-sm pr-2">
+              <SelectWrapper>
                 <select
-                  value={sortField}
-                  onChange={(e) => setSortField(e.target.value as SortField)}
-                  className="bg-transparent border-none py-2.5 pl-3 pr-8 focus:ring-0 text-sm ink-text cursor-pointer"
+                  value={rankFilter}
+                  onChange={(e) => setRankFilter(e.target.value)}
+                  className={selectClass}
                 >
-                  <option value="joinDate">{t.users.filters.sortBy.joinDate}</option>
-                  <option value="progress">{t.users.filters.sortBy.progress}</option>
-                  <option value="rank">{t.users.filters.sortBy.rank}</option>
+                  <option value="all">{t.users.filters.allRanks}</option>
+                  <option value="None">{t.users.filters.noRank}</option>
+                  {uniqueRanks.map(([id, name]) => (
+                    <option key={id} value={id}>
+                      {name}
+                    </option>
+                  ))}
                 </select>
+              </SelectWrapper>
+
+              <SelectWrapper>
+                <select
+                  value={thanaFilter}
+                  onChange={(e) => setThanaFilter(e.target.value)}
+                  className={selectClass}
+                >
+                  <option value="all">{t.users.filters.allThanas}</option>
+                  {uniqueThanas.map(([id, name]) => (
+                    <option key={id} value={id}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </SelectWrapper>
+
+              <SelectWrapper>
+                <select
+                  value={progressCategoryFilter}
+                  onChange={(e) => setProgressCategoryFilter(e.target.value)}
+                  className={selectClass}
+                >
+                  {progressCategories.map(([id, name]) => (
+                    <option key={id} value={id}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </SelectWrapper>
+
+              <div className="flex items-center gap-2">
+                <SelectWrapper>
+                  <select
+                    value={sortField}
+                    onChange={(e) => setSortField(e.target.value as SortField)}
+                    className={selectClass}
+                  >
+                    <option value="joinDate">{t.users.filters.sortBy.joinDate}</option>
+                    <option value="progress">{t.users.filters.sortBy.progress}</option>
+                    <option value="rank">{t.users.filters.sortBy.rank}</option>
+                  </select>
+                </SelectWrapper>
+
                 <button
-                  onClick={() =>
-                    setSortDir(sortDir === "asc" ? "desc" : "asc")
-                  }
-                  className="p-1 hover:bg-[#eadcc8] rounded-sm transition-colors text-[#5c4f42]"
+                  onClick={() => setSortDir(sortDir === "asc" ? "desc" : "asc")}
+                  className="p-2.5 bg-[#f6ecdd] border border-[#8a7966] text-[#4e4033] rounded-sm hover:bg-[#ece0ce] transition-colors flex items-center justify-center min-w-[42px]"
                   title={sortDir === "asc" ? t.common.sort.ascending : t.common.sort.descending}
                 >
                   {sortDir === "asc" ? (
-                    <FaChevronUp className="w-3 h-3" />
+                    <FaSortAmountUp className="w-4 h-4" />
                   ) : (
-                    <FaChevronDown className="w-3 h-3" />
+                    <FaSortAmountDown className="w-4 h-4" />
                   )}
                 </button>
               </div>
@@ -282,7 +350,7 @@ export default function UsersClient({ users }: Props) {
               {hasActiveFilters && (
                 <button
                   onClick={resetFilters}
-                  className="text-xs font-bold text-[#8b2c1a] hover:text-[#9b3a25] flex items-center gap-1.5 transition-colors uppercase tracking-wider"
+                  className="text-xs font-bold text-[#8b2c1a] hover:text-[#9b3a25] flex items-center gap-1.5 transition-colors uppercase tracking-wider h-10 px-2"
                 >
                   <FaTimes className="w-3 h-3" /> {t.users.filters.reset}
                 </button>
@@ -310,19 +378,25 @@ export default function UsersClient({ users }: Props) {
                 <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
                   {t.users.table.joined}
                 </th>
-                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
-                  {t.users.table.actions}
-                </th>
               </tr>
             </thead>
             <tbody>
               {filteredUsers.map((user) => {
-                const pct =
-                  user.syllabusTotal > 0
-                    ? Math.round(
-                      (user.syllabusCompleted / user.syllabusTotal) * 100,
-                    )
-                    : 0;
+                let pct = 0;
+                let completed = 0;
+                let total = 0;
+
+                if (progressCategoryFilter === "all") {
+                  pct = user.syllabusTotal > 0 ? Math.round((user.syllabusCompleted / user.syllabusTotal) * 100) : 0;
+                  completed = user.syllabusCompleted;
+                  total = user.syllabusTotal;
+                } else {
+                  const cp = user.categoryProgress?.find((c) => c.categoryId === progressCategoryFilter);
+                  pct = cp && cp.total > 0 ? Math.round((cp.completed / cp.total) * 100) : 0;
+                  completed = cp?.completed ?? 0;
+                  total = cp?.total ?? 0;
+                }
+
                 return (
                   <tr
                     key={user.id}
@@ -369,7 +443,7 @@ export default function UsersClient({ users }: Props) {
                         <div className="flex justify-between text-[10px] font-bold text-[#5c4f42]">
                           <span>{pct}%</span>
                           <span className="opacity-70">
-                            {user.syllabusCompleted}/{user.syllabusTotal}
+                            {completed}/{total}
                           </span>
                         </div>
                         <div className="h-1.5 bg-[#d2bfa5]/40 rounded-full overflow-hidden border border-[#c9b89a]/30">
@@ -396,14 +470,6 @@ export default function UsersClient({ users }: Props) {
                         month: "short",
                         year: "numeric",
                       })}
-                    </td>
-                    <td className="px-4 sm:px-6 py-3">
-                      <Link
-                        href={`/dashboard/users/${user.id}`}
-                        className="text-xs font-bold text-[#3f3328] hover:text-[#221910] uppercase tracking-widest underline underline-offset-4 decoration-[#c9b89a] hover:decoration-[#3f3328] transition-all"
-                      >
-                        {t.users.table.actions}
-                      </Link>
                     </td>
                   </tr>
                 );

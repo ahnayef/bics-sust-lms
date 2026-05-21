@@ -1,8 +1,8 @@
 import { RankBadge } from "@/components/ui/rank-badge";
+import { getTranslation } from "@/lib/i18n/server";
 import { getProfileByUsername } from "@/server/geo";
 import { getUserStats } from "@/server/library";
 import { getClaims } from "@/server/user";
-import { getTranslation } from "@/lib/i18n/server";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -57,11 +57,6 @@ export default async function DashboardUserProfilePage({
   );
 
   const locationParts = [profile.thana?.name].filter(Boolean);
-
-  const syllabusPercent =
-    stats && stats.syllabusTotal > 0
-      ? Math.round((stats.syllabusCompleted / stats.syllabusTotal) * 100)
-      : 0;
 
   return (
     <div className="p-2 sm:p-0 max-w-3xl mx-auto space-y-5">
@@ -138,22 +133,29 @@ export default async function DashboardUserProfilePage({
           <h2 className="text-base font-bold text-[#221910] ink-title mb-4 border-b border-[#c9b89a] pb-2">
             {t.profile.publicProfile.readingProgress}
           </h2>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-sm ink-text text-[#4a3e33]">
-              <span>
-                {stats.syllabusCompleted} / {stats.syllabusTotal} {t.profile.publicProfile.syllabusBooks}
-              </span>
-              <span className="font-bold text-[#221910]">
-                {syllabusPercent}%
-              </span>
-            </div>
-            <div className="w-full h-3 rounded-full bg-[#e4d4bf] border border-[#ccb79b] overflow-hidden">
-              <div
-                className="h-full bg-[#5a4d40] transition-all"
-                style={{ width: `${syllabusPercent}%` }}
-              />
-            </div>
-            <div className="flex gap-4 text-xs ink-text text-[#5a4b3f]">
+          <div className="space-y-6">
+            {stats.categoryProgress.map((cp) => {
+              const percent =
+                cp.total > 0 ? Math.round((cp.completed / cp.total) * 100) : 0;
+              return (
+                <div key={cp.categoryId} className="space-y-2">
+                  <div className="flex items-center justify-between text-sm ink-text text-[#4a3e33]">
+                    <span className="font-medium">
+                      {cp.categoryName}: {cp.completed} / {cp.total}
+                    </span>
+                    <span className="font-bold text-[#221910]">{percent}%</span>
+                  </div>
+                  <div className="w-full h-2.5 rounded-full bg-[#e4d4bf] border border-[#ccb79b] overflow-hidden">
+                    <div
+                      className="h-full bg-[#5a4d40] transition-all"
+                      style={{ width: `${percent}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+
+            <div className="pt-2 flex gap-4 text-xs ink-text text-[#5a4b3f] border-t border-[#dcd0bc]">
               <span>
                 {t.profile.stats.activeBorrows}:{" "}
                 <span className="font-semibold text-[#221910]">

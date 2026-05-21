@@ -21,9 +21,12 @@ export const users = {
     allRanks: "All Ranks",
     allThanas: "All Thanas",
     noRank: "No Rank",
+    progressCategory: {
+      all: "Syllabus Progress",
+    },
     sortBy: {
       joinDate: "Join Date",
-      progress: "Syllabus Progress",
+      progress: "Progress",
       rank: "Rank",
     },
     reset: "Reset Filters",

@@ -1,4 +1,5 @@
 import { RankBadge } from "@/components/ui/rank-badge";
+import { getTranslation } from "@/lib/i18n/server";
 import { getProfile } from "@/server/geo";
 import { getUserStats } from "@/server/library";
 import { getClaims } from "@/server/user";
@@ -13,7 +14,6 @@ import {
   FaPhone,
   FaShieldAlt,
 } from "react-icons/fa";
-import { getTranslation } from "@/lib/i18n/server";
 
 export default async function DashboardProfilePage() {
   const claims = await getClaims();
@@ -24,16 +24,13 @@ export default async function DashboardProfilePage() {
     getUserStats(claims.sub),
   ]);
   if (!profile) redirect("/login");
-  const syllabusPercent =
-    stats.syllabusTotal > 0
-      ? Math.round((stats.syllabusCompleted / stats.syllabusTotal) * 100)
-      : 0;
 
   const roleColors: Record<string, string> = {
     admin: "bg-amber-100 text-amber-800 border-amber-400",
     moderator: "bg-teal-100 text-teal-800 border-teal-400",
-    member: "bg-stone-100 text-stone-700 border-stone-400",
+    member: "bg-stone-100 text-stone-800 border-stone-400",
   };
+
   const joinedDate = new Date(profile.created_at).toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", {
     day: "numeric",
     month: "long",
@@ -147,29 +144,34 @@ export default async function DashboardProfilePage() {
             <h2 className="text-sm font-bold uppercase tracking-wider text-[#6a5a4c] ink-text mb-4 border-b border-[#c9b89a] pb-2">
               {t.profile.sections.readingProgress}
             </h2>
-            <div className="space-y-5">
-              <div>
-                <div className="flex justify-between items-end mb-2">
-                  <p className="text-sm font-bold text-[#221910] ink-title">
-                    {t.profile.stats.syllabusProgress}
-                  </p>
-                  <p className="text-sm font-bold text-[#221910] ink-title">
-                    {syllabusPercent}%
-                  </p>
-                </div>
-                <div className="w-full h-3 bg-[#d9cbb7] rounded-full overflow-hidden border border-[#8a7966] shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]">
-                  <div
-                    className="h-full bg-teal-700 transition-all duration-500 shadow-[0_0_10px_rgba(13,148,136,0.3)]"
-                    style={{ width: `${syllabusPercent}%` }}
-                  />
-                </div>
-                <p className="text-xs text-[#6a5a4c] mt-2 ink-text text-right">
-                  {stats.syllabusCompleted} / {stats.syllabusTotal}{" "}
-                  {t.profile.stats.booksRead}
-                </p>
-              </div>
+            <div className="space-y-6">
+              {stats.categoryProgress.map((cp) => {
+                const percent =
+                  cp.total > 0 ? Math.round((cp.completed / cp.total) * 100) : 0;
+                return (
+                  <div key={cp.categoryId}>
+                    <div className="flex justify-between items-end mb-2">
+                      <p className="text-sm font-bold text-[#221910] ink-title">
+                        {cp.categoryName}
+                      </p>
+                      <p className="text-sm font-bold text-[#221910] ink-title">
+                        {percent}%
+                      </p>
+                    </div>
+                    <div className="w-full h-3 bg-[#d9cbb7] rounded-full overflow-hidden border border-[#8a7966] shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]">
+                      <div
+                        className="h-full bg-teal-700 transition-all duration-500 shadow-[0_0_10px_rgba(13,148,136,0.3)]"
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-[#6a5a4c] mt-2 ink-text text-right">
+                      {cp.completed} / {cp.total} {t.profile.stats.booksRead}
+                    </p>
+                  </div>
+                );
+              })}
 
-              <div className="pt-2">
+              <div className="pt-2 border-t border-[#d9cbb7]/50">
                 <div className="flex justify-between items-center py-2 border-b border-[#d9cbb7]/50">
                   <span className="text-xs text-[#6a5a4c] font-medium uppercase tracking-tight">
                     {t.profile.stats.activeBorrows}
