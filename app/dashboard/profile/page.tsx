@@ -13,9 +13,12 @@ import {
   FaPhone,
   FaShieldAlt,
 } from "react-icons/fa";
+import { getTranslation } from "@/lib/i18n/server";
+
 export default async function DashboardProfilePage() {
   const claims = await getClaims();
   if (!claims) redirect("/login");
+  const { t, language } = await getTranslation();
   const [profile, stats] = await Promise.all([
     getProfile(claims.sub),
     getUserStats(claims.sub),
@@ -25,17 +28,13 @@ export default async function DashboardProfilePage() {
     stats.syllabusTotal > 0
       ? Math.round((stats.syllabusCompleted / stats.syllabusTotal) * 100)
       : 0;
-  const roleLabels: Record<string, string> = {
-    admin: "Admin",
-    moderator: "Moderator",
-    member: "Member",
-  };
+
   const roleColors: Record<string, string> = {
     admin: "bg-amber-100 text-amber-800 border-amber-400",
     moderator: "bg-teal-100 text-teal-800 border-teal-400",
     member: "bg-stone-100 text-stone-700 border-stone-400",
   };
-  const joinedDate = new Date(profile.created_at).toLocaleDateString("en-GB", {
+  const joinedDate = new Date(profile.created_at).toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -43,14 +42,10 @@ export default async function DashboardProfilePage() {
   const locationParts = [profile.thana?.name].filter(Boolean);
   return (
     <div className="p-2 sm:p-0">
-      {" "}
       <div className="max-w-3xl mx-auto space-y-5">
-        {" "}
-        {/* ── Hero card ── */}{" "}
+        {/* ── Hero card ── */}
         <section className="dashboard-surface tron-border rounded-sm p-6 sm:p-8">
-          {" "}
           <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
-            {" "}
             {profile.avatar_url ? (
               <Image
                 src={profile.avatar_url}
@@ -61,180 +56,151 @@ export default async function DashboardProfilePage() {
               />
             ) : (
               <div className="w-24 h-24 rounded-full bg-[#d9cbb7] border-2 border-[#8a7966] flex items-center justify-center text-3xl font-bold text-[#4a3e33] shrink-0 ink-title">
-                {" "}
-                {profile.full_name.charAt(0).toUpperCase()}{" "}
+                {profile.full_name.charAt(0).toUpperCase()}
               </div>
-            )}{" "}
+            )}
             <div className="flex-1 text-center sm:text-left">
-              {" "}
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
-                {" "}
                 <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
-                  {" "}
-                  {profile.full_name}{" "}
-                </h1>{" "}
+                  {profile.full_name}
+                </h1>
                 {profile.is_verified && (
                   <FaCheckCircle
                     className="w-5 h-5 text-teal-600"
-                    title="Verified"
+                    title={t.profile.header.verified}
                   />
-                )}{" "}
-              </div>{" "}
+                )}
+              </div>
               <p className="text-[#6a5a4c] ink-text mb-3">
-                {" "}
-                @{profile.username}{" "}
-              </p>{" "}
+                @{profile.username}
+              </p>
               <div className="flex flex-wrap justify-center sm:justify-start gap-2">
-                {" "}
                 <span
                   className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-xs font-semibold border ink-text ${roleColors[profile.role]}`}
                 >
-                  {" "}
-                  <FaShieldAlt className="w-3 h-3" />{" "}
-                  {roleLabels[profile.role]}{" "}
-                </span>{" "}
-                <RankBadge name={profile.rank?.name} />{" "}
-              </div>{" "}
+                  <FaShieldAlt className="w-3 h-3" />
+                  {t.profile.roles[profile.role as keyof typeof t.profile.roles]}
+                </span>
+                <RankBadge name={profile.rank?.name} />
+              </div>
               <p className="text-xs text-[#7a6a5c] ink-text mt-3">
-                {" "}
-                Joined on: <b>{joinedDate}</b>{" "}
-              </p>{" "}
-            </div>{" "}
-          </div>{" "}
-          {/* Actions */}{" "}
-          <div className="mt-5 pt-4 border-t border-[#d9c8b0] flex flex-wrap gap-3 justify-end">
-            {" "}
-            <Link
-              href={`/dashboard/profile/${profile.username}`}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#4d4034] border border-[#8a7966] rounded-sm hover:bg-[#eadcc8] transition-colors ink-text"
-            >
-              {" "}
-              View Public Profile{" "}
-            </Link>{" "}
+                {t.profile.header.joinedOn}: <b>{joinedDate}</b>
+              </p>
+            </div>
             <Link
               href="/dashboard/profile/edit"
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#4d4034] border border-[#8a7966] rounded-sm hover:bg-[#eadcc8] transition-colors ink-text"
+              className="flex items-center gap-2 px-4 py-2 bg-[#eadcc8] text-[#4e4033] border border-[#b5a490] rounded-sm hover:bg-[#e1d0ba] transition-colors text-sm font-semibold ink-text shrink-0"
             >
-              {" "}
-              <FaEdit className="w-3.5 h-3.5" /> Edit Profile{" "}
-            </Link>{" "}
-          </div>{" "}
-        </section>{" "}
-        {/* ── Reading Progress ── */}{" "}
-        <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
-          {" "}
-          <h2 className="text-lg font-bold text-[#221910] ink-title mb-4 border-b border-[#c9b89a] pb-2">
-            {" "}
-            Reading Progress{" "}
-          </h2>{" "}
-          <div className="space-y-3">
-            {" "}
-            <div className="flex items-center justify-between text-sm ink-text text-[#4a3e33]">
-              {" "}
-              <span>
-                {" "}
-                {stats.syllabusCompleted} / {stats.syllabusTotal} syllabus
-                books{" "}
-              </span>{" "}
-              <span className="font-bold text-[#221910]">
-                {" "}
-                {syllabusPercent}%{" "}
-              </span>{" "}
-            </div>{" "}
-            <div className="w-full h-3 rounded-full bg-[#e4d4bf] border border-[#ccb79b] overflow-hidden">
-              {" "}
-              <div
-                className="h-full bg-[#5a4d40] transition-all"
-                style={{ width: `${syllabusPercent}%` }}
-              />{" "}
-            </div>{" "}
-            <div className="grid grid-cols-3 gap-2 pt-1">
-              {" "}
-              {[
-                { label: "Completed", value: stats.syllabusCompleted, filter: "completed" },
-                { label: "Borrowing", value: stats.activeBorrows, filter: "active" },
-                { label: "Pending", value: stats.pendingRequests, filter: "pending" },
-              ].map(({ label, value, filter }) => (
-                <Link
-                  href={`/dashboard/history?filter=${filter}`}
-                  key={label}
-                  className="block border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-2 text-center hover:bg-[#eadcc8] transition-colors"
-                >
-                  {" "}
-                  <p className="text-xl font-bold text-[#221910] ink-title leading-none">
-                    {" "}
-                    {value}{" "}
-                  </p>{" "}
-                  <p className="text-[10px] uppercase tracking-wider text-[#6a5a4c] ink-text mt-1">
-                    {" "}
-                    {label}{" "}
-                  </p>{" "}
-                </Link>
-              ))}{" "}
-            </div>{" "}
-          </div>{" "}
-        </section>{" "}
-        {/* ── Contact & Location ── */}{" "}
-        <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
-          {" "}
-          <h2 className="text-lg font-bold text-[#221910] ink-title mb-4 border-b border-[#c9b89a] pb-2">
-            {" "}
-            Contact &amp; Location{" "}
-          </h2>{" "}
-          <dl className="space-y-4 ink-text">
-            {" "}
-            <div className="flex items-start gap-3">
-              {" "}
-              <FaEnvelope className="w-4 h-4 text-[#7a6a5c] mt-0.5 shrink-0" />{" "}
+              <FaEdit className="w-3.5 h-3.5" />
+              {t.profile.header.editProfile}
+            </Link>
+          </div>
+        </section>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* ── Contact Info ── */}
+          <section className="dashboard-surface tron-border rounded-sm p-6">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-[#6a5a4c] ink-text mb-4 border-b border-[#c9b89a] pb-2">
+              {t.profile.sections.contactInfo}
+            </h2>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <FaEnvelope className="w-4 h-4 text-[#8a7966] mt-0.5" />
+                <div>
+                  <p className="text-[10px] text-[#8a7966] uppercase font-bold tracking-tight">
+                    {t.profile.info.email}
+                  </p>
+                  <p className="text-sm text-[#221910] font-medium break-all">
+                    {profile.email}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <FaPhone className="w-4 h-4 text-[#8a7966] mt-0.5" />
+                <div>
+                  <p className="text-[10px] text-[#8a7966] uppercase font-bold tracking-tight">
+                    {t.profile.info.phone}
+                  </p>
+                  <p className="text-sm text-[#221910] font-medium">
+                    {profile.phone || t.profile.info.noPhone}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <FaMapMarkerAlt className="w-4 h-4 text-[#8a7966] mt-0.5" />
+                <div>
+                  <p className="text-[10px] text-[#8a7966] uppercase font-bold tracking-tight">
+                    {t.profile.info.location}
+                  </p>
+                  <p className="text-sm text-[#221910] font-medium">
+                    {locationParts.length > 0
+                      ? locationParts.join(", ")
+                      : t.profile.info.noLocation}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ── Reading Progress ── */}
+          <section className="dashboard-surface tron-border rounded-sm p-6">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-[#6a5a4c] ink-text mb-4 border-b border-[#c9b89a] pb-2">
+              {t.profile.sections.readingProgress}
+            </h2>
+            <div className="space-y-5">
               <div>
-                {" "}
-                <dt className="text-xs text-[#7a6a5c] uppercase tracking-wider mb-0.5">
-                  {" "}
-                  Email{" "}
-                </dt>{" "}
-                <dd className="text-[#2b2119]">{profile.email}</dd>{" "}
-              </div>{" "}
-            </div>{" "}
-            {profile.phone && (
-              <div className="flex items-start gap-3">
-                {" "}
-                <FaPhone className="w-4 h-4 text-[#7a6a5c] mt-0.5 shrink-0" />{" "}
-                <div>
-                  {" "}
-                  <dt className="text-xs text-[#7a6a5c] uppercase tracking-wider mb-0.5">
-                    {" "}
-                    Phone{" "}
-                  </dt>{" "}
-                  <dd className="text-[#2b2119]">{profile.phone}</dd>{" "}
-                </div>{" "}
+                <div className="flex justify-between items-end mb-2">
+                  <p className="text-sm font-bold text-[#221910] ink-title">
+                    {t.profile.stats.syllabusProgress}
+                  </p>
+                  <p className="text-sm font-bold text-[#221910] ink-title">
+                    {syllabusPercent}%
+                  </p>
+                </div>
+                <div className="w-full h-3 bg-[#d9cbb7] rounded-full overflow-hidden border border-[#8a7966] shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]">
+                  <div
+                    className="h-full bg-teal-700 transition-all duration-500 shadow-[0_0_10px_rgba(13,148,136,0.3)]"
+                    style={{ width: `${syllabusPercent}%` }}
+                  />
+                </div>
+                <p className="text-xs text-[#6a5a4c] mt-2 ink-text text-right">
+                  {stats.syllabusCompleted} / {stats.syllabusTotal}{" "}
+                  {t.profile.stats.booksRead}
+                </p>
               </div>
-            )}{" "}
-            {locationParts.length > 0 && (
-              <div className="flex items-start gap-3">
-                {" "}
-                <FaMapMarkerAlt className="w-4 h-4 text-[#7a6a5c] mt-0.5 shrink-0" />{" "}
-                <div>
-                  {" "}
-                  <dt className="text-xs text-[#7a6a5c] uppercase tracking-wider mb-0.5">
-                    {" "}
-                    Thana{" "}
-                  </dt>{" "}
-                  <dd className="text-[#2b2119]">
-                    {locationParts.join(",")}
-                  </dd>{" "}
-                </div>{" "}
+
+              <div className="pt-2">
+                <div className="flex justify-between items-center py-2 border-b border-[#d9cbb7]/50">
+                  <span className="text-xs text-[#6a5a4c] font-medium uppercase tracking-tight">
+                    {t.profile.stats.activeBorrows}
+                  </span>
+                  <span className="text-sm font-bold text-[#221910]">
+                    {stats.activeBorrows}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-[#d9cbb7]/50">
+                  <span className="text-xs text-[#6a5a4c] font-medium uppercase tracking-tight">
+                    {t.profile.stats.overdueItems}
+                  </span>
+                  <span
+                    className={`text-sm font-bold ${stats.overdueBorrows > 0 ? "text-red-700" : "text-[#221910]"}`}
+                  >
+                    {stats.overdueBorrows}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-xs text-[#6a5a4c] font-medium uppercase tracking-tight">
+                    {t.profile.stats.pendingRequests}
+                  </span>
+                  <span className="text-sm font-bold text-[#221910]">
+                    {stats.pendingRequests}
+                  </span>
+                </div>
               </div>
-            )}{" "}
-          </dl>{" "}
-          {profile.hide_sensitive_info && (
-            <p className="mt-4 text-xs text-[#7a6a5c] ink-text bg-[#ede0cc] border border-[#c9b89a] rounded-sm px-3 py-2">
-              {" "}
-              🔒 Your email and location are hidden from your public
-              profile.{" "}
-            </p>
-          )}{" "}
-        </section>{" "}
-      </div>{" "}
+            </div>
+          </section>
+        </div>
+      </div>
     </div>
   );
 }

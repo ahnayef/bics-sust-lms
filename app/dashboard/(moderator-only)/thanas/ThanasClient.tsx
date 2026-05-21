@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "@/lib/i18n/context";
 import { ThanaChip } from "./ThanaChip";
 
 interface Thana {
@@ -9,6 +10,7 @@ interface Thana {
 }
 
 export default function ThanasClient({ thanas }: { thanas: Thana[] }) {
+  const { t } = useTranslation();
   const [flash, setFlash] = useState<{
     type: "success" | "error";
     text: string;
@@ -34,7 +36,7 @@ export default function ThanasClient({ thanas }: { thanas: Thana[] }) {
       )}
       {thanas.length === 0 ? (
         <p className="text-sm text-[#6a5a4c] ink-text">
-          No thanas yet — add one above.
+          {t.thanas.empty}
         </p>
       ) : (
         <div className="flex flex-wrap gap-2">

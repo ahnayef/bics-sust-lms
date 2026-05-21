@@ -1,0 +1,33 @@
+export const borrow = {
+  title: "Borrow a Book",
+  subtitle: "Scan a copy QR code or enter the Copy ID manually to start a borrow request.",
+  qrMode: "Scan QR",
+  manualMode: "Enter ID",
+  scanPlaceholder: "Scanning for QR code...",
+  inputPlaceholder: "Enter Copy ID (e.g. B-001)",
+  lookup: "Lookup Copy",
+  lookingUp: "Looking up...",
+  success: {
+    title: "Request Submitted!",
+    message: "Your borrow request for {title} has been submitted for approval.",
+    viewHistory: "View History",
+    borrowAnother: "Borrow Another",
+  },
+  errors: {
+    copyNotFound: "Copy not found. Check the ID and try again.",
+    damaged: "This copy is marked as damaged and cannot be borrowed.",
+    borrowed: "This copy is currently borrowed and not available.",
+    alreadyBorrowed: "You already have this book borrowed.",
+    cameraPermission: "Camera permission denied. Please enable camera access or use manual entry.",
+    generic: "Something went wrong. Please try again.",
+  },
+  form: {
+    bookTitle: "Book Title",
+    copyId: "Copy ID",
+    returnDate: "Return Date",
+    returnDateDesc: "Standard borrow period is 14 days.",
+    submit: "Request to Borrow",
+    submitting: "Submitting...",
+    alreadyRead: "You have already completed this book on {date}. Borrowing it again is allowed, but maybe try something new?",
+  },
+} as const;

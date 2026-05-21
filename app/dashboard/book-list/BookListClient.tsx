@@ -1,12 +1,15 @@
 "use client";
 
 import StatusBadge from "@/app/components/StatusBadge";
+import { useTranslation } from "@/lib/i18n/context";
 import { submitPdfReport } from "@/server/transaction-actions";
+import "@/styles/components.css";
+import "@/styles/typography.css";
+import type { Book, PdfSubmission } from "@/types/library";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Fragment, useMemo, useState, useTransition } from "react";
 import {
-  FaBook,
   FaBookOpen,
   FaCheckCircle,
   FaClock,
@@ -16,11 +19,8 @@ import {
   FaFilter,
   FaSearch,
   FaSortAmountDown,
-  FaTimes,
+  FaTimes
 } from "react-icons/fa";
-import "@/styles/typography.css";
-import "@/styles/components.css";
-import type { Book, PdfSubmission } from "@/types/library";
 
 type SortKey =
   | "title"
@@ -41,23 +41,24 @@ interface Props {
 // ── Copy status badge ──────────────────────────────────────────────────────
 
 function CopyStatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation();
   if (status === "available") {
     return (
       <StatusBadge tone="success" size="xs" icon={FaCheckCircle}>
-        Available
+        {t.bookList.copyStatus.available}
       </StatusBadge>
     );
   }
   if (status === "damaged") {
     return (
       <StatusBadge tone="danger" size="xs" icon={FaExclamationTriangle}>
-        Damaged
+        {t.bookList.copyStatus.damaged}
       </StatusBadge>
     );
   }
   return (
     <StatusBadge tone="warning" size="xs" icon={FaClock}>
-      Borrowed
+      {t.bookList.copyStatus.borrowed}
     </StatusBadge>
   );
 }
@@ -71,6 +72,7 @@ export default function BookListClient({
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const { t } = useTranslation();
 
   // Filter / sort state
   const [searchTerm, setSearchTerm] = useState("");
@@ -124,9 +126,7 @@ export default function BookListClient({
 
     const pdfStatus = getPdfStatus(selectedBookForPdf.id);
     if (pdfStatus === "pending" || pdfStatus === "approved") {
-      setPdfError(
-        "You already have a pending or approved submission for this book.",
-      );
+      setPdfError(t.bookList.pdfModal.errors.alreadySubmitted);
       return;
     }
 
@@ -138,7 +138,12 @@ export default function BookListClient({
 
       const result = await submitPdfReport(fd);
       if (result.error) {
-        setPdfError(result.error);
+        // Map common server errors to translated strings
+        if (result.error.includes("already have a pending or approved report")) {
+          setPdfError(t.bookList.pdfModal.errors.alreadySubmitted);
+        } else {
+          setPdfError(result.error || t.bookList.pdfModal.errors.generic);
+        }
       } else {
         setPdfSuccess(true);
         setTimeout(() => {
@@ -234,97 +239,93 @@ export default function BookListClient({
   return (
     <>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
-        {/* Header */}
-        <section
-          className="book-list-surface tron-border rounded-lg p-3 sm:p-4"
-        >
-          <div className="flex flex-col gap-1.5">
-            <div className="inline-flex w-fit items-center gap-2 px-2.5 py-0.5 rounded-full border border-[#8a7966] bg-[#f6ecdd] text-[#4e4033] ink-text text-[9px] uppercase tracking-[0.12em]">
-              <FaBook className="w-3 h-3" />
-              Library Catalogue
-            </div>
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
-              <h1 className="text-lg sm:text-xl font-bold text-[#221910] leading-tight ink-title">
-                Book List
+      <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500 max-w-[1400px] mx-auto">
+        {/* ── Header + Filters ──────────────────────────────────────────────── */}
+        <div className="dashboard-surface border border-[#7d6d5a] rounded-sm p-4 sm:p-6 shadow-sm">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
+                {t.bookList.header.title}
               </h1>
-              <p className="text-[11px] sm:text-xs text-[#5c4f42] ink-text sm:text-right">
-                {stats.books} books · {stats.copies} copies · {stats.available}{" "}
-                available
+              <p className="text-sm text-[#5c4f42] mt-1 ink-text italic">
+                {t.bookList.header.subtitle}
               </p>
             </div>
-          </div>
-        </section>
 
-        {/* Filters */}
-        <section
-          className="book-list-surface tron-border rounded-lg p-3 sm:p-4"
-        >
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-6 gap-2.5">
-            <div className="relative xl:col-span-2">
-              <FaSearch className="absolute left-3 top-3 text-[#7a6a5a]" />
-              <input
-                type="text"
-                placeholder="Search title, author, copy ID…"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
-              />
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div className="relative flex-1 sm:w-64">
+                <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d6d5a] w-3.5 h-3.5" />
+                <input
+                  type="text"
+                  placeholder={t.bookList.header.searchPlaceholder}
+                  className="w-full pl-9 pr-4 py-2 bg-[#f8f1e6] border border-[#b9a58b] rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text placeholder:text-[#a6917c]"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  className="flex items-center gap-2 px-3 py-2 bg-[#eadcc8] border border-[#7d6d5a] rounded-sm text-xs font-bold text-[#221910] hover:bg-[#d9cbb7] transition-colors uppercase tracking-wider"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setTypeFilter("all");
+                    setAvailabilityFilter("all");
+                    setSortBy("title");
+                  }}
+                >
+                  <FaTimes className="w-3 h-3" /> {t.bookList.empty.clearFilters}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-[#d2bfa5]/60 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] uppercase font-bold tracking-widest text-[#7d6d5a] flex items-center gap-1.5">
+                <FaFilter className="w-2.5 h-2.5" /> {t.bookList.header.filters}
+              </label>
+              <div className="flex gap-2">
+                <select
+                  className="flex-1 bg-[#f8f1e6] border border-[#b9a58b] rounded-sm px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text"
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
+                >
+                  <option value="all">{t.bookList.filters.type.all}</option>
+                  <option value="syllabus">{t.bookList.filters.type.syllabus}</option>
+                  <option value="additional">{t.bookList.filters.type.additional}</option>
+                </select>
+                <select
+                  className="flex-1 bg-[#f8f1e6] border border-[#b9a58b] rounded-sm px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text"
+                  value={availabilityFilter}
+                  onChange={(e) =>
+                    setAvailabilityFilter(e.target.value as AvailabilityFilter)
+                  }
+                >
+                  <option value="all">{t.bookList.filters.availability.all}</option>
+                  <option value="available">{t.bookList.filters.availability.available}</option>
+                  <option value="unavailable">{t.bookList.filters.availability.unavailable}</option>
+                </select>
+              </div>
             </div>
 
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
-              className="px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
-            >
-              <option value="all">All Types</option>
-              <option value="syllabus">Syllabus</option>
-              <option value="additional">Additional</option>
-            </select>
-
-            <select
-              value={availabilityFilter}
-              onChange={(e) =>
-                setAvailabilityFilter(e.target.value as AvailabilityFilter)
-              }
-              className="px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
-            >
-              <option value="all">All Copies</option>
-              <option value="available">Available Only</option>
-              <option value="unavailable">Borrowed / Damaged</option>
-            </select>
-
-            <div className="relative xl:col-span-2">
-              <FaSortAmountDown className="absolute left-3 top-3 text-[#7a6a5a]" />
+            <div className="space-y-2">
+              <label className="text-[10px] uppercase font-bold tracking-widest text-[#7d6d5a] flex items-center gap-1.5">
+                <FaSortAmountDown className="w-2.5 h-2.5" /> {t.bookList.header.sortBy}
+              </label>
               <select
+                className="w-full bg-[#f8f1e6] border border-[#b9a58b] rounded-sm px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortKey)}
-                className="w-full pl-10 pr-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
               >
-                <option value="title">Sort by Title</option>
-                <option value="pages-asc">Pages: Low → High</option>
-                <option value="pages-desc">Pages: High → Low</option>
-                <option value="copies-desc">Copies: Most First</option>
-                <option value="copies-asc">Copies: Fewest First</option>
+                <option value="title">{t.bookList.sorting.title}</option>
+                <option value="pages-asc">{t.bookList.sorting.pagesAsc}</option>
+                <option value="pages-desc">{t.bookList.sorting.pagesDesc}</option>
+                <option value="copies-asc">{t.bookList.sorting.copiesAsc}</option>
+                <option value="copies-desc">{t.bookList.sorting.copiesDesc}</option>
               </select>
             </div>
           </div>
-
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[#6b5c4e] ink-text">
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-[#c2b09a] bg-[#f6ecdd] text-[11px]">
-              <FaFilter className="w-3 h-3" />
-              {filteredBooks.length} books shown
-            </span>
-            <button
-              type="button"
-              onClick={clearFilters}
-              disabled={!hasActiveFilters}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-[#8a7966] bg-[#f6ecdd] text-[#4e4033] text-[11px] hover:bg-[#eadcca] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <FaTimes className="w-2.5 h-2.5" /> Clear filters
-            </button>
-          </div>
-        </section>
+        </div>
 
         {/* Book table */}
         <section
@@ -333,7 +334,7 @@ export default function BookListClient({
           {filteredBooks.length === 0 ? (
             <div className="p-10 text-center">
               <p className="text-[#5c4f42] ink-text">
-                No books match the current filters.
+                {t.bookList.empty.noBooks}
               </p>
             </div>
           ) : (
@@ -342,13 +343,13 @@ export default function BookListClient({
                 <thead>
                   <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
                     {[
-                      "Book",
-                      "Author",
-                      "Pages",
-                      "Type",
-                      "Copies",
-                      "Open",
-                      "PDF",
+                      t.bookList.table.book,
+                      t.bookList.table.author,
+                      t.bookList.table.pages,
+                      t.bookList.table.type,
+                      t.bookList.table.copies,
+                      t.bookList.table.available,
+                      t.bookList.table.pdf,
                     ].map((h) => (
                       <th
                         key={h}
@@ -396,7 +397,7 @@ export default function BookListClient({
                                   {book.title}
                                 </p>
                                 <p className="text-[10px] text-[#6a5a4c] mt-0.5">
-                                  {book.copies.length} copies total
+                                  {book.copies.length} {t.bookList.bookCard.copies}
                                 </p>
                               </div>
                             </div>
@@ -412,7 +413,7 @@ export default function BookListClient({
                           <td className="px-3 sm:px-4 py-2">
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm border border-[#8f7f6c] bg-[#efe4d1] text-[#3f3328] text-[11px] font-semibold">
                               <FaBookOpen className="w-3 h-3 text-[#4e4033]" />
-                              {book.is_syllabus ? "Syllabus" : "Additional"}
+                              {book.is_syllabus ? t.bookList.bookCard.syllabus : t.bookList.bookCard.additional}
                             </span>
                           </td>
                           <td className="px-3 sm:px-4 py-2 text-sm">
@@ -431,7 +432,7 @@ export default function BookListClient({
                                 className="inline-flex items-center gap-1 px-2 py-1 rounded-sm border border-[#4f4134] bg-[#3f3328] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors text-[10px] font-semibold whitespace-nowrap"
                               >
                                 <FaDownload className="w-3 h-3" />
-                                PDF
+                                {t.bookList.table.pdf}
                               </a>
                             ) : (
                               <span className="text-[#7b6d5f] text-[10px]">
@@ -450,16 +451,16 @@ export default function BookListClient({
                                   <thead>
                                     <tr className="text-[#6a5a4c] uppercase tracking-[0.08em] border-b border-[#d9c6ab]">
                                       <th className="py-1.5 pr-2 text-left font-semibold">
-                                        Copy ID
+                                        {t.bookList.table.copyId}
                                       </th>
                                       <th className="py-1.5 pr-2 text-left font-semibold">
-                                        Copy #
+                                        {t.bookList.table.copyNum}
                                       </th>
                                       <th className="py-1.5 pr-2 text-left font-semibold">
-                                        Status
+                                        {t.bookList.table.status}
                                       </th>
                                       <th className="py-1.5 pr-2 text-left font-semibold">
-                                        Action
+                                        {t.bookList.table.actions}
                                       </th>
                                     </tr>
                                   </thead>
@@ -490,31 +491,31 @@ export default function BookListClient({
                                                   href={`/dashboard/borrow?copyId=${encodeURIComponent(copy.id)}`}
                                                   className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-sm border border-[#4f4134] bg-[#3f3328] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors font-medium text-[10px] whitespace-nowrap"
                                                 >
-                                                  Borrow
+                                                  {t.dashboard.sidebar.borrow}
                                                 </Link>
                                               ) : isMyBorrow ? (
                                                 <Link
                                                   href="/dashboard/return"
                                                   className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-sm border border-[#4f4134] bg-[#5a4d40] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors font-medium text-[10px] whitespace-nowrap"
                                                 >
-                                                  Return
+                                                  {t.dashboard.sidebar.return}
                                                 </Link>
                                               ) : (
                                                 <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-sm border border-[#9b8a75] bg-[#e3d2bf] text-[#6f6256] font-medium text-[10px] whitespace-nowrap">
                                                   {copy.status === "damaged"
-                                                    ? "Damaged"
-                                                    : "Borrowed"}
+                                                    ? t.bookList.copyStatus.damaged
+                                                    : t.bookList.copyStatus.borrowed}
                                                 </span>
                                               )}
 
                                               {/* PDF report button */}
                                               {pdfStatus === "pending" ? (
                                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm border border-[#b49d6f] bg-[#f4ecd8] text-[#6b5428] font-medium text-[10px] whitespace-nowrap">
-                                                  PDF Pending
+                                                  {t.bookList.bookCard.pdfStatus.pending}
                                                 </span>
                                               ) : pdfStatus === "approved" ? (
                                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm border border-[#8aa06f] bg-[#eef5e9] text-[#3d5c2e] font-medium text-[10px] whitespace-nowrap">
-                                                  PDF Approved
+                                                  {t.bookList.bookCard.pdfStatus.approved}
                                                 </span>
                                               ) : (
                                                 <button
@@ -526,7 +527,7 @@ export default function BookListClient({
                                                   className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-sm border border-[#6b5d4f] bg-[#5a4d40] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors font-medium text-[10px] whitespace-nowrap"
                                                 >
                                                   <FaFileAlt className="w-3 h-3" />
-                                                  Mark as Read (PDF)
+                                                  {t.bookList.bookCard.pdfReport}
                                                 </button>
                                               )}
                                             </div>
@@ -554,11 +555,11 @@ export default function BookListClient({
       {showPdfModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div
-            className="book-list-surface tron-border rounded-lg w-full max-w-md bg-[#f1e7d8] border border-[#5f4d42] p-6 shadow-xl"
+            className="book-list-surface tron-border rounded-lg w-full max-md bg-[#f1e7d8] border border-[#5f4d42] p-6 shadow-xl"
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-[#221910] ink-title">
-                Mark as Read (PDF)
+                {t.bookList.pdfModal.title}
               </h2>
               <button
                 onClick={closePdfModal}
@@ -576,17 +577,17 @@ export default function BookListClient({
                   </div>
                 </div>
                 <p className="text-[#221910] font-semibold mb-1 ink-title">
-                  Submitted!
+                  {t.bookList.pdfModal.submitted}
                 </p>
                 <p className="text-sm text-[#5c4f42] ink-text">
-                  Your PDF read submission is pending moderator approval.
+                  {t.bookList.pdfModal.description}
                 </p>
               </div>
             ) : (
               <form onSubmit={handlePdfSubmit} className="space-y-4">
                 <div>
                   <p className="text-sm font-semibold text-[#4e4033] mb-1 ink-text">
-                    Book
+                    {t.bookList.pdfModal.bookLabel}
                   </p>
                   <p className="text-sm text-[#221910] ink-title font-semibold">
                     {selectedBookForPdf?.title}
@@ -598,53 +599,44 @@ export default function BookListClient({
 
                 <div>
                   <label className="block text-sm font-semibold text-[#4e4033] mb-1 ink-text">
-                    Date Read *
+                    {t.bookList.pdfModal.dateLabel}
                   </label>
                   <input
                     type="date"
+                    required
+                    max={new Date().toISOString().split("T")[0]}
                     value={pdfReadDate}
                     onChange={(e) => setPdfReadDate(e.target.value)}
-                    max={new Date().toISOString().split("T")[0]}
-                    required
-                    className="w-full px-3 py-2 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-sm focus:ring-2 focus:ring-[#5a4d40] outline-none ink-text"
+                    className="w-full px-3 py-2 bg-[#f8f1e6] border border-[#b9a58b] rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-[#4e4033] mb-1 ink-text">
-                    Note (optional)
+                    {t.bookList.pdfModal.noteLabel}
                   </label>
                   <textarea
+                    rows={3}
+                    placeholder={t.bookList.pdfModal.notePlaceholder}
                     value={pdfNote}
                     onChange={(e) => setPdfNote(e.target.value)}
-                    placeholder="e.g., Full read, partial reading, audio companion…"
-                    rows={3}
-                    className="w-full px-3 py-2 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-sm focus:ring-2 focus:ring-[#5a4d40] outline-none ink-text text-sm"
+                    className="w-full px-3 py-2 bg-[#f8f1e6] border border-[#b9a58b] rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text resize-none"
                   />
                 </div>
 
                 {pdfError && (
-                  <div className="p-3 bg-[#f6e3df] border border-[#b0665c] text-[#7d2d23] text-sm rounded-sm ink-text">
+                  <p className="text-xs text-[#9b3a25] font-semibold italic">
                     {pdfError}
-                  </div>
+                  </p>
                 )}
 
-                <div className="flex gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={closePdfModal}
-                    className="flex-1 px-3 py-2 border border-[#7b6d5f] text-[#4e4033] rounded-sm hover:bg-[#eadcca] transition-colors font-medium text-sm ink-text"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isPending || !pdfReadDate}
-                    className="flex-1 px-3 py-2 bg-[#5a4d40] text-[#f6ede1] rounded-sm hover:bg-[#4c4035] transition-colors font-medium text-sm ink-text disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isPending ? "Submitting…" : "Submit"}
-                  </button>
-                </div>
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="w-full py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm text-sm font-bold hover:bg-[#4a3d31] transition-colors disabled:opacity-50 uppercase tracking-wider"
+                >
+                  {isPending ? t.bookList.pdfModal.submitting : t.bookList.pdfModal.submit}
+                </button>
               </form>
             )}
           </div>

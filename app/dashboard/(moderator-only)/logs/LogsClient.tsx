@@ -1,6 +1,8 @@
 "use client";
 
+import { useTranslation } from "@/lib/i18n/context";
 import type { ActionLog } from "@/types/library";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
@@ -19,7 +21,6 @@ import {
   FaUserPlus,
   FaUserTimes,
 } from "react-icons/fa";
-import Link from "next/link";
 
 function parseErrorDetails(details: string | null): { action: string; error: string } | null {
   if (!details) return null;
@@ -40,6 +41,7 @@ export default function LogsClient({
   currentDays: number;
 }) {
   const router = useRouter();
+  const { t, language } = useTranslation();
   const [isExporting, setIsExporting] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [filterType, setFilterType] = useState<"all" | "errors" | "actions">("all");
@@ -69,11 +71,18 @@ export default function LogsClient({
   const handleExport = () => {
     setIsExporting(true);
     try {
-      const headers = ["Date", "Action Type", "Actor", "Target", "Details"];
+      const headers = [
+        t.logs.export.headers.date,
+        t.logs.export.headers.actionType,
+        t.logs.export.headers.actor,
+        t.logs.export.headers.target,
+        t.logs.export.headers.details,
+      ];
 
       const rows = initialLogs.map((log) => {
-        const actorName = log.actor?.full_name ?? log.actor?.username ?? "System";
-        const targetName = log.target?.full_name ?? log.target?.username ?? "Unknown Target";
+        const actorName = log.actor?.full_name ?? log.actor?.username ?? t.logs.table.system;
+        const targetName =
+          log.target?.full_name ?? log.target?.username ?? t.logs.table.unknownTarget;
 
         return [
           new Date(log.created_at).toISOString(),
@@ -90,7 +99,10 @@ export default function LogsClient({
 
       const link = document.createElement("a");
       link.setAttribute("href", url);
-      link.setAttribute("download", `admin_logs_last_${currentDays}_days.csv`);
+      link.setAttribute(
+        "download",
+        t.logs.export.filename.replace("{days}", currentDays.toString())
+      );
       link.style.visibility = "hidden";
       document.body.appendChild(link);
       link.click();
@@ -105,10 +117,10 @@ export default function LogsClient({
       <section className="dashboard-surface tron-border rounded-sm p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-[#221910] ink-title">
-            Admin Action Logs
+            {t.logs.title}
           </h1>
           <p className="text-sm text-[#5a4b3f] ink-text mt-1">
-            System events, verifications, role changes, and errors.
+            {t.logs.subtitle}
           </p>
         </div>
 
@@ -122,9 +134,11 @@ export default function LogsClient({
               onChange={(e) => setFilterType(e.target.value as typeof filterType)}
               className="pl-8 pr-8 py-2 text-sm bg-[#fcf9f4] border border-[#d3c1a9] rounded-sm focus:ring-2 focus:ring-[#c9b89a] focus:border-[#c9b89a] transition-all text-[#3f3328] font-medium w-full sm:w-auto appearance-none"
             >
-              <option value="all">All Logs</option>
-              <option value="errors">Errors Only ({errorCount})</option>
-              <option value="actions">Actions Only</option>
+              <option value="all">{t.logs.filters.all}</option>
+              <option value="errors">
+                {t.logs.filters.errorsOnly.replace("{count}", errorCount.toString())}
+              </option>
+              <option value="actions">{t.logs.filters.actionsOnly}</option>
             </select>
           </div>
 
@@ -137,10 +151,10 @@ export default function LogsClient({
               onChange={handleRangeChange}
               className="pl-8 pr-8 py-2 text-sm bg-[#fcf9f4] border border-[#d3c1a9] rounded-sm focus:ring-2 focus:ring-[#c9b89a] focus:border-[#c9b89a] transition-all text-[#3f3328] font-medium w-full sm:w-auto appearance-none"
             >
-              <option value="7">Last 7 Days</option>
-              <option value="30">Last 30 Days</option>
-              <option value="90">Last 90 Days</option>
-              <option value="365">Last Year</option>
+              <option value="7">{t.logs.filters.last7Days}</option>
+              <option value="30">{t.logs.filters.last30Days}</option>
+              <option value="90">{t.logs.filters.last90Days}</option>
+              <option value="365">{t.logs.filters.lastYear}</option>
             </select>
           </div>
 
@@ -150,7 +164,7 @@ export default function LogsClient({
             className="flex items-center justify-center gap-2 px-4 py-2 bg-[#3f3328] hover:bg-[#4a3d31] disabled:opacity-50 disabled:cursor-not-allowed text-[#fcf9f4] text-sm font-semibold rounded-sm transition-colors"
           >
             <FaDownload className="w-3.5 h-3.5" />
-            {isExporting ? "Exporting..." : "Export CSV"}
+            {isExporting ? t.logs.export.exporting : t.logs.export.button}
           </button>
         </div>
       </section>
@@ -160,10 +174,18 @@ export default function LogsClient({
           <table className="w-full text-sm ink-text min-w-[600px]">
             <thead>
               <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
-                <th className="px-4 py-3 text-left font-bold text-[#221910]">Date</th>
-                <th className="px-4 py-3 text-left font-bold text-[#221910]">Action</th>
-                <th className="px-4 py-3 text-left font-bold text-[#221910]">Actor</th>
-                <th className="px-4 py-3 text-left font-bold text-[#221910]">Target / Details</th>
+                <th className="px-4 py-3 text-left font-bold text-[#221910]">
+                  {t.logs.table.date}
+                </th>
+                <th className="px-4 py-3 text-left font-bold text-[#221910]">
+                  {t.logs.table.action}
+                </th>
+                <th className="px-4 py-3 text-left font-bold text-[#221910]">
+                  {t.logs.table.actor}
+                </th>
+                <th className="px-4 py-3 text-left font-bold text-[#221910]">
+                  {t.logs.table.targetDetails}
+                </th>
                 <th className="px-4 py-3 text-left font-bold text-[#221910]"></th>
               </tr>
             </thead>
@@ -171,7 +193,7 @@ export default function LogsClient({
               {filteredLogs.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center text-[#6a5a4c]">
-                    No logs found for the selected filters.
+                    {t.logs.table.noLogs}
                   </td>
                 </tr>
               ) : (
@@ -186,57 +208,60 @@ export default function LogsClient({
                       className={`transition-colors ${isError ? "bg-[#f8e7e3] hover:bg-[#f3dbd5]" : "hover:bg-[#f4e8d4]/50"}`}
                     >
                       <td className="px-4 py-3 text-[#5a4b3f] whitespace-nowrap align-top">
-                        {new Date(log.created_at).toLocaleString("en-GB", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: true,
-                        })}
+                        {new Date(log.created_at).toLocaleString(
+                          language === "bn" ? "bn-BD" : "en-GB",
+                          {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                          }
+                        )}
                       </td>
                       <td className="px-4 py-3 align-top">
                         {(() => {
                           let config = {
                             icon: FaInfoCircle,
                             color: "bg-[#f4e8d4] text-[#4a3e33] border-[#d3c1a9]",
-                            label: log.action_type.replace(/_/g, " "),
+                            label: t.logs.actions[log.action_type as keyof typeof t.logs.actions] || log.action_type.replace(/_/g, " "),
                           };
                           if (log.action_type === "error")
                             config = {
                               icon: FaExclamationTriangle,
                               color: "bg-[#f3dbd5] text-[#8b2c1a] border-[#d0604a]",
-                              label: "Error",
+                              label: t.logs.actions.error,
                             };
                           else if (log.action_type === "user_verified")
                             config = {
                               icon: FaUserCheck,
                               color: "bg-[#f4e8d4] text-blue-700 border-[#d3c1a9]",
-                              label: "Verified",
+                              label: t.logs.actions.user_verified,
                             };
                           else if (log.action_type === "user_unverified")
                             config = {
                               icon: FaUserTimes,
                               color: "bg-[#f4e8d4] text-red-700 border-[#d3c1a9]",
-                              label: "Unverified",
+                              label: t.logs.actions.user_unverified,
                             };
                           else if (log.action_type === "role_changed")
                             config = {
                               icon: FaShieldAlt,
                               color: "bg-[#f4e8d4] text-purple-700 border-[#d3c1a9]",
-                              label: "Role Changed",
+                              label: t.logs.actions.role_changed,
                             };
                           else if (log.action_type === "user_joined")
                             config = {
                               icon: FaUserPlus,
                               color: "bg-[#f4e8d4] text-green-700 border-[#d3c1a9]",
-                              label: "User Joined",
+                              label: t.logs.actions.user_joined,
                             };
                           else if (log.action_type === "thana_deleted")
                             config = {
                               icon: FaMapMarkerAlt,
                               color: "bg-[#f4e8d4] text-orange-700 border-[#d3c1a9]",
-                              label: "Thana Deleted",
+                              label: t.logs.actions.thana_deleted,
                             };
 
                           const Icon = config.icon;
@@ -267,7 +292,7 @@ export default function LogsClient({
                               {log.actor.full_name ?? log.actor.username}
                             </Link>
                           ) : (
-                            <span className="font-semibold text-[#5a4b3f]">System</span>
+                            <span className="font-semibold text-[#5a4b3f]">{t.logs.table.system}</span>
                           )}
                         </div>
                       </td>
@@ -285,7 +310,7 @@ export default function LogsClient({
                           </div>
                         ) : isError ? (
                           <div className="space-y-1">
-                            <p className="text-sm text-[#8b2c1a]">{log.details ?? "Unknown error"}</p>
+                            <p className="text-sm text-[#8b2c1a]">{log.details ?? t.logs.table.unknownError}</p>
                             {isExpanded && log.details && (
                               <pre className="mt-2 p-3 bg-[#f3dbd5] border border-[#d0604a] rounded-sm text-xs text-[#6f3d35] overflow-x-auto whitespace-pre-wrap break-words">
                                 {log.details}
@@ -306,7 +331,7 @@ export default function LogsClient({
                                   {log.target.full_name ?? log.target.username}
                                 </Link>
                               ) : (
-                                <span className="font-medium text-[#7a6a5c]">Unknown</span>
+                                <span className="font-medium text-[#7a6a5c]">{t.logs.table.unknown}</span>
                               )}
                             </div>
                             {log.details && (
@@ -323,11 +348,11 @@ export default function LogsClient({
                           >
                             {isExpanded ? (
                               <>
-                                Hide <FaChevronUp className="w-2.5 h-2.5" />
+                                {t.logs.table.hide} <FaChevronUp className="w-2.5 h-2.5" />
                               </>
                             ) : (
                               <>
-                                Full Details <FaChevronDown className="w-2.5 h-2.5" />
+                                {t.logs.table.fullDetails} <FaChevronDown className="w-2.5 h-2.5" />
                               </>
                             )}
                           </button>

@@ -18,6 +18,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { FaCheck, FaClock, FaExclamationTriangle, FaFileAlt, FaSearch, FaTimes } from "react-icons/fa";
 
+import { useTranslation } from "@/lib/i18n/context";
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
@@ -40,9 +42,13 @@ interface Props {
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function formatDate(date: string | null | undefined): string {
+function formatDate(date: string | null | undefined, language: string = "en"): string {
   if (!date) return "—";
-  return new Date(date).toLocaleDateString();
+  return new Date(date).toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function isOverdueDate(dueDate: string | null | undefined): boolean {
@@ -61,10 +67,13 @@ function todayStr(): string {
 }
 
 // Badge pill shown next to tab labels
-function CountBadge({ n }: { n: number }) {
+function CountBadge({ n, urgent = false }: { n: number; urgent?: boolean }) {
   if (n === 0) return null;
   return (
-    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#5a4d40] text-[#f4e8d4] text-[10px] font-bold leading-none ml-1 shrink-0">
+    <span
+      className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold leading-none ml-1 shrink-0 ${urgent ? "bg-[#8b2c1a] text-[#fdf0ec]" : "bg-[#5a4d40] text-[#f4e8d4]"
+        }`}
+    >
       {n}
     </span>
   );
@@ -81,6 +90,7 @@ export default function TransactionsClient({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { t, language } = useTranslation();
   const activeTab = searchParams.get("tab") || "pending";
 
   const handleTabChange = (value: string) => {
@@ -148,12 +158,12 @@ export default function TransactionsClient({
   const copyConflicts = useMemo(() => {
     const map: Record<string, string[]> = {};
     pendingBorrows.forEach((tx) => {
-      const name = tx.user?.full_name || "Unknown Member";
+      const name = tx.user?.full_name || t.common.unknown;
       if (!map[tx.copy_id]) map[tx.copy_id] = [];
       map[tx.copy_id].push(name);
     });
     return map;
-  }, [pendingBorrows]);
+  }, [pendingBorrows, t.common.unknown]);
 
   // Map of copy_id to the transaction currently holding it (active/overdue)
   const activeBorrowers = useMemo(() => {
@@ -191,8 +201,13 @@ export default function TransactionsClient({
           (tx.user?.full_name ?? "").toLowerCase().includes(q) ||
           (tx.book?.title ?? "").toLowerCase().includes(q) ||
           (tx.copy?.id ?? tx.copy_id).toLowerCase().includes(q);
+
+        const isActuallyOverdue = tx.status === "overdue" || isOverdueDate(tx.due_date);
         const matchStatus =
-          statusFilter === "all" || tx.status === statusFilter;
+          statusFilter === "all" ||
+          (statusFilter === "overdue" && isActuallyOverdue) ||
+          (statusFilter === "active" && !isActuallyOverdue && tx.status === "active");
+
         return matchSearch && matchStatus;
       }),
     );
@@ -215,7 +230,7 @@ export default function TransactionsClient({
             book: pdf.book,
             copy_id: "—",
             copy: null,
-            type: "PDF Report" as any, // Type override for UI
+            type: t.transactions.tabs.pdf as any, // Type override for UI
             status: pdf.status === "approved" ? "completed" : "rejected",
             request_date: pdf.submitted_at,
           }) as unknown as Transaction,
@@ -233,13 +248,13 @@ export default function TransactionsClient({
       ),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transactions, pdfSubmissions, searchTerm, sortBy]);
+  }, [transactions, pdfSubmissions, searchTerm, sortBy, t.transactions.tabs.pdf]);
 
   const summary = useMemo(
     () => ({
       pending: transactions.filter((tx) => tx.status === "pending").length,
-      active: transactions.filter((tx) => tx.status === "active").length,
-      overdue: transactions.filter((tx) => tx.status === "overdue").length,
+      active: transactions.filter((tx) => tx.status === "active" && !isOverdueDate(tx.due_date)).length,
+      overdue: transactions.filter((tx) => tx.status === "overdue" || (tx.status === "active" && isOverdueDate(tx.due_date))).length,
       completed: transactions.filter((tx) => tx.status === "completed").length,
     }),
     [transactions],
@@ -334,7 +349,7 @@ export default function TransactionsClient({
     const working = processingId === tx.id && isPending;
     const due = dueDates[tx.id] ?? tx.due_date ?? defaultDueDate();
     const otherRequesters = (copyConflicts[tx.copy_id] || []).filter(
-      (name) => name !== (tx.user?.full_name || "Unknown Member"),
+      (name) => name !== (tx.user?.full_name || t.common.unknown),
     );
     const hasConflict = otherRequesters.length > 0;
 
@@ -380,29 +395,29 @@ export default function TransactionsClient({
                     href={`/dashboard/users/${tx.user?.id}`}
                     className="hover:underline hover:text-[#5a4b3f] transition-colors"
                   >
-                    {tx.user?.full_name ?? "Unknown Member"}
+                    {tx.user?.full_name ?? t.common.unknown}
                   </Link>
                 </p>
                 {isUnavailable ? (
                   <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#8b5c4a] text-[#f6ecdd] uppercase tracking-wider">
-                    Unavailable
+                    {t.transactions.actions.unavailable}
                   </span>
                 ) : (
                   hasConflict && (
                     <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#8b5c4a] text-[#f6ecdd] uppercase tracking-wider">
-                      Conflict
+                      {t.transactions.actions.conflict}
                     </span>
                   )
                 )}
               </div>
               <p className="text-xs text-[#5a4b3f] mt-0.5 truncate">
-                {tx.book?.title ?? "Unknown Book"}{" "}
+                {tx.book?.title ?? t.common.unknown}{" "}
                 <span className="font-mono text-[10px] opacity-70">({tx.copy?.id ?? tx.copy_id})</span>
               </p>
             </div>
           </div>
           <StatusBadge tone={isUnavailable ? "danger" : "info"} size="xs" className="shrink-0">
-            Borrow
+            {t.history.table.borrowed}
           </StatusBadge>
         </div>
 
@@ -411,7 +426,7 @@ export default function TransactionsClient({
             <div className="flex items-center gap-1.5">
               <FaExclamationTriangle className="w-3 h-3 shrink-0" />
               <span>
-                Currently borrowed by{" "}
+                {t.transactions.actions.currentlyBorrowedBy}
                 <Link
                   href={`/dashboard/users/${currentBorrower.user?.id}`}
                   className="font-bold underline hover:text-[#5a1d17]"
@@ -421,9 +436,9 @@ export default function TransactionsClient({
               </span>
             </div>
             <p className="pl-4.5">
-              Due back on:{" "}
+              {t.history.table.due}:{" "}
               <span className="font-bold">
-                {formatDate(currentBorrower.due_date)}
+                {formatDate(currentBorrower.due_date, language)}
               </span>
             </p>
           </div>
@@ -432,7 +447,7 @@ export default function TransactionsClient({
             <div className="mt-2 text-[10px] text-[#8b5c4a] font-medium flex items-center gap-1">
               <FaExclamationTriangle className="w-3 h-3" />
               <span>
-                Also requested by:{" "}
+                {t.transactions.actions.alsoRequestedBy}
                 <span className="font-bold">{otherRequesters.join(", ")}</span>
               </span>
             </div>
@@ -440,10 +455,10 @@ export default function TransactionsClient({
         )}
 
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#5a4b3f]">
-          <p>Requested: {formatDate(tx.request_date)}</p>
+          <p>{t.transactions.table.requested}: {formatDate(tx.request_date, language)}</p>
           <div className="flex items-center gap-1.5">
             <label htmlFor={`due-${tx.id}`} className="shrink-0">
-              Due:
+              {t.transactions.table.due}:
             </label>
             <input
               id={`due-${tx.id}`}
@@ -465,17 +480,17 @@ export default function TransactionsClient({
             className="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-[#f6ecdd] bg-[#4a7c59] hover:bg-[#3d6447] rounded-sm transition-colors border border-[#3d6447] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FaCheck className="w-3.5 h-3.5" />
-            {working ? "Working…" : isUnavailable ? "Unavailable" : "Approve"}
+            {working ? t.transactions.actions.approving : isUnavailable ? t.transactions.actions.unavailable : t.transactions.actions.approve}
           </button>
           <button
             disabled={working}
             onClick={() =>
-              openRejectModal("borrow", tx.id, tx.book?.title ?? "Unknown Book")
+              openRejectModal("borrow", tx.id, tx.book?.title ?? t.common.unknown)
             }
             className="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-[#f6ecdd] bg-[#8b5c4a] hover:bg-[#6b4437] rounded-sm transition-colors border border-[#6b4437] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FaTimes className="w-3.5 h-3.5" />
-            Reject
+            {t.transactions.actions.reject}
           </button>
         </div>
       </article>
@@ -519,11 +534,11 @@ export default function TransactionsClient({
                   href={`/dashboard/users/${tx.user?.id}`}
                   className="hover:underline hover:text-[#5a4b3f] transition-colors"
                 >
-                  {tx.user?.full_name ?? "Unknown Member"}
+                  {tx.user?.full_name ?? t.common.unknown}
                 </Link>
               </p>
               <p className="text-xs text-[#5a4b3f] mt-0.5 truncate">
-                {tx.book?.title ?? "Unknown Book"}{" "}
+                {tx.book?.title ?? t.common.unknown}{" "}
                 <span className="font-mono text-[10px] opacity-70">
                   ({tx.copy?.id ?? tx.copy_id})
                 </span>
@@ -531,13 +546,13 @@ export default function TransactionsClient({
             </div>
           </div>
           <StatusBadge tone="accent" size="xs" className="shrink-0">
-            Return
+            {t.history.table.returned}
           </StatusBadge>
         </div>
 
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#5a4b3f] sm:pl-[52px]">
-          <p>Requested: {formatDate(tx.request_date)}</p>
-          <p>Borrowed on: {formatDate(originalBorrow?.approved_date)}</p>
+          <p>{t.transactions.table.requested}: {formatDate(tx.request_date, language)}</p>
+          <p>{t.return.form.borrowedOn}: {formatDate(originalBorrow?.approved_date, language)}</p>
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-2 pt-3 border-t border-[#cfbba1]">
@@ -547,17 +562,17 @@ export default function TransactionsClient({
             className="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-[#f6ecdd] bg-[#4a7c59] hover:bg-[#3d6447] rounded-sm transition-colors border border-[#3d6447] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FaCheck className="w-3.5 h-3.5" />
-            {working ? "Working…" : "Approve Return"}
+            {working ? t.transactions.actions.approving : t.transactions.actions.approve}
           </button>
           <button
             disabled={working}
             onClick={() =>
-              openRejectModal("return", tx.id, tx.book?.title ?? "Unknown Book")
+              openRejectModal("return", tx.id, tx.book?.title ?? t.common.unknown)
             }
             className="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-[#f6ecdd] bg-[#8b5c4a] hover:bg-[#6b4437] rounded-sm transition-colors border border-[#6b4437] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FaTimes className="w-3.5 h-3.5" />
-            Reject
+            {t.transactions.actions.reject}
           </button>
         </div>
       </article>
@@ -575,10 +590,10 @@ export default function TransactionsClient({
         className="dashboard-surface tron-border rounded-sm p-5 sm:p-6"
       >
         <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
-          Transactions
+          {t.transactions.header.title}
         </h1>
         <p className="text-sm text-[#5a4b3f] mt-1 mb-5 ink-text">
-          Review requests, monitor live borrows, and track completed returns.
+          {t.transactions.header.subtitle}
         </p>
 
         {errorMsg && (
@@ -590,24 +605,33 @@ export default function TransactionsClient({
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {(
             [
-              { label: "Pending", value: summary.pending },
-              { label: "Active", value: summary.active },
-              { label: "Overdue", value: summary.overdue },
-              { label: "Completed", value: summary.completed },
+              { label: t.transactions.summary.pending, value: summary.pending, type: "pending" },
+              { label: t.transactions.summary.active, value: summary.active, type: "active" },
+              { label: t.transactions.summary.overdue, value: summary.overdue, type: "overdue" },
+              { label: t.transactions.summary.completed, value: summary.completed, type: "completed" },
             ] as const
-          ).map(({ label, value }) => (
-            <div
-              key={label}
-              className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3"
-            >
-              <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text">
-                {label}
-              </p>
-              <p className="text-2xl font-bold text-[#221910] ink-title">
-                {value}
-              </p>
-            </div>
-          ))}
+          ).map(({ label, value, type }) => {
+            const isUrgentOverdue = type === "overdue" && value > 0;
+            return (
+              <div
+                key={label}
+                className={`border rounded-sm p-3 transition-colors ${isUrgentOverdue
+                  ? "border-[#c4614a] bg-[#fdf0ec]"
+                  : "border-[#b9a58b] bg-[#f6ecdd]"
+                  }`}
+              >
+                <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text">
+                  {label}
+                </p>
+                <p
+                  className={`text-2xl font-bold ink-title ${isUrgentOverdue ? "text-[#9b3a25]" : "text-[#221910]"
+                    }`}
+                >
+                  {value}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -622,28 +646,28 @@ export default function TransactionsClient({
               value="pending"
               className="shrink-0 whitespace-nowrap rounded-none py-3 px-4 sm:px-5 text-xs sm:text-sm font-medium ink-text text-[#6a5a4c] border-b-[3px] border-transparent data-[state=active]:border-[#3f3328] data-[state=active]:bg-[#f6ecdd] data-[state=active]:text-[#221910] data-[state=active]:font-bold data-[state=active]:shadow-none hover:bg-[#ece0ce] transition-colors"
             >
-              Pending
+              {t.transactions.tabs.pending}
               <CountBadge n={pendingBorrows.length + pendingReturns.length} />
             </TabsTrigger>
             <TabsTrigger
               value="active"
               className="shrink-0 whitespace-nowrap rounded-none py-3 px-4 sm:px-5 text-xs sm:text-sm font-medium ink-text text-[#6a5a4c] border-b-[3px] border-transparent data-[state=active]:border-[#3f3328] data-[state=active]:bg-[#f6ecdd] data-[state=active]:text-[#221910] data-[state=active]:font-bold data-[state=active]:shadow-none hover:bg-[#ece0ce] transition-colors"
             >
-              Active
-              <CountBadge n={summary.active + summary.overdue} />
+              {t.transactions.tabs.active}
+              <CountBadge n={summary.active + summary.overdue} urgent={summary.overdue > 0} />
             </TabsTrigger>
             <TabsTrigger
               value="history"
               className="shrink-0 whitespace-nowrap rounded-none py-3 px-4 sm:px-5 text-xs sm:text-sm font-medium ink-text text-[#6a5a4c] border-b-[3px] border-transparent data-[state=active]:border-[#3f3328] data-[state=active]:bg-[#f6ecdd] data-[state=active]:text-[#221910] data-[state=active]:font-bold data-[state=active]:shadow-none hover:bg-[#ece0ce] transition-colors"
             >
-              History
+              {t.transactions.tabs.history}
             </TabsTrigger>
             <TabsTrigger
               value="pdf"
               className="shrink-0 whitespace-nowrap rounded-none py-3 px-4 sm:px-5 text-xs sm:text-sm font-medium ink-text text-[#6a5a4c] border-b-[3px] border-transparent data-[state=active]:border-[#3f3328] data-[state=active]:bg-[#f6ecdd] data-[state=active]:text-[#221910] data-[state=active]:font-bold data-[state=active]:shadow-none hover:bg-[#ece0ce] transition-colors"
             >
               <FaFileAlt className="w-3 h-3 shrink-0" />
-              <span className="hidden sm:inline">PDF Reports</span>
+              <span className="hidden sm:inline">{t.transactions.tabs.pdf}</span>
               <span className="sm:hidden">PDF</span>
               <CountBadge n={pendingPdfs.length} />
             </TabsTrigger>
@@ -655,15 +679,15 @@ export default function TransactionsClient({
               <section className="space-y-3">
                 <header className="flex items-center justify-between">
                   <h2 className="text-base font-semibold text-[#2b2119] ink-title">
-                    Borrow Requests
+                    {t.overview.sections.borrowRequests}
                   </h2>
                   <span className="text-xs text-[#6a5a4c] ink-text">
-                    {pendingBorrows.length} waiting
+                    {pendingBorrows.length} {language === "bn" ? "অপেক্ষমান" : "waiting"}
                   </span>
                 </header>
                 {pendingBorrows.length === 0 ? (
                   <div className="border border-[#cfbba1] rounded-sm p-6 text-center text-[#6a5a4c] ink-text">
-                    No borrow requests waiting.
+                    {t.transactions.empty.noPending}
                   </div>
                 ) : (
                   pendingBorrows.map(renderBorrowCard)
@@ -673,15 +697,15 @@ export default function TransactionsClient({
               <section className="space-y-3">
                 <header className="flex items-center justify-between">
                   <h2 className="text-base font-semibold text-[#2b2119] ink-title">
-                    Return Requests
+                    {t.overview.sections.returnRequests}
                   </h2>
                   <span className="text-xs text-[#6a5a4c] ink-text">
-                    {pendingReturns.length} waiting
+                    {pendingReturns.length} {language === "bn" ? "অপেক্ষমান" : "waiting"}
                   </span>
                 </header>
                 {pendingReturns.length === 0 ? (
                   <div className="border border-[#cfbba1] rounded-sm p-6 text-center text-[#6a5a4c] ink-text">
-                    No return requests waiting.
+                    {t.transactions.empty.noPending}
                   </div>
                 ) : (
                   pendingReturns.map(renderReturnCard)
@@ -698,7 +722,7 @@ export default function TransactionsClient({
                 <FaSearch className="absolute left-3 top-2.5 text-[#7a6a5a]" />
                 <input
                   type="text"
-                  placeholder="Search member, book, or copy ID…"
+                  placeholder={t.transactions.filters.search}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-9 pr-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
@@ -712,17 +736,17 @@ export default function TransactionsClient({
                   }
                   className="w-full px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
                 >
-                  <option value="all">All</option>
-                  <option value="active">Active</option>
-                  <option value="overdue">Overdue</option>
+                  <option value="all">{t.transactions.filters.status.all}</option>
+                  <option value="active">{t.transactions.filters.status.active}</option>
+                  <option value="overdue">{t.transactions.filters.status.overdue}</option>
                 </select>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as SortKey)}
                   className="w-full px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
                 >
-                  <option value="date">Newest</option>
-                  <option value="member">Member</option>
+                  <option value="date">{t.transactions.filters.sort.date}</option>
+                  <option value="member">{t.transactions.filters.sort.member}</option>
                 </select>
               </div>
             </div>
@@ -730,76 +754,80 @@ export default function TransactionsClient({
             <div className="space-y-2">
               {activeTransactions.length === 0 ? (
                 <div className="border border-[#cfbba1] rounded-sm p-8 text-center text-[#6a5a4c] ink-text">
-                  No active borrows match current filters.
+                  {t.transactions.empty.noActive}
                 </div>
               ) : (
-                activeTransactions.map((tx) => (
-                  <article
-                    key={tx.id}
-                    className="border border-[#b9a58b] rounded-sm bg-[#f6ecdd] p-3 sm:p-4 ink-text"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
-                        {/* Profile Photo */}
-                        <div className="shrink-0 hidden sm:block">
-                          <Link href={`/dashboard/users/${tx.user?.id}`}>
-                            <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[#cfbba1] bg-[#ece0ce] hover:border-[#8b5c4a] transition-colors">
-                              {tx.user?.avatar_url ? (
-                                <Image
-                                  src={tx.user.avatar_url}
-                                  alt={tx.user.full_name || ""}
-                                  fill
-                                  className="object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-[#8b5c4a] font-bold text-sm">
-                                  {(tx.user?.full_name || "?").charAt(0).toUpperCase()}
-                                </div>
-                              )}
-                            </div>
-                          </Link>
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-[#2b2119] truncate text-sm">
-                            <Link
-                              href={`/dashboard/users/${tx.user?.id}`}
-                              className="hover:underline hover:text-[#5a4b3f] transition-colors"
-                            >
-                              {tx.user?.full_name ?? "Unknown Member"}
+                activeTransactions.map((tx) => {
+                  const isActuallyOverdue = tx.status === "overdue" || isOverdueDate(tx.due_date);
+                  return (
+                    <article
+                      key={tx.id}
+                      className={`border rounded-sm p-3 sm:p-4 ink-text transition-colors ${isActuallyOverdue
+                        ? "border-[#c4614a] bg-[#fdf0ec]"
+                        : "border-[#b9a58b] bg-[#f6ecdd]"
+                        }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+                          {/* Profile Photo */}
+                          <div className="shrink-0 hidden sm:block">
+                            <Link href={`/dashboard/users/${tx.user?.id}`}>
+                              <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[#cfbba1] bg-[#ece0ce] hover:border-[#8b5c4a] transition-colors">
+                                {tx.user?.avatar_url ? (
+                                  <Image
+                                    src={tx.user.avatar_url}
+                                    alt={tx.user.full_name || ""}
+                                    fill
+                                    className="object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-[#8b5c4a] font-bold text-sm">
+                                    {(tx.user?.full_name || "?").charAt(0).toUpperCase()}
+                                  </div>
+                                )}
+                              </div>
                             </Link>
-                          </p>
-                          <p className="text-xs text-[#5a4b3f] truncate">
-                            {tx.book?.title ?? "Unknown Book"}{" "}
-                            <span className="font-mono text-[10px] opacity-70">
-                              ({tx.copy?.id ?? tx.copy_id})
-                            </span>
-                          </p>
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-[#2b2119] truncate text-sm">
+                              <Link
+                                href={`/dashboard/users/${tx.user?.id}`}
+                                className="hover:underline hover:text-[#5a4b3f] transition-colors"
+                              >
+                                {tx.user?.full_name ?? t.common.unknown}
+                              </Link>
+                            </p>
+                            <p className="text-xs text-[#5a4b3f] truncate">
+                              {tx.book?.title ?? t.common.unknown}{" "}
+                              <span className="font-mono text-[10px] opacity-70">
+                                ({tx.copy?.id ?? tx.copy_id})
+                              </span>
+                            </p>
+                          </div>
                         </div>
+                        <StatusBadge
+                          tone={isActuallyOverdue ? "danger" : "info"}
+                          size="xs"
+                          icon={FaClock}
+                          className="shrink-0"
+                        >
+                          {isActuallyOverdue ? t.history.status.overdue : t.history.status.borrowed}
+                        </StatusBadge>
                       </div>
-                      <StatusBadge
-                        tone={tx.status === "overdue" ? "danger" : "info"}
-                        size="xs"
-                        icon={FaClock}
-                        className="shrink-0"
-                      >
-                        {tx.status === "overdue" ? "Overdue" : "Active"}
-                      </StatusBadge>
-                    </div>
-                    <div className="mt-2 text-xs text-[#5a4b3f] flex flex-wrap gap-x-4 gap-y-1 sm:pl-[52px]">
-                      <p>Requested: {formatDate(tx.request_date)}</p>
-                      <p
-                        className={
-                          isOverdueDate(tx.due_date)
-                            ? "font-semibold text-red-700"
-                            : ""
-                        }
-                      >
-                        Due: {formatDate(tx.due_date)}
-                      </p>
-                    </div>
-                  </article>
-                ))
+                      <div className="mt-2 text-xs text-[#5a4b3f] flex flex-wrap gap-x-4 gap-y-1 sm:pl-[52px]">
+                        <p>{t.transactions.table.requested}: {formatDate(tx.request_date, language)}</p>
+                        <p
+                          className={
+                            isActuallyOverdue ? "text-red-700 font-bold" : ""
+                          }
+                        >
+                          {t.transactions.table.due}: {formatDate(tx.due_date, language)}
+                        </p>
+                      </div>
+                    </article>
+                  );
+                })
               )}
             </div>
           </TabsContent>
@@ -811,7 +839,7 @@ export default function TransactionsClient({
                 <FaSearch className="absolute left-3 top-2.5 text-[#7a6a5a]" />
                 <input
                   type="text"
-                  placeholder="Search member, book, or copy ID…"
+                  placeholder={t.transactions.filters.search}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-9 pr-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
@@ -822,8 +850,8 @@ export default function TransactionsClient({
                 onChange={(e) => setSortBy(e.target.value as SortKey)}
                 className="px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
               >
-                <option value="date">Newest</option>
-                <option value="member">Member Name</option>
+                <option value="date">{t.transactions.filters.sort.date}</option>
+                <option value="member">{t.transactions.filters.sort.member}</option>
               </select>
             </div>
 
@@ -831,7 +859,7 @@ export default function TransactionsClient({
               <table className="w-full text-sm ink-text min-w-[640px]">
                 <thead>
                   <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
-                    {["Member", "Book", "Copy", "Type", "Status", "Date"].map(
+                    {[t.transactions.table.member, t.transactions.table.book, t.transactions.table.copy, t.transactions.table.type, t.transactions.table.status, t.transactions.table.date].map(
                       (h) => (
                         <th
                           key={h}
@@ -850,7 +878,7 @@ export default function TransactionsClient({
                         colSpan={6}
                         className="px-4 py-8 text-center text-[#6a5a4c]"
                       >
-                        No completed transactions match current filters.
+                        {t.transactions.empty.noHistory}
                       </td>
                     </tr>
                   ) : (
@@ -907,7 +935,7 @@ export default function TransactionsClient({
                             }
                             size="xs"
                           >
-                            {tx.type}
+                            {tx.type === "borrow" ? t.history.table.borrowed : tx.type === "return" ? t.history.table.returned : tx.type}
                           </StatusBadge>
                         </td>
                         <td className="px-4 py-3">
@@ -917,13 +945,13 @@ export default function TransactionsClient({
                             }
                             size="xs"
                           >
-                            {tx.status}
+                            {tx.status === "completed" ? t.history.status.returned : t.history.status.rejected_borrow}
                           </StatusBadge>
                         </td>
                         <td className="px-4 py-3 text-[#5a4b3f] whitespace-nowrap">
                           <span
                             className="text-xs border-b border-dashed border-[#bfa687] cursor-help"
-                            title={new Date(tx.request_date).toLocaleString("en-GB", {
+                            title={new Date(tx.request_date).toLocaleString(language === "bn" ? "bn-BD" : "en-GB", {
                               day: "numeric",
                               month: "short",
                               year: "numeric",
@@ -948,7 +976,7 @@ export default function TransactionsClient({
             {pendingPdfs.length === 0 ? (
               <div className="p-10 text-center border border-[#b9a58b] rounded-sm text-[#6a5a4c] ink-text">
                 <FaFileAlt className="w-10 h-10 mx-auto mb-3 opacity-40" />
-                <p>No pending PDF submissions to review.</p>
+                <p>{t.transactions.empty.noPdfs}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -982,71 +1010,60 @@ export default function TransactionsClient({
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs text-[#5a4b3f] truncate">
+                            <p className="font-semibold text-[#2b2119] truncate">
                               <Link
                                 href={`/dashboard/users/${pdf.user?.id}`}
-                                className="hover:underline hover:text-[#3b3026] transition-colors"
+                                className="hover:underline hover:text-[#5a4b3f] transition-colors"
                               >
-                                {pdf.user?.full_name ?? "Unknown"}
-                                {pdf.user?.username && (
-                                  <span className="font-mono ml-1">
-                                    (@{pdf.user.username})
-                                  </span>
-                                )}
+                                {pdf.user?.full_name ?? t.common.unknown}
                               </Link>
                             </p>
-                            <p className="font-semibold text-[#2b2119] mt-0.5 truncate">
-                              {pdf.book?.title ?? "Unknown Book"}
+                            <p className="text-xs text-[#5a4b3f] mt-0.5 truncate">
+                              {pdf.book?.title ?? t.common.unknown}
                             </p>
-                            <div className="mt-1 space-y-0.5">
-                              {pdf.read_date && (
-                                <p className="text-[10px] text-[#5a4b3f]">
-                                  Read:{" "}
-                                  {new Date(pdf.read_date).toLocaleDateString()}
-                                </p>
-                              )}
-                              <p className="text-[10px] text-[#5a4b3f]">
-                                Submitted: {formatDate(pdf.submitted_at)}
-                              </p>
-                            </div>
-                            {pdf.note && (
-                              <p className="text-xs text-[#6a5a4c] mt-2 italic line-clamp-2">
-                                &ldquo;{pdf.note}&rdquo;
-                              </p>
-                            )}
                           </div>
                         </div>
-                        <StatusBadge
-                          tone="accent"
-                          size="xs"
-                          className="shrink-0"
-                        >
-                          Pending
+                        <StatusBadge tone="warning" size="xs" className="shrink-0">
+                          {t.bookList.bookCard.pdfReport}
                         </StatusBadge>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2 pt-3 border-t border-[#c5b5a1]">
+                      <div className="mb-4 text-xs text-[#5a4b3f] space-y-1 sm:pl-[52px]">
+                        <p>{t.transactions.pdf.submitted}: {formatDate(pdf.submitted_at, language)}</p>
+                        {pdf.note && (
+                          <div className="bg-[#f0e4d1] border border-[#c9b89a] p-2 rounded-sm mt-2 italic text-[#3f3328]">
+                            &quot;{pdf.note}&quot;
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 pt-3 border-t border-[#cfbba1] sm:pl-[52px]">
+                        {pdf.book?.pdf_link && (
+                          <a
+                            href={pdf.book.pdf_link}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-[#f6ecdd] bg-[#5a4d40] hover:bg-[#4a3e33] rounded-sm transition-colors shadow-sm"
+                          >
+                            <FaFileAlt className="w-3 h-3" />
+                            {t.bookList.bookCard.readPdf}
+                          </a>
+                        )}
                         <button
                           disabled={working}
                           onClick={() => handleApprovePdf(pdf)}
-                          className="px-3 py-2 bg-[#4a7c59] text-[#f6ecdd] border border-[#3d6447] rounded-sm hover:bg-[#3d6447] transition-colors text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-[#f6ecdd] bg-[#4a7c59] hover:bg-[#3d6447] rounded-sm transition-colors shadow-sm"
                         >
-                          <FaCheck className="w-3.5 h-3.5" />
-                          {working ? "Working…" : "Approve"}
+                          <FaCheck className="w-3 h-3" />
+                          {working ? t.transactions.actions.approving : t.transactions.actions.approve}
                         </button>
                         <button
                           disabled={working}
-                          onClick={() =>
-                            openRejectModal(
-                              "pdf",
-                              pdf.id,
-                              pdf.book?.title ?? "Unknown Book",
-                            )
-                          }
-                          className="px-3 py-2 bg-[#8b5c4a] text-[#f6ecdd] border border-[#6b4437] rounded-sm hover:bg-[#6b4437] transition-colors text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => openRejectModal("pdf", pdf.id, pdf.book?.title ?? t.common.unknown)}
+                          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-[#f6ecdd] bg-[#8b5c4a] hover:bg-[#6b4437] rounded-sm transition-colors shadow-sm"
                         >
-                          <FaTimes className="w-3.5 h-3.5" />
-                          Reject
+                          <FaTimes className="w-3 h-3" />
+                          {t.transactions.actions.reject}
                         </button>
                       </div>
                     </article>
@@ -1058,56 +1075,50 @@ export default function TransactionsClient({
         </Tabs>
       </section>
 
-      {/* Reject modal */}
+      {/* ── Reject Modal ── */}
       {rejectTarget && (
-        <div
-          className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-4 z-80"
-          onClick={(e) => e.target === e.currentTarget && closeRejectModal()}
-        >
-          <div className="dashboard-surface tron-border rounded-sm max-w-md w-full p-6">
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <h2 className="text-xl font-bold text-[#221910] ink-title">
-                Reject{" "}
-                {rejectTarget.kind === "pdf"
-                  ? "PDF Report"
-                  : rejectTarget.kind === "borrow"
-                    ? "Borrow Request"
-                    : "Return Request"}
-              </h2>
-              <button
-                onClick={closeRejectModal}
-                className="p-1.5 text-[#655648] hover:bg-[#e7d8c3] rounded-sm"
-              >
-                <FaTimes className="w-4 h-4" />
-              </button>
-            </div>
-            <p className="text-sm text-[#5a4b3f] ink-text mb-1 font-medium truncate">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity">
+          <div className="dashboard-surface tron-border w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
+            <h3 className="text-xl font-bold text-[#221910] ink-title mb-1">
+              {t.transactions.actions.confirmReject}
+            </h3>
+            <p className="text-sm text-[#5a4b3f] ink-text mb-4">
               {rejectTarget.title}
             </p>
-            <label className="block text-sm font-medium text-[#4f4134] mb-1 mt-3 ink-text">
-              Reason{" "}
-              <span className="font-normal text-[#7a6a5c]">(optional)</span>
-            </label>
-            <textarea
-              rows={3}
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="Explain why this request is being rejected…"
-              className="w-full px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm resize-none"
-            />
-            <div className="flex gap-3 mt-4">
-              <button
-                onClick={closeRejectModal}
-                className="flex-1 py-2.5 border border-[#8a7966] text-[#4f4134] rounded-sm hover:bg-[#eadcc8] font-medium ink-text"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmReject}
-                className="flex-1 py-2.5 bg-[#8b5c4a] text-[#f6ecdd] border border-[#6b4437] rounded-sm hover:bg-[#6b4437] font-medium ink-text"
-              >
-                Confirm Reject
-              </button>
+
+            <div className="space-y-4">
+              <div>
+                <label
+                  htmlFor="reason"
+                  className="block text-xs font-bold text-[#6a5a4c] uppercase tracking-wider mb-1.5"
+                >
+                  {t.transactions.actions.rejectionReason}
+                </label>
+                <textarea
+                  id="reason"
+                  rows={3}
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  className="w-full px-3 py-2 border border-[#8a7966] bg-[#f8f1e6] text-[#2f251d] rounded-sm focus:ring-1 focus:ring-[#6e5d4a] outline-none ink-text text-sm resize-none"
+                  placeholder="..."
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={closeRejectModal}
+                  className="flex-1 px-4 py-2.5 border border-[#8a7966] text-[#4e4033] rounded-sm font-bold hover:bg-[#ece0ce] transition-colors ink-text text-sm"
+                >
+                  {t.transactions.actions.cancel}
+                </button>
+                <button
+                  onClick={handleConfirmReject}
+                  className="flex-1 px-4 py-2.5 bg-[#8b5c4a] text-[#f6ecdd] rounded-sm font-bold hover:bg-[#6b4437] transition-colors ink-text text-sm"
+                >
+                  {t.transactions.actions.reject}
+                </button>
+              </div>
             </div>
           </div>
         </div>

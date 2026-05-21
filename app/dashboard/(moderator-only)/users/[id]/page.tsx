@@ -1,4 +1,5 @@
 import { RankBadge } from "@/components/ui/rank-badge";
+import { getTranslation } from "@/lib/i18n/server";
 import { getProfile, getRanks } from "@/server/geo";
 import { getUserStats } from "@/server/library";
 import { moderatorPermissions } from "@/server/profiles";
@@ -29,6 +30,7 @@ export default async function UserProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const { t, language } = await getTranslation();
 
   const [profile, stats, perms, ranksResponse] = await Promise.all([
     getProfile(id),
@@ -41,7 +43,7 @@ export default async function UserProfilePage({
     notFound();
   }
 
-  const joinedDate = new Date(profile.created_at).toLocaleDateString("en-GB", {
+  const joinedDate = new Date(profile.created_at).toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -61,13 +63,13 @@ export default async function UserProfilePage({
           className="inline-flex items-center gap-2 text-sm text-[#5a4b3f] hover:text-[#221910] transition-colors ink-text"
         >
           <FaArrowLeft className="w-3.5 h-3.5" />
-          Back to Users
+          {t.users.details.backToUsers}
         </Link>
         <Link
           href={`/dashboard/profile/${profile.username}`}
           className="inline-flex items-center gap-2 px-3 py-1.5 border border-[#8a7966] text-[#4e4033] bg-[#eadcca] hover:bg-[#d6c4b0] transition-colors text-xs font-semibold rounded-sm ink-text"
         >
-          View Public Profile <FaArrowRight className="w-3 h-3" />
+          {t.users.details.viewPublicProfile} <FaArrowRight className="w-3 h-3" />
         </Link>
       </div>
 
@@ -103,17 +105,17 @@ export default async function UserProfilePage({
             {profile.is_verified ? (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-sm border border-[#a3b994] bg-[#eef5e9] text-[#3d5c2e] ink-text">
                 <FaCheckCircle className="w-3.5 h-3.5" />
-                Verified
+                {t.users.badges.verified}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-sm border border-[#c9b48a] bg-[#fdf5e4] text-[#7a5e2a] ink-text">
                 <FaClock className="w-3.5 h-3.5" />
-                Unverified
+                {t.users.badges.unverified}
               </span>
             )}
 
             <span className="inline-block px-3 py-1.5 text-xs font-semibold rounded-sm border border-[#b9a58b] bg-[#f6ecdd] text-[#4f4134] ink-text capitalize">
-              {profile.role}
+              {t.profile.roles[profile.role as keyof typeof t.profile.roles] || profile.role}
             </span>
           </div>
         </div>
@@ -122,7 +124,7 @@ export default async function UserProfilePage({
       {/* Reading progress + borrow stats */}
       <div className="dashboard-surface tron-border rounded-sm p-6">
         <h2 className="text-base font-semibold text-[#3b3026] ink-title mb-4 uppercase tracking-[0.06em]">
-          Library Activity
+          {t.users.details.libraryActivity}
         </h2>
 
         <div className="space-y-4">
@@ -130,15 +132,9 @@ export default async function UserProfilePage({
           <div>
             <div className="flex items-center justify-between text-sm text-[#5a4b3f] ink-text mb-1.5">
               <span>
-                Syllabus progress —{" "}
-                <span className="font-semibold text-[#2b2119]">
-                  {stats.syllabusCompleted}
-                </span>{" "}
-                of{" "}
-                <span className="font-semibold text-[#2b2119]">
-                  {stats.syllabusTotal}
-                </span>{" "}
-                books
+                {t.users.details.syllabusProgress
+                  .replace("{completed}", stats.syllabusCompleted.toString())
+                  .replace("{total}", stats.syllabusTotal.toString())}
               </span>
               <span className="font-bold text-[#2b2119]">{progress}%</span>
             </div>
@@ -154,7 +150,7 @@ export default async function UserProfilePage({
           <div className="grid grid-cols-3 gap-3 pt-1">
             <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
               <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1 ink-text">
-                Active Borrows
+                {t.users.details.activeBorrows}
               </p>
               <p className="text-2xl font-bold text-[#221910] ink-title leading-none">
                 {stats.activeBorrows}
@@ -163,7 +159,7 @@ export default async function UserProfilePage({
             {stats.overdueBorrows > 0 ? (
               <div className="border border-[#c4614a] bg-[#fdf0ec] rounded-sm p-3">
                 <p className="text-[11px] uppercase tracking-[0.08em] text-[#8b2c1a] mb-1 ink-text">
-                  Overdue
+                  {t.users.details.overdue}
                 </p>
                 <p className="text-2xl font-bold text-[#9b3a25] ink-title leading-none">
                   {stats.overdueBorrows}
@@ -172,7 +168,7 @@ export default async function UserProfilePage({
             ) : (
               <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
                 <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1 ink-text">
-                  Overdue
+                  {t.users.details.overdue}
                 </p>
                 <p className="text-2xl font-bold text-[#221910] ink-title leading-none">
                   0
@@ -181,7 +177,7 @@ export default async function UserProfilePage({
             )}
             <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
               <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1 ink-text">
-                Pending Requests
+                {t.users.details.pendingRequests}
               </p>
               <p className="text-2xl font-bold text-[#221910] ink-title leading-none">
                 {stats.pendingRequests}
@@ -193,7 +189,7 @@ export default async function UserProfilePage({
           {stats.currentBorrows.length > 0 && (
             <div className="pt-2">
               <h3 className="text-sm font-semibold text-[#3b3026] ink-title mb-2 uppercase tracking-[0.06em]">
-                Currently Borrowed
+                {t.users.details.currentlyBorrowed}
               </h3>
               <div className="space-y-2">
                 {stats.currentBorrows.map((tx) => {
@@ -215,19 +211,19 @@ export default async function UserProfilePage({
                         )}
                         <div className="min-w-0">
                           <p className="font-medium text-[#2b2119] truncate ink-text">
-                            {tx.book?.title ?? "Unknown book"}
+                            {tx.book?.title ?? t.dashboard.recentBorrows.unknownBook}
                           </p>
                           <p className="text-xs text-[#5a4b3f] ink-text">
-                            Copy #{tx.copy?.copy_number ?? "?"}
+                            {t.bookList.table.copyNum.replace("#", "")} #{tx.copy?.copy_number ?? "?"}
                             {tx.due_date && (
-                              <> &middot; Due {new Date(tx.due_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</>
+                              <> &middot; {t.users.details.dueOn.replace("{date}", new Date(tx.due_date).toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", { day: "numeric", month: "short", year: "numeric" }))}</>
                             )}
                           </p>
                         </div>
                       </div>
                       {isOverdue && daysOver > 0 && (
                         <span className="text-xs font-bold text-[#9b3a25] shrink-0 ml-2">
-                          {daysOver}d overdue
+                          {t.users.details.overdueBy.replace("{days}", daysOver.toString())}
                         </span>
                       )}
                     </div>
@@ -242,13 +238,13 @@ export default async function UserProfilePage({
       {/* Details grid */}
       <div className="dashboard-surface tron-border rounded-sm p-6">
         <h2 className="text-base font-semibold text-[#3b3026] ink-title mb-4 uppercase tracking-[0.06em]">
-          Profile Details
+          {t.users.details.profileDetails}
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 ink-text">
           <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
             <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1">
-              Email
+              {t.profile.info.email}
             </p>
             <p className="text-sm font-medium text-[#221910] break-all">
               {profile.email}
@@ -257,45 +253,45 @@ export default async function UserProfilePage({
 
           <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
             <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1">
-              Phone
+              {t.profile.info.phone}
             </p>
             <p className="text-sm font-medium text-[#221910]">
               {profile.phone ?? (
-                <span className="text-[#8a7966] italic">Not provided</span>
+                <span className="text-[#8a7966] italic">{t.users.details.notProvided}</span>
               )}
             </p>
           </div>
 
           <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
             <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1">
-              Rank
+              {t.profile.editForm.rank}
             </p>
             <RankBadge name={profile.rank?.name} />
           </div>
 
           <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
             <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1">
-              Thana
+              {t.profile.info.location}
             </p>
             <p className="text-sm font-medium text-[#221910]">
               {profile.thana?.name ? (
                 profile.thana.name
               ) : (
-                <span className="text-[#8a7966] italic">Not assigned</span>
+                <span className="text-[#8a7966] italic">{t.users.details.notAssigned}</span>
               )}
             </p>
           </div>
 
           <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
             <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1">
-              Joined
+              {t.profile.header.joinedOn}
             </p>
             <p className="text-sm font-medium text-[#221910]">{joinedDate}</p>
           </div>
 
           <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
             <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1">
-              Verification Status
+              {t.users.details.verificationStatus}
             </p>
             <p className="text-sm font-medium text-[#221910]">
               {profile.is_verified ? "Verified" : "Not yet verified"}

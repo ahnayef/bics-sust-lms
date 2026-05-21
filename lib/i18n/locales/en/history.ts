@@ -1,0 +1,31 @@
+export const history = {
+  title: "Borrow History",
+  subtitle: "Track your past and current book borrows.",
+  table: {
+    book: "Book",
+    copyId: "Copy ID",
+    borrowed: "Borrowed",
+    due: "Due",
+    returned: "Returned",
+    status: "Status",
+  },
+  status: {
+    pending_borrow: "Pending Borrow",
+    borrowed: "Borrowed",
+    pending_return: "Pending Return",
+    returned: "Returned",
+    rejected_borrow: "Rejected",
+    rejected_return: "Return Rejected",
+    overdue: "Overdue",
+  },
+  empty: "You haven't borrowed any books yet.",
+  backToDashboard: "Back to Dashboard",
+  filters: {
+    all: "All",
+    active: "Borrowed",
+    completed: "Returned",
+    overdue: "Overdue",
+    pending: "Pending Borrow",
+    rejected: "Rejected",
+  },
+} as const;

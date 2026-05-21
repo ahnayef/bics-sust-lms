@@ -25,7 +25,9 @@ import {
 } from "react-icons/fa";
 
 import { UserRole } from "@/lib/constants";
+import { useTranslation } from "@/lib/i18n/context";
 import type { NotificationItem } from "@/types/library";
+import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import NotificationBell from "./NotificationBell";
 
 interface DashboardShellProps {
@@ -39,108 +41,6 @@ interface DashboardShellProps {
 
 import { USER_ROLES } from "@/lib/constants";
 
-const navigationItems = [
-  {
-    label: "Dashboard",
-    href: "/dashboard",
-    icon: FaHome,
-    requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR, USER_ROLES.MEMBER],
-  },
-  {
-    label: "My Profile",
-    href: "/dashboard/profile",
-    icon: FaUser,
-    requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR, USER_ROLES.MEMBER],
-  },
-  {
-    label: "Book List",
-    href: "/dashboard/book-list",
-    icon: FaBookOpen,
-    requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR, USER_ROLES.MEMBER],
-  },
-  {
-    label: "Overview",
-    href: "/dashboard/overview",
-    icon: FaChartLine,
-    requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-  },
-  {
-    label: "Moderators",
-    href: "/dashboard/moderators",
-    icon: FaShieldAlt,
-    requiresRole: [USER_ROLES.ADMIN],
-  },
-  {
-    label: "Users",
-    href: "/dashboard/users",
-    icon: FaUsers,
-    requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-  },
-  {
-    label: "Books",
-    href: "/dashboard/books",
-    icon: FaBook,
-    requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-  },
-  {
-    label: "Copies",
-    href: "/dashboard/copies",
-    icon: FaGraduationCap,
-    requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-  },
-  {
-    label: "Transactions",
-    href: "/dashboard/transactions",
-    icon: FaExchangeAlt,
-    requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-  },
-  {
-    label: "Logs",
-    href: "/dashboard/logs",
-    icon: FaClipboardList,
-    requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-  },
-  {
-    label: "Thanas",
-    href: "/dashboard/thanas",
-    icon: FaMapMarkerAlt,
-    requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-  },
-  {
-    label: "Ranks",
-    href: "/dashboard/ranks",
-    icon: FaShieldAlt,
-    requiresRole: [USER_ROLES.ADMIN],
-  },
-  {
-    label: "Print QR",
-    href: "/dashboard/print-qr",
-    icon: FaPrint,
-    requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-  },
-];
-
-const ADMIN_COLOR = {
-  active: "bg-[#dbe6f1] text-[#234b7d] border-y-[#5c8ab0] shadow-[inset_4px_0_0_0_#5c8ab0]",
-  inactive: "bg-[#e6ebf1]/70 text-[#3f4b5a] hover:bg-[#d5dee9] hover:border-y-[#9eb0d6]",
-  iconActive: "text-[#234b7d]",
-  iconInactive: "text-[#4d719d]",
-};
-
-const MODERATOR_COLOR = {
-  active: "bg-[#d3decb] text-[#2d4a35] border-y-[#4a7c59] shadow-[inset_4px_0_0_0_#4a7c59]",
-  inactive: "bg-[#ecf1e9]/40 text-[#5a4b3f] hover:bg-[#e1eadc] hover:border-y-[#c8d6c7]",
-  iconActive: "text-[#2d4a35]",
-  iconInactive: "text-[#4a7c59]",
-};
-
-const GENERAL_COLOR = {
-  active: "bg-[#eadcc8] text-[#221910] border-y-[#7d6d5a] shadow-[inset_4px_0_0_0_#4e4033]",
-  inactive: "text-[#4d4034] hover:bg-[#ece0ce] hover:border-y-[#b59f86]",
-  iconActive: "text-[#221910]",
-  iconInactive: "text-[#554738]",
-};
-
 export default function DashboardShell({
   userId,
   userName,
@@ -151,9 +51,113 @@ export default function DashboardShell({
 }: DashboardShellProps) {
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const { t } = useTranslation();
+
+  const navigationItems = [
+    {
+      label: t.dashboard.sidebar.dashboard,
+      href: "/dashboard",
+      icon: FaHome,
+      requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR, USER_ROLES.MEMBER],
+    },
+    {
+      label: t.dashboard.sidebar.myProfile,
+      href: "/dashboard/profile",
+      icon: FaUser,
+      requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR, USER_ROLES.MEMBER],
+    },
+    {
+      label: t.dashboard.sidebar.bookList,
+      href: "/dashboard/book-list",
+      icon: FaBookOpen,
+      requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR, USER_ROLES.MEMBER],
+    },
+    {
+      label: t.dashboard.sidebar.overview,
+      href: "/dashboard/overview",
+      icon: FaChartLine,
+      requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
+    },
+    {
+      label: t.dashboard.sidebar.transactions,
+      href: "/dashboard/transactions",
+      icon: FaExchangeAlt,
+      requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
+    },
+    {
+      label: t.dashboard.sidebar.books,
+      href: "/dashboard/books",
+      icon: FaBook,
+      requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
+    },
+    {
+      label: t.dashboard.sidebar.copies,
+      href: "/dashboard/copies",
+      icon: FaGraduationCap,
+      requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
+    },
+    {
+      label: t.dashboard.sidebar.users,
+      href: "/dashboard/users",
+      icon: FaUsers,
+      requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
+    },
+    {
+      label: t.dashboard.sidebar.moderators,
+      href: "/dashboard/moderators",
+      icon: FaShieldAlt,
+      requiresRole: [USER_ROLES.ADMIN],
+    },
+    {
+      label: t.dashboard.sidebar.ranks,
+      href: "/dashboard/ranks",
+      icon: FaShieldAlt,
+      requiresRole: [USER_ROLES.ADMIN],
+    },
+    {
+      label: t.dashboard.sidebar.logs,
+      href: "/dashboard/logs",
+      icon: FaClipboardList,
+      requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
+    },
+    {
+      label: t.dashboard.sidebar.thanas,
+      href: "/dashboard/thanas",
+      icon: FaMapMarkerAlt,
+      requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
+    },
+    {
+      label: t.dashboard.sidebar.printQr,
+      href: "/dashboard/print-qr",
+      icon: FaPrint,
+      requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
+    },
+  ];
+
+  const ADMIN_COLOR = {
+    active: "bg-[#dbe6f1] text-[#234b7d] border-y-[#5c8ab0] shadow-[inset_4px_0_0_0_#5c8ab0]",
+    inactive: "bg-[#e6ebf1]/70 text-[#3f4b5a] hover:bg-[#d5dee9] hover:border-y-[#9eb0d6]",
+    iconActive: "text-[#234b7d]",
+    iconInactive: "text-[#4d719d]",
+  };
+
+  const MODERATOR_COLOR = {
+    active: "bg-[#d3decb] text-[#2d4a35] border-y-[#4a7c59] shadow-[inset_4px_0_0_0_#4a7c59]",
+    inactive: "bg-[#ecf1e9]/40 text-[#5a4b3f] hover:bg-[#e1eadc] hover:border-y-[#c8d6c7]",
+    iconActive: "text-[#2d4a35]",
+    iconInactive: "text-[#4a7c59]",
+  };
+
+  const GENERAL_COLOR = {
+    active: "bg-[#eadcc8] text-[#221910] border-y-[#7d6d5a] shadow-[inset_4px_0_0_0_#4e4033]",
+    inactive: "text-[#4d4034] hover:bg-[#ece0ce] hover:border-y-[#b59f86]",
+    iconActive: "text-[#221910]",
+    iconInactive: "text-[#554738]",
+  };
 
   const visibleNavItems = navigationItems.filter((item) =>
-    item.requiresRole.includes(userRole),
+    (item.requiresRole as string[]).includes(userRole),
   );
 
   const isActive = (href: string) => {
@@ -181,19 +185,25 @@ export default function DashboardShell({
         <aside
           className={`absolute top-0 left-0 flex flex-col shrink-0 h-screen overflow-y-auto dashboard-surface tron-border border-r border-[#5e4e3e] transition-all duration-300 ${isMobileOpen ? "w-64 shadow-2xl" : "w-14"} lg:w-64`}
         >
-          <Link
-            href="/dashboard"
-            onClick={() => setIsMobileOpen(false)}
-            className={`flex items-center py-[17px] border-b border-[#6d5c4a] ink-title text-[#221910] font-bold text-lg overflow-hidden hover:bg-[#ece0ce] transition-colors w-full text-left ${isMobileOpen ? "px-4 gap-3" : "justify-center lg:justify-start lg:px-4 lg:gap-3"}`}
-          >
-            <div className="w-5 h-5 lg:w-6 lg:h-6 shrink-0 flex items-center justify-center text-[#554738]">
-              <FaBook className="w-full h-full hidden lg:block" />
-              {isMobileOpen ? <FaTimes className="w-5 h-5 lg:hidden" /> : <FaBars className="w-4 h-4 lg:hidden" />}
-            </div>
-            <span className={`whitespace-nowrap transition-opacity ${isMobileOpen ? "block" : "hidden lg:block"}`}>
-              SUST LMS
-            </span>
-          </Link>
+          <div className={`flex items-center border-b border-[#6d5c4a] overflow-hidden hover:bg-[#ece0ce] transition-colors w-full ${isMobileOpen ? "px-4" : "justify-center lg:justify-start lg:px-4"}`}>
+            <button
+              onClick={() => setIsMobileOpen(!isMobileOpen)}
+              className="py-[17px] shrink-0 flex items-center justify-center text-[#554738] lg:hidden"
+            >
+              {isMobileOpen ? <FaTimes className="w-5 h-5" /> : <FaBars className="w-4 h-4" />}
+            </button>
+
+            <Link
+              href="/dashboard"
+              onClick={() => setIsMobileOpen(false)}
+              className={`flex items-center py-[17px] ink-title text-[#221910] font-bold text-lg gap-3 ${isMobileOpen ? "block" : "hidden lg:flex"}`}
+            >
+              <FaBook className="w-5 h-5 lg:w-6 lg:h-6 shrink-0 hidden lg:block text-[#554738]" />
+              <span className="whitespace-nowrap transition-opacity">
+                SUST LMS
+              </span>
+            </Link>
+          </div>
 
           <nav className="py-4 pb-8">
             {visibleNavItems.map((item) => {
@@ -201,8 +211,9 @@ export default function DashboardShell({
               const active = isActive(item.href);
 
               // Determine "flavor" based on role requirements
-              const isAdminOnly = item.requiresRole.length === 1 && item.requiresRole[0] === USER_ROLES.ADMIN;
-              const isModeratorStaff = item.requiresRole.includes(USER_ROLES.MODERATOR) && !item.requiresRole.includes(USER_ROLES.MEMBER);
+              const roles = item.requiresRole as string[];
+              const isAdminOnly = roles.length === 1 && roles[0] === USER_ROLES.ADMIN;
+              const isModeratorStaff = roles.includes(USER_ROLES.MODERATOR) && !roles.includes(USER_ROLES.MEMBER);
 
               let itemClasses = "";
               let iconClasses = "";
@@ -249,47 +260,122 @@ export default function DashboardShell({
           <div className="flex items-center justify-between">
             <h1 className="text-lg lg:text-xl font-semibold text-[#221910] ink-title">
               {pathname === "/dashboard"
-                ? "Home"
+                ? t.dashboard.sidebar.dashboard
                 : pathname.startsWith("/dashboard/profile")
-                  ? "My Profile"
-                  : "Dashboard"}
+                  ? t.dashboard.sidebar.myProfile
+                  : navigationItems.find((item) => isActive(item.href))?.label ||
+                  t.dashboard.sidebar.dashboard}
             </h1>
             <div className="flex items-center gap-2 lg:gap-5">
-              <NotificationBell userId={userId} notifications={initialNotifications} />
+              <div className="hidden sm:flex items-center gap-2 lg:gap-5">
+                <LanguageSwitcher />
+                <NotificationBell userId={userId} notifications={initialNotifications} />
 
-              <Link
-                href="/dashboard/profile"
-                className="flex items-center gap-2 text-sm text-[#5a4b3f] ink-text hover:text-[#221910] transition-colors"
-              >
-                {userAvatar ? (
-                  <Image
-                    src={userAvatar}
-                    alt={userName}
-                    width={28}
-                    height={28}
-                    priority
-                    className="w-7 h-7 rounded-full object-cover border border-[#8a7966]"
-                  />
-                ) : (
-                  <div className="w-7 h-7 rounded-full bg-[#d9cbb7] border border-[#8a7966] flex items-center justify-center text-xs font-bold text-[#4a3e33]">
-                    {userName.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <span className="hidden sm:block">
-                  Welcome back,{" "}
-                  <span className="font-semibold text-[#2f251d]">
-                    {userName}
-                  </span>
-                </span>
-              </Link>
-              <form action={signOut}>
-                <button
-                  type="submit"
-                  className="cursor-pointer px-3 py-1.5 lg:px-4 lg:py-2 bg-[#f0e4d1] text-[#4c3e31] border border-[#8a7966] rounded-sm hover:bg-[#eadcc8] transition-colors font-medium text-sm ink-text"
-                >
-                  Logout
-                </button>
-              </form>
+                <div className="relative">
+                  <button
+                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                    className="flex items-center gap-2 text-sm text-[#5a4b3f] ink-text hover:text-[#221910] transition-colors focus:outline-none"
+                  >
+                    {userAvatar ? (
+                      <Image
+                        src={userAvatar}
+                        alt={userName}
+                        width={28}
+                        height={28}
+                        priority
+                        className="w-7 h-7 rounded-full object-cover border border-[#8a7966]"
+                      />
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-[#d9cbb7] border border-[#8a7966] flex items-center justify-center text-xs font-bold text-[#4a3e33]">
+                        {userName.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <span>
+                      {t.dashboard.header.welcome}{" "}
+                      <span className="font-semibold text-[#2f251d]">
+                        {userName}
+                      </span>
+                    </span>
+                  </button>
+
+                  {isProfileOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-30"
+                        onClick={() => setIsProfileOpen(false)}
+                      />
+                      <div className="absolute right-0 mt-2 w-48 bg-[#f6ecdd] border border-[#8a7966] rounded-sm shadow-xl z-40 py-2">
+                        <div className="px-4 py-2 border-b border-[#eadcc8] mb-1">
+                          <p className="text-xs text-[#5c4f42] uppercase tracking-wider">{t.dashboard.header.welcome}</p>
+                          <p className="text-sm font-bold text-[#221910] truncate">{userName}</p>
+                        </div>
+                        <form action={signOut}>
+                          <button
+                            type="submit"
+                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-700 hover:bg-[#fdf0ec] transition-colors font-medium"
+                          >
+                            <FaBars className="w-3.5 h-3.5 rotate-90" />
+                            {t.dashboard.header.logout}
+                          </button>
+                        </form>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Mobile Profile Dropdown */}
+              <div className="sm:hidden flex items-center gap-3">
+                <NotificationBell userId={userId} notifications={initialNotifications} />
+                <div className="relative">
+                  <button
+                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                    className="flex items-center focus:outline-none"
+                  >
+                    {userAvatar ? (
+                      <Image
+                        src={userAvatar}
+                        alt={userName}
+                        width={32}
+                        height={32}
+                        priority
+                        className="w-8 h-8 rounded-full object-cover border border-[#8a7966]"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-[#d9cbb7] border border-[#8a7966] flex items-center justify-center text-sm font-bold text-[#4a3e33]">
+                        {userName.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </button>
+
+                  {isProfileOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-30"
+                        onClick={() => setIsProfileOpen(false)}
+                      />
+                      <div className="absolute right-0 mt-2 w-48 bg-[#f6ecdd] border border-[#8a7966] rounded-sm shadow-xl z-40 py-2">
+                        <div className="px-4 py-2 border-b border-[#eadcc8] mb-1">
+                          <p className="text-xs text-[#5c4f42] uppercase tracking-wider">{t.dashboard.header.welcome}</p>
+                          <p className="text-sm font-bold text-[#221910] truncate">{userName}</p>
+                        </div>
+                        <div className="px-4 py-2 border-b border-[#eadcc8] my-1">
+                          <LanguageSwitcher />
+                        </div>
+                        <form action={signOut} className="mt-1">
+                          <button
+                            type="submit"
+                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-700 hover:bg-[#fdf0ec] transition-colors font-medium"
+                          >
+                            <FaBars className="w-3.5 h-3.5 rotate-90" />
+                            {t.dashboard.header.logout}
+                          </button>
+                        </form>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>

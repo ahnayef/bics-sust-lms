@@ -17,6 +17,8 @@ import {
   FaMapMarkerAlt,
 } from "react-icons/fa";
 
+import { useTranslation } from "@/lib/i18n/context";
+
 interface Props {
   profile: Profile;
   thanas: Thana[];
@@ -43,6 +45,7 @@ export default function EditProfileForm({
   ranks,
   geoSource: initialGeoSource,
 }: Props) {
+  const { t } = useTranslation();
   const [state, formAction, isPending] = useActionState(
     updateProfileAction,
     null,
@@ -59,7 +62,7 @@ export default function EditProfileForm({
     if (value === "" || /^\+?[0-9]*$/.test(value)) {
       setPhone(value);
       if (value.length > 19) {
-        setPhoneError("Phone number cannot exceed 19 characters");
+        setPhoneError(t.profile.editForm.errors.phoneTooLong);
       } else {
         setPhoneError("");
       }
@@ -89,36 +92,35 @@ export default function EditProfileForm({
   const currentRankName = ranks.find(r => r.id === rankId)?.name ?? "None";
 
   const thanaOptions = useMemo(
-    () => [{ id: "", name: "— Not set —" } as Thana, ...thanas],
-    [thanas],
+    () => [{ id: "", name: t.profile.editForm.thanaNotSet } as Thana, ...thanas],
+    [thanas, t.profile.editForm.thanaNotSet],
   );
 
   const [selectedThana, setSelectedThana] = useState(profile.thana_id ?? "");
   const [geoSource] = useState<GeoSource>(initialGeoSource);
 
   const selectedThanaLabel =
-    thanaOptions.find((t) => t.id === selectedThana)?.name ?? "Not set";
+    thanaOptions.find((t) => t.id === selectedThana)?.name ?? t.profile.editForm.preview.none;
 
   const savePreview = (
     <div className="space-y-1">
       <p>
-        <span className="text-[#7a6a5c]">Full Name:</span>{" "}
-        {fullName || "(none)"}
+        <span className="text-[#7a6a5c]">{t.profile.editForm.preview.fullName}:</span>{" "}
+        {fullName || t.profile.editForm.preview.none}
       </p>
       <p>
-        <span className="text-[#7a6a5c]">Phone:</span> {phone || "(none)"}
+        <span className="text-[#7a6a5c]">{t.profile.editForm.preview.phone}:</span> {phone || t.profile.editForm.preview.none}
       </p>
       <p className="flex items-center gap-2">
-        <span className="text-[#7a6a5c]">Rank:</span>{" "}
+        <span className="text-[#7a6a5c]">{t.profile.editForm.preview.rank}:</span>{" "}
         <RankBadge name={currentRankName} className={rankChanged ? "border-amber-500 bg-amber-50" : ""} />
       </p>
       <p>
-        <span className="text-[#7a6a5c]">Thana:</span> {selectedThanaLabel}
+        <span className="text-[#7a6a5c]">{t.profile.editForm.preview.thana}:</span> {selectedThanaLabel}
       </p>
       {rankChanged && (
         <p className="mt-2 text-amber-700">
-          ⚠ Your rank is changing — you will be un-verified and need
-          re-verification.
+          ⚠ {t.profile.editForm.rankNote}
         </p>
       )}
     </div>
@@ -130,8 +132,6 @@ export default function EditProfileForm({
 
   return (
     <>
-
-
       <div
         className="p-2 sm:p-0"
         style={{ fontFamily: "'Courier Prime', 'Courier New', monospace" }}
@@ -143,7 +143,7 @@ export default function EditProfileForm({
               className="inline-flex items-center gap-2 text-sm text-[#6a5a4c] hover:text-[#221910] ink-text transition-colors"
             >
               <FaArrowLeft className="w-3 h-3" />
-              Back to My Profile
+              {t.profile.editForm.backToProfile}
             </Link>
           </div>
 
@@ -152,11 +152,10 @@ export default function EditProfileForm({
               className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title mb-1"
               style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
             >
-              Edit Profile
+              {t.profile.editForm.title}
             </h1>
             <p className="text-[#5a4b3f] text-sm ink-text">
-              Update your details below. Username and avatar cannot be changed
-              here.
+              {t.profile.editForm.subtitle}
             </p>
           </div>
 
@@ -186,7 +185,7 @@ export default function EditProfileForm({
                   @{profile.username}
                 </p>
                 <p className="text-xs text-[#a0907e] ink-text mt-0.5">
-                  Avatar &amp; username are managed via your OAuth provider
+                  {t.profile.editForm.avatarNote}
                 </p>
               </div>
             </div>
@@ -206,7 +205,7 @@ export default function EditProfileForm({
               <div>
                 <div className="flex items-center justify-between">
                   <label htmlFor="full_name" className={labelClass}>
-                    Full Name <span className="text-red-500">*</span>
+                    {t.profile.editForm.fullName} <span className="text-red-500">*</span>
                   </label>
                   <span className="text-[10px] text-[#7a6a5c] font-normal opacity-70">
                     ({fullName.length}/100)
@@ -221,7 +220,7 @@ export default function EditProfileForm({
                   autoComplete="name"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Your full name"
+                  placeholder={t.profile.editForm.fullName}
                   className={inputClass}
                 />
               </div>
@@ -229,9 +228,9 @@ export default function EditProfileForm({
               <div>
                 <div className="flex items-center justify-between">
                   <label htmlFor="phone" className={labelClass}>
-                    Phone Number{" "}
+                    {t.profile.editForm.phone}{" "}
                     <span className="text-[#7a6a5c] font-normal">
-                      (optional)
+                      ({t.profile.info.noPhone})
                     </span>
                     {phone.length > 0 && (
                       <span className="ml-2 text-[10px] text-[#7a6a5c] font-normal opacity-70">
@@ -241,7 +240,7 @@ export default function EditProfileForm({
                   </label>
                   {phoneError && (
                     <span className="text-xs text-red-600 font-semibold ink-text">
-                      Too long
+                      {t.profile.editForm.errors.phoneTooLong}
                     </span>
                   )}
                 </div>
@@ -253,7 +252,7 @@ export default function EditProfileForm({
                   maxLength={19}
                   value={phone}
                   onChange={handlePhoneChange}
-                  placeholder="01919191919"
+                  placeholder={t.profile.editForm.phonePlaceholder}
                   className={`${inputClass} ${phoneError ? "border-red-400 focus:ring-red-500" : ""
                     }`}
                 />
@@ -266,7 +265,7 @@ export default function EditProfileForm({
 
               <div>
                 <label htmlFor="rank_id" className={labelClass}>
-                  Rank <span className="text-red-500">*</span>
+                  {t.profile.editForm.rank} <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="rank_id"
@@ -276,7 +275,7 @@ export default function EditProfileForm({
                   onChange={(e) => setRankId(e.target.value === "none" ? null : e.target.value)}
                   className={inputClass}
                 >
-                  <option value="none">None</option>
+                  <option value="none">{t.profile.editForm.preview.none}</option>
                   {ranks.map((r) => (
                     <option key={r.id} value={r.id}>
                       {r.name}
@@ -286,7 +285,7 @@ export default function EditProfileForm({
                 <div className="flex items-start gap-2 mt-2 px-3 py-2 rounded-sm border border-amber-400/60 bg-amber-50/80 text-amber-800 text-xs ink-text">
                   <FaExclamationTriangle className="shrink-0 mt-0.5 w-3 h-3" />
                   <span>
-                    If you change your rank, you will be un-verified until a moderator verifies you again.
+                    {t.profile.editForm.rankNote}
                   </span>
                 </div>
               </div>
@@ -295,7 +294,7 @@ export default function EditProfileForm({
                 <div className="flex items-center gap-2 text-[#3f3328]">
                   <FaMapMarkerAlt className="text-[#6e5d4a] shrink-0" />
                   <span className="text-sm font-semibold ink-text tracking-wide uppercase">
-                    Thana
+                    {t.profile.editForm.thana}
                   </span>
                 </div>
 
@@ -303,23 +302,22 @@ export default function EditProfileForm({
                   <div className="flex items-start gap-2 px-3 py-2 rounded-sm border border-red-400/60 bg-red-50/80 text-red-800 text-xs ink-text">
                     <span className="shrink-0 mt-0.5">✕</span>
                     <span>
-                      No thanas are configured. You can leave the thana unset
-                      until an admin adds thanas.
+                      {t.profile.editForm.thanaEmpty}
                     </span>
                   </div>
                 )}
 
                 <div>
-                  <label className={labelClass}>Select thana</label>
+                  <label className={labelClass}>{t.profile.editForm.thanaSelect}</label>
                   <ThanaCombobox
                     name="thana_id"
                     options={thanaOptions}
                     value={selectedThana}
                     onChange={setSelectedThana}
-                    placeholder="Select thana…"
-                    searchPlaceholder="Search thana…"
+                    placeholder={t.profile.editForm.thanaPlaceholder}
+                    searchPlaceholder={t.profile.editForm.thanaSearchPlaceholder}
                     disabled={thanaOptions.length <= 1}
-                    disabledHint="No thanas available yet"
+                    disabledHint={t.profile.editForm.thanaDisabledHint}
                   />
                 </div>
               </div>
@@ -327,11 +325,10 @@ export default function EditProfileForm({
               <div className="flex items-start gap-3 px-4 py-3 border border-[#c9b99a] bg-[#ede0cc] rounded-sm">
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-[#3f3328] ink-text">
-                    Hide contact info from public profile
+                    {t.profile.editForm.privacy.title}
                   </p>
                   <p className="text-xs text-[#6a5a4c] ink-text mt-0.5">
-                    When enabled, your email, phone, and location won&apos;t be
-                    visible on your public profile page.
+                    {t.profile.editForm.privacy.description}
                   </p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer mt-0.5">
@@ -356,7 +353,7 @@ export default function EditProfileForm({
                   href="/dashboard/profile"
                   className="flex-1 py-3 px-4 text-center bg-[#ede0cc] text-[#4a3825] border border-[#c9b99a] font-semibold rounded-sm hover:bg-[#e4d5b8] active:scale-[0.98] transition-all duration-150 ink-text text-base"
                 >
-                  Cancel
+                  {t.profile.editForm.cancel}
                 </Link>
                 <button
                   type="submit"
@@ -364,7 +361,7 @@ export default function EditProfileForm({
                   className="flex-1 py-3 px-6 bg-[#3f3328] text-[#f4e8d4] font-semibold rounded-sm hover:bg-[#221910] active:scale-[0.98] transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed ink-title text-base tracking-wide"
                   style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
                 >
-                  {isPending ? "Saving…" : "Save Changes"}
+                  {isPending ? t.profile.editForm.saving : t.profile.editForm.save}
                 </button>
               </div>
             </form>
@@ -376,9 +373,9 @@ export default function EditProfileForm({
               if (!isPending) setSaveModalOpen(false);
             }}
             onConfirm={handleSaveConfirm}
-            title="Save Profile Changes"
+            title={t.profile.editForm.confirmTitle}
             preview={savePreview}
-            confirmLabel="Save Changes"
+            confirmLabel={t.profile.editForm.save}
             loading={isPending}
           />
 

@@ -1,8 +1,10 @@
 "use client";
 
+import { useTranslation } from "@/lib/i18n/context";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 interface NavbarProps {
   isLoggedIn?: boolean;
@@ -11,9 +13,10 @@ interface NavbarProps {
 export default function Navbar({ isLoggedIn = false }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   const ctaHref = isLoggedIn ? "/dashboard" : "/login";
-  const ctaLabel = isLoggedIn ? "Dashboard" : "Sign In";
+  const ctaLabel = isLoggedIn ? t.nav.dashboard : t.nav.signIn;
 
   const logoHref = pathname.startsWith("/dashboard") ? "/dashboard" : "/";
 
@@ -43,7 +46,7 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
               className="text-xs tracking-[0.14em] text-[#4a4038]"
               style={{ fontFamily: "Courier Prime, monospace" }}
             >
-              Weekly Edition
+              {t.nav.weeklyEdition}
             </span>
           </Link>
 
@@ -54,15 +57,16 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
               className="text-[#2c2520] hover:text-black font-semibold tracking-wide text-sm transition-colors"
               style={{ fontFamily: "Courier Prime, monospace" }}
             >
-              Features
+              {t.nav.features}
             </Link>
             <Link
               href="/contact"
               className="text-[#2c2520] hover:text-black font-semibold tracking-wide text-sm transition-colors"
               style={{ fontFamily: "Courier Prime, monospace" }}
             >
-              Contact
+              {t.nav.contact}
             </Link>
+            <LanguageSwitcher />
           </div>
 
           {/* CTA Button */}
@@ -109,28 +113,34 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <div className="md:hidden pb-4 pt-2 space-y-2 border-t border-[#3c342d]">
+          <div
+            className="md:hidden absolute top-16 left-0 w-full border-b-2 border-[#3c342d] py-4 px-4 space-y-4"
+            style={{ backgroundColor: "#e8dcc8" }}
+          >
             <Link
               href="/#features"
-              className="block px-4 py-2 text-[#2c2520] hover:bg-[#d9cbb7] tracking-wide font-semibold"
-              style={{ fontFamily: "Courier Prime, monospace" }}
               onClick={() => setIsOpen(false)}
+              className="block text-[#2c2520] font-semibold tracking-wide text-sm"
+              style={{ fontFamily: "Courier Prime, monospace" }}
             >
-              Features
+              {t.nav.features}
             </Link>
             <Link
               href="/contact"
-              className="block px-4 py-2 text-[#2c2520] hover:bg-[#d9cbb7] tracking-wide font-semibold"
-              style={{ fontFamily: "Courier Prime, monospace" }}
               onClick={() => setIsOpen(false)}
+              className="block text-[#2c2520] font-semibold tracking-wide text-sm"
+              style={{ fontFamily: "Courier Prime, monospace" }}
             >
-              Contact
+              {t.nav.contact}
             </Link>
+            <div className="pt-2 border-t border-[#6d6053]/20">
+              <LanguageSwitcher />
+            </div>
             <Link
               href={ctaHref}
-              className="block px-4 py-2 bg-[#6d6053] text-[#f3ebdd] font-semibold tracking-wide hover:bg-[#5b5045]"
-              style={{ fontFamily: "Courier Prime, monospace" }}
               onClick={() => setIsOpen(false)}
+              className="block w-full text-center px-5 py-2 font-semibold text-sm border border-[#6d6053] bg-[#6d6053] text-[#f3ebdd]"
+              style={{ fontFamily: "Courier Prime, monospace" }}
             >
               {ctaLabel}
             </Link>

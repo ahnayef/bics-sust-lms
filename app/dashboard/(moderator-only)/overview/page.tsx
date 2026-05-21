@@ -1,4 +1,5 @@
 import { TRANSACTION_STATUS_COLORS } from "@/lib/constants";
+import { getTranslation } from "@/lib/i18n/server";
 import { getOverviewData } from "@/server/library";
 import type {
   PdfSubmission,
@@ -13,7 +14,7 @@ import {
   FaExchangeAlt,
   FaExclamationTriangle,
   FaFileAlt,
-  FaHourglassHalf,
+  FaHourglassHalf
 } from "react-icons/fa";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -28,9 +29,9 @@ function daysOverdue(dueDate: string | null): number {
   );
 }
 
-function fmtDate(d: string | null | undefined): string {
+function fmtDate(d: string | null | undefined, language: string = "en"): string {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-GB", {
+  return new Date(d).toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -90,7 +91,7 @@ function StatCard({
 function SectionHeader({
   title,
   href,
-  hrefLabel = "View All",
+  hrefLabel,
 }: {
   title: string;
   href?: string;
@@ -98,56 +99,50 @@ function SectionHeader({
 }) {
   return (
     <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-[#7d6d5a]">
-      <h2 className="text-base sm:text-lg font-bold text-[#221910] ink-title">
+      <h3 className="font-bold text-[#221910] ink-title uppercase tracking-wider text-xs sm:text-sm">
         {title}
-      </h2>
+      </h3>
       {href && (
         <Link
           href={href}
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-[#4f4134] hover:text-[#2f251d] ink-text transition-colors"
+          className="text-[10px] sm:text-xs font-bold text-[#5c4f42] hover:text-[#221910] flex items-center gap-1.5 transition-colors uppercase tracking-widest"
         >
-          {hrefLabel} <FaArrowRight className="w-3 h-3" />
+          {hrefLabel} <FaArrowRight className="w-2 h-2" />
         </Link>
       )}
     </div>
   );
 }
 
-function StatusPill({ status }: { status: string }) {
-  const styles = TRANSACTION_STATUS_COLORS as Record<string, string>;
+function Avatar({ url, name }: { url: string | null; name: string }) {
+  if (url) {
+    return (
+      <Image
+        src={url}
+        alt={name}
+        width={32}
+        height={32}
+        className="w-8 h-8 rounded-full border border-[#8a7966] object-cover shrink-0"
+      />
+    );
+  }
   return (
-    <span
-      className={`inline-block px-2 py-0.5 text-[11px] font-semibold border rounded-sm ink-text capitalize ${styles[status] ?? "border-[#b9a58b] bg-[#f6ecdd] text-[#4f4134]"}`}
-    >
-      {status}
-    </span>
+    <div className="w-8 h-8 rounded-full bg-[#d9cbb7] border border-[#8a7966] flex items-center justify-center text-[10px] font-bold text-[#4a3e33] shrink-0">
+      {getInitials(name)}
+    </div>
   );
 }
 
-function Avatar({
-  url,
-  name,
-  size = "sm",
-}: {
-  url: string | null;
-  name: string;
-  size?: "sm" | "md";
-}) {
-  const dim = size === "md" ? "w-9 h-9 text-sm" : "w-7 h-7 text-xs";
-  return url ? (
-    <Image
-      src={url}
-      alt={name}
-      width={size === "md" ? 36 : 28}
-      height={size === "md" ? 36 : 28}
-      className={`${dim} rounded-full object-cover border border-[#8a7966] shrink-0`}
-    />
-  ) : (
-    <div
-      className={`${dim} rounded-full bg-[#d9cbb7] border border-[#8a7966] flex items-center justify-center font-bold text-[#4a3e33] shrink-0 ink-title select-none`}
+function StatusPill({ status, label }: { status: string; label: string }) {
+  const colors =
+    TRANSACTION_STATUS_COLORS[status as keyof typeof TRANSACTION_STATUS_COLORS] ||
+    "bg-gray-100 text-gray-600 border-gray-200";
+  return (
+    <span
+      className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-tighter ${colors}`}
     >
-      {getInitials(name)}
-    </div>
+      {label}
+    </span>
   );
 }
 
@@ -164,16 +159,16 @@ function BarRow({
 }) {
   const pct = total > 0 ? (value / total) * 100 : 0;
   return (
-    <div>
-      <div className="flex items-center justify-between text-xs ink-text text-[#5a4b3f] mb-1">
+    <div className="space-y-1">
+      <div className="flex justify-between text-[10px] font-medium text-[#5c4f42]">
         <span>{label}</span>
-        <span className="font-semibold text-[#221910]">
-          {value} / {total}
+        <span>
+          {value} ({Math.round(pct)}%)
         </span>
       </div>
-      <div className="w-full h-2 bg-[#e4d4bf] rounded-full overflow-hidden border border-[#ccb79b]">
+      <div className="h-1.5 bg-[#d2bfa5]/40 rounded-full overflow-hidden">
         <div
-          className={`h-full ${color} rounded-full`}
+          className={`h-full ${color} transition-all duration-500`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -181,17 +176,19 @@ function BarRow({
   );
 }
 
-const TH = ({ children }: { children: React.ReactNode }) => (
-  <th className="px-4 sm:px-5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-[#3b3026] whitespace-nowrap">
-    {children}
-  </th>
-);
+function TH({ children }: { children: React.ReactNode }) {
+  return (
+    <th className="px-4 sm:px-5 py-3 text-left text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
+      {children}
+    </th>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Page
+// Page Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default async function DashboardOverview() {
+export default async function Overview() {
   const {
     stats,
     overdueItems,
@@ -203,11 +200,21 @@ export default async function DashboardOverview() {
     pendingPdfs,
   } = await getOverviewData();
 
+  const { t, language } = await getTranslation();
+
   const urgentCount =
     stats.overdueCount +
     stats.pendingBorrowRequests +
     stats.pendingReturnRequests +
     stats.pendingPdfSubmissions;
+
+  const getStatusLabel = (tx: Transaction) => {
+    if (tx.status === "pending") return tx.type === "borrow" ? t.history.status.pending_borrow : t.history.status.pending_return;
+    if (tx.status === "active") return t.history.status.borrowed;
+    if (tx.status === "overdue") return t.history.status.overdue;
+    if (tx.status === "completed") return t.history.status.returned;
+    return tx.type === "borrow" ? t.history.status.rejected_borrow : t.history.status.rejected_return;
+  };
 
   return (
     <div className="space-y-5 sm:space-y-6">
@@ -216,10 +223,10 @@ export default async function DashboardOverview() {
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
-              Dashboard Overview
+              {t.overview.header.title}
             </h1>
             <p className="text-sm text-[#5c4f42] mt-1 ink-text">
-              Live snapshot of library operations.
+              {t.overview.header.subtitle}
             </p>
           </div>
 
@@ -227,52 +234,56 @@ export default async function DashboardOverview() {
             {urgentCount > 0 && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#d0604a] bg-[#fce8e4] text-[#8b2c1a] text-xs font-semibold rounded-sm ink-text">
                 <FaExclamationTriangle className="w-3 h-3" />
-                {urgentCount} action{urgentCount !== 1 ? "s" : ""} needed
+                {urgentCount}{" "}
+                {urgentCount === 1
+                  ? t.overview.header.actionNeeded
+                  : t.overview.header.actionsNeeded}
               </span>
             )}
             <Link
               href="/dashboard/transactions"
               className="inline-flex items-center gap-2 px-3 py-1.5 border border-[#4e4033] bg-[#3f3328] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors text-xs font-medium rounded-sm ink-text"
             >
-              View Transactions <FaArrowRight className="w-3 h-3" />
+              {t.overview.header.viewTransactions}{" "}
+              <FaArrowRight className="w-3 h-3" />
             </Link>
           </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
           <StatCard
-            label="Books"
+            label={t.overview.stats.books}
             value={stats.totalBooks}
-            sub={`${stats.syllabusBooks} syllabus`}
+            sub={`${stats.syllabusBooks} ${t.overview.stats.syllabus}`}
             href="/dashboard/books"
           />
           <StatCard
-            label="Copies"
+            label={t.overview.stats.copies}
             value={stats.totalCopies}
-            sub={`${stats.availableCopies} available`}
+            sub={`${stats.availableCopies} ${t.overview.stats.available}`}
             href="/dashboard/copies"
           />
           <StatCard
-            label="Members"
+            label={t.overview.stats.members}
             value={stats.totalMembers}
-            sub={`${stats.verifiedMembers} verified`}
+            sub={`${stats.verifiedMembers} ${t.overview.stats.verified}`}
             href="/dashboard/users"
           />
           <StatCard
-            label="Active Borrows"
+            label={t.overview.stats.activeBorrows}
             value={stats.activeBorrows}
             href="/dashboard/transactions?tab=active"
           />
           <StatCard
-            label="Overdue"
+            label={t.overview.stats.overdue}
             value={stats.overdueCount}
             urgent={stats.overdueCount > 0}
             href="/dashboard/transactions?tab=active"
           />
           <StatCard
-            label="Done This Month"
+            label={t.overview.stats.doneThisMonth}
             value={stats.completedThisMonth}
-            sub="completed"
+            sub={t.overview.stats.completed}
             href="/dashboard/transactions?tab=history"
           />
         </div>
@@ -283,35 +294,35 @@ export default async function DashboardOverview() {
         {/* Action Required */}
         <section className="dashboard-surface tron-border rounded-sm">
           <SectionHeader
-            title="Action Required"
+            title={t.overview.sections.actionRequired}
             href="/dashboard/transactions"
-            hrefLabel="Open Queue"
+            hrefLabel={t.overview.sections.openQueue}
           />
           <div className="p-4 sm:p-5 space-y-2.5">
             {[
               {
-                label: "Overdue Borrows",
+                label: t.overview.actions.overdueBorrows,
                 count: stats.overdueCount,
                 icon: FaExclamationTriangle,
                 urgent: true,
                 tab: "active",
               },
               {
-                label: "Pending Borrow Requests",
+                label: t.overview.actions.pendingBorrowRequests,
                 count: stats.pendingBorrowRequests,
                 icon: FaHourglassHalf,
                 urgent: stats.pendingBorrowRequests > 0,
                 tab: "pending",
               },
               {
-                label: "Pending Return Requests",
+                label: t.overview.actions.pendingReturnRequests,
                 count: stats.pendingReturnRequests,
                 icon: FaExchangeAlt,
                 urgent: stats.pendingReturnRequests > 0,
                 tab: "pending",
               },
               {
-                label: "PDF Submissions to Review",
+                label: t.overview.actions.pdfSubmissionsReview,
                 count: stats.pendingPdfSubmissions,
                 icon: FaFileAlt,
                 urgent: false,
@@ -322,20 +333,22 @@ export default async function DashboardOverview() {
                 key={label}
                 href={`/dashboard/transactions?tab=${tab}`}
                 className={`flex items-center justify-between p-3 border rounded-sm transition-colors ${urgent && count > 0
-                    ? "border-[#c4614a] bg-[#fdf0ec] hover:bg-[#f9e6e1]"
-                    : "border-[#c4b08a] bg-[#f8f1e6] hover:bg-[#ede3d4]"
+                  ? "border-[#c4614a] bg-[#fdf0ec] hover:bg-[#f9e6e1]"
+                  : "border-[#c4b08a] bg-[#f8f1e6] hover:bg-[#ede3d4]"
                   }`}
               >
                 <div className="flex items-center gap-2.5">
                   <Icon
-                    className={`w-3.5 h-3.5 shrink-0 ${urgent && count > 0 ? "text-[#c4614a]" : "text-[#7a6a5a]"}`}
+                    className={`w-3.5 h-3.5 shrink-0 ${urgent && count > 0 ? "text-[#c4614a]" : "text-[#7a6a5a]"
+                      }`}
                   />
                   <span className="text-sm ink-text text-[#3f3328]">
                     {label}
                   </span>
                 </div>
                 <span
-                  className={`text-xl font-bold ink-title ${urgent && count > 0 ? "text-[#9b3a25]" : "text-[#221910]"}`}
+                  className={`text-xl font-bold ink-title ${urgent && count > 0 ? "text-[#9b3a25]" : "text-[#221910]"
+                    }`}
                 >
                   {count}
                 </span>
@@ -346,26 +359,26 @@ export default async function DashboardOverview() {
 
         {/* Collection Health */}
         <section className="dashboard-surface tron-border rounded-sm">
-          <SectionHeader title="Collection Health" />
+          <SectionHeader title={t.overview.sections.collectionHealth} />
           <div className="p-4 sm:p-5 space-y-5">
             <div className="space-y-2.5">
               <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text font-semibold">
-                Copies
+                {t.overview.stats.copies}
               </p>
               <BarRow
-                label="Available"
+                label={t.overview.stats.available}
                 value={stats.availableCopies}
                 total={stats.totalCopies}
                 color="bg-[#6b9e5e]"
               />
               <BarRow
-                label="Borrowed"
+                label={t.overview.stats.borrowed}
                 value={stats.borrowedCopies}
                 total={stats.totalCopies}
                 color="bg-[#5a7ab5]"
               />
               <BarRow
-                label="Damaged"
+                label={t.overview.stats.damaged}
                 value={stats.damagedCopies}
                 total={stats.totalCopies}
                 color="bg-[#c4614a]"
@@ -375,12 +388,12 @@ export default async function DashboardOverview() {
             <div className="grid grid-cols-2 gap-4 pt-3 border-t border-[#d2bfa5]">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-2 ink-text font-semibold">
-                  Books
+                  {t.overview.stats.books}
                 </p>
                 <div className="space-y-1.5 text-sm ink-text">
                   {[
-                    ["Syllabus", stats.syllabusBooks],
-                    ["General", stats.generalBooks],
+                    [t.overview.sections.syllabus, stats.syllabusBooks],
+                    [t.overview.stats.general, stats.generalBooks],
                   ].map(([l, v]) => (
                     <div
                       key={String(l)}
@@ -394,12 +407,12 @@ export default async function DashboardOverview() {
               </div>
               <div>
                 <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-2 ink-text font-semibold">
-                  Members
+                  {t.overview.stats.members}
                 </p>
                 <div className="space-y-1.5 text-sm ink-text">
                   {[
-                    ["Verified", stats.verifiedMembers],
-                    ["Unverified", stats.unverifiedMembers],
+                    [t.overview.stats.verified, stats.verifiedMembers],
+                    [t.overview.stats.unverified, stats.unverifiedMembers],
                   ].map(([l, v]) => (
                     <div
                       key={String(l)}
@@ -419,10 +432,14 @@ export default async function DashboardOverview() {
       {/* ── Top Borrowers + Popular Books ────────────────────────────── */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-5">
         <section className="dashboard-surface tron-border rounded-sm">
-          <SectionHeader title="Top Borrowers" href="/dashboard/users" />
+          <SectionHeader
+            title={t.overview.sections.topBorrowers}
+            href="/dashboard/users"
+            hrefLabel={t.common.viewAll}
+          />
           {topMembers.length === 0 ? (
             <p className="p-5 text-sm text-[#6a5a4c] ink-text">
-              No borrow history yet.
+              {t.overview.empty.noBorrowHistory}
             </p>
           ) : (
             <div className="divide-y divide-[#d2bfa5]">
@@ -454,10 +471,14 @@ export default async function DashboardOverview() {
         </section>
 
         <section className="dashboard-surface tron-border rounded-sm">
-          <SectionHeader title="Most Borrowed Books" href="/dashboard/books" />
+          <SectionHeader
+            title={t.overview.sections.mostBorrowedBooks}
+            href="/dashboard/books"
+            hrefLabel={t.common.viewAll}
+          />
           {popularBooks.length === 0 ? (
             <p className="p-5 text-sm text-[#6a5a4c] ink-text">
-              No borrow history yet.
+              {t.overview.empty.noBorrowHistory}
             </p>
           ) : (
             <div className="divide-y divide-[#d2bfa5]">
@@ -474,7 +495,7 @@ export default async function DashboardOverview() {
                       {b.author}
                       {b.is_syllabus && (
                         <span className="px-1.5 py-0.5 text-[9px] font-semibold border border-[#8aa06f] bg-[#eef5e9] text-[#3d5c2e] rounded-sm">
-                          Syllabus
+                          {t.overview.sections.syllabus}
                         </span>
                       )}
                     </p>
@@ -496,24 +517,28 @@ export default async function DashboardOverview() {
           style={{ borderColor: "#c4614a" }}
         >
           <SectionHeader
-            title={`Overdue Borrows — ${overdueItems.length}`}
+            title={`${t.overview.sections.overdueBorrows} — ${overdueItems.length}`}
             href="/dashboard/transactions?tab=active"
-            hrefLabel="Manage"
+            hrefLabel={t.overview.sections.manage}
           />
           <div className="overflow-x-auto">
             <table className="w-full text-sm ink-text">
               <thead>
                 <tr className="bg-[#fce8e4] border-b border-[#d0604a]">
-                  {["Member", "Book", "Copy", "Due Date", "Days Over"].map(
-                    (h) => (
-                      <th
-                        key={h}
-                        className="px-4 sm:px-5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8b2c1a] whitespace-nowrap"
-                      >
-                        {h}
-                      </th>
-                    ),
-                  )}
+                  {[
+                    t.overview.table.member,
+                    t.overview.table.book,
+                    t.overview.table.copy,
+                    t.overview.table.dueDate,
+                    t.overview.table.daysOver,
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="px-4 sm:px-5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8b2c1a] whitespace-nowrap"
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -545,7 +570,7 @@ export default async function DashboardOverview() {
                         {tx.copy ? `#${tx.copy.copy_number}` : "—"}
                       </td>
                       <td className="px-4 sm:px-5 py-3 text-[#5a4b3f] whitespace-nowrap">
-                        {fmtDate(tx.due_date)}
+                        {fmtDate(tx.due_date, language)}
                       </td>
                       <td className="px-4 sm:px-5 py-3">
                         <span className="font-bold text-[#9b3a25]">
@@ -567,9 +592,9 @@ export default async function DashboardOverview() {
           {pendingBorrows.length > 0 && (
             <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
               <SectionHeader
-                title={`Borrow Requests — ${pendingBorrows.length}`}
+                title={`${t.overview.sections.borrowRequests} — ${pendingBorrows.length}`}
                 href="/dashboard/transactions?tab=pending"
-                hrefLabel="Review"
+                hrefLabel={t.overview.sections.review}
               />
               <div className="divide-y divide-[#d2bfa5]">
                 {pendingBorrows.map((tx: Transaction) => (
@@ -582,15 +607,18 @@ export default async function DashboardOverview() {
                       name={tx.user?.full_name ?? "?"}
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[#2b2119] ink-text truncate">
+                      <Link
+                        href={`/dashboard/users/${tx.user?.id}`}
+                        className="text-sm font-medium text-[#2b2119] ink-text truncate hover:underline hover:text-[#5a4b3f] transition-colors"
+                      >
                         {tx.user?.full_name}
-                      </p>
+                      </Link>
                       <p className="text-xs text-[#7a6a5a] ink-text truncate">
                         {tx.book?.title}
                       </p>
                     </div>
                     <p className="text-xs text-[#7a6a5a] ink-text whitespace-nowrap shrink-0">
-                      {fmtDate(tx.request_date)}
+                      {fmtDate(tx.request_date, language)}
                     </p>
                   </div>
                 ))}
@@ -601,9 +629,9 @@ export default async function DashboardOverview() {
           {pendingReturns.length > 0 && (
             <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
               <SectionHeader
-                title={`Return Requests — ${pendingReturns.length}`}
+                title={`${t.overview.sections.returnRequests} — ${pendingReturns.length}`}
                 href="/dashboard/transactions?tab=pending"
-                hrefLabel="Review"
+                hrefLabel={t.overview.sections.review}
               />
               <div className="divide-y divide-[#d2bfa5]">
                 {pendingReturns.map((tx: Transaction) => (
@@ -616,15 +644,18 @@ export default async function DashboardOverview() {
                       name={tx.user?.full_name ?? "?"}
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[#2b2119] ink-text truncate">
+                      <Link
+                        href={`/dashboard/users/${tx.user?.id}`}
+                        className="text-sm font-medium text-[#2b2119] ink-text truncate hover:underline hover:text-[#5a4b3f] transition-colors"
+                      >
                         {tx.user?.full_name}
-                      </p>
+                      </Link>
                       <p className="text-xs text-[#7a6a5a] ink-text truncate">
                         {tx.book?.title}
                       </p>
                     </div>
                     <p className="text-xs text-[#7a6a5a] ink-text whitespace-nowrap shrink-0">
-                      {fmtDate(tx.request_date)}
+                      {fmtDate(tx.request_date, language)}
                     </p>
                   </div>
                 ))}
@@ -637,24 +668,25 @@ export default async function DashboardOverview() {
       {/* ── Recent Activity ───────────────────────────────────────────── */}
       <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
         <SectionHeader
-          title="Recent Activity"
+          title={t.overview.sections.recentActivity}
           href="/dashboard/transactions?tab=history"
+          hrefLabel={t.overview.header.viewTransactions}
         />
         {recentActivity.length === 0 ? (
           <p className="p-5 text-sm text-[#6a5a4c] ink-text">
-            No activity yet.
+            {t.overview.empty.noActivity}
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm ink-text">
               <thead>
                 <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
-                  <TH>Member</TH>
-                  <TH>Type</TH>
-                  <TH>Book</TH>
-                  <TH>Copy</TH>
-                  <TH>Date</TH>
-                  <TH>Status</TH>
+                  <TH>{t.overview.table.member}</TH>
+                  <TH>{t.overview.table.type}</TH>
+                  <TH>{t.overview.table.book}</TH>
+                  <TH>{t.overview.table.copy}</TH>
+                  <TH>{t.overview.table.date}</TH>
+                  <TH>{t.overview.table.status}</TH>
                 </tr>
               </thead>
               <tbody>
@@ -678,7 +710,7 @@ export default async function DashboardOverview() {
                       </div>
                     </td>
                     <td className="px-4 sm:px-5 py-3 capitalize text-[#5a4b3f]">
-                      {tx.type}
+                      {tx.type === "borrow" ? t.history.table.borrowed : t.history.table.returned}
                     </td>
                     <td className="px-4 sm:px-5 py-3 text-[#3f3328] max-w-48">
                       <p className="truncate">{tx.book?.title}</p>
@@ -687,10 +719,10 @@ export default async function DashboardOverview() {
                       {tx.copy ? `#${tx.copy.copy_number}` : "—"}
                     </td>
                     <td className="px-4 sm:px-5 py-3 text-[#5a4b3f] whitespace-nowrap">
-                      {fmtDate(tx.request_date)}
+                      {fmtDate(tx.request_date, language)}
                     </td>
                     <td className="px-4 sm:px-5 py-3">
-                      <StatusPill status={tx.status} />
+                      <StatusPill status={tx.status} label={getStatusLabel(tx)} />
                     </td>
                   </tr>
                 ))}
@@ -704,17 +736,17 @@ export default async function DashboardOverview() {
       {pendingPdfs.length > 0 && (
         <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
           <SectionHeader
-            title={`Pending PDF Reviews — ${pendingPdfs.length}`}
+            title={`${t.overview.sections.pendingPdfReviews} — ${pendingPdfs.length}`}
             href="/dashboard/transactions?tab=pdf"
-            hrefLabel="Review"
+            hrefLabel={t.overview.sections.review}
           />
           <div className="overflow-x-auto">
             <table className="w-full text-sm ink-text">
               <thead>
                 <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
-                  <TH>Member</TH>
-                  <TH>Book</TH>
-                  <TH>Submitted</TH>
+                  <TH>{t.overview.table.member}</TH>
+                  <TH>{t.overview.table.book}</TH>
+                  <TH>{t.overview.table.submitted}</TH>
                 </tr>
               </thead>
               <tbody>
@@ -741,12 +773,12 @@ export default async function DashboardOverview() {
                       <p className="truncate">{ps.book?.title}</p>
                       {ps.book?.is_syllabus && (
                         <span className="px-1.5 py-0.5 text-[9px] font-semibold border border-[#8aa06f] bg-[#eef5e9] text-[#3d5c2e] rounded-sm">
-                          Syllabus
+                          {t.overview.sections.syllabus}
                         </span>
                       )}
                     </td>
                     <td className="px-4 sm:px-5 py-3 text-[#5a4b3f] whitespace-nowrap">
-                      {fmtDate(ps.submitted_at)}
+                      {fmtDate(ps.submitted_at, language)}
                     </td>
                   </tr>
                 ))}

@@ -2,6 +2,7 @@ import { RankBadge } from "@/components/ui/rank-badge";
 import { getProfileByUsername } from "@/server/geo";
 import { getUserStats } from "@/server/library";
 import { getClaims } from "@/server/user";
+import { getTranslation } from "@/lib/i18n/server";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -21,6 +22,7 @@ export default async function DashboardUserProfilePage({
   params: Promise<{ username: string }>;
 }) {
   const { username } = await params;
+  const { t, language } = await getTranslation();
 
   const claims = await getClaims();
   if (!claims) redirect("/login");
@@ -34,9 +36,9 @@ export default async function DashboardUserProfilePage({
   if (!profile) notFound();
 
   const roleLabels: Record<string, string> = {
-    admin: "Admin",
-    moderator: "Moderator",
-    member: "Member",
+    admin: t.profile.roles.admin,
+    moderator: t.profile.roles.moderator,
+    member: t.profile.roles.member,
   };
 
   const roleColors: Record<string, string> = {
@@ -45,11 +47,14 @@ export default async function DashboardUserProfilePage({
     member: "bg-stone-100 text-stone-700 border-stone-400",
   };
 
-  const joinedDate = new Date(profile.created_at).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const joinedDate = new Date(profile.created_at).toLocaleDateString(
+    language === "bn" ? "bn-BD" : "en-GB",
+    {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }
+  );
 
   const locationParts = [profile.thana?.name].filter(Boolean);
 
@@ -66,7 +71,7 @@ export default async function DashboardUserProfilePage({
         className="inline-flex items-center gap-2 text-sm text-[#5a4b3f] hover:text-[#221910] transition-colors ink-text"
       >
         <FaArrowLeft className="w-3.5 h-3.5" />
-        Back to Profile
+        {t.profile.publicProfile.back}
       </Link>
 
       {/* Hero */}
@@ -94,7 +99,7 @@ export default async function DashboardUserProfilePage({
               {profile.is_verified && (
                 <FaCheckCircle
                   className="w-5 h-5 text-teal-600"
-                  title="Verified"
+                  title={t.profile.header.verified}
                 />
               )}
             </div>
@@ -111,17 +116,17 @@ export default async function DashboardUserProfilePage({
               <RankBadge name={profile.rank?.name} />
               {profile.is_verified ? (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-sm text-xs font-semibold border bg-[#eef5e9] text-[#3d5c2e] border-[#a3b994] ink-text">
-                  <FaCheckCircle className="w-3 h-3" /> Verified
+                  <FaCheckCircle className="w-3 h-3" /> {t.profile.publicProfile.verified}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-sm text-xs font-semibold border bg-[#fdf5e4] text-[#7a5e2a] border-[#c9b48a] ink-text">
-                  <FaClock className="w-3 h-3" /> Unverified
+                  <FaClock className="w-3 h-3" /> {t.profile.publicProfile.unverified}
                 </span>
               )}
             </div>
 
             <p className="text-xs text-[#7a6a5c] ink-text mt-3">
-              Joined on: <b>{joinedDate}</b>
+              {t.profile.header.joinedOn}: <b>{joinedDate}</b>
             </p>
           </div>
         </div>
@@ -131,12 +136,12 @@ export default async function DashboardUserProfilePage({
       {stats && (
         <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
           <h2 className="text-base font-bold text-[#221910] ink-title mb-4 border-b border-[#c9b89a] pb-2">
-            Reading Progress
+            {t.profile.publicProfile.readingProgress}
           </h2>
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm ink-text text-[#4a3e33]">
               <span>
-                {stats.syllabusCompleted} / {stats.syllabusTotal} syllabus books
+                {stats.syllabusCompleted} / {stats.syllabusTotal} {t.profile.publicProfile.syllabusBooks}
               </span>
               <span className="font-bold text-[#221910]">
                 {syllabusPercent}%
@@ -150,13 +155,13 @@ export default async function DashboardUserProfilePage({
             </div>
             <div className="flex gap-4 text-xs ink-text text-[#5a4b3f]">
               <span>
-                Active borrows:{" "}
+                {t.profile.stats.activeBorrows}:{" "}
                 <span className="font-semibold text-[#221910]">
                   {stats.activeBorrows}
                 </span>
               </span>
               <span>
-                Pending requests:{" "}
+                {t.profile.stats.pendingRequests}:{" "}
                 <span className="font-semibold text-[#221910]">
                   {stats.pendingRequests}
                 </span>
@@ -169,11 +174,11 @@ export default async function DashboardUserProfilePage({
       {/* Contact & Location */}
       <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
         <h2 className="text-base font-bold text-[#221910] ink-title mb-4 border-b border-[#c9b89a] pb-2">
-          Contact &amp; Location
+          {t.profile.publicProfile.contactLocation}
         </h2>
         {profile.hide_sensitive_info ? (
           <p className="text-sm text-[#7a6a5c] ink-text italic">
-            This member has chosen to keep their contact information private.
+            {t.profile.publicProfile.privateInfo}
           </p>
         ) : (
           <dl className="space-y-3 ink-text">
@@ -181,7 +186,7 @@ export default async function DashboardUserProfilePage({
               <FaEnvelope className="w-4 h-4 text-[#7a6a5c] mt-0.5 shrink-0" />
               <div>
                 <dt className="text-xs text-[#7a6a5c] uppercase tracking-wider mb-0.5">
-                  Email
+                  {t.profile.info.email}
                 </dt>
                 <dd className="text-[#2b2119]">{profile.email}</dd>
               </div>
@@ -191,7 +196,7 @@ export default async function DashboardUserProfilePage({
                 <FaPhone className="w-4 h-4 text-[#7a6a5c] mt-0.5 shrink-0" />
                 <div>
                   <dt className="text-xs text-[#7a6a5c] uppercase tracking-wider mb-0.5">
-                    Phone
+                    {t.profile.info.phone}
                   </dt>
                   <dd className="text-[#2b2119]">{profile.phone}</dd>
                 </div>
@@ -202,7 +207,7 @@ export default async function DashboardUserProfilePage({
                 <FaMapMarkerAlt className="w-4 h-4 text-[#7a6a5c] mt-0.5 shrink-0" />
                 <div>
                   <dt className="text-xs text-[#7a6a5c] uppercase tracking-wider mb-0.5">
-                    Thana
+                    {t.profile.editForm.thana}
                   </dt>
                   <dd className="text-[#2b2119]">{locationParts.join(", ")}</dd>
                 </div>

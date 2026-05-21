@@ -1,5 +1,8 @@
 "use client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTranslation } from "@/lib/i18n/context";
+import "@/styles/components.css";
+import "@/styles/typography.css";
 import QRCode from "qrcode";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import {
@@ -11,8 +14,6 @@ import {
   FaSearch,
   FaTimes,
 } from "react-icons/fa";
-import "@/styles/typography.css";
-import "@/styles/components.css";
 
 interface Book {
   id: string;
@@ -36,6 +37,7 @@ interface Props {
 type TypeFilter = "all" | "syllabus" | "additional";
 
 export default function PrintQrClient({ books, copies }: Props) {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("select");
 
   // Selection state
@@ -184,11 +186,11 @@ export default function PrintQrClient({ books, copies }: Props) {
         <div className="flex flex-col gap-1.5">
           <div className="inline-flex w-fit items-center gap-2 px-2.5 py-0.5 rounded-full border border-[#8a7966] bg-[#f6ecdd] text-[#4e4033] ink-text text-[9px] uppercase tracking-[0.12em]">
             <FaPrint className="w-3 h-3" />
-            Moderator Tools
+            {t.bookList.qrPrint.subtitle}
           </div>
           <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
             <h1 className="text-lg sm:text-2xl font-bold text-[#221910] leading-tight ink-title">
-              Print QR Codes
+              {t.bookList.qrPrint.title}
             </h1>
           </div>
         </div>
@@ -201,13 +203,13 @@ export default function PrintQrClient({ books, copies }: Props) {
               value="select"
               className="flex-1 rounded-none py-2.5 sm:py-3 px-2 sm:px-4 text-[11px] sm:text-sm font-medium ink-text text-[#5a4b3f] border-r border-[#c5b090] data-[state=active]:bg-[#f6ecdd] data-[state=active]:text-[#221910] data-[state=active]:font-bold data-[state=active]:shadow-[inset_0_-2px_0_0_#4a3d31] hover:bg-[#e4d4bf] transition-all"
             >
-              Select Items
+              {t.bookList.qrPrint.tabs.select}
             </TabsTrigger>
             <TabsTrigger
               value="preview"
               className="flex-1 rounded-none py-2.5 sm:py-3 px-2 sm:px-4 text-[11px] sm:text-sm font-medium ink-text text-[#5a4b3f] data-[state=active]:bg-[#f6ecdd] data-[state=active]:text-[#221910] data-[state=active]:font-bold data-[state=active]:shadow-[inset_0_-2px_0_0_#4a3d31] hover:bg-[#e4d4bf] transition-all flex items-center justify-center gap-2"
             >
-              Preview & Print Layout
+              {t.bookList.qrPrint.tabs.preview}
               {selectedCopies.size > 0 && (
                 <span className="bg-[#4a3d31] text-[#f4e8d4] px-2 py-0.5 rounded-full text-[10px] font-bold">
                   {selectedCopies.size}
@@ -223,7 +225,7 @@ export default function PrintQrClient({ books, copies }: Props) {
                 <FaSearch className="absolute left-3 top-3 text-[#7a6a5a]" />
                 <input
                   type="text"
-                  placeholder="Search title, author, ID…"
+                  placeholder={t.bookList.header.searchPlaceholder}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-[#8a7966] bg-[#f8f1e6] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
@@ -234,16 +236,16 @@ export default function PrintQrClient({ books, copies }: Props) {
                 onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
                 className="xl:col-span-2 px-3 py-2 border border-[#8a7966] bg-[#f8f1e6] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
               >
-                <option value="all">All Types</option>
-                <option value="syllabus">Syllabus</option>
-                <option value="additional">Additional</option>
+                <option value="all">{t.bookList.filters.type.all}</option>
+                <option value="syllabus">{t.bookList.filters.type.syllabus}</option>
+                <option value="additional">{t.bookList.filters.type.additional}</option>
               </select>
               <select
                 value={authorFilter}
                 onChange={(e) => setAuthorFilter(e.target.value)}
                 className="xl:col-span-2 px-3 py-2 border border-[#8a7966] bg-[#f8f1e6] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
               >
-                <option value="all">All Authors</option>
+                <option value="all">{t.bookList.qrPrint.filters.allAuthors}</option>
                 {uniqueAuthors.map(a => (
                   <option key={a} value={a}>{a}</option>
                 ))}
@@ -254,7 +256,7 @@ export default function PrintQrClient({ books, copies }: Props) {
               <div className="flex gap-2">
                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-[#c2b09a] bg-[#f8f1e6] text-[11px]">
                   <FaFilter className="w-3 h-3" />
-                  {filteredBooks.length} books shown
+                  {t.bookList.qrPrint.filters.booksShown.replace("{count}", filteredBooks.length.toString())}
                 </span>
                 <button
                   type="button"
@@ -263,7 +265,7 @@ export default function PrintQrClient({ books, copies }: Props) {
                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-[#8a7966] bg-[#f8f1e6] text-[#4e4033] text-[11px] hover:bg-[#eadcca] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <FaTimes className="w-2.5 h-2.5" />
-                  Clear filters
+                  {t.bookList.empty.clearFilters}
                 </button>
               </div>
             </div>
@@ -279,24 +281,24 @@ export default function PrintQrClient({ books, copies }: Props) {
                   {isAllSelected ? <FaCheckSquare className="w-4 h-4" /> : <FaRegSquare className="w-4 h-4" />}
                 </button>
                 <span className="text-xs font-semibold text-[#3b3026] uppercase tracking-[0.08em] ink-text">
-                  Select / Unselect All Filtered
+                  {t.bookList.qrPrint.table.selectUnselectAll}
                 </span>
               </div>
 
               {filteredBooks.length === 0 ? (
                 <div className="p-10 text-center">
-                  <p className="text-[#5c4f42] ink-text">No books match the current filters.</p>
+                  <p className="text-[#5c4f42] ink-text">{t.bookList.empty.noBooks}</p>
                 </div>
               ) : (
                 <div className="w-full overflow-x-auto">
                   <table className="w-full min-w-[600px] text-sm ink-text">
                     <thead>
                       <tr className="bg-[#f2e7d7] border-b border-[#d2bfa5]">
-                        <th className="w-10 px-3 py-2 text-center text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]">Sel</th>
-                        <th className="px-3 py-2 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]">Book</th>
-                        <th className="px-3 py-2 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]">Author</th>
-                        <th className="px-3 py-2 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]">Type</th>
-                        <th className="px-3 py-2 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]">Copies</th>
+                        <th className="w-10 px-3 py-2 text-center text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]">{t.bookList.qrPrint.table.sel}</th>
+                        <th className="px-3 py-2 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]">{t.bookList.table.book}</th>
+                        <th className="px-3 py-2 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]">{t.bookList.table.author}</th>
+                        <th className="px-3 py-2 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]">{t.bookList.table.type}</th>
+                        <th className="px-3 py-2 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]">{t.bookList.table.copies}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -336,7 +338,7 @@ export default function PrintQrClient({ books, copies }: Props) {
                               <td className="px-3 py-3">
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm border border-[#8f7f6c] bg-[#f8f1e6] text-[#3f3328] text-[11px] font-semibold">
                                   <FaBookOpen className="w-3 h-3 text-[#4e4033]" />
-                                  {book.is_syllabus ? "Syllabus" : "Additional"}
+                                  {book.is_syllabus ? t.bookList.filters.type.syllabus : t.bookList.filters.type.additional}
                                 </span>
                               </td>
                               <td className="px-3 py-3 text-[#5a4b3f] text-sm">{book.copies.length}</td>
@@ -390,11 +392,11 @@ export default function PrintQrClient({ books, copies }: Props) {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4 pb-4 border-b border-[#e4d4bf] print:hidden">
               <div className="flex flex-col gap-3">
                 <p className="text-sm text-[#5a4b3f] ink-text font-semibold">
-                  {selectedCopies.size} unique {selectedCopies.size === 1 ? 'QR code' : 'QR codes'} selected.
+                  {selectedCopies.size} {t.bookList.qrPrint.preview.duplicates.toLowerCase()}
                 </p>
                 <div className="flex flex-wrap items-center gap-4 text-sm ink-text">
                   <label className="flex items-center gap-2 text-[#3b3026]">
-                    <span className="font-semibold">Copies per QR:</span>
+                    <span className="font-semibold">{t.bookList.qrPrint.preview.duplicates}:</span>
                     <input
                       type="number"
                       min="1"
@@ -411,26 +413,26 @@ export default function PrintQrClient({ books, copies }: Props) {
                       onChange={(e) => setFillPage(e.target.checked)}
                       className="w-4 h-4 accent-[#4a7c59]"
                     />
-                    <span className="font-semibold">Fill page with QRs</span>
+                    <span className="font-semibold">{t.bookList.qrPrint.preview.fillPage}</span>
                   </label>
                 </div>
               </div>
               <div className="flex items-center gap-4 shrink-0">
-                <p className="text-sm font-semibold text-[#4a7c59] ink-text">Total QRs: {printCopies.length}</p>
+                <p className="text-sm font-semibold text-[#4a7c59] ink-text">{t.overview.stats.copies}: {printCopies.length}</p>
                 <button
                   onClick={() => window.print()}
                   disabled={printCopies.length === 0}
                   className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-[#4a7c59] text-[#f6ecdd] border border-[#3d6447] rounded-sm hover:bg-[#3d6447] transition-colors text-xs sm:text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed ink-text"
                 >
                   <FaPrint />
-                  Print Layout
+                  {t.bookList.qrPrint.preview.print}
                 </button>
               </div>
             </div>
 
             {selectedCopies.size === 0 ? (
               <div className="text-center py-10">
-                <p className="text-[#5c4f42] ink-text">No copies selected. Go back to &quot;Select Items&quot; to pick copies for printing.</p>
+                <p className="text-[#5c4f42] ink-text">{t.bookList.empty.noBooks}</p>
               </div>
             ) : (
               <div id="print-area" className="min-h-[297mm] print:min-h-0 w-full max-w-[210mm] print:max-w-none print:w-full mx-auto print:mx-0 print:border-none print:shadow-none bg-white print:bg-transparent">

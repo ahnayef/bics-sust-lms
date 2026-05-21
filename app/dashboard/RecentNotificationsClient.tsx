@@ -15,6 +15,7 @@ import {
 } from "react-icons/fa";
 import { getRelativeTime } from "@/lib/utils";
 import { useNotificationStore } from "./useNotificationStore";
+import { useTranslation } from "@/lib/i18n/context";
 
 interface Props {
   userId: string;
@@ -23,6 +24,7 @@ interface Props {
 
 export default function RecentNotificationsClient({ userId, recentNotifications }: Props) {
   const { readIds, markAsRead, isLoaded } = useNotificationStore(userId, recentNotifications);
+  const { t } = useTranslation();
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -56,13 +58,13 @@ export default function RecentNotificationsClient({ userId, recentNotifications 
     <section className="dashboard-surface tron-border rounded-sm p-4 sm:p-6 -mx-2 sm:mx-0">
       <div className="flex items-center justify-between mb-4 border-b border-[#c9b89a] pb-2">
         <h2 className="text-lg font-bold text-[#221910] ink-title">
-          Recent Notifications
+          {t.dashboard.home.notifications.title}
         </h2>
         <Link
           href="/dashboard/notifications"
           className="text-xs font-semibold text-[#6a5a4c] hover:text-[#221910] underline underline-offset-2"
         >
-          View All
+          {t.dashboard.home.notifications.viewAll}
         </Link>
       </div>
       <ul className="space-y-3">
@@ -93,7 +95,7 @@ export default function RecentNotificationsClient({ userId, recentNotifications 
                       <div className="mt-2 w-full bg-[#f0e4d1] border border-[#c9b89a] p-2 rounded-sm inline-block">
                         <div className="flex items-center justify-between mb-0.5 gap-2">
                           <span className="text-[10px] text-[#4a3e33] font-bold uppercase tracking-wider">
-                            Reason
+                            {t.dashboard.home.notifications.reason}
                           </span>
                         </div>
                         <p className="text-xs text-[#2f251d] font-medium ink-text">

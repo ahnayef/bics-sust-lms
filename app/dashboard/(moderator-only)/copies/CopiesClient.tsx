@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { useEffect, useRef, useState, useTransition } from "react";
+import { useTranslation } from "@/lib/i18n/context";
 import {
   FaDownload,
   FaPlus,
@@ -24,7 +25,7 @@ import {
 
 type StatusFilter = "all" | CopyStatus;
 
-// ── QR card generation (unchanged from original) ─────────────────────────────
+// ── QR card generation ───────────────────────────────────────────────────────
 
 const QR_CARD_WIDTH = 420;
 const QR_CARD_HEIGHT = 520;
@@ -67,7 +68,7 @@ const wrapCanvasText = (
   return visibleLines;
 };
 
-const buildQrCardImage = async (copyId: string, bookTitle: string) => {
+const buildQrCardImage = async (copyId: string, bookTitle: string, copyIdLabel: string) => {
   const qrDataUrl = await QRCode.toDataURL(copyId, {
     errorCorrectionLevel: "M",
     margin: 2,
@@ -119,7 +120,7 @@ const buildQrCardImage = async (copyId: string, bookTitle: string) => {
   ctx.fillStyle = "#5a4b3f";
   ctx.font = '600 18px "Arial", sans-serif';
   ctx.fillText(
-    `Copy ID: ${copyId}`,
+    `${copyIdLabel}: ${copyId}`,
     canvas.width / 2,
     titleStartY + titleLines.length * QR_TITLE_LINE_HEIGHT + QR_COPY_GAP,
   );
@@ -146,6 +147,7 @@ type PendingAction =
 
 export default function CopiesClient({ initialCopies, books }: Props) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [isPending, startTransition] = useTransition();
 
   const [copies, setCopies] = useState<Copy[]>(initialCopies);
@@ -278,7 +280,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
       if (result.error) {
         showFlash("error", result.error);
       } else {
-        showFlash("success", "Copy added successfully.");
+        showFlash("success", t.copies.flash.addSuccess);
         closeModal();
         router.refresh();
       }
@@ -309,7 +311,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
       if (result.error) {
         showFlash("error", result.error);
       } else {
-        showFlash("success", "Copy removed.");
+        showFlash("success", t.copies.flash.deleteSuccess);
         router.refresh();
       }
     });
@@ -339,7 +341,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
     }
 
     try {
-      const imageUrl = await buildQrCardImage(copy.id, copy.book.title);
+      const imageUrl = await buildQrCardImage(copy.id, copy.book.title, t.copies.qrModal.copyId);
       if (qrRequestIdRef.current === requestId) setQrImageUrl(imageUrl);
     } catch {
       if (qrRequestIdRef.current === requestId) setQrImageUrl("");
@@ -386,11 +388,10 @@ export default function CopiesClient({ initialCopies, books }: Props) {
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
-              Copies Control Room
+              {t.copies.title}
             </h1>
             <p className="text-[#5a4b3f] mt-1 ink-text">
-              Track every physical copy clearly by ID, status, and copy number
-              at a glance.
+              {t.copies.subtitle}
             </p>
           </div>
 
@@ -400,14 +401,14 @@ export default function CopiesClient({ initialCopies, books }: Props) {
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 transition-colors font-medium ink-text"
           >
             <FaPlus className="w-4 h-4" />
-            Add Copy
+            {t.copies.actions.addCopy}
           </button>
         </div>
 
         <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-4 sm:mt-5">
           <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-2 sm:p-3">
             <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight">
-              Total
+              {t.copies.stats.total}
             </p>
             <p className="text-xl sm:text-2xl font-bold text-[#221910] ink-title leading-none mt-1">
               {counts.total}
@@ -415,7 +416,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
           </div>
           <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-2 sm:p-3">
             <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight">
-              Available
+              {t.copies.stats.available}
             </p>
             <p className="text-xl sm:text-2xl font-bold text-[#221910] ink-title leading-none mt-1">
               {counts.available}
@@ -423,7 +424,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
           </div>
           <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-2 sm:p-3">
             <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight">
-              Borrowed
+              {t.copies.stats.borrowed}
             </p>
             <p className="text-xl sm:text-2xl font-bold text-[#221910] ink-title leading-none mt-1">
               {counts.borrowed}
@@ -441,7 +442,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
             <FaSearch className="absolute left-3 top-3 text-[#7a6a5a]" />
             <input
               type="text"
-              placeholder="Search title, author, or copy ID..."
+              placeholder={t.copies.filters.searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none ink-text"
@@ -453,10 +454,10 @@ export default function CopiesClient({ initialCopies, books }: Props) {
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
             className="px-3 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none ink-text"
           >
-            <option value="all">All Status</option>
-            <option value="available">Available</option>
-            <option value="borrowed">Borrowed</option>
-            <option value="damaged">Damaged</option>
+            <option value="all">{t.copies.filters.all}</option>
+            <option value="available">{t.copies.filters.available}</option>
+            <option value="borrowed">{t.copies.filters.borrowed}</option>
+            <option value="damaged">{t.copies.filters.damaged}</option>
           </select>
         </div>
       </section>
@@ -470,22 +471,22 @@ export default function CopiesClient({ initialCopies, books }: Props) {
             <thead>
               <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
                 <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
-                  Copy ID
+                  {t.copies.table.copyId}
                 </th>
                 <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
-                  Book
+                  {t.copies.table.bookTitle}
                 </th>
                 <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
-                  Author
+                  {t.books.table.author}
                 </th>
                 <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
-                  Copy #
+                  {t.books.table.copies} #
                 </th>
                 <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
-                  Status
+                  {t.copies.table.status}
                 </th>
                 <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
-                  Actions
+                  {t.copies.table.actions}
                 </th>
               </tr>
             </thead>
@@ -510,8 +511,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                   <td className="px-4 sm:px-6 py-3">
                     <div className="space-y-1">
                       <StatusBadge tone={getStatusBadgeTone(copy.status)}>
-                        {copy.status.charAt(0).toUpperCase() +
-                          copy.status.slice(1)}
+                        {t.copies.filters[copy.status]}
                       </StatusBadge>
                       {copy.status === "borrowed" && copy.borrower && (
                         <p className="text-[10px] text-[#5a4b3f] ink-text">
@@ -532,7 +532,8 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                         onClick={() => openQrModal(copy.id)}
                         disabled={isPending}
                         className="p-2 text-[#5b4c3f] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors disabled:opacity-55"
-                        aria-label={`Show QR for ${copy.id}`}
+                        aria-label={`${t.copies.actions.downloadQr} ${copy.id}`}
+                        title={t.copies.actions.downloadQr}
                       >
                         <FaQrcode className="w-4 h-4" />
                       </button>
@@ -540,7 +541,8 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                         onClick={() => handleDelete(copy.id)}
                         disabled={isPending}
                         className="p-2 text-[#6a4e3d] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors disabled:opacity-55"
-                        aria-label={`Delete ${copy.id}`}
+                        aria-label={`${t.copies.actions.delete} ${copy.id}`}
+                        title={t.copies.actions.delete}
                       >
                         <FaTrash className="w-4 h-4" />
                       </button>
@@ -554,7 +556,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
 
         {filteredCopies.length === 0 && (
           <div className="text-center py-12 text-[#6a5a4c] ink-text">
-            <p>No copies match the current search/filter.</p>
+            <p>{t.copies.empty}</p>
           </div>
         )}
       </section>
@@ -571,7 +573,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
           >
             <div className="flex items-start justify-between gap-3 mb-4">
               <h2 className="text-xl font-bold text-[#221910] ink-title">
-                Add New Copy
+                {t.copies.modal.addTitle}
               </h2>
               <button
                 onClick={closeModal}
@@ -587,7 +589,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
               {/* Book search dropdown */}
               <div>
                 <label className="block text-sm font-medium text-[#4f4134] mb-1">
-                  Select Book *
+                  {t.copies.modal.labels.selectBook} *
                 </label>
                 <div className="relative">
                   <input
@@ -598,7 +600,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                       setTimeout(() => setShowBookDropdown(false), 120);
                     }}
                     onChange={(e) => handleBookSearchChange(e.target.value)}
-                    placeholder="Search book by title or author"
+                    placeholder={t.copies.modal.placeholders.searchBook}
                     className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
                   />
 
@@ -638,7 +640,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                 disabled={isPending}
                 className="flex-1 px-4 py-2.5 border border-[#8a7966] text-[#4f4134] rounded-sm hover:bg-[#eadcc8] disabled:opacity-55 transition-colors font-medium ink-text"
               >
-                Cancel
+                {t.copies.modal.cancel}
               </button>
               <button
                 onClick={handleAdd}
@@ -648,7 +650,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                 }
                 className="flex-1 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 disabled:cursor-not-allowed transition-colors font-medium ink-text"
               >
-                {isPending ? "Adding…" : "Add Copy"}
+                {isPending ? "..." : t.copies.modal.add}
               </button>
             </div>
           </div>
@@ -661,19 +663,17 @@ export default function CopiesClient({ initialCopies, books }: Props) {
           open
           onClose={() => setPendingAction(null)}
           onConfirm={pendingAction.type === "add" ? confirmAdd : confirmDelete}
-          title={pendingAction.type === "add" ? "Add Copy" : "Remove Copy"}
+          title={pendingAction.type === "add" ? t.copies.modal.addTitle : t.copies.confirmDelete.title}
           description={
             pendingAction?.type === "delete" ? (
               refCount === null ? (
-                "Checking references..."
+                "..."
               ) : refCount > 0 ? (
                 <span>
-                  <b className="text-[#221910] font-bold">{refCount}</b> active or
-                  pending transaction(s) currently reference this copy. This
-                  cannot be undone.
+                  <b className="text-[#221910] font-bold">{refCount}</b> {t.copies.confirmDelete.warning.replace("{count}", refCount.toString())}
                 </span>
               ) : (
-                "No active references found. This cannot be undone."
+                t.copies.confirmDelete.message
               )
             ) : undefined
           }
@@ -681,11 +681,11 @@ export default function CopiesClient({ initialCopies, books }: Props) {
             pendingAction.type === "delete" ? (
               <div className="space-y-1 text-sm">
                 <p>
-                  <span className="font-semibold">Book:</span>{" "}
+                  <span className="font-semibold">{t.copies.table.bookTitle}:</span>{" "}
                   {pendingAction.bookTitle}
                 </p>
                 <p>
-                  <span className="font-semibold">Copy ID:</span>{" "}
+                  <span className="font-semibold">{t.copies.table.copyId}:</span>{" "}
                   {pendingAction.copyId}
                 </p>
               </div>
@@ -702,14 +702,11 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                 return (
                   <div className="space-y-1 text-sm">
                     <p>
-                      <span className="font-semibold">Book:</span>{" "}
+                      <span className="font-semibold">{t.copies.table.bookTitle}:</span>{" "}
                       {selectedBook?.title ?? "—"}
                     </p>
                     <p>
-                      <span className="font-semibold">Expected QR ID:</span> {qrId}
-                    </p>
-                    <p className="text-xs text-[#6a5a4c] pt-1">
-                      (Automatically numbered to avoid conflicts)
+                      <span className="font-semibold">Expected {t.copies.table.copyId}:</span> {qrId}
                     </p>
                   </div>
                 );
@@ -717,7 +714,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
             )
           }
           confirmLabel={
-            pendingAction.type === "add" ? "Add Copy" : "Remove Copy"
+            pendingAction.type === "add" ? t.copies.modal.add : t.copies.actions.delete
           }
           danger={pendingAction.type === "delete"}
           loading={isPending}
@@ -737,11 +734,8 @@ export default function CopiesClient({ initialCopies, books }: Props) {
             <div className="flex items-start justify-between gap-3 mb-3">
               <div>
                 <h2 className="text-xl font-bold text-[#221910] ink-title">
-                  Copy QR Code
+                  {t.copies.qrModal.title}
                 </h2>
-                <p className="text-xs text-[#5a4b3f] ink-text mt-0.5">
-                  Download with book name and copy ID
-                </p>
               </div>
               <button
                 onClick={closeQrModal}
@@ -755,7 +749,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
             <div className="p-1 flex flex-col items-center gap-3">
               {qrIsLoading && (
                 <div className="w-full min-h-105 flex items-center justify-center text-[#5a4b3f] ink-text">
-                  Generating QR preview...
+                  {t.copies.qrModal.loading}
                 </div>
               )}
 
@@ -772,7 +766,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
 
               {!qrIsLoading && !qrImageUrl && (
                 <div className="w-full min-h-105 flex items-center justify-center text-[#5a4b3f] ink-text">
-                  Unable to generate QR preview.
+                  Error
                 </div>
               )}
             </div>
@@ -782,7 +776,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                 onClick={closeQrModal}
                 className="flex-1 px-3 py-2 border border-[#8a7966] text-[#4f4134] rounded-sm hover:bg-[#eadcc8] transition-colors font-medium text-sm ink-text"
               >
-                Close
+                {t.copies.qrModal.close}
               </button>
               <button
                 onClick={handleDownloadQr}
@@ -790,7 +784,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                 className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 disabled:cursor-not-allowed transition-colors font-medium text-sm ink-text"
               >
                 <FaDownload className="w-4 h-4" />
-                Download PNG
+                {t.copies.qrModal.download}
               </button>
             </div>
 

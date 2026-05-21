@@ -1,6 +1,7 @@
 "use client";
 
 import { RankBadge } from "@/components/ui/rank-badge";
+import { useTranslation } from "@/lib/i18n/context";
 import type { UserWithStats } from "@/types/library";
 import Image from "next/image";
 import Link from "next/link";
@@ -32,20 +33,22 @@ function getInitials(name: string): string {
 }
 
 function VerificationBadge({ verified }: { verified: boolean }) {
+  const { t } = useTranslation();
   return verified ? (
     <FaCheckCircle
       className="w-3.5 h-3.5 text-[#5a8a3e] shrink-0"
-      title="Verified"
+      title={t.users.badges.verified}
     />
   ) : (
     <FaTimesCircle
       className="w-3.5 h-3.5 text-[#b07a2a] shrink-0"
-      title="Unverified"
+      title={t.users.badges.unverified}
     />
   );
 }
 
 export default function UsersClient({ users }: Props) {
+  const { t, language } = useTranslation();
   const [tab, setTab] = useState<Tab>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [rankFilter, setRankFilter] = useState<string>("all");
@@ -127,13 +130,13 @@ export default function UsersClient({ users }: Props) {
           b.syllabusTotal > 0 ? b.syllabusCompleted / b.syllabusTotal : 0;
         cmp = pa - pb;
       } else if (sortField === "rank") {
-        const ra = a.rank?.name ?? "None";
-        const rb = b.rank?.name ?? "None";
+        const ra = a.rank?.name ?? t.users.filters.noRank;
+        const rb = b.rank?.name ?? t.users.filters.noRank;
         cmp = ra.localeCompare(rb);
       }
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [baseUsers, searchTerm, rankFilter, thanaFilter, sortField, sortDir]);
+  }, [baseUsers, searchTerm, rankFilter, thanaFilter, sortField, sortDir, t.users.filters.noRank]);
 
   const tabCounts = {
     all: users.length,
@@ -164,16 +167,16 @@ export default function UsersClient({ users }: Props) {
     <div className="space-y-5">
       <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
-          Users
+          {t.users.title}
         </h1>
         <p className="text-[#5a4b3f] mt-1 ink-text text-sm">
-          Manage and monitor all registered members.
+          {t.users.subtitle}
         </p>
         <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-4">
           {[
-            { label: "Total", value: users.length },
-            { label: "Verified", value: verifiedUsers.length },
-            { label: "Unverified", value: unverifiedUsers.length },
+            { label: t.users.stats.total, value: users.length },
+            { label: t.users.stats.verified, value: verifiedUsers.length },
+            { label: t.users.stats.unverified, value: unverifiedUsers.length },
           ].map(({ label, value }) => (
             <div
               key={label}
@@ -191,244 +194,215 @@ export default function UsersClient({ users }: Props) {
       </section>
 
       <div className="flex border-b border-[#b9a58b] gap-0 overflow-x-auto overflow-y-hidden">
-        {(["all", "verified", "unverified", "overdue"] as const).map((t) => (
+        {(["all", "verified", "unverified", "overdue"] as const).map((tabId) => (
           <button
-            key={t}
+            key={tabId}
             type="button"
-            onClick={() => setTab(t)}
-            className={`flex-1 shrink-0 whitespace-nowrap px-3 sm:px-6 py-2.5 text-xs sm:text-sm font-medium ink-text transition-colors flex items-center justify-center gap-1.5 border-b-[3px] -mb-px cursor-pointer ${tab === t
+            onClick={() => setTab(tabId)}
+            className={`flex-1 shrink-0 whitespace-nowrap px-3 sm:px-6 py-2.5 text-xs sm:text-sm font-medium ink-text transition-colors flex items-center justify-center gap-1.5 border-b-[3px] -mb-px cursor-pointer ${tab === tabId
               ? "border-[#3f3328] text-[#221910] font-bold bg-[#f6ecdd]"
-              : "border-transparent text-[#6a5a4c] hover:text-[#2b2119] hover:bg-[#ece0ce]"
+              : "border-transparent text-[#6a5a4c] hover:text-[#3f3328] hover:bg-[#eadcc8]/30"
               }`}
           >
-            {t === "all"
-              ? "All Users"
-              : t === "verified"
-                ? "✓ Verified"
-                : t === "unverified"
-                  ? "✗ Unverified"
-                  : "⚠ Overdue"}
-            <span className="px-1.5 py-0.5 text-[10px] rounded-sm bg-[#e4d4bf] text-[#4f4134] shrink-0">
-              {tabCounts[t]}
+            {t.users.tabs[tabId]}
+            <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${tab === tabId ? "bg-[#3f3328] text-[#f4e8d4]" : "bg-[#d2bfa5] text-[#4a3825]"
+              }`}>
+              {tabCounts[tabId]}
             </span>
           </button>
         ))}
       </div>
 
-      <section className="dashboard-surface tron-border rounded-sm p-4 sm:p-5 border border-[#5f4f40] space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#5c4f42] ink-text">
-            Filters &amp; Sort
-          </span>
-          {hasActiveFilters && (
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#7a4c37] border border-[#c4a882] bg-[#f6ecdd] rounded-sm hover:bg-[#ede3d4] hover:border-[#b0906a] transition-colors ink-text cursor-pointer"
-            >
-              <FaTimes className="w-3 h-3" />
-              Reset
-            </button>
-          )}
-        </div>
+      <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
+        <div className="p-4 sm:p-5 border-b border-[#7d6d5a] bg-[#eadcc8]/40 space-y-4">
+          <div className="flex flex-col lg:flex-row gap-4">
+            <div className="relative flex-1">
+              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a7966] w-4 h-4" />
+              <input
+                type="text"
+                placeholder={t.users.filters.searchPlaceholder}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <select
+                value={rankFilter}
+                onChange={(e) => setRankFilter(e.target.value)}
+                className={selectClass}
+              >
+                <option value="all">{t.users.filters.allRanks}</option>
+                <option value="None">{t.users.filters.noRank}</option>
+                {uniqueRanks.map(([id, name]) => (
+                  <option key={id} value={id}>
+                    {name}
+                  </option>
+                ))}
+              </select>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="relative sm:col-span-1">
-            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7a6a5a] w-3.5 h-3.5" />
-            <input
-              type="text"
-              placeholder="Search name, email, username…"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
-            />
+              <select
+                value={thanaFilter}
+                onChange={(e) => setThanaFilter(e.target.value)}
+                className={selectClass}
+              >
+                <option value="all">{t.users.filters.allThanas}</option>
+                {uniqueThanas.map(([id, name]) => (
+                  <option key={id} value={id}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+
+              <div className="flex items-center gap-2 border border-[#8a7966] bg-[#f6ecdd] rounded-sm pr-2">
+                <select
+                  value={sortField}
+                  onChange={(e) => setSortField(e.target.value as SortField)}
+                  className="bg-transparent border-none py-2.5 pl-3 pr-8 focus:ring-0 text-sm ink-text cursor-pointer"
+                >
+                  <option value="joinDate">{t.users.filters.sortBy.joinDate}</option>
+                  <option value="progress">{t.users.filters.sortBy.progress}</option>
+                  <option value="rank">{t.users.filters.sortBy.rank}</option>
+                </select>
+                <button
+                  onClick={() =>
+                    setSortDir(sortDir === "asc" ? "desc" : "asc")
+                  }
+                  className="p-1 hover:bg-[#eadcc8] rounded-sm transition-colors text-[#5c4f42]"
+                  title={sortDir === "asc" ? t.common.sort.ascending : t.common.sort.descending}
+                >
+                  {sortDir === "asc" ? (
+                    <FaChevronUp className="w-3 h-3" />
+                  ) : (
+                    <FaChevronDown className="w-3 h-3" />
+                  )}
+                </button>
+              </div>
+
+              {hasActiveFilters && (
+                <button
+                  onClick={resetFilters}
+                  className="text-xs font-bold text-[#8b2c1a] hover:text-[#9b3a25] flex items-center gap-1.5 transition-colors uppercase tracking-wider"
+                >
+                  <FaTimes className="w-3 h-3" /> {t.users.filters.reset}
+                </button>
+              )}
+            </div>
           </div>
-          <select
-            value={sortField}
-            onChange={(e) => setSortField(e.target.value as SortField)}
-            className={selectClass}
-          >
-            <option value="joinDate">Sort: Join Date</option>
-            <option value="progress">Sort: Progress</option>
-            <option value="rank">Sort: Rank</option>
-          </select>
-          <button
-            type="button"
-            onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
-            className="flex items-center justify-center gap-2 px-3 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm hover:bg-[#ede3d4] transition-colors ink-text text-sm cursor-pointer"
-          >
-            {sortDir === "desc" ? (
-              <FaChevronDown className="w-3.5 h-3.5" />
-            ) : (
-              <FaChevronUp className="w-3.5 h-3.5" />
-            )}
-            {sortDir === "desc" ? "Descending" : "Ascending"}
-          </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <select
-            value={rankFilter}
-            onChange={(e) => setRankFilter(e.target.value)}
-            className={selectClass}
-          >
-            <option value="all">All Ranks</option>
-            <option value="None">None</option>
-            {uniqueRanks.map(([id, name]) => (
-              <option key={id} value={id}>
-                {name}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={thanaFilter}
-            onChange={(e) => setThanaFilter(e.target.value)}
-            className={selectClass}
-          >
-            <option value="all">All Thanas</option>
-            {uniqueThanas.map(([id, name]) => (
-              <option key={id} value={id}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </section>
-
-      <section className="dashboard-surface tron-border rounded-sm overflow-hidden border border-[#5f4f40]">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm ink-text min-w-160">
+          <table className="w-full text-sm ink-text text-left">
             <thead>
               <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
-                {[
-                  "Name",
-                  "Email",
-                  "Rank",
-                  "Progress",
-                  "Borrows",
-                  "Joined",
-                  "Actions",
-                ].map((h) => (
-                  <th
-                    key={h}
-                    className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs"
-                  >
-                    {h}
-                  </th>
-                ))}
+                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
+                  {t.users.table.member}
+                </th>
+                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
+                  {t.users.table.rank}
+                </th>
+                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
+                  {t.users.table.progress}
+                </th>
+                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
+                  {t.users.table.overdue}
+                </th>
+                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
+                  {t.users.table.joined}
+                </th>
+                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
+                  {t.users.table.actions}
+                </th>
               </tr>
             </thead>
             <tbody>
               {filteredUsers.map((user) => {
-                const progress =
+                const pct =
                   user.syllabusTotal > 0
                     ? Math.round(
                       (user.syllabusCompleted / user.syllabusTotal) * 100,
                     )
                     : 0;
-                const joinedDate = new Date(user.created_at).toLocaleDateString(
-                  "en-GB",
-                  { day: "numeric", month: "short", year: "numeric" },
-                );
-
                 return (
                   <tr
                     key={user.id}
                     className="border-b border-[#d2bfa5] hover:bg-[#f4ebdc] transition-colors"
                   >
                     <td className="px-4 sm:px-6 py-3">
-                      <div className="flex items-center gap-2.5">
-                        {user.avatar_url ? (
-                          <Image
-                            src={user.avatar_url}
-                            alt={user.full_name}
-                            width={32}
-                            height={32}
-                            className="w-8 h-8 rounded-full object-cover border border-[#8a7966] shrink-0"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-[#d9cbb7] border border-[#8a7966] flex items-center justify-center text-xs font-bold text-[#4a3e33] shrink-0 ink-title select-none">
-                            {getInitials(user.full_name)}
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <Link
-                              href={`/dashboard/users/${user.id}`}
-                              className="font-medium text-[#2b2119] hover:underline hover:text-[#3f3328] transition-colors truncate"
-                            >
-                              {user.full_name}
-                            </Link>
+                      <div className="flex items-center gap-3">
+                        <div className="shrink-0 relative">
+                          {user.avatar_url ? (
+                            <Image
+                              src={user.avatar_url}
+                              alt={user.full_name}
+                              width={32}
+                              height={32}
+                              className="w-8 h-8 rounded-full border border-[#8a7966] object-cover"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-[#d9cbb7] border border-[#8a7966] flex items-center justify-center text-[10px] font-bold text-[#4a3e33]">
+                              {getInitials(user.full_name)}
+                            </div>
+                          )}
+                          <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5">
                             <VerificationBadge verified={user.is_verified} />
                           </div>
-                          <p className="text-xs text-[#7a6a5a] truncate">
+                        </div>
+                        <div className="min-w-0">
+                          <Link
+                            href={`/dashboard/users/${user.id}`}
+                            className="font-bold text-[#2b2119] truncate leading-tight hover:underline hover:text-[#5a4b3f] transition-colors"
+                          >
+                            {user.full_name}
+                          </Link>
+                          <p className="text-[11px] text-[#7a6a5a]">
                             @{user.username}
                           </p>
                         </div>
                       </div>
                     </td>
-
-                    <td className="px-4 sm:px-6 py-3 text-[#5a4b3f]">
-                      {user.email}
-                    </td>
-
                     <td className="px-4 sm:px-6 py-3">
                       <RankBadge name={user.rank?.name} />
                     </td>
-
-                    <td className="px-4 sm:px-6 py-3 min-w-48">
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between text-xs text-[#5a4b3f]">
-                          <span>
+                    <td className="px-4 sm:px-6 py-3">
+                      <div className="space-y-1 w-24">
+                        <div className="flex justify-between text-[10px] font-bold text-[#5c4f42]">
+                          <span>{pct}%</span>
+                          <span className="opacity-70">
                             {user.syllabusCompleted}/{user.syllabusTotal}
                           </span>
-                          <span className="font-semibold text-[#2b2119]">
-                            {progress}%
-                          </span>
                         </div>
-                        <div className="w-full h-2 rounded-full bg-[#e4d4bf] border border-[#ccb79b] overflow-hidden">
+                        <div className="h-1.5 bg-[#d2bfa5]/40 rounded-full overflow-hidden border border-[#c9b89a]/30">
                           <div
-                            className="h-full bg-[#5a4d40]"
-                            style={{ width: `${progress}%` }}
+                            className="h-full bg-[#5a4d40] transition-all"
+                            style={{ width: `${pct}%` }}
                           />
                         </div>
                       </div>
                     </td>
-
-                    <td className="px-4 sm:px-6 py-3 text-xs text-[#5a4b3f]">
-                      <p>
-                        Active:{" "}
-                        <span className="font-semibold text-[#2b2119]">
-                          {user.activeBorrows}
+                    <td className="px-4 sm:px-6 py-3">
+                      {user.overdueBorrows > 0 ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-[#fce8e4] text-[#8b2c1a] border border-[#d0604a] text-[10px] font-bold">
+                          <FaTimesCircle className="w-2.5 h-2.5" />
+                          {user.overdueBorrows}
                         </span>
-                      </p>
-                      {user.overdueBorrows > 0 && (
-                        <p>
-                          Overdue:{" "}
-                          <span className="font-semibold text-[#9b3a25]">
-                            {user.overdueBorrows}
-                          </span>
-                        </p>
+                      ) : (
+                        <span className="text-[#8a7966] text-xs">—</span>
                       )}
-                      <p>
-                        Pending:{" "}
-                        <span className="font-semibold text-[#2b2119]">
-                          {user.pendingRequests}
-                        </span>
-                      </p>
                     </td>
-
                     <td className="px-4 sm:px-6 py-3 text-xs text-[#5a4b3f] whitespace-nowrap">
-                      {joinedDate}
+                      {new Date(user.created_at).toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
                     </td>
-
                     <td className="px-4 sm:px-6 py-3">
                       <Link
                         href={`/dashboard/users/${user.id}`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#4d4034] border border-[#8a7966] rounded-sm hover:bg-[#eadcc8] hover:border-[#c4ad91] transition-colors ink-text"
+                        className="text-xs font-bold text-[#3f3328] hover:text-[#221910] uppercase tracking-widest underline underline-offset-4 decoration-[#c9b89a] hover:decoration-[#3f3328] transition-all"
                       >
-                        View
+                        {t.users.table.actions}
                       </Link>
                     </td>
                   </tr>
@@ -437,23 +411,17 @@ export default function UsersClient({ users }: Props) {
             </tbody>
           </table>
         </div>
-
         {filteredUsers.length === 0 && (
           <div className="text-center py-12 text-[#6a5a4c] ink-text">
-            No users match the current filters.
+            <p>{t.users.empty}</p>
           </div>
         )}
-
         {filteredUsers.length > 0 && (
           <div className="px-4 sm:px-6 py-3 border-t border-[#d2bfa5] text-xs text-[#6a5a4c] ink-text">
-            Showing {filteredUsers.length} of {baseUsers.length}{" "}
+            {t.common.pagination.showing} {filteredUsers.length} {t.common.pagination.of} {baseUsers.length}{" "}
             {tab === "all"
-              ? "users"
-              : tab === "verified"
-                ? "verified users"
-                : tab === "unverified"
-                  ? "unverified users"
-                  : "users with overdue books"}
+              ? t.users.tabs.all
+              : t.users.tabs[tab]}
           </div>
         )}
       </section>

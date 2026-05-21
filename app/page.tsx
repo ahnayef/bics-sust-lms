@@ -1,3 +1,4 @@
+import { getTranslation } from "@/lib/i18n/server";
 import { getProfile } from "@/server/geo";
 import { getClaims } from "@/server/user";
 import { cacheLife, cacheTag } from "next/cache";
@@ -35,9 +36,18 @@ async function HomeContent() {
   const profile = claims ? await getProfile(claims.sub as string) : null;
   const isLoggedIn = !!claims;
   const isProfileComplete = profile?.profile_completed ?? false;
+  const { t } = await getTranslation();
 
-  const ctaHref = !isLoggedIn ? "/login" : isProfileComplete ? "/dashboard" : "/setup";
-  const ctaLabel = !isLoggedIn ? "Get Started" : isProfileComplete ? "Go to Dashboard" : "Finish Setup";
+  const ctaHref = !isLoggedIn
+    ? "/login"
+    : isProfileComplete
+      ? "/dashboard"
+      : "/setup";
+  const ctaLabel = !isLoggedIn
+    ? t.home.hero.getStarted
+    : isProfileComplete
+      ? t.home.hero.dashboard
+      : t.home.hero.setup;
 
   return (
     <>
@@ -53,16 +63,16 @@ async function HomeContent() {
         >
           <div className="text-center border-b-2 border-double border-gray-800 pb-6 mb-6">
             <div className="newspaper-subheader mb-4">
-              SUST Digital Library Platform
+              {t.home.hero.subheader}
             </div>
             <h1 className="newspaper-headline">
-              Library Management
+              {t.home.hero.headline}
               <div style={{ fontSize: "2.5rem", marginTop: "0.5rem" }}>
-                Made Simple
+                {t.home.hero.headlineSub}
               </div>
             </h1>
             <div className="newspaper-subheader mt-4">
-              One workflow from shelf to checkout
+              {t.home.hero.tagline}
             </div>
           </div>
 
@@ -73,9 +83,7 @@ async function HomeContent() {
               lineHeight: "1.8",
             }}
           >
-            Manage books, copies, and members in one place. Handle borrowing and
-            returns with clear workflows, and track member reading progress
-            across syllabus and general collections.
+            {t.home.hero.description}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -92,7 +100,7 @@ async function HomeContent() {
                 className="newspaper-border border-2 border-gray-900 text-gray-900 px-8 py-3 font-semibold transition-colors text-center"
                 style={{ backgroundColor: "#f7f1e7" }}
               >
-                Learn More
+                {t.home.hero.learnMore}
               </a>
             )}
           </div>

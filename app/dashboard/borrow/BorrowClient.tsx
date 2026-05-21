@@ -15,6 +15,8 @@ import {
   FaQrcode,
 } from "react-icons/fa";
 
+import { useTranslation } from "@/lib/i18n/context";
+
 interface CompletedBook {
   bookId: string;
   completedOn: string;
@@ -37,6 +39,7 @@ export default function BorrowClient({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { t, language } = useTranslation();
 
   // ── State ──────────────────────────────────────────────────────────────────
 
@@ -57,12 +60,12 @@ export default function BorrowClient({
   });
   const [error, setError] = useState(() => {
     if (initialCopyId && !initialCopy) {
-      return "Copy not found. Check the ID and try again.";
+      return t.borrow.errors.copyNotFound;
     }
     if (initialCopy && initialCopy.status !== "available") {
       return initialCopy.status === "damaged"
-        ? "This copy is marked as damaged and cannot be borrowed."
-        : "This copy is currently borrowed and not available.";
+        ? t.borrow.errors.damaged
+        : t.borrow.errors.borrowed;
     }
     return "";
   });
@@ -130,7 +133,7 @@ export default function BorrowClient({
       setIsLookingUp(false);
 
       if (!copy) {
-        setError(lookupError ?? "Copy not found. Check the ID and try again.");
+        setError(lookupError ?? t.borrow.errors.copyNotFound);
         return false;
       }
 
@@ -138,14 +141,14 @@ export default function BorrowClient({
         setUnavailableCopy(copy);
         setError(
           copy.status === "damaged"
-            ? "This copy is marked as damaged and cannot be borrowed."
-            : "This copy is currently borrowed and not available.",
+            ? t.borrow.errors.damaged
+            : t.borrow.errors.borrowed,
         );
         return false;
       }
 
       if (activeBorrowCopyIds.includes(upper)) {
-        setError("You already have an active or pending request for this copy.");
+        setError(t.borrow.errors.alreadyBorrowed);
         return false;
       }
 
@@ -157,7 +160,7 @@ export default function BorrowClient({
     } catch (err) {
       if (thisLookup === lookupCounterRef.current) {
         setIsLookingUp(false);
-        setError("An error occurred while looking up the copy.");
+        setError(t.borrow.errors.generic);
       }
       return false;
     }
@@ -184,8 +187,8 @@ export default function BorrowClient({
         setSelectedCopy(null);
         setError(
           initialCopy.status === "damaged"
-            ? "This copy is marked as damaged and cannot be borrowed."
-            : "This copy is currently borrowed and not available.",
+            ? t.borrow.errors.damaged
+            : t.borrow.errors.borrowed,
         );
       }
     } else if (initialCopyId) {
@@ -210,7 +213,7 @@ export default function BorrowClient({
   const handleManualCheck = (e: React.FormEvent) => {
     e.preventDefault();
     if (copyId.length < 5) {
-      setError("ID too short. Check the ID and try again.");
+      setError(t.borrow.errors.copyNotFound);
       return;
     }
     performLookup(copyId);
@@ -263,7 +266,7 @@ export default function BorrowClient({
 
   if (success && selectedCopy) {
     const returnDateObj = new Date(returnDate);
-    const formattedDate = returnDateObj.toLocaleDateString("en-US", {
+    const formattedDate = returnDateObj.toLocaleDateString(language === "bn" ? "bn-BD" : "en-US", {
       weekday: "short",
       year: "numeric",
       month: "short",
@@ -272,7 +275,6 @@ export default function BorrowClient({
 
     return (
       <>
-
         <div className="flex-1 flex items-center justify-center px-4 py-8">
           <div className="borrow-surface tron-border rounded-lg p-8 text-center max-w-sm w-full">
             <div className="flex justify-center mb-6">
@@ -281,27 +283,26 @@ export default function BorrowClient({
               </div>
             </div>
             <h2 className="text-2xl font-bold text-[#221910] mb-2 ink-title">
-              Borrow Request Submitted
+              {t.borrow.success.title}
             </h2>
             <div className="bg-[#f6ecdd] border border-[#786a5c] rounded-lg p-4 mb-6">
               <p className="text-[#5c4f42] mb-3 ink-text">
                 <span className="font-semibold text-[#221910] ink-title">
-                  {selectedCopy.book?.title ?? "Unknown Book"}
+                  {selectedCopy.book?.title ?? "—"}
                 </span>
               </p>
               <p className="text-sm text-[#5c4f42] mb-3 ink-text">
-                Waiting for moderator approval before this appears in your
-                active borrows.
+                {t.borrow.success.message.replace("{title}", "")}
               </p>
               <div className="space-y-2 text-sm ink-text">
                 <p className="text-[#5c4f42]">
-                  <span className="text-[#6f6256]">Copy:</span>{" "}
+                  <span className="text-[#6f6256]">{t.borrow.form.copyId}:</span>{" "}
                   <span className="font-mono font-medium text-[#221910]">
                     {selectedCopy.id}
                   </span>
                 </p>
                 <p className="text-[#5c4f42]">
-                  <span className="text-[#6f6256]">Requested return by:</span>{" "}
+                  <span className="text-[#6f6256]">{t.borrow.form.returnDate}:</span>{" "}
                   <span className="font-medium text-[#221910]">
                     {formattedDate}
                   </span>
@@ -312,7 +313,7 @@ export default function BorrowClient({
               href="/dashboard"
               className="inline-block px-6 py-2 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] transition-colors ink-text"
             >
-              Go to Profile
+              {t.history.backToDashboard}
             </Link>
           </div>
         </div>
@@ -324,8 +325,6 @@ export default function BorrowClient({
 
   return (
     <>
-
-
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Mode selector */}
         <div className="flex gap-2 mb-6 borrow-surface tron-border rounded-lg p-1">
@@ -337,7 +336,7 @@ export default function BorrowClient({
               }`}
           >
             <FaQrcode className="inline w-4 h-4 mr-2" />
-            Scan QR
+            {t.borrow.qrMode}
           </button>
           <button
             onClick={() => setInputMode("manual")}
@@ -347,7 +346,7 @@ export default function BorrowClient({
               }`}
           >
             <FaKeyboard className="inline w-4 h-4 mr-2" />
-            Enter ID
+            {t.borrow.manualMode}
           </button>
         </div>
 
@@ -451,8 +450,8 @@ export default function BorrowClient({
                 {!selectedCopy && (
                   <p className="text-xs text-[#5c4f42] text-center ink-text">
                     {isLookingUp
-                      ? "Looking up copy…"
-                      : "Position the QR code within the frame"}
+                      ? t.borrow.lookingUp
+                      : t.borrow.scanPlaceholder}
                   </p>
                 )}
 
@@ -484,7 +483,7 @@ export default function BorrowClient({
                     onClick={resetLookup}
                     className="w-full px-4 py-3 border border-[#7b6d5f] text-[#4e4033] rounded-lg font-medium hover:bg-[#eadcca] transition-colors ink-text"
                   >
-                    Scan Another
+                    {t.borrow.success.borrowAnother}
                   </button>
                 )}
               </div>
@@ -494,7 +493,7 @@ export default function BorrowClient({
                 <div className="space-y-2">
                   <label className="block">
                     <p className="text-sm font-medium text-[#4e4033] mb-2 ink-text">
-                      Copy ID
+                      {t.borrow.form.copyId}
                     </p>
                     <div className="flex gap-2">
                       <input
@@ -507,7 +506,7 @@ export default function BorrowClient({
                             handleManualCheck(e as any);
                           }
                         }}
-                        placeholder="e.g., QRA1B2C3-1"
+                        placeholder={t.borrow.inputPlaceholder}
                         maxLength={16}
                         className="flex-1 px-4 py-3 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-lg focus:ring-2 focus:ring-[#5a4d40] outline-none text-lg font-mono tracking-widest"
                         autoFocus
@@ -518,7 +517,7 @@ export default function BorrowClient({
                         disabled={isLookingUp || copyId.length < 5}
                         className="px-6 py-3 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text whitespace-nowrap"
                       >
-                        {isLookingUp ? "Checking…" : "Check ID"}
+                        {isLookingUp ? t.borrow.lookingUp : t.borrow.lookup}
                       </button>
                     </div>
                   </label>
@@ -526,8 +525,8 @@ export default function BorrowClient({
                 {!selectedCopy && (
                   <p className="text-xs text-[#6f6256] ink-text">
                     {isLookingUp
-                      ? "Looking up copy…"
-                      : "Enter the copy ID printed on the book card."}
+                      ? t.borrow.lookingUp
+                      : t.borrow.subtitle}
                   </p>
                 )}
               </div>
@@ -541,14 +540,14 @@ export default function BorrowClient({
                 <div className="flex items-center gap-2 mb-4">
                   <FaCheck className="w-5 h-5 text-[#4e4033]" />
                   <p className="text-sm font-semibold text-[#4e4033] ink-text">
-                    Book Found
+                    {t.borrow.lookup}
                   </p>
                 </div>
 
                 <div className="space-y-3">
                   <div>
                     <p className="text-xs text-[#6f6256] uppercase tracking-wide mb-1 ink-text">
-                      Title
+                      {t.borrow.form.bookTitle}
                     </p>
                     <p className="text-2xl font-bold text-[#221910] ink-title">
                       {selectedCopy.book?.title ?? "—"}
@@ -556,7 +555,7 @@ export default function BorrowClient({
                   </div>
                   <div>
                     <p className="text-xs text-[#6f6256] uppercase tracking-wide mb-1 ink-text">
-                      Author
+                      {t.bookList.table.author}
                     </p>
                     <p className="text-lg text-[#4e4033] ink-text">
                       {selectedCopy.book?.author ?? "—"}
@@ -565,7 +564,7 @@ export default function BorrowClient({
                   <div className="grid grid-cols-3 gap-3 pt-2">
                     <div>
                       <p className="text-xs text-[#6f6256] uppercase tracking-wide mb-1 ink-text">
-                        Copy #
+                        {t.bookList.table.copyNum}
                       </p>
                       <p className="font-medium text-[#221910] ink-text">
                         {selectedCopy.copy_number}
@@ -573,7 +572,7 @@ export default function BorrowClient({
                     </div>
                     <div>
                       <p className="text-xs text-[#6f6256] uppercase tracking-wide mb-1 ink-text">
-                        Pages
+                        {t.bookList.table.pages}
                       </p>
                       <p className="font-medium text-[#221910] ink-text">
                         {selectedCopy.book?.pages ?? "—"}
@@ -581,7 +580,7 @@ export default function BorrowClient({
                     </div>
                     <div>
                       <p className="text-xs text-[#6f6256] uppercase tracking-wide mb-1 ink-text">
-                        Copy ID
+                        {t.borrow.form.copyId}
                       </p>
                       <p className="font-mono text-sm font-bold text-[#221910]">
                         {selectedCopy.id}
@@ -598,15 +597,12 @@ export default function BorrowClient({
                     <FaExclamationTriangle className="w-5 h-5 text-[#7a6338] mt-0.5 shrink-0" />
                     <div>
                       <p className="text-sm font-semibold text-[#6b5428] ink-text mb-1">
-                        You have previously completed this book
+                        {t.borrow.form.alreadyRead.split(".")[0]}
                       </p>
                       <p className="text-xs text-[#6b5428] ink-text">
-                        Completed on{" "}
-                        {new Date(
-                          alreadyCompletedBook.completedOn,
-                        ).toLocaleDateString()}{" "}
-                        (Copy ID: {alreadyCompletedBook.copyId}). You can still
-                        borrow another copy if needed.
+                        {t.borrow.form.alreadyRead
+                          .replace("{date}", new Date(alreadyCompletedBook.completedOn).toLocaleDateString())
+                          .replace("{copyId}", alreadyCompletedBook.copyId)}
                       </p>
                     </div>
                   </div>
@@ -617,7 +613,7 @@ export default function BorrowClient({
               <div className="borrow-surface tron-border rounded-lg p-6">
                 <label className="block">
                   <p className="text-sm font-medium text-[#4e4033] mb-2 ink-text">
-                    Preferred Return Date
+                    {t.borrow.form.returnDate}
                   </p>
                   <input
                     type="date"
@@ -629,8 +625,7 @@ export default function BorrowClient({
                   />
                 </label>
                 <p className="text-xs text-[#6f6256] mt-2 ink-text">
-                  This is a preference — the moderator sets the official due
-                  date on approval.
+                  {t.borrow.form.returnDateDesc}
                 </p>
               </div>
 
@@ -641,7 +636,7 @@ export default function BorrowClient({
                   disabled={!returnDate || isPending}
                   className="flex-1 px-4 py-3 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text"
                 >
-                  {isPending ? "Submitting…" : "Confirm Borrow Request"}
+                  {isPending ? t.borrow.form.submitting : t.borrow.form.submit}
                 </button>
               </div>
             </div>
@@ -655,14 +650,14 @@ export default function BorrowClient({
                 <div>
                   <p className="text-sm font-semibold text-[#7d2d23] ink-text mb-1">
                     {unavailableCopy.status === "damaged"
-                      ? "This copy is damaged"
-                      : "This copy is currently borrowed"}
+                      ? t.borrow.errors.damaged
+                      : t.borrow.errors.borrowed}
                   </p>
                   <p className="text-sm text-[#5b3a33] ink-text font-semibold">
-                    {unavailableCopy.book?.title ?? "Unknown Book"}
+                    {unavailableCopy.book?.title ?? "—"}
                   </p>
                   <p className="text-xs text-[#6c4d44] ink-text mt-1">
-                    Copy #{unavailableCopy.copy_number} — {unavailableCopy.id}
+                    {t.bookList.table.copyNum} {unavailableCopy.copy_number} — {unavailableCopy.id}
                   </p>
                 </div>
               </div>
@@ -680,8 +675,7 @@ export default function BorrowClient({
           {cameraPermissionDenied && (
             <div className="p-4 bg-[#f4ecd8] border border-[#b49d6f] rounded-lg">
               <p className="text-sm text-[#6b5428] ink-text">
-                <strong>Camera permission denied.</strong> Enable camera access
-                in your browser settings and try again.
+                <strong>{t.borrow.errors.cameraPermission.split(".")[0]}.</strong> {t.borrow.errors.cameraPermission.split(".")[1]}
               </p>
             </div>
           )}
@@ -693,7 +687,7 @@ export default function BorrowClient({
                 href="/dashboard/book-list"
                 className="block w-full px-4 py-3 border border-[#7b6d5f] text-[#4e4033] rounded-lg font-medium hover:bg-[#eadcca] transition-colors text-center ink-text"
               >
-                Back to Book List
+                {t.bookList.empty.clearFilters.replace("Filters", "and Go Back")}
               </Link>
             </div>
           )}

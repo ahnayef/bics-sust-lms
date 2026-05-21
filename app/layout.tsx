@@ -3,12 +3,13 @@ import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
 import { Geist, Noto_Sans_Bengali } from "next/font/google";
 import "./globals.css";
+import { I18nProvider } from "@/lib/i18n/context";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 const notoSansBengali = Noto_Sans_Bengali({
   variable: "--font-noto-sans-bengali",
-  subsets: ["latin"],
+  subsets: ["bengali", "latin"],
 });
 
 export const metadata: Metadata = {
@@ -35,8 +36,10 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         {/* shows up as a box in mobile screen */}
         {/*<GrainOverlay />*/}
-        <AOSInit />
-        {children}
+        <I18nProvider>
+          <AOSInit />
+          {children}
+        </I18nProvider>
       </body>
     </html>
   );

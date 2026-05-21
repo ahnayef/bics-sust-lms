@@ -1,33 +1,33 @@
 "use client";
 
+import { useTranslation } from "@/lib/i18n/context";
 import type { NotificationItem } from "@/types/library";
-import { useNotificationStore } from "../useNotificationStore";
-import { 
-  FaBell, 
-  FaCheckCircle, 
-  FaTimesCircle, 
-  FaExclamationTriangle, 
+import Link from "next/link";
+import {
+  FaCheckCircle,
+  FaExclamationTriangle,
   FaInfoCircle,
   FaMapMarkerAlt,
   FaShieldAlt,
+  FaTimesCircle,
   FaUserCheck,
-  FaUserTimes,
-  FaUserPlus
+  FaUserPlus,
+  FaUserTimes
 } from "react-icons/fa";
-import Link from "next/link";
-import { useEffect } from "react";
+import { useNotificationStore } from "../useNotificationStore";
 
 interface Props {
   userId: string;
   notifications: NotificationItem[];
 }
 
-export default function NotificationsClient({ userId, notifications }: Props) {
-  const { readIds, markAsRead, markAllAsRead, isLoaded } = useNotificationStore(userId, notifications);
+export default function NotificationsClient({ userId, notifications: initialNotifications }: Props) {
+  const { t, language } = useTranslation();
+  const { readIds, markAsRead, markAllAsRead, isLoaded } = useNotificationStore(userId, initialNotifications);
 
   // Automatically mark as read if they click the link
   // But wait, they might just view it on the page. Let's add a explicit button or mark as read on click.
-  
+
   const getIcon = (type: string) => {
     switch (type) {
       case "transaction_approved":
@@ -55,18 +55,18 @@ export default function NotificationsClient({ userId, notifications }: Props) {
   };
 
   if (!isLoaded) {
-    return <div className="text-center py-8 text-[#5a4b3f]">Loading...</div>;
+    return <div className="text-center py-8 text-[#5a4b3f]">{t.notifications.loading}</div>;
   }
 
-  const unreadCount = notifications.filter((n) => !readIds.includes(n.id)).length;
+  const unreadCount = initialNotifications.filter((n) => !readIds.includes(n.id)).length;
 
   return (
     <section className="dashboard-surface tron-border rounded-sm p-4 sm:p-6 -mx-2 sm:mx-0">
       <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#c9b89a]">
         <div>
-          <h2 className="text-xl font-bold text-[#221910] ink-title">History</h2>
+          <h2 className="text-xl font-bold text-[#221910] ink-title">{t.notifications.title}</h2>
           <p className="text-sm text-[#5a4b3f] ink-text">
-            {unreadCount} unread notification{unreadCount !== 1 ? "s" : ""}
+            {unreadCount} {unreadCount === 1 ? t.notifications.unread : t.notifications.unreadPlural}
           </p>
         </div>
         {unreadCount > 0 && (
@@ -74,27 +74,26 @@ export default function NotificationsClient({ userId, notifications }: Props) {
             onClick={markAllAsRead}
             className="text-xs font-semibold px-3 py-1.5 bg-[#f4e8d4] text-[#3f3328] border border-[#c9b89a] hover:bg-[#ece0ce] rounded-sm transition-colors"
           >
-            Mark all as read
+            {t.notifications.markAllRead}
           </button>
         )}
       </div>
 
-      {notifications.length === 0 ? (
+      {initialNotifications.length === 0 ? (
         <p className="text-sm text-[#6a5a4c] ink-text text-center py-8">
-          You don't have any notifications yet.
+          {t.notifications.empty}
         </p>
       ) : (
         <ul className="space-y-4">
-          {notifications.map((notif) => {
+          {initialNotifications.map((notif) => {
             const isUnread = !readIds.includes(notif.id);
             return (
               <li
                 key={notif.id}
-                className={`p-4 border rounded-sm transition-colors relative ${
-                  isUnread 
-                    ? "bg-[#fcf9f4] border-[#d3c1a9] shadow-sm" 
+                className={`p-4 border rounded-sm transition-colors relative ${isUnread
+                    ? "bg-[#fcf9f4] border-[#d3c1a9] shadow-sm"
                     : "bg-[#f4e8d4]/50 border-[#e4d4bf] opacity-80"
-                }`}
+                  }`}
                 onClick={() => {
                   if (isUnread) markAsRead(notif.id);
                 }}
@@ -109,10 +108,10 @@ export default function NotificationsClient({ userId, notifications }: Props) {
                       <h3 className={`text-base font-bold ink-title ${isUnread ? "text-[#221910]" : "text-[#3f3328]"}`}>
                         {notif.title}
                       </h3>
-                      <span 
+                      <span
                         className="text-[10px] sm:text-[11px] text-[#8a7a6c] font-semibold whitespace-nowrap"
                       >
-                        {new Date(notif.date).toLocaleString("en-GB", {
+                        {new Date(notif.date).toLocaleString(language === "bn" ? "bn-BD" : "en-GB", {
                           day: "numeric",
                           month: "short",
                           year: "numeric",
@@ -122,16 +121,16 @@ export default function NotificationsClient({ userId, notifications }: Props) {
                         })}
                       </span>
                     </div>
-                    
+
                     <p className={`text-sm ink-text leading-relaxed ${isUnread ? "text-[#4a3e33]" : "text-[#5a4b3f]"}`}>
                       {notif.message}
                     </p>
-                    
+
                     {notif.reason && (
                       <div className="mt-3 bg-[#f0e4d1] border border-[#c9b89a] rounded-sm p-3 inline-block w-full sm:w-auto shadow-sm">
                         <div className="flex items-center justify-between mb-1">
                           <p className="text-[11px] font-bold text-[#4a3e33] uppercase tracking-wider">
-                            Moderator Note
+                            {t.notifications.moderatorNote}
                           </p>
                         </div>
                         <p className="text-sm text-[#2f251d] font-medium ink-text">
@@ -139,7 +138,7 @@ export default function NotificationsClient({ userId, notifications }: Props) {
                         </p>
                       </div>
                     )}
-                    
+
                     {notif.link && (
                       <div className="mt-3 flex items-center gap-4">
                         <Link
@@ -150,7 +149,7 @@ export default function NotificationsClient({ userId, notifications }: Props) {
                           }}
                           className="text-xs font-bold text-[#221910] uppercase tracking-wide underline underline-offset-4 hover:text-[#5a4b3f] transition-colors"
                         >
-                          View Details &rarr;
+                          {t.notifications.viewDetails} &rarr;
                         </Link>
                         {isUnread && (
                           <button
@@ -160,7 +159,7 @@ export default function NotificationsClient({ userId, notifications }: Props) {
                             }}
                             className="text-[11px] font-semibold text-[#6a5a4c] hover:text-[#221910] uppercase tracking-wide transition-colors"
                           >
-                            Mark as read
+                            {t.notifications.markRead}
                           </button>
                         )}
                       </div>

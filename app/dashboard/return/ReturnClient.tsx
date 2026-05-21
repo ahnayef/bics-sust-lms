@@ -12,6 +12,8 @@ import {
   FaUndoAlt,
 } from "react-icons/fa";
 
+import { useTranslation } from "@/lib/i18n/context";
+
 interface ReturnClientProps {
   currentBorrows: Transaction[];
   userId: string;
@@ -23,6 +25,7 @@ export default function ReturnClient({
   userId: _userId,
 }: ReturnClientProps) {
   const router = useRouter();
+  const { t, language } = useTranslation();
   const [isPending, startTransition] = useTransition();
   const [processingId, setProcessingId] = useState<string | null>(null);
 
@@ -56,7 +59,7 @@ export default function ReturnClient({
         setError(result.error);
       } else {
         setSuccess(
-          `Return request submitted for "${bookTitle}". A moderator will confirm it shortly.`,
+          t.return.success.message.replace("{title}", bookTitle),
         );
         // Clear QR scanner state after a successful scanner-triggered return
         setScannedCopyId(null);
@@ -136,11 +139,10 @@ export default function ReturnClient({
       {/* Page title */}
       <div>
         <h1 className="text-2xl sm:text-3xl text-[#221910] ink-title font-bold">
-          Return
+          {t.return.title}
         </h1>
         <p className="text-[#5c4f42] text-sm mt-1 ink-text">
-          Return books you&apos;ve borrowed, or scan a QR code to submit a
-          return request.
+          {t.return.subtitle}
         </p>
       </div>
 
@@ -159,14 +161,14 @@ export default function ReturnClient({
       {/* ── Section 1: Currently borrowed books ─────────────────────────────── */}
       <section>
         <h2 className="text-lg font-semibold text-[#221910] ink-title mb-3">
-          Currently Borrowed
+          {t.return.form.bookTitle}
         </h2>
 
         {currentBorrows.length === 0 ? (
           <div className="dashboard-surface tron-border rounded-lg p-8 text-center">
             <FaUndoAlt className="mx-auto w-8 h-8 text-[#9c8d7e] mb-3" />
             <p className="text-[#5c4f42] ink-text">
-              You have no active borrows.
+              {t.history.empty}
             </p>
           </div>
         ) : (
@@ -185,13 +187,13 @@ export default function ReturnClient({
               const bookTitle = txn.book?.title ?? "Unknown Book";
               const borrowedDateStr = new Date(
                 txn.request_date,
-              ).toLocaleDateString("en-GB", {
+              ).toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", {
                 day: "numeric",
                 month: "short",
                 year: "numeric",
               });
               const dueDateStr = dueDate
-                ? dueDate.toLocaleDateString("en-GB", {
+                ? dueDate.toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", {
                   day: "numeric",
                   month: "short",
                   year: "numeric",
@@ -218,19 +220,19 @@ export default function ReturnClient({
                       {/* Meta row */}
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm ink-text text-[#5c4f42]">
                         <span>
-                          Copy:{" "}
+                          {t.return.form.copyId}:{" "}
                           <span className="font-semibold font-mono text-[#221910]">
                             {txn.copy_id}
                           </span>
                         </span>
                         <span>
-                          Borrowed:{" "}
+                          {t.return.form.borrowedOn}:{" "}
                           <span className="font-semibold text-[#221910]">
                             {borrowedDateStr}
                           </span>
                         </span>
                         <span>
-                          Due:{" "}
+                          {t.return.form.dueDate}:{" "}
                           <span className="font-semibold text-[#221910]">
                             {dueDateStr}
                           </span>
@@ -241,8 +243,7 @@ export default function ReturnClient({
                       {isOverdue && overdueDays > 0 && (
                         <div className="flex items-center gap-1.5 mt-2 text-xs text-[#7a4c37] bg-[#f7e6df] border border-[#b0665c] rounded px-2 py-1 w-fit ink-text">
                           <FaExclamationTriangle className="w-3 h-3 shrink-0" />
-                          Overdue by {overdueDays} day
-                          {overdueDays !== 1 ? "s" : ""}
+                          {language === "bn" ? `সময় অতিক্রান্ত: ${overdueDays} দিন` : `Overdue by ${overdueDays} day${overdueDays !== 1 ? "s" : ""}`}
                         </div>
                       )}
                     </div>
@@ -253,7 +254,7 @@ export default function ReturnClient({
                       disabled={isPending}
                       className="shrink-0 px-4 py-2 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text text-sm"
                     >
-                      {processingId === txn.id && isPending ? "…" : "Return"}
+                      {processingId === txn.id && isPending ? "…" : t.return.form.submit.replace("Request to ", "")}
                     </button>
                   </div>
                 </div>
@@ -266,7 +267,7 @@ export default function ReturnClient({
       {/* ── Section 2: QR scanner / manual input ──────────────────────────────── */}
       <section>
         <h2 className="text-lg font-semibold text-[#221910] ink-title mb-3">
-          Return by QR Code
+          {t.return.qrMode}
         </h2>
 
         {/* Mode toggle */}
@@ -279,7 +280,7 @@ export default function ReturnClient({
               }`}
           >
             <FaQrcode className="inline w-4 h-4 mr-2" />
-            Scan QR
+            {t.return.qrMode}
           </button>
           <button
             onClick={() => setInputMode("manual")}
@@ -289,7 +290,7 @@ export default function ReturnClient({
               }`}
           >
             <FaKeyboard className="inline w-4 h-4 mr-2" />
-            Enter ID
+            {t.return.manualMode}
           </button>
         </div>
 
@@ -324,8 +325,8 @@ export default function ReturnClient({
                   className="w-full px-4 py-3 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] transition-colors ink-text"
                 >
                   {cameraPermissionDenied
-                    ? "Camera Permission Denied — Try Again"
-                    : "Start QR Scanner"}
+                    ? t.borrow.errors.cameraPermission.split(".")[0]
+                    : t.borrow.qrMode}
                 </button>
               )}
 
@@ -372,7 +373,7 @@ export default function ReturnClient({
               </div>
 
               <p className="text-xs text-[#5c4f42] text-center ink-text">
-                Position QR code within the frame
+                {t.borrow.scanPlaceholder}
               </p>
 
               {scanPaused && !scannedCopyId && (
@@ -390,13 +391,13 @@ export default function ReturnClient({
             <div className="space-y-4">
               <label className="block">
                 <p className="text-sm font-medium text-[#4e4033] mb-2 ink-text">
-                  Copy ID
+                  {t.return.form.copyId}
                 </p>
                 <input
                   type="text"
                   value={copyId}
                   onChange={handleCopyIdChange}
-                  placeholder="e.g., QRA1B2C3-1"
+                  placeholder={t.return.inputPlaceholder}
                   maxLength={20}
                   className="w-full px-4 py-3 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-lg focus:ring-2 focus:ring-[#5a4d40] focus:border-transparent outline-none text-lg font-mono tracking-widest"
                   autoFocus
@@ -411,7 +412,7 @@ export default function ReturnClient({
               <div className="flex items-center gap-2">
                 <FaUndoAlt className="w-4 h-4 text-[#4a6a4a] shrink-0" />
                 <p className="text-sm font-semibold text-[#3a5a3a] ink-text">
-                  Ready to return:
+                  {t.return.success.returnAnother}
                 </p>
               </div>
 
@@ -422,7 +423,7 @@ export default function ReturnClient({
                   </p>
                 )}
                 <p className="text-sm font-mono text-[#4e4033] ink-text mt-0.5">
-                  Copy ID:{" "}
+                  {t.return.form.copyId}:{" "}
                   <span className="font-semibold text-[#221910]">
                     {scannedCopyId}
                   </span>
@@ -435,7 +436,7 @@ export default function ReturnClient({
                   onClick={resetScanner}
                   className="flex-1 px-3 py-2 border border-[#7b6d5f] text-[#4e4033] rounded-lg font-medium hover:bg-[#eadcca] transition-colors ink-text text-sm"
                 >
-                  Cancel
+                  {language === "bn" ? "বাতিল করুন" : "Cancel"}
                 </button>
                 <button
                   type="button"
@@ -443,7 +444,7 @@ export default function ReturnClient({
                   disabled={isPending}
                   className="flex-1 px-3 py-2 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text text-sm"
                 >
-                  {processingId === scannedCopyId && isPending ? "Submitting…" : "Confirm Return"}
+                  {processingId === scannedCopyId && isPending ? t.return.form.submitting : t.return.form.submit}
                 </button>
               </div>
             </div>
@@ -453,8 +454,7 @@ export default function ReturnClient({
           {cameraPermissionDenied && (
             <div className="p-4 bg-[#f4ecd8] border border-[#b49d6f] rounded-lg">
               <p className="text-sm text-[#6b5428] ink-text">
-                <strong>Camera permission denied.</strong> Please enable camera
-                access in your browser settings and try again.
+                <strong>{t.borrow.errors.cameraPermission.split(".")[0]}.</strong> {t.borrow.errors.cameraPermission.split(".")[1]}
               </p>
             </div>
           )}

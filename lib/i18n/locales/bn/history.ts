@@ -1,0 +1,31 @@
+export const history = {
+  title: "ধারের ইতিহাস",
+  subtitle: "আপনার বর্তমান এবং পূর্বের ধারের তথ্য দেখুন।",
+  table: {
+    book: "বই",
+    copyId: "কপি আইডি",
+    borrowed: "ধার নেওয়া হয়েছে",
+    due: "ফেরত দেওয়ার তারিখ",
+    returned: "ফেরত দেওয়া হয়েছে",
+    status: "অবস্থা",
+  },
+  status: {
+    pending_borrow: "ধারের অনুরোধ",
+    borrowed: "ধার নেওয়া হয়েছে",
+    pending_return: "ফেরতের অনুরোধ",
+    returned: "ফেরত দেওয়া হয়েছে",
+    rejected_borrow: "প্রত্যাখ্যাত",
+    rejected_return: "ফেরত প্রত্যাখ্যাত",
+    overdue: "সময় অতিক্রান্ত",
+  },
+  empty: "আপনি এখনও কোনো বই ধার করেননি।",
+  backToDashboard: "ড্যাশবোর্ডে ফিরে যান",
+  filters: {
+    all: "সব",
+    active: "ধার করা হয়েছে",
+    completed: "ফেরত দেওয়া হয়েছে",
+    overdue: "সময়োত্তীর্ণ",
+    pending: "পেন্ডিং অনুরোধ",
+    rejected: "প্রত্যাখ্যাত",
+  },
+} as const;

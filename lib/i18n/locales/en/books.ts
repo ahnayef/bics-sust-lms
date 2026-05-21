@@ -1,0 +1,66 @@
+export const books = {
+  title: "Book Management",
+  subtitle: "Add, edit, and manage library collection.",
+  stats: {
+    total: "Total Books",
+    syllabus: "Syllabus",
+    additional: "Additional",
+    copies: "Total Copies",
+  },
+  filters: {
+    searchPlaceholder: "Search title or author...",
+    all: "All Books",
+    syllabus: "Syllabus",
+    additional: "Additional",
+  },
+  actions: {
+    addBook: "Add Book",
+    edit: "Edit",
+    delete: "Delete",
+    downloadPdf: "Download PDF",
+  },
+  table: {
+    title: "Title",
+    author: "Author",
+    pages: "Pages",
+    copies: "Copies",
+    type: "Type",
+    actions: "Actions",
+  },
+  empty: "No books match this search/filter combination.",
+  modal: {
+    addTitle: "Add New Book",
+    editTitle: "Edit Book",
+    labels: {
+      title: "Book Title",
+      author: "Author",
+      type: "Book Type",
+      pages: "Number of Pages",
+      pdfLink: "PDF Link (optional)",
+      autoAddCopy: "Auto-add first copy",
+    },
+    placeholders: {
+      title: "Enter book title",
+      author: "Enter author name",
+      pages: "Enter number of pages",
+      pdfLink: "https://...",
+    },
+    types: {
+      syllabus: "Syllabus Book",
+      additional: "Additional Book",
+    },
+    cancel: "Cancel",
+    save: "Save Changes",
+    add: "Add Book",
+  },
+  flash: {
+    addSuccess: "Book added successfully.",
+    updateSuccess: "Book updated successfully.",
+    deleteSuccess: "Book removed successfully.",
+  },
+  confirmDelete: {
+    title: "Delete Book",
+    message: "Are you sure you want to delete this book? This will also remove all its copies.",
+    warning: "This book is currently being used in {count} transactions (borrows/returns). Deleting it will cause data inconsistency.",
+  },
+} as const;

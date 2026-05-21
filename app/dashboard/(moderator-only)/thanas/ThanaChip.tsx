@@ -4,6 +4,7 @@ import ConfirmModal from "@/components/ui/confirm-modal";
 import { deleteThana, getThanaRefCount, modifyThana } from "@/server/geo-actions";
 import { useRouter } from "next/navigation";
 import { startTransition, useRef, useState } from "react";
+import { useTranslation } from "@/lib/i18n/context";
 import { FaCheck, FaPencilAlt, FaTimes, FaTrash } from "react-icons/fa";
 
 interface ThanaChipProps {
@@ -14,6 +15,7 @@ interface ThanaChipProps {
 
 export function ThanaChip({ id, name, onFlash }: ThanaChipProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [editing, setEditing] = useState(false);
@@ -41,17 +43,17 @@ export function ThanaChip({ id, name, onFlash }: ThanaChipProps) {
         onFlash("error", result.error);
         return;
       }
-      onFlash("success", `Thana "${name}" deleted.`);
+      onFlash("success", t.thanas.chip.deleteSuccess.replace("{name}", name));
       router.refresh();
     });
   }
 
   const deleteDescription =
     refCount === null
-      ? "Checking references..."
+      ? t.thanas.chip.checkingRefs
       : refCount > 0
-        ? <span><b className="text-[#221910] font-bold">{refCount}</b> member profile(s) currently reference this thana. Their thana will be set to none. This cannot be undone.</span>
-        : <span>No profile references this thana. This cannot be undone.</span>;
+        ? <span><b className="text-[#221910] font-bold">{refCount}</b> {t.thanas.chip.refWarning.replace("{count}", "")}</span>
+        : <span>{t.thanas.chip.noRefWarning}</span>;
 
   const [renameOpen, setRenameOpen] = useState(false);
   const [pendingName, setPendingName] = useState("");
@@ -79,7 +81,7 @@ export function ThanaChip({ id, name, onFlash }: ThanaChipProps) {
         return;
       }
       setEditing(false);
-      onFlash("success", `Thana renamed to "${pendingName}".`);
+      onFlash("success", t.thanas.chip.renameSuccess.replace("{name}", pendingName));
       router.refresh();
     });
   }
@@ -127,9 +129,9 @@ export function ThanaChip({ id, name, onFlash }: ThanaChipProps) {
             if (!renameLoading) setRenameOpen(false);
           }}
           onConfirm={handleRenameConfirm}
-          title="Rename Thana"
-          preview={`Renaming from '${name}' to '${pendingName}'`}
-          confirmLabel="Rename"
+          title={t.thanas.chip.renameTitle}
+          preview={t.thanas.chip.renamePreview.replace("{old}", name).replace("{new}", pendingName)}
+          confirmLabel={t.thanas.chip.renameLabel}
           loading={renameLoading}
         />
       </>
@@ -144,7 +146,7 @@ export function ThanaChip({ id, name, onFlash }: ThanaChipProps) {
           type="button"
           onClick={() => setEditing(true)}
           className="text-[#7a5a4a] hover:text-[#5a2a1a] transition-colors ml-0.5"
-          aria-label={`Rename ${name}`}
+          aria-label={`${t.books.actions.edit} ${name}`}
         >
           <FaPencilAlt className="w-2.5 h-2.5" />
         </button>
@@ -152,7 +154,7 @@ export function ThanaChip({ id, name, onFlash }: ThanaChipProps) {
           type="button"
           onClick={handleDeleteClick}
           className="text-[#7a5a4a] hover:text-[#5a2a1a] transition-colors"
-          aria-label={`Remove ${name}`}
+          aria-label={`${t.books.actions.delete} ${name}`}
         >
           <FaTrash className="w-2.5 h-2.5" />
         </button>
@@ -164,11 +166,11 @@ export function ThanaChip({ id, name, onFlash }: ThanaChipProps) {
           if (!deleteLoading) setDeleteOpen(false);
         }}
         onConfirm={handleDeleteConfirm}
-        title="Delete Thana"
+        title={t.thanas.chip.deleteTitle}
         description={deleteDescription}
         preview={name}
         danger={true}
-        confirmLabel="Delete"
+        confirmLabel={t.thanas.chip.deleteConfirm}
         loading={deleteLoading}
       />
     </>
