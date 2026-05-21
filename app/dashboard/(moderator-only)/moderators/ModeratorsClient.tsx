@@ -246,7 +246,7 @@ export default function ModeratorsClient({ initialModerators }: Props) {
                   {/* Actions */}
                   <div className="flex items-center gap-2 shrink-0">
                     <Link
-                      href={`/dashboard/profile/${person.username}`}
+                      href={`/dashboard/users/${person.id}`}
                       className="px-3 py-1.5 text-xs font-medium text-[#4d4034] border border-[#8a7966] rounded-sm hover:bg-[#eadcc8] transition-colors ink-text"
                     >
                       {t.common.actions}
