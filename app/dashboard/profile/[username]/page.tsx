@@ -1,8 +1,9 @@
 import { RankBadge } from "@/components/ui/rank-badge";
+import HistoryClient from "@/app/dashboard/history/HistoryClient";
 import { getTranslation } from "@/lib/i18n/server";
 import { getProfileByUsername } from "@/server/geo";
-import { getUserStats } from "@/server/library";
-import { getClaims } from "@/server/user";
+import { getUserStats, getUserTransactions, getPdfSubmissions } from "@/server/library";
+import { getClaims, getCurrentProfile } from "@/server/user";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -27,13 +28,21 @@ export default async function DashboardUserProfilePage({
   const claims = await getClaims();
   if (!claims) redirect("/login");
 
-  const [profile, stats] = await Promise.all([
+  const [profile, currentUserProfile] = await Promise.all([
     getProfileByUsername(username),
-    // Stats fetched after profile is known
-    getProfileByUsername(username).then((p) => (p ? getUserStats(p.id) : null)),
+    getCurrentProfile(),
   ]);
 
   if (!profile) notFound();
+
+  const isAdminOrMod =
+    currentUserProfile?.role === "admin" || currentUserProfile?.role === "moderator";
+
+  const [stats, transactions, pdfSubmissions] = await Promise.all([
+    getUserStats(profile.id),
+    isAdminOrMod ? getUserTransactions(profile.id) : [],
+    isAdminOrMod ? getPdfSubmissions({ userId: profile.id }) : [],
+  ]);
 
   const roleLabels: Record<string, string> = {
     admin: t.profile.roles.admin,
@@ -53,7 +62,7 @@ export default async function DashboardUserProfilePage({
       day: "numeric",
       month: "long",
       year: "numeric",
-    }
+    },
   );
 
   const locationParts = [profile.thana?.name].filter(Boolean);
@@ -70,7 +79,7 @@ export default async function DashboardUserProfilePage({
       </Link>
 
       {/* Hero */}
-      <section className="dashboard-surface tron-border rounded-sm p-6 sm:p-8">
+      <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
         <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
           {profile.avatar_url ? (
             <Image
@@ -218,6 +227,20 @@ export default async function DashboardUserProfilePage({
           </dl>
         )}
       </section>
+
+      {/* Transaction History (Admins & Mods only) */}
+      {isAdminOrMod && (
+        <section className="space-y-4">
+          <h2 className="text-base font-bold text-[#221910] ink-title">
+            Transaction History
+          </h2>
+          <HistoryClient
+            transactions={transactions}
+            pdfSubmissions={pdfSubmissions}
+            initialFilter="all"
+          />
+        </section>
+      )}
     </div>
   );
 }

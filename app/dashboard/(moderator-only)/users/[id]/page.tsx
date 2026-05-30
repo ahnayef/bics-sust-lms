@@ -1,7 +1,8 @@
 import { RankBadge } from "@/components/ui/rank-badge";
+import HistoryClient from "@/app/dashboard/history/HistoryClient";
 import { getTranslation } from "@/lib/i18n/server";
 import { getProfile, getRanks } from "@/server/geo";
-import { getUserStats } from "@/server/library";
+import { getUserStats, getUserTransactions, getPdfSubmissions } from "@/server/library";
 import { moderatorPermissions } from "@/server/profiles";
 import Image from "next/image";
 import Link from "next/link";
@@ -32,11 +33,13 @@ export default async function UserProfilePage({
   const { id } = await params;
   const { t, language } = await getTranslation();
 
-  const [profile, stats, perms, ranksResponse] = await Promise.all([
+  const [profile, stats, perms, ranksResponse, transactions, pdfSubmissions] = await Promise.all([
     getProfile(id),
     getUserStats(id),
     moderatorPermissions(),
     getRanks(),
+    getUserTransactions(id),
+    getPdfSubmissions({ userId: id }),
   ]);
 
   if (!profile) {
@@ -49,13 +52,8 @@ export default async function UserProfilePage({
     year: "numeric",
   });
 
-  const progress =
-    stats.syllabusTotal > 0
-      ? Math.round((stats.syllabusCompleted / stats.syllabusTotal) * 100)
-      : 0;
-
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6">
       {/* Back link */}
       <div className="flex items-center justify-between">
         <Link
@@ -127,27 +125,30 @@ export default async function UserProfilePage({
           {t.users.details.libraryActivity}
         </h2>
 
-        <div className="space-y-4">
-          {/* Syllabus progress bar */}
-          <div>
-            <div className="flex items-center justify-between text-sm text-[#5a4b3f] ink-text mb-1.5">
-              <span>
-                {t.users.details.syllabusProgress
-                  .replace("{completed}", stats.syllabusCompleted.toString())
-                  .replace("{total}", stats.syllabusTotal.toString())}
-              </span>
-              <span className="font-bold text-[#2b2119]">{progress}%</span>
-            </div>
-            <div className="w-full h-3 rounded-full bg-[#e4d4bf] border border-[#ccb79b] overflow-hidden">
-              <div
-                className="h-full bg-[#5a4d40] transition-all"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
+        <div className="space-y-6">
+          {/* Category progress bars */}
+          {stats.categoryProgress.map((cp) => {
+            const percent = cp.total > 0 ? Math.round((cp.completed / cp.total) * 100) : 0;
+            return (
+              <div key={cp.categoryId} className="space-y-1.5">
+                <div className="flex items-center justify-between text-sm text-[#5a4b3f] ink-text">
+                  <span className="font-medium">
+                    {cp.categoryName}: {cp.completed} / {cp.total}
+                  </span>
+                  <span className="font-bold text-[#2b2119]">{percent}%</span>
+                </div>
+                <div className="w-full h-3 rounded-full bg-[#e4d4bf] border border-[#ccb79b] overflow-hidden">
+                  <div
+                    className="h-full bg-[#5a4d40] transition-all"
+                    style={{ width: `${percent}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
 
           {/* Quick borrow counts */}
-          <div className="grid grid-cols-3 gap-3 pt-1">
+          <div className="grid grid-cols-3 gap-3 pt-2">
             <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
               <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1 ink-text">
                 {t.users.details.activeBorrows}
@@ -235,13 +236,25 @@ export default async function UserProfilePage({
         </div>
       </div>
 
+      {/* Transaction History */}
+      <div className="space-y-4">
+        <h2 className="text-base font-semibold text-[#3b3026] ink-title uppercase tracking-[0.06em]">
+          Transaction History
+        </h2>
+        <HistoryClient
+          transactions={transactions}
+          pdfSubmissions={pdfSubmissions}
+          initialFilter="all"
+        />
+      </div>
+
       {/* Details grid */}
       <div className="dashboard-surface tron-border rounded-sm p-6">
         <h2 className="text-base font-semibold text-[#3b3026] ink-title mb-4 uppercase tracking-[0.06em]">
           {t.users.details.profileDetails}
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 ink-text">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 ink-text">
           <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3">
             <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-1">
               {t.profile.info.email}
