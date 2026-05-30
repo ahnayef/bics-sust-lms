@@ -86,7 +86,7 @@ export async function borrowBook(
   if (copy.status !== COPY_STATUS.AVAILABLE)
     return { error: "This copy is not available" };
 
-  const dup = await getDuplicateTransaction(sub, copy_id, [
+  const dup = await getDuplicateTransaction(sub, copy_id, "borrow", [
     TRANSACTION_STATUS.PENDING,
     TRANSACTION_STATUS.ACTIVE,
     TRANSACTION_STATUS.OVERDUE,
@@ -130,14 +130,14 @@ export async function returnBook(
   const copy_id = (formData.get("copy_id") as string)?.trim();
   if (!copy_id) return { error: "Copy ID is required" };
 
-  const borrow = await getDuplicateTransaction(sub, copy_id, [
+  const borrow = await getDuplicateTransaction(sub, copy_id, "borrow", [
     TRANSACTION_STATUS.ACTIVE,
     TRANSACTION_STATUS.OVERDUE,
   ]);
 
   if (!borrow) return { error: "No active borrow found for this copy" };
 
-  const dupReturn = await getDuplicateTransaction(sub, copy_id, [
+  const dupReturn = await getDuplicateTransaction(sub, copy_id, "return", [
     TRANSACTION_STATUS.PENDING,
   ]);
 

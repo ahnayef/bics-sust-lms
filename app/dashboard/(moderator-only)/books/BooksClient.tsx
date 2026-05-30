@@ -18,7 +18,7 @@ interface BookForm {
   is_syllabus: boolean;
   pages: string;
   pdf_link: string;
-  auto_add_first_copy: boolean;
+  first_copy_id: string;
 }
 
 const EMPTY_FORM: BookForm = {
@@ -29,7 +29,7 @@ const EMPTY_FORM: BookForm = {
   is_syllabus: true,
   pages: "",
   pdf_link: "",
-  auto_add_first_copy: false,
+  first_copy_id: "",
 };
 
 interface Props {
@@ -120,13 +120,14 @@ export default function BooksClient({ initialBooks, categories }: Props) {
     setPendingAction(null);
     startTransition(async () => {
       const fd = new FormData();
+      fd.set("id", formData.id.trim());
       fd.set("title", formData.title.trim());
       fd.set("author", formData.author.trim());
       fd.set("category_id", formData.category_id);
       fd.set("is_syllabus", formData.is_syllabus ? "true" : "false");
       if (formData.pages) fd.set("pages", formData.pages);
       if (formData.pdf_link.trim()) fd.set("pdf_link", formData.pdf_link.trim());
-      if (formData.auto_add_first_copy) fd.set("auto_add_first_copy", "true");
+      if (formData.first_copy_id.trim()) fd.set("first_copy_id", formData.first_copy_id.trim());
 
       const result = await addBook(fd);
       if (result.error) {
@@ -150,7 +151,7 @@ export default function BooksClient({ initialBooks, categories }: Props) {
       is_syllabus: book.is_syllabus,
       pages: book.pages?.toString() ?? "",
       pdf_link: book.pdf_link ?? "",
-      auto_add_first_copy: false,
+      first_copy_id: "",
     });
     setEditingId(id);
     setShowAddModal(true);
@@ -459,6 +460,21 @@ export default function BooksClient({ initialBooks, categories }: Props) {
             <div className="space-y-4 ink-text">
               <div>
                 <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                  Book ID *
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. B001"
+                  value={formData.id}
+                  disabled={!!editingId}
+                  onChange={(e) =>
+                    setFormData({ ...formData, id: e.target.value })
+                  }
+                  className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none disabled:opacity-50"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#4f4134] mb-1">
                   {t.books.modal.labels.title} *
                 </label>
                 <input
@@ -536,25 +552,25 @@ export default function BooksClient({ initialBooks, categories }: Props) {
               </div>
 
               {!editingId && (
-                <div className="flex items-center gap-2 pt-2">
+                <div>
+                  <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                    First Copy ID (Optional)
+                  </label>
                   <input
-                    type="checkbox"
-                    id="auto_add"
-                    checked={formData.auto_add_first_copy}
+                    type="text"
+                    placeholder="e.g. C001"
+                    value={formData.first_copy_id}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        auto_add_first_copy: e.target.checked,
+                        first_copy_id: e.target.value,
                       })
                     }
-                    className="w-4 h-4 rounded-sm border-[#8a7966] bg-[#f6ecdd] text-[#3f3328] focus:ring-[#6e5d4a]"
+                    className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
                   />
-                  <label
-                    htmlFor="auto_add"
-                    className="text-sm font-medium text-[#4f4134]"
-                  >
-                    {t.books.modal.labels.autoAddCopy}
-                  </label>
+                  <p className="text-[10px] text-[#8a7966] mt-1">
+                    Leave blank if you don't want to add a copy right now.
+                  </p>
                 </div>
               )}
 

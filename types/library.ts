@@ -23,8 +23,7 @@ export type ActionLogType =
 // ── Core entities ───────────────────────────────────────────────────────────
 
 export interface Book {
-  id: string; // UUID
-  short_id: string;
+  id: string; // Manual ID (number or string)
   title: string;
   author: string;
   category_id: string | null;

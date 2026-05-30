@@ -2,6 +2,7 @@
 
 import StatusBadge from "@/app/components/StatusBadge";
 import ConfirmModal from "@/components/ui/confirm-modal";
+import { useTranslation } from "@/lib/i18n/context";
 import {
   addCopyOfBook,
   getBookRefCount,
@@ -13,7 +14,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { useTranslation } from "@/lib/i18n/context";
 import {
   FaDownload,
   FaPlus,
@@ -131,10 +131,11 @@ const buildQrCardImage = async (copyId: string, bookTitle: string, copyIdLabel: 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 interface CopyForm {
-  book_id: string; // UUID of the selected book
+  book_id: string; // Manual ID of the selected book
+  copy_id: string; // Manual ID for the copy
 }
 
-const EMPTY_FORM: CopyForm = { book_id: "" };
+const EMPTY_FORM: CopyForm = { book_id: "", copy_id: "" };
 
 interface Props {
   initialCopies: Copy[];
@@ -276,6 +277,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
     startTransition(async () => {
       const fd = new FormData();
       fd.set("book_id", formData.book_id);
+      fd.set("copy_id", formData.copy_id.trim());
       const result = await addCopyOfBook(fd);
       if (result.error) {
         showFlash("error", result.error);
@@ -586,6 +588,22 @@ export default function CopiesClient({ initialCopies, books }: Props) {
             </div>
 
             <div className="space-y-4 ink-text">
+              {/* Copy ID */}
+              <div>
+                <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                  Copy ID *
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. C001"
+                  value={formData.copy_id}
+                  onChange={(e) =>
+                    setFormData({ ...formData, copy_id: e.target.value })
+                  }
+                  className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
+                />
+              </div>
+
               {/* Book search dropdown */}
               <div>
                 <label className="block text-sm font-medium text-[#4f4134] mb-1">
@@ -646,7 +664,8 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                 onClick={handleAdd}
                 disabled={
                   isPending ||
-                  !formData.book_id
+                  !formData.book_id ||
+                  !formData.copy_id.trim()
                 }
                 className="flex-1 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 disabled:cursor-not-allowed transition-colors font-medium ink-text"
               >
@@ -694,10 +713,6 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                 const selectedBook = books.find(
                   (b) => b.id === formData.book_id,
                 );
-                const bookCopies = copies.filter((c) => c.book_id === formData.book_id);
-                const maxCopyNum = bookCopies.reduce((max, c) => Math.max(max, c.copy_number), 0);
-                const nextCopyNum = maxCopyNum + 1;
-                const qrId = selectedBook ? `QR${selectedBook.short_id}-${nextCopyNum}` : "—";
 
                 return (
                   <div className="space-y-1 text-sm">
@@ -706,7 +721,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                       {selectedBook?.title ?? "—"}
                     </p>
                     <p>
-                      <span className="font-semibold">Expected {t.copies.table.copyId}:</span> {qrId}
+                      <span className="font-semibold">{t.copies.table.copyId}:</span> {formData.copy_id}
                     </p>
                   </div>
                 );

@@ -124,7 +124,7 @@ async function loadCopiesCached(): Promise<Copy[]> {
     .eq("active_borrow.type", "borrow")
     .in("active_borrow.status", ["active", "overdue"])
     .order("book_id")
-    .order("copy_number");
+    .order("created_at");
 
   if (error || !data) {
     if (error) logActionError("loadCopiesCached", error.message);

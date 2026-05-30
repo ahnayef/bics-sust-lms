@@ -152,12 +152,14 @@ export async function getTransactionById(id: string) {
 export async function getDuplicateTransaction(
   userId: string,
   copyId: string,
+  type: string,
   statuses: string[],
 ) {
   return db.query.transactions.findFirst({
     where: and(
       eq(schema.transactions.user_id, userId),
       ilike(schema.transactions.copy_id, copyId),
+      eq(schema.transactions.type, type),
       inArray(schema.transactions.status, statuses),
     ),
   });
@@ -191,7 +193,7 @@ export async function updateBorrowStatus(
     .where(
       and(
         eq(schema.transactions.user_id, userId),
-        eq(schema.transactions.copy_id, copyId),
+        ilike(schema.transactions.copy_id, copyId),
         eq(schema.transactions.type, "borrow"),
         inArray(schema.transactions.status, ["active", "overdue"]),
       ),

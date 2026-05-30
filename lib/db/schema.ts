@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { relations } from "drizzle-orm";
 import {
   boolean,
   date,
@@ -82,11 +82,7 @@ export const profilesRelations = relations(profiles, ({ one, many }) => ({
 }));
 
 export const books = pgTable("books", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  short_id: text("short_id")
-    .notNull()
-    .unique()
-    .default(sql`substr(md5(random()::text), 1, 6)`),
+  id: text("id").primaryKey(), // Manual ID (number or string)
   title: text("title").notNull(),
   author: text("author").notNull(),
   category_id: uuid("category_id").references(() => categories.id, {
@@ -110,8 +106,8 @@ export const booksRelations = relations(books, ({ one, many }) => ({
 }));
 
 export const copies = pgTable("copies", {
-  id: text("id").primaryKey(), // e.g. "QR001"
-  book_id: uuid("book_id")
+  id: text("id").primaryKey(), // Manual ID (number or string)
+  book_id: text("book_id")
     .notNull()
     .references(() => books.id, { onDelete: "cascade" }),
   copy_number: integer("copy_number").notNull().default(1),
@@ -136,7 +132,7 @@ export const transactions = pgTable("transactions", {
   copy_id: text("copy_id")
     .notNull()
     .references(() => copies.id, { onDelete: "cascade" }),
-  book_id: uuid("book_id")
+  book_id: text("book_id")
     .notNull()
     .references(() => books.id, { onDelete: "cascade" }),
   type: text("type").notNull(),
@@ -175,7 +171,7 @@ export const pdfSubmissions = pgTable("pdf_submissions", {
   user_id: uuid("user_id")
     .notNull()
     .references(() => profiles.id, { onDelete: "cascade" }),
-  book_id: uuid("book_id")
+  book_id: text("book_id")
     .notNull()
     .references(() => books.id, { onDelete: "cascade" }),
   read_date: date("read_date"),

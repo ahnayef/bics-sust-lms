@@ -56,6 +56,7 @@ export async function addBook(
   try {
     const user = await requireModOrAdmin();
 
+    const id = (formData.get("id") as string)?.trim();
     const title = (formData.get("title") as string)?.trim();
     const author = (formData.get("author") as string)?.trim();
     const category_id = (formData.get("category_id") as string) || null;
@@ -63,29 +64,41 @@ export async function addBook(
     const pagesRaw = parseInt(formData.get("pages") as string, 10);
     const pages = Number.isFinite(pagesRaw) && pagesRaw > 0 ? pagesRaw : null;
     const pdf_link = (formData.get("pdf_link") as string)?.trim() || null;
-    const first_copy_raw = formData.get("auto_add_first_copy") === "true";
+    const first_copy_id = (formData.get("first_copy_id") as string)?.trim();
 
+    if (!id) return { error: "Book ID is required" };
     if (!title) return { error: "Title is required" };
     if (!author) return { error: "Author is required" };
 
-    const short_id = randomBytes(3).toString("hex").toUpperCase();
+    // Check for duplicate book ID
+    const existingBook = await getBookById(id);
+    if (existingBook) {
+      return { error: `A book with ID "${id}" already exists` };
+    }
+
+    // Check for duplicate copy ID if provided
+    if (first_copy_id) {
+      const existingCopy = await getCopyById(first_copy_id);
+      if (existingCopy) {
+        return { error: `A copy with ID "${first_copy_id}" already exists` };
+      }
+    }
 
     const [book] = await insertBook({
+      id,
       title,
       author,
       category_id,
       is_syllabus,
       pages,
       pdf_link,
-      short_id,
     });
 
     if (!book) {
       throw new Error("Failed to add book");
     }
 
-    if (first_copy_raw) {
-      const first_copy_id = `QR${book.short_id}-1`;
+    if (first_copy_id) {
       try {
         await insertCopy({ id: first_copy_id, book_id: book.id, copy_number: 1 });
       } catch (copyErr: any) {
@@ -291,41 +304,36 @@ export async function addCopyOfBook(
     const user = await requireModOrAdmin();
 
     const book_id = formData.get("book_id") as string;
+    const copy_id = (formData.get("copy_id") as string)?.trim();
+
     if (!book_id) return { error: "Book ID is required" };
+    if (!copy_id) return { error: "Copy ID is required" };
 
     const book = await getBookById(book_id);
     if (!book) return { error: "Book not found" };
 
-    // Retry loop to handle concurrent modifications (race condition)
-    let attempt = 0;
-    const maxAttempts = 5;
-    let finalError = null;
-
-    while (attempt < maxAttempts) {
-      attempt++;
-
-      // Auto-number: max existing copy_number + 1
-      const copy_number = (await getMaxCopyNumber(book_id)) + 1;
-      const copy_id = `QR${book.short_id}-${copy_number}`;
-
-      try {
-        await insertCopy({ id: copy_id, book_id, copy_number, status: "available" });
-
-        invalidateAfterBookOrCopyMutation();
-        revalidatePath("/dashboard/books");
-        revalidatePath("/dashboard/copies");
-        return {};
-      } catch (err: any) {
-        finalError = err;
-        // If it's a unique constraint violation on id or copy_number, retry
-        if (err.message?.includes("unique") || err.code === "23505") {
-          continue;
-        }
-        throw err;
-      }
+    // Check for duplicate copy ID
+    const existingCopy = await getCopyById(copy_id);
+    if (existingCopy) {
+      return { error: `A copy with ID "${copy_id}" already exists` };
     }
 
-    throw finalError || new Error("Failed to add copy after multiple attempts");
+    // Get max copy number to increment it for this book
+    const copy_number = (await getMaxCopyNumber(book_id)) + 1;
+
+    try {
+      await insertCopy({ id: copy_id, book_id, copy_number, status: "available" });
+
+      invalidateAfterBookOrCopyMutation();
+      revalidatePath("/dashboard/books");
+      revalidatePath("/dashboard/copies");
+      return {};
+    } catch (err: any) {
+      if (err.message?.includes("unique") || err.code === "23505") {
+        return { error: `Copy ID "${copy_id}" is already in use` };
+      }
+      throw err;
+    }
   } catch (error: any) {
     return { error: error.message };
   }
