@@ -5,7 +5,7 @@ export default async function CategoriesPage() {
   const categories = await getCategories();
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
       <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
           Book Categories
