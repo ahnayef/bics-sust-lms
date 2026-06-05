@@ -1,8 +1,8 @@
 import { getUserNotifications } from "@/server/library";
 import { getClaims } from "@/server/user";
-import { redirect } from "next/navigation";
 import Link from "next/link";
-import { FaChevronLeft, FaBell } from "react-icons/fa";
+import { redirect } from "next/navigation";
+import { FaBell, FaChevronLeft } from "react-icons/fa";
 import NotificationsClient from "./NotificationsClient";
 
 export default async function NotificationsPage() {

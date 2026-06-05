@@ -5,7 +5,6 @@ import type { Transaction } from "@/types/library";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FaBook, FaHistory, FaQrcode, FaUndoAlt } from "react-icons/fa";
-import RecentNotificationsClient from "./RecentNotificationsClient";
 
 export default async function DashboardHomePage() {
   const claims = await getClaims();
@@ -80,7 +79,8 @@ export default async function DashboardHomePage() {
         </div>
       </section>
 
-      <RecentNotificationsClient userId={claims.sub as string} recentNotifications={recentNotifications} />
+      {/* let it stay comented */}
+      {/* <RecentNotificationsClient userId={claims.sub as string} recentNotifications={recentNotifications} /> */}
 
       <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
         <h2 className="text-lg font-bold text-[#221910] ink-title mb-4 border-b border-[#c9b89a] pb-2">
@@ -140,10 +140,10 @@ export default async function DashboardHomePage() {
                   </div>
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-semibold border shrink-0 ink-text ${isOverdue
-                        ? "bg-red-50 text-red-700 border-red-300"
-                        : isDueSoon
-                          ? "bg-[#fff7ed] text-[#9a3412] border-[#fdba74]"
-                          : "bg-teal-50 text-teal-700 border-teal-300"
+                      ? "bg-red-50 text-red-700 border-red-300"
+                      : isDueSoon
+                        ? "bg-[#fff7ed] text-[#9a3412] border-[#fdba74]"
+                        : "bg-teal-50 text-teal-700 border-teal-300"
                       }`}
                   >
                     {isOverdue

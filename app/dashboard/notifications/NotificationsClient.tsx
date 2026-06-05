@@ -91,8 +91,8 @@ export default function NotificationsClient({ userId, notifications: initialNoti
               <li
                 key={notif.id}
                 className={`p-4 border rounded-sm transition-colors relative ${isUnread
-                    ? "bg-[#fcf9f4] border-[#d3c1a9] shadow-sm"
-                    : "bg-[#f4e8d4]/50 border-[#e4d4bf] opacity-80"
+                  ? "bg-[#efe9dc] border-[#d3c1a9] shadow-sm"
+                  : "bg-[#efdec2]/50 border-[#e4d4bf] opacity-80"
                   }`}
                 onClick={() => {
                   if (isUnread) markAsRead(notif.id);
