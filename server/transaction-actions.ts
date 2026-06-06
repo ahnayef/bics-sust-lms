@@ -78,7 +78,7 @@ export async function borrowBook(
   if (!caller) return { error: "Not authenticated" };
 
   const { sub } = caller;
-  const copy_id = (formData.get("copy_id") as string)?.trim();
+  const copy_id = (formData.get("copy_id") as string)?.trim().toUpperCase();
   if (!copy_id) return { error: "Copy ID is required" };
 
   const copy = await getCopyById(copy_id);
@@ -127,7 +127,7 @@ export async function returnBook(
   if (!caller) return { error: "Not authenticated" };
 
   const { sub } = caller;
-  const copy_id = (formData.get("copy_id") as string)?.trim();
+  const copy_id = (formData.get("copy_id") as string)?.trim().toUpperCase();
   if (!copy_id) return { error: "Copy ID is required" };
 
   const borrow = await getDuplicateTransaction(sub, copy_id, "borrow", [
@@ -342,7 +342,7 @@ export async function submitPdfReport(
   if (!caller) return { error: "Not authenticated" };
 
   const { sub } = caller;
-  const book_id = formData.get("book_id") as string;
+  const book_id = (formData.get("book_id") as string)?.trim().toUpperCase();
   const read_date = (formData.get("read_date") as string) || null;
   const note = (formData.get("note") as string)?.trim() || null;
 

@@ -25,9 +25,6 @@ export default function NotificationsClient({ userId, notifications: initialNoti
   const { t, language } = useTranslation();
   const { readIds, markAsRead, markAllAsRead, isLoaded } = useNotificationStore(userId, initialNotifications);
 
-  // Automatically mark as read if they click the link
-  // But wait, they might just view it on the page. Let's add a explicit button or mark as read on click.
-
   const getIcon = (type: string) => {
     switch (type) {
       case "transaction_approved":

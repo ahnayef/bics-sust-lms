@@ -12,7 +12,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
   getBookWithCopies,
   getCopyByQR,
-  getCopyStatus,
+  getCopyStatus
 } from "@/server/db-access";
 import { logActionError } from "@/server/error-log";
 import type {

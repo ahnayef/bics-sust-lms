@@ -26,15 +26,15 @@ export default async function BorrowPage({
         tx.type === "borrow" &&
         ["active", "overdue", "pending"].includes(tx.status),
     )
-    .map((tx) => tx.copy_id);
+    .map((tx) => tx.copy_id.toUpperCase());
 
   // Books the user has already physically completed (for the "already read" warning)
   const completedBooks = allTxns
     .filter((tx) => tx.type === "borrow" && tx.status === "completed")
     .map((tx) => ({
-      bookId: tx.book_id,
+      bookId: tx.book_id.toUpperCase(),
       completedOn: tx.updated_at,
-      copyId: tx.copy_id,
+      copyId: tx.copy_id.toUpperCase(),
     }));
 
   return (

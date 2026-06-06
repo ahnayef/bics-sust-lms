@@ -14,7 +14,7 @@ export default async function DashboardHomePage() {
   const notifications = await getUserNotifications(claims.sub);
   const recentNotifications = notifications.slice(0, 3);
   return (
-    <div className="p-2 sm:p-0 max-w-3xl mx-auto space-y-6">
+    <div className="p-2 sm:p-0 space-y-6">
       <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
         <h2 className="text-lg font-bold text-[#221910] ink-title mb-2">
           {t.dashboard.home.title}

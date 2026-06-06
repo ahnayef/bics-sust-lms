@@ -60,7 +60,7 @@ export async function createActionLog(log: typeof schema.actionLogs.$inferInsert
 
 export async function getBookById(id: string) {
   return db.query.books.findFirst({
-    where: eq(schema.books.id, id),
+    where: ilike(schema.books.id, id),
   });
 }
 
@@ -69,16 +69,16 @@ export async function insertBook(book: typeof schema.books.$inferInsert) {
 }
 
 export async function updateBook(id: string, book: Partial<typeof schema.books.$inferInsert>) {
-  return db.update(schema.books).set(book).where(eq(schema.books.id, id));
+  return db.update(schema.books).set(book).where(ilike(schema.books.id, id));
 }
 
 export async function deleteBook(id: string) {
-  return db.delete(schema.books).where(eq(schema.books.id, id));
+  return db.delete(schema.books).where(ilike(schema.books.id, id));
 }
 
 export async function getCopyById(id: string) {
   return db.query.copies.findFirst({
-    where: eq(schema.copies.id, id),
+    where: ilike(schema.copies.id, id),
   });
 }
 
@@ -87,17 +87,17 @@ export async function insertCopy(copy: typeof schema.copies.$inferInsert) {
 }
 
 export async function updateCopy(id: string, copy: Partial<typeof schema.copies.$inferInsert>) {
-  return db.update(schema.copies).set(copy).where(eq(schema.copies.id, id));
+  return db.update(schema.copies).set(copy).where(ilike(schema.copies.id, id));
 }
 
 export async function deleteCopy(id: string) {
-  return db.delete(schema.copies).where(eq(schema.copies.id, id));
+  return db.delete(schema.copies).where(ilike(schema.copies.id, id));
 }
 
 export async function getBorrowedCopiesCountByBookId(bookId: string) {
   const result = await db.query.copies.findMany({
     where: and(
-      eq(schema.copies.book_id, bookId),
+      ilike(schema.copies.book_id, bookId),
       eq(schema.copies.status, "borrowed")
     ),
     columns: { id: true },
@@ -108,7 +108,7 @@ export async function getBorrowedCopiesCountByBookId(bookId: string) {
 
 export async function getMaxCopyNumber(bookId: string) {
   const result = await db.query.copies.findFirst({
-    where: eq(schema.copies.book_id, bookId),
+    where: ilike(schema.copies.book_id, bookId),
     orderBy: (copies, { desc }) => [desc(copies.copy_number)],
     columns: { copy_number: true },
   });
@@ -117,7 +117,7 @@ export async function getMaxCopyNumber(bookId: string) {
 
 export async function getBookWithCopies(id: string) {
   return db.query.books.findFirst({
-    where: eq(schema.books.id, id),
+    where: ilike(schema.books.id, id),
     with: {
       copies: true,
     },
@@ -135,7 +135,7 @@ export async function getCopyByQR(copyId: string) {
 
 export async function getCopyStatus(id: string) {
   const copy = await db.query.copies.findFirst({
-    where: eq(schema.copies.id, id),
+    where: ilike(schema.copies.id, id),
     columns: { status: true },
   });
   return copy?.status;
@@ -168,7 +168,11 @@ export async function getDuplicateTransaction(
 export async function createTransaction(
   txn: typeof schema.transactions.$inferInsert,
 ) {
-  return db.insert(schema.transactions).values(txn);
+  return db.insert(schema.transactions).values({
+    ...txn,
+    copy_id: txn.copy_id.toUpperCase(),
+    book_id: txn.book_id.toUpperCase(),
+  });
 }
 
 export async function updateTransaction(
@@ -206,7 +210,7 @@ export async function getDuplicatePdfSubmission(userId: string, bookId: string) 
   return db.query.pdfSubmissions.findFirst({
     where: and(
       eq(schema.pdfSubmissions.user_id, userId),
-      eq(schema.pdfSubmissions.book_id, bookId),
+      ilike(schema.pdfSubmissions.book_id, bookId),
       inArray(schema.pdfSubmissions.status, ["pending", "approved"]),
     ),
   });
@@ -215,7 +219,10 @@ export async function getDuplicatePdfSubmission(userId: string, bookId: string) 
 export async function createPdfSubmission(
   submission: typeof schema.pdfSubmissions.$inferInsert,
 ) {
-  return db.insert(schema.pdfSubmissions).values(submission);
+  return db.insert(schema.pdfSubmissions).values({
+    ...submission,
+    book_id: submission.book_id.toUpperCase(),
+  });
 }
 
 export async function updatePdfSubmission(
@@ -226,4 +233,52 @@ export async function updatePdfSubmission(
     .update(schema.pdfSubmissions)
     .set(submission)
     .where(eq(schema.pdfSubmissions.id, id));
+}
+
+export async function getTransactionsByUserId(userId: string) {
+  return db.query.transactions.findMany({
+    where: eq(schema.transactions.user_id, userId),
+    with: {
+      user: true,
+      book: true,
+      copy: true,
+      reviewer: true,
+    },
+    orderBy: (transactions, { desc }) => [desc(transactions.request_date)],
+  });
+}
+
+export async function getAllTransactions() {
+  return db.query.transactions.findMany({
+    with: {
+      user: true,
+      book: true,
+      copy: true,
+      reviewer: true,
+    },
+    orderBy: (transactions, { desc }) => [desc(transactions.request_date)],
+  });
+}
+
+export async function getPdfSubmissionsByUserId(userId: string) {
+  return db.query.pdfSubmissions.findMany({
+    where: eq(schema.pdfSubmissions.user_id, userId),
+    with: {
+      user: true,
+      book: true,
+      reviewer: true,
+    },
+    orderBy: (pdfs, { desc }) => [desc(pdfs.submitted_at)],
+  });
+}
+
+export async function getAllPdfSubmissions() {
+  return db.query.pdfSubmissions.findMany({
+    with: {
+      user: true,
+      book: true,
+      reviewer: true,
+    },
+    orderBy: (pdfs, { desc }) => [desc(pdfs.submitted_at)],
+  });
 }

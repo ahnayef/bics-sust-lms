@@ -94,6 +94,7 @@ export default function BooksClient({ initialBooks, categories }: Props) {
     const query = searchTerm.toLowerCase().trim();
     return books.filter((book) => {
       const matchesSearch =
+        book.id.toLowerCase().includes(query) ||
         book.title.toLowerCase().includes(query) ||
         book.author.toLowerCase().includes(query);
       const matchesType =
@@ -112,12 +113,7 @@ export default function BooksClient({ initialBooks, categories }: Props) {
   };
 
   const handleAdd = () => {
-    if (!formData.title.trim() || !formData.author.trim()) return;
-    setPendingAction({ type: "add" });
-  };
-
-  const confirmAdd = () => {
-    setPendingAction(null);
+    if (!formData.title.trim() || !formData.author.trim() || !formData.id.trim()) return;
     startTransition(async () => {
       const fd = new FormData();
       fd.set("id", formData.id.trim());
@@ -159,11 +155,6 @@ export default function BooksClient({ initialBooks, categories }: Props) {
 
   const handleUpdate = () => {
     if (!formData.title.trim() || !formData.author.trim()) return;
-    setPendingAction({ type: "update" });
-  };
-
-  const confirmUpdate = () => {
-    setPendingAction(null);
     startTransition(async () => {
       const fd = new FormData();
       fd.set("id", formData.id);
@@ -314,34 +305,28 @@ export default function BooksClient({ initialBooks, categories }: Props) {
             />
           </div>
           <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
-            <button
-              onClick={() => setTypeFilter("all")}
-              className={`px-4 py-2 rounded-sm text-xs font-bold whitespace-nowrap border transition-all ${typeFilter === "all"
-                ? "bg-[#3f3328] text-[#f4e8d4] border-[#3f3328]"
-                : "bg-[#f6ecdd] text-[#5c4f42] border-[#b9a58b] hover:bg-[#ece0ce]"
-                }`}
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="px-4 py-2 rounded-sm text-xs font-bold whitespace-nowrap border bg-[#f6ecdd] text-[#5c4f42] border-[#b9a58b] hover:bg-[#ece0ce] transition-all"
             >
-              {t.books.filters.all}
-            </button>
-            {categories.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => setTypeFilter(c.id)}
-                className={`px-4 py-2 rounded-sm text-xs font-bold whitespace-nowrap border transition-all ${typeFilter === c.id
-                  ? "bg-[#3f3328] text-[#f4e8d4] border-[#3f3328]"
-                  : "bg-[#f6ecdd] text-[#5c4f42] border-[#b9a58b] hover:bg-[#ece0ce]"
-                  }`}
-              >
-                {c.name}
-              </button>
-            ))}
+              <option value="all">{t.books.filters.all}</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-sm ink-text text-left">
+          <table className="w-full text-sm ink-text text-left min-w-[700px]">
             <thead>
               <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
+                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
+                  ID
+                </th>
                 <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
                   {t.books.table.title}
                 </th>
@@ -358,6 +343,9 @@ export default function BooksClient({ initialBooks, categories }: Props) {
                   {t.books.table.type}
                 </th>
                 <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
+                  Created At
+                </th>
+                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
                   {t.books.table.actions}
                 </th>
               </tr>
@@ -368,6 +356,9 @@ export default function BooksClient({ initialBooks, categories }: Props) {
                   key={book.id}
                   className="border-b border-[#d2bfa5] hover:bg-[#f4ebdc] transition-colors"
                 >
+                  <td className="px-4 sm:px-6 py-3 font-mono font-medium text-[#2b2119]">
+                    {book.id}
+                  </td>
                   <td className="px-4 sm:px-6 py-3 font-medium text-[#2b2119]">
                     {book.title}
                   </td>
@@ -388,6 +379,18 @@ export default function BooksClient({ initialBooks, categories }: Props) {
                     <StatusBadge tone="neutral">
                       {book.category?.name ?? (book.is_syllabus ? t.books.filters.syllabus : t.books.filters.additional)}
                     </StatusBadge>
+                  </td>
+                  <td className="px-4 sm:px-6 py-3">
+                    <span
+                      className="text-[#5a4b3f]"
+                      title={new Date(book.created_at).toLocaleString()}
+                    >
+                      {new Date(book.created_at).toLocaleDateString(undefined, {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
                   </td>
                   <td className="px-4 sm:px-6 py-3">
                     <div className="flex items-center gap-2">
@@ -468,7 +471,7 @@ export default function BooksClient({ initialBooks, categories }: Props) {
                   value={formData.id}
                   disabled={!!editingId}
                   onChange={(e) =>
-                    setFormData({ ...formData, id: e.target.value })
+                    setFormData({ ...formData, id: e.target.value.toUpperCase() })
                   }
                   className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none disabled:opacity-50"
                 />
@@ -563,7 +566,7 @@ export default function BooksClient({ initialBooks, categories }: Props) {
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        first_copy_id: e.target.value,
+                        first_copy_id: e.target.value.toUpperCase(),
                       })
                     }
                     className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
@@ -599,53 +602,7 @@ export default function BooksClient({ initialBooks, categories }: Props) {
         </div>
       )}
 
-      {/* Confirmation Modals */}
-      <ConfirmModal
-        open={pendingAction?.type === "add"}
-        onClose={() => setPendingAction(null)}
-        onConfirm={confirmAdd}
-        title={t.books.modal.addTitle}
-        confirmLabel={t.books.modal.add}
-        loading={isPending}
-        preview={
-          <div className="space-y-1">
-            <p>
-              <span className="text-[#7a6a5c]">{t.books.table.title}:</span>{" "}
-              {formData.title}
-            </p>
-            <p>
-              <span className="text-[#7a6a5c]">{t.books.table.author}:</span>{" "}
-              {formData.author}
-            </p>
-            <p>
-              <span className="text-[#7a6a5c]">{t.books.table.type}:</span>{" "}
-              {formData.is_syllabus ? t.books.modal.types.syllabus : t.books.modal.types.additional}
-            </p>
-          </div>
-        }
-      />
-
-      <ConfirmModal
-        open={pendingAction?.type === "update"}
-        onClose={() => setPendingAction(null)}
-        onConfirm={confirmUpdate}
-        title={t.books.modal.editTitle}
-        confirmLabel={t.books.modal.save}
-        loading={isPending}
-        preview={
-          <div className="space-y-1">
-            <p>
-              <span className="text-[#7a6a5c]">{t.books.table.title}:</span>{" "}
-              {formData.title}
-            </p>
-            <p>
-              <span className="text-[#7a6a5c]">{t.books.table.author}:</span>{" "}
-              {formData.author}
-            </p>
-          </div>
-        }
-      />
-
+      {/* Confirm modal only for delete */}
       <ConfirmModal
         open={pendingAction?.type === "delete"}
         onClose={() => {

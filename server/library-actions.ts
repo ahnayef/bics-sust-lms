@@ -23,8 +23,7 @@ import {
   updateCopy,
 } from "@/server/db-access";
 import { logActionError } from "@/server/error-log";
-import { randomBytes } from "crypto";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, ilike, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -56,7 +55,7 @@ export async function addBook(
   try {
     const user = await requireModOrAdmin();
 
-    const id = (formData.get("id") as string)?.trim();
+    const id = (formData.get("id") as string)?.trim().toUpperCase();
     const title = (formData.get("title") as string)?.trim();
     const author = (formData.get("author") as string)?.trim();
     const category_id = (formData.get("category_id") as string) || null;
@@ -64,7 +63,7 @@ export async function addBook(
     const pagesRaw = parseInt(formData.get("pages") as string, 10);
     const pages = Number.isFinite(pagesRaw) && pagesRaw > 0 ? pagesRaw : null;
     const pdf_link = (formData.get("pdf_link") as string)?.trim() || null;
-    const first_copy_id = (formData.get("first_copy_id") as string)?.trim();
+    const first_copy_id = (formData.get("first_copy_id") as string)?.trim().toUpperCase();
 
     if (!id) return { error: "Book ID is required" };
     if (!title) return { error: "Title is required" };
@@ -130,7 +129,7 @@ export async function editBook(
   try {
     const user = await requireModOrAdmin();
 
-    const id = formData.get("id") as string;
+    const id = (formData.get("id") as string)?.toUpperCase();
     const title = (formData.get("title") as string)?.trim();
     const author = (formData.get("author") as string)?.trim();
     const category_id = (formData.get("category_id") as string) || null;
@@ -166,7 +165,7 @@ export async function removeBook(
   try {
     const user = await requireModOrAdmin();
 
-    const id = formData.get("id") as string;
+    const id = (formData.get("id") as string)?.toUpperCase();
     if (!id) return { error: "Book ID is required" };
 
     // Safety: block if any copy is currently borrowed
@@ -196,7 +195,7 @@ export async function getBookRefCount(bookId: string): Promise<number> {
   // We can use drizzle for this too
   const result = await db.query.transactions.findMany({
     where: and(
-      eq(schema.transactions.book_id, bookId),
+      ilike(schema.transactions.book_id, bookId),
       inArray(schema.transactions.status, ["pending", "active", "overdue"])
     ),
     columns: { id: true },
@@ -303,8 +302,8 @@ export async function addCopyOfBook(
   try {
     const user = await requireModOrAdmin();
 
-    const book_id = formData.get("book_id") as string;
-    const copy_id = (formData.get("copy_id") as string)?.trim();
+    const book_id = (formData.get("book_id") as string)?.toUpperCase();
+    const copy_id = (formData.get("copy_id") as string)?.trim().toUpperCase();
 
     if (!book_id) return { error: "Book ID is required" };
     if (!copy_id) return { error: "Copy ID is required" };
@@ -349,7 +348,7 @@ export async function removeCopy(
   try {
     const user = await requireModOrAdmin();
 
-    const id = formData.get("id") as string;
+    const id = ((formData.get("copy_id") as string) || (formData.get("id") as string))?.toUpperCase();
     if (!id) return { error: "Copy ID is required" };
 
     const copy = await getCopyById(id);
@@ -379,7 +378,7 @@ export async function updateCopyMetadata(
   try {
     const user = await requireModOrAdmin();
 
-    const id = formData.get("id") as string;
+    const id = (formData.get("id") as string)?.toUpperCase();
     const status = formData.get("status") as string;
 
     if (!id) return { error: "Copy ID is required" };

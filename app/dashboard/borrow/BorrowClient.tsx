@@ -212,7 +212,7 @@ export default function BorrowClient({
 
   const handleManualCheck = (e: React.FormEvent) => {
     e.preventDefault();
-    if (copyId.length < 5) {
+    if (!copyId.trim()) {
       setError(t.borrow.errors.copyNotFound);
       return;
     }
@@ -514,7 +514,7 @@ export default function BorrowClient({
                       <button
                         type="button"
                         onClick={handleManualCheck}
-                        disabled={isLookingUp || copyId.length < 5}
+                        disabled={isLookingUp || !copyId.trim()}
                         className="px-6 py-3 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text whitespace-nowrap"
                       >
                         {isLookingUp ? t.borrow.lookingUp : t.borrow.lookup}

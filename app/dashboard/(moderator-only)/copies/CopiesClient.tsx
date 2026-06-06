@@ -268,12 +268,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
   };
 
   const handleAdd = () => {
-    if (!formData.book_id) return;
-    setPendingAction({ type: "add" });
-  };
-
-  const confirmAdd = () => {
-    setPendingAction(null);
+    if (!formData.book_id || !formData.copy_id.trim()) return;
     startTransition(async () => {
       const fd = new FormData();
       fd.set("book_id", formData.book_id);
@@ -371,15 +366,18 @@ export default function CopiesClient({ initialCopies, books }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Flash notification */}
+      {/* Flash Messages */}
       {flash && (
         <div
-          className={`fixed top-4 right-4 z-[200] px-4 py-3 rounded-sm border text-sm font-medium ink-text shadow-lg transition-all ${flash.type === "success"
-            ? "bg-[#e8f5e8] border-[#6b9e6b] text-[#2a4a2a]"
-            : "bg-[#f5e8e8] border-[#9e6b6b] text-[#4a2a2a]"
+          className={`fixed top-20 right-4 z-100 p-4 rounded-sm shadow-xl border animate-in fade-in slide-in-from-right-4 duration-300 ${flash.type === "success"
+            ? "bg-[#eef5e9] border-[#a3b994] text-[#3d5c2e]"
+            : "bg-[#fdf0ec] border-[#d0604a] text-[#8b2c1a]"
             }`}
         >
-          {flash.text}
+          <div className="flex items-center gap-2">
+            {flash.type === "success" ? "✓" : "✕"}
+            <p className="text-sm font-bold ink-text">{flash.text}</p>
+          </div>
         </div>
       )}
 
@@ -435,59 +433,57 @@ export default function CopiesClient({ initialCopies, books }: Props) {
         </div>
       </section>
 
-      {/* Search & filter bar */}
-      <section
-        className="dashboard-surface tron-border rounded-sm p-4 sm:p-5 border border-[#5f4f40]"
-      >
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          <div className="relative lg:col-span-2">
-            <FaSearch className="absolute left-3 top-3 text-[#7a6a5a]" />
+      {/* Copies table */}
+      <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
+        {/* Filters */}
+        <div className="p-4 sm:p-5 border-b border-[#7d6d5a] bg-[#eadcc8]/40 flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a7966] w-4 h-4" />
             <input
               type="text"
               placeholder={t.copies.filters.searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none ink-text"
+              className="w-full pl-10 pr-4 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none ink-text"
             />
           </div>
-
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            className="px-3 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none ink-text"
-          >
-            <option value="all">{t.copies.filters.all}</option>
-            <option value="available">{t.copies.filters.available}</option>
-            <option value="borrowed">{t.copies.filters.borrowed}</option>
-            <option value="damaged">{t.copies.filters.damaged}</option>
-          </select>
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+              className="px-4 py-2 rounded-sm text-xs font-bold whitespace-nowrap border bg-[#f6ecdd] text-[#5c4f42] border-[#b9a58b] hover:bg-[#ece0ce] transition-all"
+            >
+              <option value="all">{t.copies.filters.all}</option>
+              <option value="available">{t.copies.filters.available}</option>
+              <option value="borrowed">{t.copies.filters.borrowed}</option>
+              <option value="damaged">{t.copies.filters.damaged}</option>
+            </select>
+          </div>
         </div>
-      </section>
 
-      {/* Copies table */}
-      <section
-        className="dashboard-surface tron-border rounded-sm overflow-hidden border border-[#5f4f40]"
-      >
         <div className="overflow-x-auto">
-          <table className="w-full text-sm ink-text min-w-160">
+          <table className="w-full text-sm ink-text text-left min-w-[700px]">
             <thead>
               <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
-                <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
+                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
                   {t.copies.table.copyId}
                 </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
+                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
                   {t.copies.table.bookTitle}
                 </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
+                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
                   {t.books.table.author}
                 </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
+                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
                   {t.books.table.copies} #
                 </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
+                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
                   {t.copies.table.status}
                 </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs">
+                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
+                  Created At
+                </th>
+                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
                   {t.copies.table.actions}
                 </th>
               </tr>
@@ -527,6 +523,18 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                         </p>
                       )}
                     </div>
+                  </td>
+                  <td className="px-4 sm:px-6 py-3">
+                    <span
+                      className="text-[#5a4b3f]"
+                      title={new Date(copy.created_at).toLocaleString()}
+                    >
+                      {new Date(copy.created_at).toLocaleDateString(undefined, {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
                   </td>
                   <td className="px-4 sm:px-6 py-3">
                     <div className="flex items-center gap-2">
@@ -598,7 +606,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                   placeholder="e.g. C001"
                   value={formData.copy_id}
                   onChange={(e) =>
-                    setFormData({ ...formData, copy_id: e.target.value })
+                    setFormData({ ...formData, copy_id: e.target.value.toUpperCase() })
                   }
                   className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
                 />
@@ -676,62 +684,38 @@ export default function CopiesClient({ initialCopies, books }: Props) {
         </div>
       )}
 
-      {/* Confirm modal */}
-      {pendingAction && (
+      {/* Confirm modal only for delete */}
+      {pendingAction?.type === "delete" && (
         <ConfirmModal
           open
           onClose={() => setPendingAction(null)}
-          onConfirm={pendingAction.type === "add" ? confirmAdd : confirmDelete}
-          title={pendingAction.type === "add" ? t.copies.modal.addTitle : t.copies.confirmDelete.title}
+          onConfirm={confirmDelete}
+          title={t.copies.confirmDelete.title}
           description={
-            pendingAction?.type === "delete" ? (
-              refCount === null ? (
-                "..."
-              ) : refCount > 0 ? (
-                <span>
-                  <b className="text-[#221910] font-bold">{refCount}</b> {t.copies.confirmDelete.warning.replace("{count}", refCount.toString())}
-                </span>
-              ) : (
-                t.copies.confirmDelete.message
-              )
-            ) : undefined
-          }
-          preview={
-            pendingAction.type === "delete" ? (
-              <div className="space-y-1 text-sm">
-                <p>
-                  <span className="font-semibold">{t.copies.table.bookTitle}:</span>{" "}
-                  {pendingAction.bookTitle}
-                </p>
-                <p>
-                  <span className="font-semibold">{t.copies.table.copyId}:</span>{" "}
-                  {pendingAction.copyId}
-                </p>
-              </div>
+            refCount === null ? (
+              "..."
+            ) : refCount > 0 ? (
+              <span>
+                <b className="text-[#221910] font-bold">{refCount}</b> {t.copies.confirmDelete.warning.replace("{count}", refCount.toString())}
+              </span>
             ) : (
-              (() => {
-                const selectedBook = books.find(
-                  (b) => b.id === formData.book_id,
-                );
-
-                return (
-                  <div className="space-y-1 text-sm">
-                    <p>
-                      <span className="font-semibold">{t.copies.table.bookTitle}:</span>{" "}
-                      {selectedBook?.title ?? "—"}
-                    </p>
-                    <p>
-                      <span className="font-semibold">{t.copies.table.copyId}:</span> {formData.copy_id}
-                    </p>
-                  </div>
-                );
-              })()
+              t.copies.confirmDelete.message
             )
           }
-          confirmLabel={
-            pendingAction.type === "add" ? t.copies.modal.add : t.copies.actions.delete
+          preview={
+            <div className="space-y-1 text-sm">
+              <p>
+                <span className="font-semibold">{t.copies.table.bookTitle}:</span>{" "}
+                {pendingAction.bookTitle}
+              </p>
+              <p>
+                <span className="font-semibold">{t.copies.table.copyId}:</span>{" "}
+                {pendingAction.copyId}
+              </p>
+            </div>
           }
-          danger={pendingAction.type === "delete"}
+          confirmLabel={t.copies.actions.delete}
+          danger
           loading={isPending}
         />
       )}

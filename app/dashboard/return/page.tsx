@@ -1,13 +1,18 @@
 import { getClaims } from "@/server/user";
-import { getUserStats } from "@/server/library";
+import { getUserTransactions } from "@/server/library";
 import { redirect } from "next/navigation";
 import ReturnClient from "./ReturnClient";
 
 export default async function ReturnPage() {
   const claims = await getClaims();
   if (!claims) redirect("/login");
-  const stats = await getUserStats(claims.sub);
+  const transactions = await getUserTransactions(claims.sub);
+  // Filter active/overdue borrows
+  const currentBorrows = transactions.filter(
+    (tx) =>
+      tx.type === "borrow" && ["active", "overdue"].includes(tx.status),
+  );
   return (
-    <ReturnClient currentBorrows={stats.currentBorrows} userId={claims.sub} />
+    <ReturnClient currentBorrows={currentBorrows} userId={claims.sub} />
   );
 }

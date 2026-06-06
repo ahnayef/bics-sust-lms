@@ -8,4 +8,5 @@ export const notifications = {
   viewDetails: "View Details",
   markRead: "Mark as read",
   loading: "Loading...",
+  seeAll: "See all notifications",
 } as const;
