@@ -29,7 +29,7 @@ export default async function AdminLogsPage({
   const logs = await getAdminLogs(filterDays);
 
   return (
-    <div className="p-2 sm:p-0 max-w-5xl mx-auto space-y-6">
+    <div className="p-2 sm:p-0 space-y-6">
       <LogsClient initialLogs={logs} currentDays={filterDays} />
     </div>
   );

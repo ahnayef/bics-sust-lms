@@ -12,6 +12,7 @@ import {
   FaBook,
   FaBookOpen,
   FaChartLine,
+  FaCheckSquare,
   FaClipboardList,
   FaExchangeAlt,
   FaGraduationCap,
@@ -24,8 +25,9 @@ import {
   FaUsers,
 } from "react-icons/fa";
 
-import { UserRole } from "@/lib/constants";
+import { USER_ROLES, UserRole } from "@/lib/constants";
 import { useTranslation } from "@/lib/i18n/context";
+import { cn } from "@/lib/utils";
 import type { NotificationItem } from "@/types/library";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import NotificationBell from "./NotificationBell";
@@ -38,9 +40,6 @@ interface DashboardShellProps {
   initialNotifications: NotificationItem[];
   children: React.ReactNode;
 }
-
-import { USER_ROLES } from "@/lib/constants";
-import { cn } from "@/lib/utils";
 
 export default function DashboardShell({
   userId,
@@ -55,90 +54,110 @@ export default function DashboardShell({
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { t } = useTranslation();
 
-  const navigationItems = [
+  const navigationGroups = [
     {
-      label: t.dashboard.sidebar.dashboard,
-      href: "/dashboard",
-      icon: FaHome,
-      requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR, USER_ROLES.MEMBER],
+      items: [
+        {
+          label: t.dashboard.sidebar.dashboard,
+          href: "/dashboard",
+          icon: FaHome,
+          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR, USER_ROLES.MEMBER],
+        },
+        {
+          label: t.dashboard.sidebar.myProfile,
+          href: "/dashboard/profile",
+          icon: FaUser,
+          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR, USER_ROLES.MEMBER],
+        },
+        {
+          label: t.dashboard.sidebar.bookList,
+          href: "/dashboard/book-list",
+          icon: FaBookOpen,
+          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR, USER_ROLES.MEMBER],
+        },
+        {
+          label: t.dashboard.sidebar.checklists,
+          href: "/dashboard/checklists",
+          icon: FaCheckSquare,
+          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR, USER_ROLES.MEMBER],
+        },
+      ],
     },
     {
-      label: t.dashboard.sidebar.myProfile,
-      href: "/dashboard/profile",
-      icon: FaUser,
-      requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR, USER_ROLES.MEMBER],
-    },
-    {
-      label: t.dashboard.sidebar.bookList,
-      href: "/dashboard/book-list",
-      icon: FaBookOpen,
-      requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR, USER_ROLES.MEMBER],
-    },
-    {
-      label: t.dashboard.sidebar.overview,
-      href: "/dashboard/overview",
-      icon: FaChartLine,
-      requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-    },
-    {
-      label: t.dashboard.sidebar.transactions,
-      href: "/dashboard/transactions",
-      icon: FaExchangeAlt,
-      requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-    },
-    {
-      label: t.dashboard.sidebar.books,
-      href: "/dashboard/books",
-      icon: FaBook,
-      requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-    },
-    {
-      label: t.dashboard.sidebar.copies,
-      href: "/dashboard/copies",
-      icon: FaGraduationCap,
-      requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-    },
-    {
-      label: t.dashboard.sidebar.users,
-      href: "/dashboard/users",
-      icon: FaUsers,
-      requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-    },
-    {
-      label: t.dashboard.sidebar.moderators,
-      href: "/dashboard/moderators",
-      icon: FaShieldAlt,
-      requiresRole: [USER_ROLES.ADMIN],
-    },
-    {
-      label: t.dashboard.sidebar.ranks,
-      href: "/dashboard/ranks",
-      icon: FaShieldAlt,
-      requiresRole: [USER_ROLES.ADMIN],
-    },
-    {
-      label: t.dashboard.sidebar.categories,
-      href: "/dashboard/categories",
-      icon: FaClipboardList,
-      requiresRole: [USER_ROLES.ADMIN],
-    },
-    {
-      label: t.dashboard.sidebar.logs,
-      href: "/dashboard/logs",
-      icon: FaClipboardList,
-      requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-    },
-    {
-      label: t.dashboard.sidebar.thanas,
-      href: "/dashboard/thanas",
-      icon: FaMapMarkerAlt,
-      requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-    },
-    {
-      label: t.dashboard.sidebar.printQr,
-      href: "/dashboard/print-qr",
-      icon: FaPrint,
-      requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
+      items: [
+        {
+          label: t.dashboard.sidebar.overview,
+          href: "/dashboard/overview",
+          icon: FaChartLine,
+          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
+        },
+        {
+          label: t.dashboard.sidebar.transactions,
+          href: "/dashboard/transactions",
+          icon: FaExchangeAlt,
+          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
+        },
+        {
+          label: t.dashboard.sidebar.books,
+          href: "/dashboard/books",
+          icon: FaBook,
+          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
+        },
+        {
+          label: t.dashboard.sidebar.copies,
+          href: "/dashboard/copies",
+          icon: FaGraduationCap,
+          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
+        },
+        {
+          label: t.dashboard.sidebar.checklistsManage,
+          href: "/dashboard/checklists-manage",
+          icon: FaCheckSquare,
+          requiresRole: [USER_ROLES.ADMIN],
+        },
+        {
+          label: t.dashboard.sidebar.categories,
+          href: "/dashboard/categories",
+          icon: FaClipboardList,
+          requiresRole: [USER_ROLES.ADMIN],
+        },
+        {
+          label: t.dashboard.sidebar.users,
+          href: "/dashboard/users",
+          icon: FaUsers,
+          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
+        },
+        {
+          label: t.dashboard.sidebar.moderators,
+          href: "/dashboard/moderators",
+          icon: FaShieldAlt,
+          requiresRole: [USER_ROLES.ADMIN],
+        },
+        {
+          label: t.dashboard.sidebar.ranks,
+          href: "/dashboard/ranks",
+          icon: FaShieldAlt,
+          requiresRole: [USER_ROLES.ADMIN],
+        },
+        {
+          label: t.dashboard.sidebar.thanas,
+          href: "/dashboard/thanas",
+          icon: FaMapMarkerAlt,
+          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
+        },
+        {
+          label: t.dashboard.sidebar.logs,
+          href: "/dashboard/logs",
+          icon: FaClipboardList,
+          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
+        },
+        {
+          label: t.dashboard.sidebar.printQr,
+          href: "/dashboard/print-qr",
+          icon: FaPrint,
+          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
+        },
+      ],
     },
   ];
 
@@ -163,9 +182,18 @@ export default function DashboardShell({
     iconInactive: "text-[#554738]",
   };
 
-  const visibleNavItems = navigationItems.filter((item) =>
-    (item.requiresRole as string[]).includes(userRole),
-  );
+  // Preprocess visible nav groups with items filtered by role
+  const visibleNavGroups = navigationGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) =>
+        (item.requiresRole as string[]).includes(userRole),
+      ),
+    }))
+    .filter((group) => group.items.length > 0);
+
+  // For top bar title, keep a flat list of items
+  const allVisibleNavItems = visibleNavGroups.flatMap((group) => group.items);
 
   const isActive = (href: string) => {
     if (href === "/dashboard") {
@@ -176,8 +204,6 @@ export default function DashboardShell({
 
   return (
     <div className="relative h-screen flex overflow-hidden dashboard-shell print:h-auto print:overflow-visible print:block">
-
-
       {/* Mobile Backdrop */}
       {isMobileOpen && (
         <div
@@ -214,49 +240,56 @@ export default function DashboardShell({
           </div>
 
           <nav className="py-4 pb-8">
-            {visibleNavItems.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.href);
+            {visibleNavGroups.map((group, groupIndex) => (
+              <div key={groupIndex}>
+                {groupIndex > 0 && (
+                  <div className="mx-4 my-3 border-t border-[#6d5c4a] opacity-30" />
+                )}
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(item.href);
 
-              // Determine "flavor" based on role requirements
-              const roles = item.requiresRole as string[];
-              const isAdminOnly = roles.length === 1 && roles[0] === USER_ROLES.ADMIN;
-              const isModeratorStaff = roles.includes(USER_ROLES.MODERATOR) && !roles.includes(USER_ROLES.MEMBER);
+                  // Determine "flavor" based on role requirements
+                  const roles = item.requiresRole as string[];
+                  const isAdminOnly = roles.length === 1 && roles[0] === USER_ROLES.ADMIN;
+                  const isModeratorStaff = roles.includes(USER_ROLES.MODERATOR) && !roles.includes(USER_ROLES.MEMBER);
 
-              let itemClasses = "";
-              let iconClasses = "";
+                  let itemClasses = "";
+                  let iconClasses = "";
 
-              if (isAdminOnly) {
-                // Admin Only: Subtle bluish tint
-                itemClasses = active ? ADMIN_COLOR.active : ADMIN_COLOR.inactive;
-                iconClasses = active ? ADMIN_COLOR.iconActive : ADMIN_COLOR.iconInactive;
-              } else if (isModeratorStaff) {
-                // Moderator/Staff: Subtle green tint
-                itemClasses = active ? MODERATOR_COLOR.active : MODERATOR_COLOR.inactive;
-                iconClasses = active ? MODERATOR_COLOR.iconActive : MODERATOR_COLOR.iconInactive;
-              } else {
-                // General: Default parchment/tan
-                itemClasses = active ? GENERAL_COLOR.active : GENERAL_COLOR.inactive;
-                iconClasses = active ? GENERAL_COLOR.iconActive : GENERAL_COLOR.iconInactive;
-              }
+                  if (isAdminOnly) {
+                    // Admin Only: Subtle bluish tint
+                    itemClasses = active ? ADMIN_COLOR.active : ADMIN_COLOR.inactive;
+                    iconClasses = active ? ADMIN_COLOR.iconActive : ADMIN_COLOR.iconInactive;
+                  } else if (isModeratorStaff) {
+                    // Moderator/Staff: Subtle green tint
+                    itemClasses = active ? MODERATOR_COLOR.active : MODERATOR_COLOR.inactive;
+                    iconClasses = active ? MODERATOR_COLOR.iconActive : MODERATOR_COLOR.iconInactive;
+                  } else {
+                    // General: Default parchment/tan
+                    itemClasses = active ? GENERAL_COLOR.active : GENERAL_COLOR.inactive;
+                    iconClasses = active ? GENERAL_COLOR.iconActive : GENERAL_COLOR.iconInactive;
+                  }
 
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsMobileOpen(false)}
-                  className={`flex items-center py-3 transition-colors ink-text border-y border-transparent overflow-hidden ${isMobileOpen ? "px-4 gap-3" : "justify-center lg:justify-start lg:px-4 lg:gap-3"} ${itemClasses}`}
-                  title={item.label}
-                >
-                  <div className={`w-5 h-5 lg:w-6 lg:h-6 shrink-0 flex items-center justify-center ${iconClasses}`}>
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <span className={`font-medium whitespace-nowrap transition-opacity ${isMobileOpen ? "block text-sm" : "hidden lg:block"}`}>
-                    {item.label}
-                  </span>
-                </Link>
-              );
-            })}
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setIsMobileOpen(false)}
+                      className={`flex items-center py-3 transition-colors ink-text border-y border-transparent overflow-hidden ${isMobileOpen ? "px-4 gap-3" : "justify-center lg:justify-start lg:px-4 lg:gap-3"} ${itemClasses}`}
+                      title={item.label}
+                    >
+                      <div className={`w-5 h-5 lg:w-6 lg:h-6 shrink-0 flex items-center justify-center ${iconClasses}`}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <span className={`font-medium whitespace-nowrap transition-opacity ${isMobileOpen ? "block text-sm" : "hidden lg:block"}`}>
+                        {item.label}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
           </nav>
         </aside>
       </div>
@@ -271,7 +304,7 @@ export default function DashboardShell({
                 ? t.dashboard.sidebar.dashboard
                 : pathname.startsWith("/dashboard/profile")
                   ? t.dashboard.sidebar.myProfile
-                  : navigationItems.find((item) => isActive(item.href))?.label ||
+                  : allVisibleNavItems.find((item) => isActive(item.href))?.label ||
                   t.dashboard.sidebar.dashboard}
             </h1>
             <div className="flex items-center gap-2 lg:gap-5">

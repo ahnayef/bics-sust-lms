@@ -19,7 +19,6 @@ interface Book {
   id: string;
   title: string;
   author: string;
-  short_id: string;
   is_syllabus?: boolean;
 }
 
@@ -68,13 +67,13 @@ export default function PrintQrClient({ books, copies }: Props) {
       const matchesQuery = !query ||
         book.title.toLowerCase().includes(query) ||
         book.author.toLowerCase().includes(query) ||
-        book.short_id.toLowerCase().includes(query) ||
+        book.id.toLowerCase().includes(query) ||
         bookCopies.some(c => c.id.toLowerCase().includes(query));
 
       return {
         ...book,
         copies: bookCopies,
-        visible: matchesType && matchesAuthor && matchesQuery && bookCopies.length > 0
+        visible: matchesType && matchesAuthor && matchesQuery
       };
     }).filter(b => b.visible);
   }, [books, copies, searchTerm, typeFilter, authorFilter]);
@@ -178,7 +177,7 @@ export default function PrintQrClient({ books, copies }: Props) {
   }, [copies, selectedCopies, books, duplicateCount, fillPage]);
 
   return (
-    <div className="space-y-4 sm:space-y-6 print:space-y-0 print:m-0 max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-4 sm:py-8">
+    <div className="space-y-4 sm:space-y-6 print:space-y-0 print:m-0 px-2 sm:px-6 lg:px-8 py-4 sm:py-8">
 
 
       {/* Header */}
@@ -330,7 +329,7 @@ export default function PrintQrClient({ books, copies }: Props) {
                                   </span>
                                   <div className="min-w-0">
                                     <p className="font-semibold text-[#221910] leading-snug text-sm">{book.title}</p>
-                                    <p className="text-[10px] text-[#6a5a4c] mt-0.5 font-mono">ID: {book.short_id}</p>
+                                    <p className="text-[10px] text-[#6a5a4c] mt-0.5 font-mono">ID: {book.id}</p>
                                   </div>
                                 </div>
                               </td>

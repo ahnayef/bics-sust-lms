@@ -49,3 +49,17 @@ export function invalidateUsersDirectory() {
   clearTag("users");
   refresh();
 }
+
+/** Checklist or checklist item changes. */
+export function invalidateAfterChecklistMutation() {
+  clearTag("checklists");
+  clearTag("users");
+  refresh();
+}
+
+/** Checklist completion changes. */
+export function invalidateAfterChecklistCompletionMutation() {
+  clearTag("checklists");
+  clearTag("users");
+  refresh();
+}

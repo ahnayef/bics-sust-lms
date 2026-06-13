@@ -177,15 +177,18 @@ create trigger transactions_updated_at
 -- Row Level Security
 -- ============================================================
 
-alter table public.thanas        enable row level security;
-alter table public.ranks         enable row level security;
-alter table public.profiles      enable row level security;
-alter table public.books         enable row level security;
-alter table public.copies        enable row level security;
-alter table public.transactions  enable row level security;
-alter table public.pdf_submissions enable row level security;
-alter table public.settings      enable row level security;
-alter table public.action_logs   enable row level security;
+alter table public.thanas                enable row level security;
+alter table public.ranks                 enable row level security;
+alter table public.profiles              enable row level security;
+alter table public.books                 enable row level security;
+alter table public.copies                enable row level security;
+alter table public.transactions          enable row level security;
+alter table public.pdf_submissions       enable row level security;
+alter table public.settings              enable row level security;
+alter table public.action_logs           enable row level security;
+alter table public.checklists            enable row level security;
+alter table public.checklist_items       enable row level security;
+alter table public.checklist_completions enable row level security;
 
 -- Helper function to get the current user's role without recursion
 create or replace function public.get_my_role()
@@ -282,6 +285,31 @@ create policy "Authenticated users read settings"
 create policy "Admins manage settings"
   on public.settings for all
   using (public.get_my_role() = 'admin');
+
+-- ── Checklists ──────────────────────────────────────────────────────────────
+create policy "Authenticated users read visible checklists"
+  on public.checklists for select using (auth.uid() is not null and visible = true);
+
+create policy "Admins manage checklists"
+  on public.checklists for all using (public.get_my_role() = 'admin');
+
+create policy "Authenticated users read checklist items"
+  on public.checklist_items for select using (auth.uid() is not null);
+
+create policy "Admins manage checklist items"
+  on public.checklist_items for all using (public.get_my_role() = 'admin');
+
+create policy "Users read own completions"
+  on public.checklist_completions for select
+  using (auth.uid() = user_id);
+
+create policy "Users insert own completions"
+  on public.checklist_completions for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users delete own completions"
+  on public.checklist_completions for delete
+  using (auth.uid() = user_id);
 
 -- ── Action Logs ─────────────────────────────────────────────────────────────
 create policy "Users read own target action logs"

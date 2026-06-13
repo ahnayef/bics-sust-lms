@@ -19,7 +19,6 @@ export function ThanaChip({ id, name, onFlash }: ThanaChipProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [editing, setEditing] = useState(false);
-
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [refCount, setRefCount] = useState<number | null>(null);
@@ -89,10 +88,10 @@ export function ThanaChip({ id, name, onFlash }: ThanaChipProps) {
   if (editing) {
     return (
       <>
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 text-xs border border-[#c4ae8e] bg-[#f6ecdd] rounded-sm text-[#3b3026] ink-text">
+        <div className="inline-flex items-center gap-2 px-4 py-2 text-sm border border-[#c4ae8e] bg-[#f6ecdd] rounded-sm text-[#3b3026] ink-text">
           <form
             onSubmit={handleRenameSubmit}
-            className="inline-flex items-center gap-1.5"
+            className="inline-flex items-center gap-2"
           >
             <input type="hidden" name="id" value={id} />
             <input
@@ -103,23 +102,23 @@ export function ThanaChip({ id, name, onFlash }: ThanaChipProps) {
               required
               // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus
-              className="px-1 py-0.5 border border-[#8a7966] bg-white text-[#2f251d] rounded-sm outline-none focus:ring-1 focus:ring-[#6e5d4a] text-xs w-28 ink-text"
+              className="px-2 py-1 border border-[#8a7966] bg-white text-[#2f251d] rounded-sm outline-none focus:ring-1 focus:ring-[#6e5d4a] text-sm w-36 ink-text"
             />
             <button
               type="submit"
-              className="text-[#3a6a3a] hover:text-[#1a4a1a] transition-colors"
+              className="p-1.5 text-[#3a6a3a] hover:text-[#1a4a1a] transition-colors rounded-sm hover:bg-[#eadcc8]"
               aria-label="Save rename"
             >
-              <FaCheck className="w-2.5 h-2.5" />
+              <FaCheck className="w-4 h-4" />
             </button>
           </form>
           <button
             type="button"
             onClick={() => setEditing(false)}
-            className="text-[#7a5a4a] hover:text-[#5a2a1a] transition-colors"
+            className="p-1.5 text-[#7a5a4a] hover:text-[#5a2a1a] transition-colors rounded-sm hover:bg-[#eadcc8]"
             aria-label="Cancel rename"
           >
-            <FaTimes className="w-2.5 h-2.5" />
+            <FaTimes className="w-4 h-4" />
           </button>
         </div>
 
@@ -140,23 +139,23 @@ export function ThanaChip({ id, name, onFlash }: ThanaChipProps) {
 
   return (
     <>
-      <div className="inline-flex items-center gap-1.5 px-3 py-1 text-xs border border-[#c4ae8e] bg-[#f6ecdd] rounded-sm text-[#3b3026] ink-text">
+      <div className="inline-flex items-center gap-2 px-4 py-2 text-sm border border-[#c4ae8e] bg-[#f6ecdd] rounded-sm text-[#3b3026] ink-text">
         {name}
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="text-[#7a5a4a] hover:text-[#5a2a1a] transition-colors ml-0.5"
+          className="p-1.5 text-[#7a5a4a] hover:text-[#5a2a1a] transition-colors rounded-sm hover:bg-[#eadcc8]"
           aria-label={`${t.books.actions.edit} ${name}`}
         >
-          <FaPencilAlt className="w-2.5 h-2.5" />
+          <FaPencilAlt className="w-4 h-4" />
         </button>
         <button
           type="button"
           onClick={handleDeleteClick}
-          className="text-[#7a5a4a] hover:text-[#5a2a1a] transition-colors"
+          className="p-1.5 text-[#7a5a4a] hover:text-[#5a2a1a] transition-colors rounded-sm hover:bg-[#eadcc8]"
           aria-label={`${t.books.actions.delete} ${name}`}
         >
-          <FaTrash className="w-2.5 h-2.5" />
+          <FaTrash className="w-4 h-4" />
         </button>
       </div>
 

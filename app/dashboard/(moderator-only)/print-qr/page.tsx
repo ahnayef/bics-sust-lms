@@ -1,34 +1,37 @@
-import { createClient } from "@/lib/supabase/server";
+import { getProfile } from "@/server/geo";
+import { getBooks } from "@/server/library";
+import { getClaims } from "@/server/user";
 import { redirect } from "next/navigation";
 import PrintQrClient from "./PrintQrClient";
 
 export default async function PrintQrPage() {
-  const supabase = await createClient();
-
-  const { data: claimsData } = await supabase.auth.getClaims();
-  if (!claimsData?.claims?.sub) {
+  const claims = await getClaims();
+  if (!claims?.sub) {
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", claimsData.claims.sub)
-    .single();
-
+  const profile = await getProfile(claims.sub);
   if (profile?.role !== "admin" && profile?.role !== "moderator") {
     redirect("/dashboard");
   }
 
-  // Fetch books and copies
-  const { data: books } = await supabase
-    .from("books")
-    .select("id, title, author, short_id, is_syllabus")
-    .order("title");
-  const { data: copies } = await supabase
-    .from("copies")
-    .select("id, book_id, copy_number")
-    .order("copy_number");
+  // Fetch books with copies using same function as Books page
+  const books = await getBooks();
 
-  return <PrintQrClient books={books ?? []} copies={copies ?? []} />;
+  // Extract copies array from books for PrintQrClient
+  const copies = books.flatMap(book => (book.copies ?? []).map(copy => ({
+    id: copy.id,
+    book_id: book.id,
+    copy_number: copy.copy_number
+  })));
+
+  // Pass books in same shape as expected
+  const simpleBooks = books.map(book => ({
+    id: book.id,
+    title: book.title,
+    author: book.author,
+    is_syllabus: book.is_syllabus
+  }));
+
+  return <PrintQrClient books={simpleBooks} copies={copies} />;
 }

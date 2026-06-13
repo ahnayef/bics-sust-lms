@@ -1,5 +1,6 @@
 import { RankBadge } from "@/components/ui/rank-badge";
 import { getTranslation } from "@/lib/i18n/server";
+import { getUserChecklistProgress } from "@/server/checklists";
 import { getProfile } from "@/server/geo";
 import { getUserStats } from "@/server/library";
 import { getClaims } from "@/server/user";
@@ -19,9 +20,10 @@ export default async function DashboardProfilePage() {
   const claims = await getClaims();
   if (!claims) redirect("/login");
   const { t, language } = await getTranslation();
-  const [profile, stats] = await Promise.all([
+  const [profile, stats, checklistProgress] = await Promise.all([
     getProfile(claims.sub),
     getUserStats(claims.sub),
+    getUserChecklistProgress(claims.sub),
   ]);
   if (!profile) redirect("/login");
 
@@ -201,6 +203,42 @@ export default async function DashboardProfilePage() {
           </div>
         </section>
       </div>
+
+      {/* ── Checklist Progress ── */}
+      {checklistProgress.length > 0 && (
+        <section className="dashboard-surface tron-border rounded-sm p-6">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-[#6a5a4c] ink-text mb-4 border-b border-[#c9b89a] pb-2">
+            {t.profile.sections.checklistProgress}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {checklistProgress.map((cp) => {
+              const percent =
+                cp.total > 0 ? Math.round((cp.completed / cp.total) * 100) : 0;
+              return (
+                <div key={cp.checklistId}>
+                  <div className="flex justify-between items-end mb-2">
+                    <p className="text-sm font-bold text-[#221910] ink-title">
+                      {cp.checklistName}
+                    </p>
+                    <p className="text-sm font-bold text-[#221910] ink-title">
+                      {percent}%
+                    </p>
+                  </div>
+                  <div className="w-full h-3 bg-[#d9cbb7] rounded-full overflow-hidden border border-[#8a7966] shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]">
+                    <div
+                      className="h-full bg-[#4a7c59] transition-all duration-500"
+                      style={{ width: `${percent}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-[#6a5a4c] mt-2 ink-text text-right">
+                    {cp.completed} / {cp.total}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

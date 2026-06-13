@@ -216,6 +216,54 @@ export const actionLogs = pgTable("action_logs", {
   created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
+export const checklists = pgTable("checklists", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  visible: boolean("visible").notNull().default(true),
+  created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const checklistsRelations = relations(checklists, ({ many }) => ({
+  items: many(checklistItems),
+  completions: many(checklistCompletions),
+}));
+
+export const checklistItems = pgTable("checklist_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  checklist_id: uuid("checklist_id").notNull().references(() => checklists.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  order: integer("order").notNull().default(0),
+  created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const checklistItemsRelations = relations(checklistItems, ({ one, many }) => ({
+  checklist: one(checklists, {
+    fields: [checklistItems.checklist_id],
+    references: [checklists.id],
+  }),
+  completions: many(checklistCompletions),
+}));
+
+export const checklistCompletions = pgTable("checklist_completions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  user_id: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  checklist_item_id: uuid("checklist_item_id").notNull().references(() => checklistItems.id, { onDelete: "cascade" }),
+  created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+export const checklistCompletionsRelations = relations(checklistCompletions, ({ one }) => ({
+  user: one(profiles, {
+    fields: [checklistCompletions.user_id],
+    references: [profiles.id],
+  }),
+  item: one(checklistItems, {
+    fields: [checklistCompletions.checklist_item_id],
+    references: [checklistItems.id],
+  }),
+}));
+
 export const actionLogsRelations = relations(actionLogs, ({ one }) => ({
   actor: one(profiles, {
     fields: [actionLogs.actor_id],

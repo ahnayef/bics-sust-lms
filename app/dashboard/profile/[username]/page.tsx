@@ -1,8 +1,9 @@
-import { RankBadge } from "@/components/ui/rank-badge";
 import HistoryClient from "@/app/dashboard/history/HistoryClient";
+import { RankBadge } from "@/components/ui/rank-badge";
 import { getTranslation } from "@/lib/i18n/server";
+import { getUserChecklistProgress } from "@/server/checklists";
 import { getProfileByUsername } from "@/server/geo";
-import { getUserStats, getUserTransactions, getPdfSubmissions } from "@/server/library";
+import { getPdfSubmissions, getUserStats, getUserTransactions } from "@/server/library";
 import { getClaims, getCurrentProfile } from "@/server/user";
 import Image from "next/image";
 import Link from "next/link";
@@ -38,10 +39,11 @@ export default async function DashboardUserProfilePage({
   const isAdminOrMod =
     currentUserProfile?.role === "admin" || currentUserProfile?.role === "moderator";
 
-  const [stats, transactions, pdfSubmissions] = await Promise.all([
+  const [stats, transactions, pdfSubmissions, checklistProgress] = await Promise.all([
     getUserStats(profile.id),
     isAdminOrMod ? getUserTransactions(profile.id) : [],
     isAdminOrMod ? getPdfSubmissions({ userId: profile.id }) : [],
+    getUserChecklistProgress(profile.id),
   ]);
 
   const roleLabels: Record<string, string> = {
@@ -68,7 +70,7 @@ export default async function DashboardUserProfilePage({
   const locationParts = [profile.thana?.name].filter(Boolean);
 
   return (
-    <div className="p-2 sm:p-0 max-w-3xl mx-auto space-y-5">
+    <div className="p-2 sm:p-0 space-y-5">
       {/* Back */}
       <Link
         href="/dashboard/profile"
@@ -178,6 +180,37 @@ export default async function DashboardUserProfilePage({
                 </span>
               </span>
             </div>
+          </div>
+        </section>
+      )}
+
+      {/* Checklist progress */}
+      {checklistProgress.length > 0 && (
+        <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
+          <h2 className="text-base font-bold text-[#221910] ink-title mb-4 border-b border-[#c9b89a] pb-2">
+            {t.profile.sections.checklistProgress}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {checklistProgress.map((cp) => {
+              const percent =
+                cp.total > 0 ? Math.round((cp.completed / cp.total) * 100) : 0;
+              return (
+                <div key={cp.checklistId} className="space-y-2">
+                  <div className="flex items-center justify-between text-sm ink-text text-[#4a3e33]">
+                    <span className="font-medium">
+                      {cp.checklistName}: {cp.completed} / {cp.total}
+                    </span>
+                    <span className="font-bold text-[#221910]">{percent}%</span>
+                  </div>
+                  <div className="w-full h-2.5 rounded-full bg-[#e4d4bf] border border-[#ccb79b] overflow-hidden">
+                    <div
+                      className="h-full bg-[#4a7c59] transition-all"
+                      style={{ width: `${percent}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
       )}

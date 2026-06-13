@@ -1,6 +1,7 @@
 import { bookList } from "./bookList";
 import { books } from "./books";
 import { borrow } from "./borrow";
+import { checklists } from "./checklists";
 import { common } from "./common";
 import { copies } from "./copies";
 import { dashboard } from "./dashboard";
@@ -38,4 +39,5 @@ export const bn = {
   history,
   transactions,
   notifications,
+  checklists,
 } as const;

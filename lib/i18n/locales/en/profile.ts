@@ -13,14 +13,15 @@ export const profile = {
   sections: {
     contactInfo: "Contact Information",
     readingProgress: "Reading Progress",
+    checklistProgress: "Checklist Progress",
     stats: "Library Stats",
   },
   info: {
     email: "Email",
     phone: "Phone",
-    location: "Location",
+    location: "Thana",
     noPhone: "No phone provided",
-    noLocation: "No location provided",
+    noLocation: "No thana provided",
   },
   stats: {
     syllabusProgress: "Syllabus Progress",
@@ -50,7 +51,7 @@ export const profile = {
     confirmMessage: "Are you sure you want to save these changes?",
     privacy: {
       title: "Hide contact info from public profile",
-      description: "When enabled, your email, phone, and location won't be visible on your public profile page.",
+      description: "When enabled, your email, phone, and thana won't be visible on your public profile page.",
     },
     thanaSelect: "Select thana",
     thanaEmpty: "No thanas are configured. You can leave the thana unset until an admin adds thanas.",
@@ -72,7 +73,7 @@ export const profile = {
   publicProfile: {
     back: "Back to Profile",
     readingProgress: "Reading Progress",
-    contactLocation: "Contact & Location",
+    contactLocation: "Contact & Thana",
     privateInfo: "This member has chosen to keep their contact information private.",
     unverified: "Unverified",
     verified: "Verified",

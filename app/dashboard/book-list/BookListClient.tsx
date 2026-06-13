@@ -239,7 +239,7 @@ export default function BookListClient({
   return (
     <>
 
-      <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500 max-w-[1400px] mx-auto">
+      <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
         {/* ── Header + Filters ──────────────────────────────────────────────── */}
         <div className="dashboard-surface border border-[#7d6d5a] rounded-sm p-4 sm:p-6 shadow-sm">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
