@@ -18,103 +18,138 @@ async function requireAdmin() {
 }
 
 export async function createChecklist(name: string, visible: boolean) {
-  await requireAdmin();
+  try {
+    await requireAdmin();
 
-  await db.insert(schema.checklists).values({
-    name,
-    visible,
-    created_at: new Date(),
-    updated_at: new Date(),
-  });
+    await db.insert(schema.checklists).values({
+      name,
+      visible,
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
 
-  invalidateAfterChecklistMutation();
-  revalidatePath("/dashboard");
+    invalidateAfterChecklistMutation();
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Something went wrong" };
+  }
 }
 
 export async function updateChecklist(id: string, name: string, visible: boolean) {
-  await requireAdmin();
+  try {
+    await requireAdmin();
 
-  await db.update(schema.checklists).set({
-    name,
-    visible,
-    updated_at: new Date(),
-  }).where(eq(schema.checklists.id, id));
+    await db.update(schema.checklists).set({
+      name,
+      visible,
+      updated_at: new Date(),
+    }).where(eq(schema.checklists.id, id));
 
-  invalidateAfterChecklistMutation();
-  revalidatePath("/dashboard");
+    invalidateAfterChecklistMutation();
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Something went wrong" };
+  }
 }
 
 export async function deleteChecklist(id: string) {
-  await requireAdmin();
+  try {
+    await requireAdmin();
 
-  await db.delete(schema.checklists).where(eq(schema.checklists.id, id));
+    await db.delete(schema.checklists).where(eq(schema.checklists.id, id));
 
-  invalidateAfterChecklistMutation();
-  revalidatePath("/dashboard");
+    invalidateAfterChecklistMutation();
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Something went wrong" };
+  }
 }
 
 export async function addChecklistItem(checklistId: string, name: string) {
-  await requireAdmin();
+  try {
+    await requireAdmin();
 
-  const lastItem = await db.query.checklistItems.findFirst({
-    where: eq(schema.checklistItems.checklist_id, checklistId),
-    orderBy: [desc(schema.checklistItems.order)],
-  });
+    const lastItem = await db.query.checklistItems.findFirst({
+      where: eq(schema.checklistItems.checklist_id, checklistId),
+      orderBy: [desc(schema.checklistItems.order)],
+    });
 
-  const newOrder = lastItem ? lastItem.order + 1 : 0;
+    const newOrder = lastItem ? lastItem.order + 1 : 0;
 
-  await db.insert(schema.checklistItems).values({
-    checklist_id: checklistId,
-    name,
-    order: newOrder,
-    created_at: new Date(),
-    updated_at: new Date(),
-  });
+    await db.insert(schema.checklistItems).values({
+      checklist_id: checklistId,
+      name,
+      order: newOrder,
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
 
-  invalidateAfterChecklistMutation();
-  revalidatePath("/dashboard");
+    invalidateAfterChecklistMutation();
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Something went wrong" };
+  }
 }
 
 export async function updateChecklistItem(id: string, name: string) {
-  await requireAdmin();
+  try {
+    await requireAdmin();
 
-  await db.update(schema.checklistItems).set({
-    name,
-    updated_at: new Date(),
-  }).where(eq(schema.checklistItems.id, id));
+    await db.update(schema.checklistItems).set({
+      name,
+      updated_at: new Date(),
+    }).where(eq(schema.checklistItems.id, id));
 
-  invalidateAfterChecklistMutation();
-  revalidatePath("/dashboard");
+    invalidateAfterChecklistMutation();
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Something went wrong" };
+  }
 }
 
 export async function deleteChecklistItem(id: string) {
-  await requireAdmin();
+  try {
+    await requireAdmin();
 
-  await db.delete(schema.checklistItems).where(eq(schema.checklistItems.id, id));
+    await db.delete(schema.checklistItems).where(eq(schema.checklistItems.id, id));
 
-  invalidateAfterChecklistMutation();
-  revalidatePath("/dashboard");
+    invalidateAfterChecklistMutation();
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Something went wrong" };
+  }
 }
 
 export async function toggleChecklistItem(itemId: string, checked: boolean) {
-  const user = await requireAuth();
-  const userId = user.id;
+  try {
+    const user = await requireAuth();
+    const userId = user.id;
 
-  if (checked) {
-    await db.insert(schema.checklistCompletions).values({
-      user_id: userId,
-      checklist_item_id: itemId,
-      created_at: new Date(),
-    }).onConflictDoNothing();
-  } else {
-    await db.delete(schema.checklistCompletions).where(
-      and(
-        eq(schema.checklistCompletions.user_id, userId),
-        eq(schema.checklistCompletions.checklist_item_id, itemId)
-      )
-    );
+    if (checked) {
+      await db.insert(schema.checklistCompletions).values({
+        user_id: userId,
+        checklist_item_id: itemId,
+        created_at: new Date(),
+      }).onConflictDoNothing();
+    } else {
+      await db.delete(schema.checklistCompletions).where(
+        and(
+          eq(schema.checklistCompletions.user_id, userId),
+          eq(schema.checklistCompletions.checklist_item_id, itemId)
+        )
+      );
+    }
+
+    invalidateAfterChecklistCompletionMutation();
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Something went wrong" };
   }
-
-  invalidateAfterChecklistCompletionMutation();
-  revalidatePath("/dashboard");
 }

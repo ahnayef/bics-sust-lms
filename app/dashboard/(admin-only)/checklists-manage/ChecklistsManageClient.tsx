@@ -69,18 +69,24 @@ export default function ChecklistsManageClient({ initialChecklists }: Props) {
     setShowChecklistModal(true);
   };
 
-  const handleSubmitChecklist = () => {
+  const handleSubmitChecklist = async () => {
     if (!checklistFormData.name.trim()) return;
 
     startTransition(async () => {
       try {
+        let result;
         if (editingChecklist) {
-          await updateChecklist(editingChecklist.id, checklistFormData.name, checklistFormData.visible);
-          showFlash("success", "Checklist updated");
+          result = await updateChecklist(editingChecklist.id, checklistFormData.name, checklistFormData.visible);
         } else {
-          await createChecklist(checklistFormData.name, checklistFormData.visible);
-          showFlash("success", "Checklist added");
+          result = await createChecklist(checklistFormData.name, checklistFormData.visible);
         }
+
+        if (result?.error) {
+          showFlash("error", result.error);
+          return;
+        }
+
+        showFlash("success", editingChecklist ? "Checklist updated" : "Checklist added");
         setShowChecklistModal(false);
         router.refresh();
       } catch (err: any) {
@@ -102,18 +108,24 @@ export default function ChecklistsManageClient({ initialChecklists }: Props) {
     setShowItemModal(true);
   };
 
-  const handleSubmitItem = () => {
+  const handleSubmitItem = async () => {
     if (!itemFormData.name.trim() || !currentChecklistId) return;
 
     startTransition(async () => {
       try {
+        let result;
         if (editingItem) {
-          await updateChecklistItem(editingItem.id, itemFormData.name);
-          showFlash("success", "Item updated");
+          result = await updateChecklistItem(editingItem.id, itemFormData.name);
         } else {
-          await addChecklistItem(currentChecklistId, itemFormData.name);
-          showFlash("success", "Item added");
+          result = await addChecklistItem(currentChecklistId, itemFormData.name);
         }
+
+        if (result?.error) {
+          showFlash("error", result.error);
+          return;
+        }
+
+        showFlash("success", editingItem ? "Item updated" : "Item added");
         setShowItemModal(false);
         router.refresh();
       } catch (err: any) {
@@ -126,18 +138,24 @@ export default function ChecklistsManageClient({ initialChecklists }: Props) {
     setDeleteId({ type, id });
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteId) return;
 
     startTransition(async () => {
       try {
+        let result;
         if (deleteId.type === "checklist") {
-          await deleteChecklist(deleteId.id);
-          showFlash("success", "Checklist deleted");
+          result = await deleteChecklist(deleteId.id);
         } else {
-          await deleteChecklistItem(deleteId.id);
-          showFlash("success", "Item deleted");
+          result = await deleteChecklistItem(deleteId.id);
         }
+
+        if (result?.error) {
+          showFlash("error", result.error);
+          return;
+        }
+
+        showFlash("success", deleteId.type === "checklist" ? "Checklist deleted" : "Item deleted");
         setDeleteId(null);
         router.refresh();
       } catch (err: any) {
@@ -151,8 +169,8 @@ export default function ChecklistsManageClient({ initialChecklists }: Props) {
       {flash && (
         <div
           className={`fixed top-20 right-4 z-50 p-4 rounded-sm shadow-xl border ${flash.type === "success"
-              ? "bg-[#eef5e9] border-[#a3b994] text-[#3d5c2e]"
-              : "bg-[#fdf0ec] border-[#d0604a] text-[#8b2c1a]"
+            ? "bg-[#eef5e9] border-[#a3b994] text-[#3d5c2e]"
+            : "bg-[#fdf0ec] border-[#d0604a] text-[#8b2c1a]"
             }`}
         >
           <p className="text-sm font-bold">{flash.text}</p>
@@ -271,7 +289,13 @@ export default function ChecklistsManageClient({ initialChecklists }: Props) {
             <h2 className="text-xl font-bold text-[#221910] mb-4">
               {editingChecklist ? "Edit Checklist" : "Add Checklist"}
             </h2>
-            <div className="space-y-4">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSubmitChecklist();
+              }}
+              className="space-y-4"
+            >
               <div>
                 <label className="block text-sm font-medium text-[#4f4134] mb-1">Name</label>
                 <input
@@ -279,7 +303,7 @@ export default function ChecklistsManageClient({ initialChecklists }: Props) {
                   value={checklistFormData.name}
                   onChange={(e) => setChecklistFormData({ ...checklistFormData, name: e.target.value })}
                   className="w-full px-4 py-2 border border-[#8a7966] bg-[#f6ecdd] rounded-sm outline-none"
-                  placeholder="e.g. 3 Mandatory Books"
+                  placeholder="e.g. বই নোট"
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -296,20 +320,21 @@ export default function ChecklistsManageClient({ initialChecklists }: Props) {
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button
+                  type="button"
                   onClick={() => setShowChecklistModal(false)}
                   className="px-4 py-2 text-[#5a4b3f] hover:bg-[#ece0ce] rounded-sm transition-colors"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={handleSubmitChecklist}
+                  type="submit"
                   disabled={isPending}
                   className="px-4 py-2 bg-[#3f3328] text-[#f4e8d4] rounded-sm font-bold disabled:opacity-50"
                 >
                   {editingChecklist ? "Update" : "Add"}
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}
@@ -320,7 +345,13 @@ export default function ChecklistsManageClient({ initialChecklists }: Props) {
             <h2 className="text-xl font-bold text-[#221910] mb-4">
               {editingItem ? "Edit Item" : "Add Item"}
             </h2>
-            <div className="space-y-4">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSubmitItem();
+              }}
+              className="space-y-4"
+            >
               <div>
                 <label className="block text-sm font-medium text-[#4f4134] mb-1">Name</label>
                 <input
@@ -328,25 +359,26 @@ export default function ChecklistsManageClient({ initialChecklists }: Props) {
                   value={itemFormData.name}
                   onChange={(e) => setItemFormData({ ...itemFormData, name: e.target.value })}
                   className="w-full px-4 py-2 border border-[#8a7966] bg-[#f6ecdd] rounded-sm outline-none"
-                  placeholder="e.g. Rich Dad Poor Dad"
+                  placeholder="e.g. চরিত্র গঠনের মৌলিক উপাদান"
                 />
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button
+                  type="button"
                   onClick={() => setShowItemModal(false)}
                   className="px-4 py-2 text-[#5a4b3f] hover:bg-[#ece0ce] rounded-sm transition-colors"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={handleSubmitItem}
+                  type="submit"
                   disabled={isPending}
                   className="px-4 py-2 bg-[#3f3328] text-[#f4e8d4] rounded-sm font-bold disabled:opacity-50"
                 >
                   {editingItem ? "Update" : "Add"}
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}

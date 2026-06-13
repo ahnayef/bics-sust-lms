@@ -377,12 +377,6 @@ export default async function Overview() {
                 total={stats.totalCopies}
                 color="bg-[#5a7ab5]"
               />
-              <BarRow
-                label={t.overview.stats.damaged}
-                value={stats.damagedCopies}
-                total={stats.totalCopies}
-                color="bg-[#c4614a]"
-              />
             </div>
 
             <div className="grid grid-cols-2 gap-4 pt-3 border-t border-[#d2bfa5]">

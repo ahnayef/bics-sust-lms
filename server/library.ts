@@ -250,7 +250,7 @@ export async function getPdfSubmissions(
 
 /** Reading progress and active borrow info for one user. */
 export async function getUserStats(userId: string): Promise<UserStats> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   // 1. Fetch all categories that count in progress
   const { data: categories } = await supabase
@@ -751,7 +751,7 @@ export async function getOverviewData(): Promise<OverviewData> {
 import type { ActionLog, NotificationItem } from "@/types/library";
 
 export async function getUserNotifications(userId: string): Promise<NotificationItem[]> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   const [
     { data: txs },
@@ -867,7 +867,7 @@ export async function getUserNotifications(userId: string): Promise<Notification
 }
 
 export async function getAdminLogs(days: number = 30): Promise<ActionLog[]> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
 

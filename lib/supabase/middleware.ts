@@ -37,8 +37,23 @@ export async function updateSession(request: NextRequest) {
 
   // IMPORTANT: If you remove getClaims() and you use server-side rendering
   // with the Supabase client, your users may be randomly logged out.
-  const { data } = await supabase.auth.getClaims();
-  const user = data?.claims;
+  
+  // Try to get claims with timeout, gracefully fail instead of crashing
+  let user = null;
+  try {
+    // Timeout after 3 seconds to prevent hanging
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Claims fetch timeout")), 3000)
+    );
+    const { data } = await Promise.race([
+      supabase.auth.getClaims(),
+      timeout,
+    ]);
+    user = data?.claims;
+  } catch {
+    // If claims fetch fails or times out, just proceed without crashing
+    // The client-side auth will handle session management
+  }
   const path = request.nextUrl.pathname;
 
   // If user is already logged in, /login should redirect to /dashboard

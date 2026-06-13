@@ -35,7 +35,7 @@ export default function ChecklistsClient({
     setTimeout(() => setFlash(null), 4500);
   };
 
-  const handleConfirmToggle = () => {
+  const handleConfirmToggle = async () => {
     if (!confirmation) return;
 
     // Optimistic update
@@ -46,7 +46,16 @@ export default function ChecklistsClient({
 
     startTransition(async () => {
       try {
-        await toggleChecklistItem(confirmation.itemId, !confirmation.currentChecked);
+        const result = await toggleChecklistItem(confirmation.itemId, !confirmation.currentChecked);
+        
+        if (result?.error) {
+          // Revert optimistic update on error
+          setCompletedItemIds(new Set(initialCompletedItemIds));
+          showFlash("error", result.error);
+          setConfirmation(null);
+          return;
+        }
+        
         showFlash("success", confirmation.currentChecked ? "Item marked as incomplete" : "Item marked as complete!");
         setConfirmation(null);
         router.refresh();

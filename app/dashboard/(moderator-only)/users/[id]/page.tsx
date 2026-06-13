@@ -1,8 +1,9 @@
-import { RankBadge } from "@/components/ui/rank-badge";
 import HistoryClient from "@/app/dashboard/history/HistoryClient";
+import { RankBadge } from "@/components/ui/rank-badge";
 import { getTranslation } from "@/lib/i18n/server";
+import { getChecklists, getUserChecklistCompletions, getUserChecklistProgress } from "@/server/checklists";
 import { getProfile, getRanks } from "@/server/geo";
-import { getUserStats, getUserTransactions, getPdfSubmissions } from "@/server/library";
+import { getPdfSubmissions, getUserStats, getUserTransactions } from "@/server/library";
 import { moderatorPermissions } from "@/server/profiles";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,8 +12,10 @@ import {
   FaArrowLeft,
   FaArrowRight,
   FaCheckCircle,
+  FaCheckSquare,
   FaClock,
   FaExclamationTriangle,
+  FaSquare
 } from "react-icons/fa";
 import UserActions from "./UserActions";
 
@@ -33,13 +36,16 @@ export default async function UserProfilePage({
   const { id } = await params;
   const { t, language } = await getTranslation();
 
-  const [profile, stats, perms, ranksResponse, transactions, pdfSubmissions] = await Promise.all([
+  const [profile, stats, perms, ranksResponse, transactions, pdfSubmissions, checklistProgress, checklists, completedItemIds] = await Promise.all([
     getProfile(id),
     getUserStats(id),
     moderatorPermissions(),
     getRanks(),
     getUserTransactions(id),
     getPdfSubmissions({ userId: id }),
+    getUserChecklistProgress(id),
+    getChecklists(true),
+    getUserChecklistCompletions(id),
   ]);
 
   if (!profile) {
@@ -235,6 +241,59 @@ export default async function UserProfilePage({
           )}
         </div>
       </div>
+
+      {/* Checklist progress and details */}
+      {checklistProgress.length > 0 && (
+        <div className="dashboard-surface tron-border rounded-sm p-6">
+          <h2 className="text-base font-semibold text-[#3b3026] ink-title mb-4 uppercase tracking-[0.06em]">
+            {t.profile.sections.checklistProgress}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {checklists.map((checklist) => {
+              const progress = checklistProgress.find(p => p.checklistId === checklist.id);
+              if (!progress) return null;
+              const percent = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
+
+              return (
+                <div key={checklist.id} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-sm text-[#5a4b3f] ink-text">
+                      <span className="font-bold text-[#221910]">
+                        {checklist.name}
+                      </span>
+                      <span className="font-bold text-[#2b2119]">{percent}%</span>
+                    </div>
+                    <div className="w-full h-2 rounded-full bg-[#e4d4bf] border border-[#ccb79b] overflow-hidden">
+                      <div
+                        className="h-full bg-[#4a7c59] transition-all"
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-1.5 pl-1">
+                    {checklist.items.map((item) => {
+                      const isCompleted = completedItemIds.has(item.id);
+                      return (
+                        <div key={item.id} className="flex items-center gap-2 text-xs">
+                          {isCompleted ? (
+                            <FaCheckSquare className="w-3.5 h-3.5 text-[#4a7c59] shrink-0" />
+                          ) : (
+                            <FaSquare className="w-3.5 h-3.5 text-[#ccb79b] shrink-0" />
+                          )}
+                          <span className={`${isCompleted ? "text-[#2b2119] font-medium" : "text-[#8a7966]"}`}>
+                            {item.name}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Transaction History */}
       <div className="space-y-4">
