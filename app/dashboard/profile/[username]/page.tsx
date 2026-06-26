@@ -1,11 +1,11 @@
 import HistoryClient from "@/app/dashboard/history/HistoryClient";
+import Avatar from "@/components/Avatar";
 import { RankBadge } from "@/components/ui/rank-badge";
 import { getTranslation } from "@/lib/i18n/server";
 import { getUserChecklistProgress } from "@/server/checklists";
 import { getProfileByUsername } from "@/server/geo";
 import { getPdfSubmissions, getUserStats, getUserTransactions } from "@/server/library";
 import { getClaims, getCurrentProfile } from "@/server/user";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
@@ -13,10 +13,20 @@ import {
   FaCheckCircle,
   FaClock,
   FaEnvelope,
+  FaFileAlt,
   FaMapMarkerAlt,
   FaPhone,
   FaShieldAlt,
 } from "react-icons/fa";
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? "?";
+  return (
+    (parts[0][0]?.toUpperCase() ?? "") +
+    (parts[parts.length - 1][0]?.toUpperCase() ?? "")
+  );
+}
 
 export default async function DashboardUserProfilePage({
   params,
@@ -83,19 +93,13 @@ export default async function DashboardUserProfilePage({
       {/* Hero */}
       <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
         <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
-          {profile.avatar_url ? (
-            <Image
-              src={profile.avatar_url}
-              alt={profile.full_name}
-              width={80}
-              height={80}
-              className="w-20 h-20 rounded-full object-cover border-2 border-[#8a7966] shrink-0"
-            />
-          ) : (
-            <div className="w-20 h-20 rounded-full bg-[#d9cbb7] border-2 border-[#8a7966] flex items-center justify-center text-2xl font-bold text-[#4a3e33] shrink-0 ink-title">
-              {profile.full_name.charAt(0).toUpperCase()}
-            </div>
-          )}
+          <Avatar
+            src={profile.avatar_url}
+            alt={profile.full_name}
+            initials={getInitials(profile.full_name)}
+            size="lg"
+            className="border-2"
+          />
 
           <div className="flex-1 text-center sm:text-left">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
@@ -134,6 +138,16 @@ export default async function DashboardUserProfilePage({
             <p className="text-xs text-[#7a6a5c] ink-text mt-3">
               {t.profile.header.joinedOn}: <b>{joinedDate}</b>
             </p>
+
+            <div className="mt-4">
+              <Link
+                href={`/dashboard/report?user=${profile.id}`}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-stone-800 text-stone-100 border border-stone-600 rounded-sm hover:bg-stone-700 transition-colors text-sm font-semibold ink-text shrink-0"
+              >
+                <FaFileAlt className="w-3.5 h-3.5 text-stone-300" />
+                {t.profile.header.report || "View Report"}
+              </Link>
+            </div>
           </div>
         </div>
       </section>

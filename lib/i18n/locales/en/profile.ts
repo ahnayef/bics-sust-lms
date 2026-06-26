@@ -4,6 +4,7 @@ export const profile = {
     editProfile: "Edit Profile",
     verified: "Verified",
     joinedOn: "Joined on",
+    report: "Profile Report",
   },
   roles: {
     admin: "Admin",

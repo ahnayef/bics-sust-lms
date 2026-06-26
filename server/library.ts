@@ -8,13 +8,11 @@
 import { applyCacheLife } from "@/lib/cache";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
   getBookWithCopies,
   getCopyByQR,
   getCopyStatus
 } from "@/server/db-access";
-import { logActionError } from "@/server/error-log";
 import type {
   Book,
   Category,
@@ -26,12 +24,11 @@ import type {
   TopMember,
   Transaction,
   UserStats,
-  UserWithStats
+  UserWithStats,
 } from "@/types/library";
 import type { Profile } from "@/types/profile";
-import { asc } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, ne, sql } from "drizzle-orm";
 import { cacheTag } from "next/cache";
-import { cookies } from "next/headers";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Books
@@ -40,8 +37,6 @@ import { cookies } from "next/headers";
 /**
  * All books with their copies — cached across requests and invalidated on writes
  * via `updateTag("books")` (see server/cache-invalidation.ts).
- *
- * Uses the service role client inside `'use cache'` (no cookie context).
  */
 async function loadBooksCached(): Promise<Book[]> {
   "use cache";
@@ -71,12 +66,9 @@ export async function getBooks(): Promise<Book[]> {
 
 /** All categories. */
 export async function getCategories(): Promise<Category[]> {
-  const supabase = createServiceClient();
-  const { data, error } = await supabase
-    .from("categories")
-    .select("*")
-    .order("name");
-  if (error || !data) return [];
+  const data = await db.query.categories.findMany({
+    orderBy: [asc(schema.categories.name)],
+  });
   return data as unknown as Category[];
 }
 
@@ -111,32 +103,40 @@ async function loadCopiesCached(): Promise<Copy[]> {
   cacheTag("copies");
   applyCacheLife("max");
 
-  const supabase = createServiceClient();
-  const { data, error } = await supabase
-    .from("copies")
-    .select(`
-      *,
-      book:books(id, title, author, is_syllabus),
-      active_borrow:transactions(
-        user:profiles!user_id(id, full_name)
-      )
-    `)
-    .eq("active_borrow.type", "borrow")
-    .in("active_borrow.status", ["active", "overdue"])
-    .order("book_id")
-    .order("created_at");
-
-  if (error || !data) {
-    if (error) logActionError("loadCopiesCached", error.message);
-    return [];
-  }
+  const data = await db.query.copies.findMany({
+    with: {
+      book: {
+        columns: {
+          id: true,
+          title: true,
+          author: true,
+          is_syllabus: true,
+        },
+      },
+      transactions: {
+        where: and(
+          eq(schema.transactions.type, "borrow"),
+          inArray(schema.transactions.status, ["active", "overdue"])
+        ),
+        with: {
+          user: {
+            columns: {
+              id: true,
+              full_name: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: [asc(schema.copies.book_id), asc(schema.copies.created_at)],
+  });
 
   // Flatten the join: take the first active borrower if it exists
   return data.map((row: any) => {
-    const { active_borrow, ...copy } = row;
+    const { transactions, ...copy } = row;
     const borrower =
-      active_borrow && active_borrow.length > 0
-        ? active_borrow[0].user
+      transactions && transactions.length > 0
+        ? transactions[0].user
         : null;
     return { ...copy, borrower };
   }) as unknown as Copy[];
@@ -164,27 +164,49 @@ async function loadTransactionsCached(
   cacheTag("transactions");
   applyCacheLife("max");
 
-  const supabase = createServiceClient();
-  let query = supabase
-    .from("transactions")
-    .select(
-      `*,
-       user:profiles!user_id(id, full_name, username, email, avatar_url),
-       copy:copies!copy_id(id, copy_number, status, book_id),
-       book:books!book_id(id, title, author, is_syllabus),
-       reviewer:profiles!reviewed_by(id, full_name)`,
-    )
-    .order("request_date", { ascending: false });
+  const whereConditions = [];
+  if (filters.type) whereConditions.push(eq(schema.transactions.type, filters.type));
+  if (filters.status) whereConditions.push(eq(schema.transactions.status, filters.status));
+  if (filters.userId) whereConditions.push(eq(schema.transactions.user_id, filters.userId));
 
-  if (filters.type) query = query.eq("type", filters.type);
-  if (filters.status) query = query.eq("status", filters.status);
-  if (filters.userId) query = query.eq("user_id", filters.userId);
+  const data = await db.query.transactions.findMany({
+    where: and(...whereConditions),
+    with: {
+      user: {
+        columns: {
+          id: true,
+          full_name: true,
+          username: true,
+          email: true,
+          avatar_url: true,
+        },
+      },
+      copy: {
+        columns: {
+          id: true,
+          copy_number: true,
+          status: true,
+          book_id: true,
+        },
+      },
+      book: {
+        columns: {
+          id: true,
+          title: true,
+          author: true,
+          is_syllabus: true,
+        },
+      },
+      reviewer: {
+        columns: {
+          id: true,
+          full_name: true,
+        },
+      },
+    },
+    orderBy: [desc(schema.transactions.request_date)],
+  });
 
-  const { data, error } = await query;
-  if (error || !data) {
-    if (error) logActionError("loadTransactionsCached", error.message, null, { filters });
-    return [];
-  }
   return data as unknown as Transaction[];
 }
 
@@ -218,22 +240,39 @@ async function loadPdfSubmissionsCached(
   cacheTag("pdf-submissions");
   applyCacheLife("max");
 
-  const supabase = createServiceClient();
-  let query = supabase
-    .from("pdf_submissions")
-    .select(
-      `*,
-       user:profiles!user_id(id, full_name, username, avatar_url),
-       book:books!book_id(id, title, author, is_syllabus),
-       reviewer:profiles!reviewed_by(id, full_name)`,
-    )
-    .order("submitted_at", { ascending: false });
+  const whereConditions = [];
+  if (filters.userId) whereConditions.push(eq(schema.pdfSubmissions.user_id, filters.userId));
+  if (filters.status) whereConditions.push(eq(schema.pdfSubmissions.status, filters.status));
 
-  if (filters.userId) query = query.eq("user_id", filters.userId);
-  if (filters.status) query = query.eq("status", filters.status);
+  const data = await db.query.pdfSubmissions.findMany({
+    where: and(...whereConditions),
+    with: {
+      user: {
+        columns: {
+          id: true,
+          full_name: true,
+          username: true,
+          avatar_url: true,
+        },
+      },
+      book: {
+        columns: {
+          id: true,
+          title: true,
+          author: true,
+          is_syllabus: true,
+        },
+      },
+      reviewer: {
+        columns: {
+          id: true,
+          full_name: true,
+        },
+      },
+    },
+    orderBy: [desc(schema.pdfSubmissions.submitted_at)],
+  });
 
-  const { data, error } = await query;
-  if (error || !data) return [];
   return data as unknown as PdfSubmission[];
 }
 
@@ -248,26 +287,27 @@ export async function getPdfSubmissions(
 // User stats (reading progress, active borrows, etc.)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Reading progress and active borrow info for one user. */
-export async function getUserStats(userId: string): Promise<UserStats> {
-  const supabase = createServiceClient();
+async function loadUserStatsCached(userId: string): Promise<UserStats> {
+  "use cache";
+  cacheTag("users", "books", "transactions", "pdf-submissions");
+  applyCacheLife("short");
 
   // 1. Fetch all categories that count in progress
-  const { data: categories } = await supabase
-    .from("categories")
-    .select("id, name")
-    .eq("count_in_progress", true);
+  const categories = await db.query.categories.findMany({
+    where: eq(schema.categories.count_in_progress, true),
+    columns: { id: true, name: true },
+  });
 
-  const categoryIds = (categories ?? []).map((c) => c.id);
+  const categoryIds = categories.map((c) => c.id);
 
   // 2. Fetch total books per category
-  const { data: categoryTotals } = await supabase
-    .from("books")
-    .select("category_id")
-    .in("category_id", categoryIds);
+  const categoryTotals = await db.query.books.findMany({
+    where: inArray(schema.books.category_id, categoryIds),
+    columns: { category_id: true },
+  });
 
   const totalPerCategory = new Map<string, number>();
-  for (const b of categoryTotals ?? []) {
+  for (const b of categoryTotals) {
     if (b.category_id) {
       totalPerCategory.set(
         b.category_id,
@@ -277,22 +317,34 @@ export async function getUserStats(userId: string): Promise<UserStats> {
   }
 
   // 3. Fetch completed books (transactions + PDF)
-  const { data: completedBorrows } = await supabase
-    .from("transactions")
-    .select("book_id, book:books!book_id(category_id)")
-    .eq("user_id", userId)
-    .eq("type", "borrow")
-    .eq("status", "completed");
+  const completedBorrows = await db.query.transactions.findMany({
+    where: and(
+      eq(schema.transactions.user_id, userId),
+      eq(schema.transactions.type, "borrow"),
+      eq(schema.transactions.status, "completed")
+    ),
+    with: {
+      book: {
+        columns: { category_id: true }
+      }
+    }
+  });
 
-  const { data: approvedPdfs } = await supabase
-    .from("pdf_submissions")
-    .select("book_id, book:books!book_id(category_id)")
-    .eq("user_id", userId)
-    .eq("status", "approved");
+  const approvedPdfs = await db.query.pdfSubmissions.findMany({
+    where: and(
+      eq(schema.pdfSubmissions.user_id, userId),
+      eq(schema.pdfSubmissions.status, "approved")
+    ),
+    with: {
+      book: {
+        columns: { category_id: true }
+      }
+    }
+  });
 
   // Map to track unique completed books per category
   const completedIdsPerCategory = new Map<string, Set<string>>();
-  for (const c of categories ?? []) {
+  for (const c of categories) {
     completedIdsPerCategory.set(c.id, new Set());
   }
 
@@ -305,10 +357,10 @@ export async function getUserStats(userId: string): Promise<UserStats> {
     }
   };
 
-  completedBorrows?.forEach(addBookToProgress);
-  approvedPdfs?.forEach(addBookToProgress);
+  completedBorrows.forEach(addBookToProgress);
+  approvedPdfs.forEach(addBookToProgress);
 
-  const categoryProgress: CategoryProgress[] = (categories ?? []).map((c) => ({
+  const categoryProgress: CategoryProgress[] = categories.map((c) => ({
     categoryId: c.id,
     categoryName: c.name,
     completed: completedIdsPerCategory.get(c.id)?.size ?? 0,
@@ -316,7 +368,7 @@ export async function getUserStats(userId: string): Promise<UserStats> {
   }));
 
   // Legacy syllabus support
-  const syllabusCat = (categories ?? []).find((c) => c.name === "Syllabus");
+  const syllabusCat = categories.find((c) => c.name === "Syllabus");
   const syllabusCompleted = syllabusCat
     ? (completedIdsPerCategory.get(syllabusCat.id)?.size ?? 0)
     : 0;
@@ -325,38 +377,51 @@ export async function getUserStats(userId: string): Promise<UserStats> {
     : 0;
 
   // Active + overdue borrows (what they currently have)
-  const { data: activeBorrows } = await supabase
-    .from("transactions")
-    .select(
-      "*, book:books!book_id(id, title, author, is_syllabus), copy:copies!copy_id(id, copy_number)",
-    )
-    .eq("user_id", userId)
-    .eq("type", "borrow")
-    .in("status", ["active", "overdue"]);
+  const activeBorrows = await db.query.transactions.findMany({
+    where: and(
+      eq(schema.transactions.user_id, userId),
+      eq(schema.transactions.type, "borrow"),
+      inArray(schema.transactions.status, ["active", "overdue"])
+    ),
+    with: {
+      book: {
+        columns: { id: true, title: true, author: true, is_syllabus: true }
+      },
+      copy: {
+        columns: { id: true, copy_number: true }
+      }
+    }
+  });
 
   // Pending requests (not yet approved)
-  const { count: pendingCount } = await supabase
-    .from("transactions")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .eq("status", "pending");
+  const pendingRequests = await db.query.transactions.findMany({
+    where: and(
+      eq(schema.transactions.user_id, userId),
+      eq(schema.transactions.status, "pending")
+    ),
+    columns: { id: true }
+  });
 
   const now = new Date();
   return {
     syllabusCompleted,
     syllabusTotal,
     categoryProgress,
-    activeBorrows: activeBorrows?.length ?? 0,
-    overdueBorrows: (activeBorrows ?? []).filter((t) => {
-      const tx = t as unknown as Transaction;
+    activeBorrows: activeBorrows.length,
+    overdueBorrows: activeBorrows.filter((tx) => {
       return (
         tx.status === "overdue" ||
         (tx.due_date && new Date(tx.due_date) < now)
       );
     }).length,
-    pendingRequests: pendingCount ?? 0,
-    currentBorrows: (activeBorrows ?? []) as unknown as Transaction[],
+    pendingRequests: pendingRequests.length,
+    currentBorrows: activeBorrows as unknown as Transaction[],
   };
+}
+
+/** Reading progress and active borrow info for one user (cached). */
+export async function getUserStats(userId: string): Promise<UserStats> {
+  return loadUserStatsCached(userId);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -372,58 +437,30 @@ async function loadUsersCached(): Promise<UserWithStats[]> {
   cacheTag("users");
   applyCacheLife("max");
 
-  const supabase = createServiceClient();
+  const profilesData = await db.query.profiles.findMany({
+    with: {
+      thana: true,
+      rank: true,
+    },
+    orderBy: [desc(schema.profiles.created_at)],
+  });
 
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select(
-      "id, full_name, username, email, avatar_url, role, is_verified, profile_completed, created_at, updated_at, phone, thana_id, rank_id",
-    )
-    .order("created_at", { ascending: false });
+  if (!profilesData || profilesData.length === 0) return [];
 
-  if (!profiles || profiles.length === 0) return [];
-
-  // Fetch all ranks to map rank_id
-  const { data: ranks } = await supabase.from("ranks").select("id, name");
-  const rankById = new Map<string, { id: string; name: string }>();
-  for (const r of ranks ?? []) {
-    rankById.set(r.id, r);
-  }
-
-  const thanaIds = [
-    ...new Set(
-      profiles
-        .map((p) => (p as { thana_id?: string | null }).thana_id)
-        .filter((id): id is string => Boolean(id)),
-    ),
-  ];
-
-  const thanaById = new Map<string, { id: string; name: string }>();
-  if (thanaIds.length > 0) {
-    const { data: thanaRows } = await supabase
-      .from("thanas")
-      .select("id, name")
-      .in("id", thanaIds);
-    for (const t of thanaRows ?? []) {
-      thanaById.set(t.id, t);
-    }
-  }
-
-  const ids = profiles.map((p) => p.id);
+  const ids = profilesData.map((p) => p.id);
 
   // Fetch categories for progress tracking
-  const { data: categories } = await supabase
-    .from("categories")
-    .select("id, name")
-    .eq("count_in_progress", true);
-  const progressCategories = categories ?? [];
+  const progressCategories = await db.query.categories.findMany({
+    where: eq(schema.categories.count_in_progress, true),
+    columns: { id: true, name: true },
+  });
 
   // Fetch total books per category
-  const { data: categoryTotals } = await supabase
-    .from("books")
-    .select("category_id");
+  const categoryTotals = await db.query.books.findMany({
+    columns: { category_id: true },
+  });
   const totalPerCategory = new Map<string, number>();
-  for (const b of categoryTotals ?? []) {
+  for (const b of categoryTotals) {
     if (b.category_id) {
       totalPerCategory.set(
         b.category_id,
@@ -439,38 +476,54 @@ async function loadUsersCached(): Promise<UserWithStats[]> {
     : 0;
 
   // Batch: active/overdue borrow counts
-  const { data: activeTxns } = await supabase
-    .from("transactions")
-    .select("user_id, status, due_date")
-    .in("user_id", ids)
-    .eq("type", "borrow")
-    .in("status", ["active", "overdue"]);
+  const activeTxns = await db.query.transactions.findMany({
+    where: and(
+      inArray(schema.transactions.user_id, ids),
+      eq(schema.transactions.type, "borrow"),
+      inArray(schema.transactions.status, ["active", "overdue"])
+    ),
+    columns: { user_id: true, status: true, due_date: true },
+  });
 
   // Batch: pending counts
-  const { data: pendingTxns } = await supabase
-    .from("transactions")
-    .select("user_id")
-    .in("user_id", ids)
-    .eq("status", "pending");
+  const pendingTxns = await db.query.transactions.findMany({
+    where: and(
+      inArray(schema.transactions.user_id, ids),
+      eq(schema.transactions.status, "pending")
+    ),
+    columns: { user_id: true },
+  });
 
   // Batch: completed borrows with category info
-  const { data: completedBorrows } = await supabase
-    .from("transactions")
-    .select("user_id, book_id, book:books!book_id(category_id)")
-    .in("user_id", ids)
-    .eq("type", "borrow")
-    .eq("status", "completed");
+  const completedBorrows = await db.query.transactions.findMany({
+    where: and(
+      inArray(schema.transactions.user_id, ids),
+      eq(schema.transactions.type, "borrow"),
+      eq(schema.transactions.status, "completed")
+    ),
+    with: {
+      book: {
+        columns: { category_id: true }
+      }
+    }
+  });
 
   // Batch: approved PDF submissions with category info
-  const { data: approvedPdfs } = await supabase
-    .from("pdf_submissions")
-    .select("user_id, book_id, book:books!book_id(category_id)")
-    .in("user_id", ids)
-    .eq("status", "approved");
+  const approvedPdfs = await db.query.pdfSubmissions.findMany({
+    where: and(
+      inArray(schema.pdfSubmissions.user_id, ids),
+      eq(schema.pdfSubmissions.status, "approved")
+    ),
+    with: {
+      book: {
+        columns: { category_id: true }
+      }
+    }
+  });
 
   const now = new Date();
-  return profiles.map((profile): UserWithStats => {
-    const userActiveTxns = (activeTxns ?? []).filter(
+  return profilesData.map((profile): UserWithStats => {
+    const userActiveTxns = activeTxns.filter(
       (t) => t.user_id === profile.id,
     );
     const activeBorrowsCount = userActiveTxns.length;
@@ -478,7 +531,7 @@ async function loadUsersCached(): Promise<UserWithStats[]> {
       (t) =>
         t.status === "overdue" || (t.due_date && new Date(t.due_date) < now),
     ).length;
-    const pendingRequestsCount = (pendingTxns ?? []).filter(
+    const pendingRequestsCount = pendingTxns.filter(
       (t) => t.user_id === profile.id,
     ).length;
 
@@ -498,8 +551,8 @@ async function loadUsersCached(): Promise<UserWithStats[]> {
       }
     };
 
-    completedBorrows?.forEach(processItem);
-    approvedPdfs?.forEach(processItem);
+    completedBorrows.forEach(processItem);
+    approvedPdfs.forEach(processItem);
 
     const categoryProgress: CategoryProgress[] = progressCategories.map(
       (c) => ({
@@ -516,12 +569,6 @@ async function loadUsersCached(): Promise<UserWithStats[]> {
 
     return {
       ...(profile as unknown as Profile),
-      thana: profile.thana_id
-        ? thanaById.get(profile.thana_id as string)
-        : undefined,
-      rank: (profile as any).rank_id
-        ? rankById.get((profile as any).rank_id as string)
-        : undefined,
       syllabusCompleted,
       syllabusTotal,
       categoryProgress,
@@ -541,13 +588,7 @@ export async function getUsers(): Promise<UserWithStats[]> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Fetches everything the overview dashboard needs in parallel:
- * stats, overdue items, pending queues, recent activity,
- * top borrowers, and most-borrowed books.
- *
- * `firstOfMonth` is part of the cache key so the "completed this month" query
- * stays correct across month boundaries. `mark_overdue_transactions` runs on
- * cache refresh (miss / after invalidation), not on every cache hit.
+ * Fetches everything the overview dashboard needs in parallel.
  */
 async function loadOverviewDataCached(
   firstOfMonth: string,
@@ -556,99 +597,88 @@ async function loadOverviewDataCached(
   cacheTag("overview");
   applyCacheLife("minutes");
 
-  const supabase = createServiceClient();
-
-  await supabase.rpc("mark_overdue_transactions");
+  // In Drizzle, we don't have a direct equivalent to supabase.rpc unless we use db.execute
+  // But we can just rely on the application logic for overdue checks or run a raw query
+  await db.execute(sql`SELECT mark_overdue_transactions()`);
 
   const [
-    { data: books },
-    { data: copies },
-    { data: members },
-    { data: openTransactions },
-    { data: recentActivity },
-    { data: borrowHistory },
-    { data: pendingPdfs },
-    { count: completedThisMonth },
+    booksData,
+    copiesData,
+    membersData,
+    allOpenTransactions,
+    recentActivityData,
+    borrowHistoryData,
+    pendingPdfsData,
+    completedThisMonthData,
   ] = await Promise.all([
-    supabase.from("books").select("id, is_syllabus"),
-
-    supabase.from("copies").select("id, status"),
-
-    supabase.from("profiles").select("id, is_verified").eq("role", "member"),
-
-    // All open work in one query — partitioned client-side
-    supabase
-      .from("transactions")
-      .select(
-        `id, type, status, request_date, due_date,
-         user:profiles!user_id(id, full_name, username, avatar_url),
-         book:books!book_id(id, title, author, is_syllabus),
-         copy:copies!copy_id(id, copy_number)`,
-      )
-      .in("status", ["active", "overdue", "pending"])
-      .order("due_date", { ascending: true }),
-
-    // Latest 15 transactions for the activity feed
-    supabase
-      .from("transactions")
-      .select(
-        `id, type, status, request_date, due_date,
-         user:profiles!user_id(id, full_name, username, avatar_url),
-         book:books!book_id(id, title, author),
-         copy:copies!copy_id(id, copy_number)`,
-      )
-      .order("request_date", { ascending: false })
-      .limit(15),
-
-    // Recent borrow records for top-member and popular-book aggregation.
-    // 300 rows is more than enough to surface the real top-5 in any
-    // reasonably-sized library; fetching the whole table would be wasteful.
-    supabase
-      .from("transactions")
-      .select(
-        "user_id, book_id, user:profiles!user_id(id, full_name, username, avatar_url), book:books!book_id(id, title, author, is_syllabus)",
-      )
-      .eq("type", "borrow")
-      .in("status", ["active", "completed", "overdue"])
-      .order("request_date", { ascending: false })
-      .limit(300),
-
-    // Pending PDF submissions
-    supabase
-      .from("pdf_submissions")
-      .select(
-        `id, submitted_at,
-         user:profiles!user_id(id, full_name, username, avatar_url),
-         book:books!book_id(id, title, author, is_syllabus)`,
-      )
-      .eq("status", "pending")
-      .order("submitted_at", { ascending: true })
-      .limit(10),
-
-    // Completed this calendar month — count only
-    supabase
-      .from("transactions")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "completed")
-      .gte("updated_at", firstOfMonth),
+    db.query.books.findMany({ columns: { id: true, is_syllabus: true } }),
+    db.query.copies.findMany({ columns: { id: true, status: true } }),
+    db.query.profiles.findMany({
+      where: eq(schema.profiles.role, "member"),
+      columns: { id: true, is_verified: true }
+    }),
+    db.query.transactions.findMany({
+      where: inArray(schema.transactions.status, ["active", "overdue", "pending"]),
+      with: {
+        user: { columns: { id: true, full_name: true, username: true, avatar_url: true } },
+        book: { columns: { id: true, title: true, author: true, is_syllabus: true } },
+        copy: { columns: { id: true, copy_number: true } }
+      },
+      orderBy: [asc(schema.transactions.due_date)]
+    }),
+    db.query.transactions.findMany({
+      with: {
+        user: { columns: { id: true, full_name: true, username: true, avatar_url: true } },
+        book: { columns: { id: true, title: true, author: true } },
+        copy: { columns: { id: true, copy_number: true } }
+      },
+      orderBy: [desc(schema.transactions.request_date)],
+      limit: 15
+    }),
+    db.query.transactions.findMany({
+      where: and(
+        eq(schema.transactions.type, "borrow"),
+        inArray(schema.transactions.status, ["active", "completed", "overdue"])
+      ),
+      with: {
+        user: { columns: { id: true, full_name: true, username: true, avatar_url: true } },
+        book: { columns: { id: true, title: true, author: true, is_syllabus: true } }
+      },
+      orderBy: [desc(schema.transactions.request_date)],
+      limit: 300
+    }),
+    db.query.pdfSubmissions.findMany({
+      where: eq(schema.pdfSubmissions.status, "pending"),
+      with: {
+        user: { columns: { id: true, full_name: true, username: true, avatar_url: true } },
+        book: { columns: { id: true, title: true, author: true, is_syllabus: true } }
+      },
+      orderBy: [asc(schema.pdfSubmissions.submitted_at)],
+      limit: 10
+    }),
+    db.query.transactions.findMany({
+      where: and(
+        eq(schema.transactions.status, "completed"),
+        sql`${schema.transactions.updated_at} >= ${firstOfMonth}`
+      ),
+      columns: { id: true }
+    })
   ]);
 
-  // Partition open transactions
-  const allOpen = openTransactions ?? [];
   const now = new Date();
-  const overdueItems = allOpen.filter(
+  const overdueItems = allOpenTransactions.filter(
     (t) =>
       t.type === "borrow" &&
       (t.status === "overdue" ||
         (t.status === "active" && t.due_date && new Date(t.due_date) < now)),
   );
-  const pendingBorrows = allOpen.filter(
+  const pendingBorrows = allOpenTransactions.filter(
     (t) => t.type === "borrow" && t.status === "pending",
   );
-  const pendingReturns = allOpen.filter(
+  const pendingReturns = allOpenTransactions.filter(
     (t) => t.type === "return" && t.status === "pending",
   );
-  const activeBorrows = allOpen.filter(
+  const activeBorrows = allOpenTransactions.filter(
     (t) =>
       t.status === "active" ||
       t.status === "overdue" ||
@@ -660,10 +690,10 @@ async function loadOverviewDataCached(
     string,
     { meta: NonNullable<Transaction["user"]>; count: number }
   >();
-  for (const tx of borrowHistory ?? []) {
-    const user = (tx as unknown as Transaction).user;
+  for (const tx of borrowHistoryData) {
+    const user = tx.user;
     if (!user) continue;
-    const entry = memberMap.get(tx.user_id) ?? { meta: user, count: 0 };
+    const entry = memberMap.get(tx.user_id) ?? { meta: user as any, count: 0 };
     entry.count++;
     memberMap.set(tx.user_id, entry);
   }
@@ -683,10 +713,10 @@ async function loadOverviewDataCached(
     string,
     { meta: NonNullable<Transaction["book"]>; count: number }
   >();
-  for (const tx of borrowHistory ?? []) {
-    const book = (tx as unknown as Transaction).book;
+  for (const tx of borrowHistoryData) {
+    const book = tx.book;
     if (!book) continue;
-    const entry = bookMap.get(tx.book_id) ?? { meta: book, count: 0 };
+    const entry = bookMap.get(tx.book_id) ?? { meta: book as any, count: 0 };
     entry.count++;
     bookMap.set(tx.book_id, entry);
   }
@@ -701,41 +731,36 @@ async function loadOverviewDataCached(
       totalBorrows: count,
     }));
 
-  const booksArr = books ?? [];
-  const copiesArr = copies ?? [];
-  const membersArr = members ?? [];
-
   return {
     stats: {
-      totalBooks: booksArr.length,
-      syllabusBooks: booksArr.filter((b) => b.is_syllabus).length,
-      generalBooks: booksArr.filter((b) => !b.is_syllabus).length,
-      totalCopies: copiesArr.length,
-      availableCopies: copiesArr.filter((c) => c.status === "available").length,
-      borrowedCopies: copiesArr.filter((c) => c.status === "borrowed").length,
-      damagedCopies: copiesArr.filter((c) => c.status === "damaged").length,
-      totalMembers: membersArr.length,
-      verifiedMembers: membersArr.filter((m) => m.is_verified).length,
-      unverifiedMembers: membersArr.filter((m) => !m.is_verified).length,
+      totalBooks: booksData.length,
+      syllabusBooks: booksData.filter((b) => b.is_syllabus).length,
+      generalBooks: booksData.filter((b) => !b.is_syllabus).length,
+      totalCopies: copiesData.length,
+      availableCopies: copiesData.filter((c) => c.status === "available").length,
+      borrowedCopies: copiesData.filter((c) => c.status === "borrowed").length,
+      damagedCopies: copiesData.filter((c) => c.status === "damaged").length,
+      totalMembers: membersData.length,
+      verifiedMembers: membersData.filter((m) => m.is_verified).length,
+      unverifiedMembers: membersData.filter((m) => !m.is_verified).length,
       activeBorrows: activeBorrows.length,
       overdueCount: overdueItems.length,
       pendingBorrowRequests: pendingBorrows.length,
       pendingReturnRequests: pendingReturns.length,
-      pendingPdfSubmissions: (pendingPdfs ?? []).length,
-      completedThisMonth: completedThisMonth ?? 0,
+      pendingPdfSubmissions: pendingPdfsData.length,
+      completedThisMonth: completedThisMonthData.length,
     },
     overdueItems: overdueItems as unknown as Transaction[],
     pendingBorrows: pendingBorrows as unknown as Transaction[],
     pendingReturns: pendingReturns as unknown as Transaction[],
-    recentActivity: (recentActivity ?? []) as unknown as Transaction[],
+    recentActivity: recentActivityData as unknown as Transaction[],
     topMembers,
     popularBooks,
-    pendingPdfs: (pendingPdfs ?? []) as unknown as PdfSubmission[],
+    pendingPdfs: pendingPdfsData as unknown as PdfSubmission[],
   };
 }
 
 export async function getOverviewData(): Promise<OverviewData> {
-  await cookies();
   const firstOfMonth = new Date(
     new Date().getFullYear(),
     new Date().getMonth(),
@@ -749,37 +774,37 @@ export async function getOverviewData(): Promise<OverviewData> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { ActionLog, NotificationItem } from "@/types/library";
+async function loadUserNotificationsCached(userId: string): Promise<NotificationItem[]> {
+  "use cache";
+  cacheTag("users", "transactions", "pdf-submissions", "actionLogs");
+  applyCacheLife("short");
 
-export async function getUserNotifications(userId: string): Promise<NotificationItem[]> {
-  const supabase = createServiceClient();
-
-  const [
-    { data: txs },
-    { data: pdfs },
-    { data: logs }
-  ] = await Promise.all([
-    supabase
-      .from("transactions")
-      .select("id, status, type, updated_at, request_date, rejection_reason, book:books(title)")
-      .eq("user_id", userId)
-      .in("status", ["active", "completed", "rejected", "overdue"]),
-
-    supabase
-      .from("pdf_submissions")
-      .select("id, status, submitted_at, updated_at, rejection_reason, book:books(title)")
-      .eq("user_id", userId)
-      .in("status", ["approved", "rejected"]),
-
-    supabase
-      .from("action_logs")
-      .select("id, action_type, created_at, details")
-      .eq("target_id", userId)
-      .neq("action_type", "error")
+  const [txs, pdfs, logs] = await Promise.all([
+    db.query.transactions.findMany({
+      where: and(
+        eq(schema.transactions.user_id, userId),
+        inArray(schema.transactions.status, ["active", "completed", "rejected", "overdue"])
+      ),
+      with: { book: { columns: { title: true } } }
+    }),
+    db.query.pdfSubmissions.findMany({
+      where: and(
+        eq(schema.pdfSubmissions.user_id, userId),
+        inArray(schema.pdfSubmissions.status, ["approved", "rejected"])
+      ),
+      with: { book: { columns: { title: true } } }
+    }),
+    db.query.actionLogs.findMany({
+      where: and(
+        eq(schema.actionLogs.target_id, userId),
+        ne(schema.actionLogs.action_type, "error")
+      )
+    })
   ]);
 
   const items: NotificationItem[] = [];
 
-  for (const tx of txs ?? []) {
+  for (const tx of txs) {
     const bookTitle = (tx as any).book?.title ?? "a book";
     let type: NotificationItem["type"] | null = null;
     let title = "";
@@ -806,7 +831,7 @@ export async function getUserNotifications(userId: string): Promise<Notification
     if (type) {
       items.push({
         id: tx.id,
-        date: tx.updated_at ?? tx.request_date,
+        date: (tx.updated_at ?? tx.request_date)?.toISOString() ?? new Date().toISOString(),
         type,
         title,
         message,
@@ -816,11 +841,11 @@ export async function getUserNotifications(userId: string): Promise<Notification
     }
   }
 
-  for (const pdf of pdfs ?? []) {
+  for (const pdf of pdfs) {
     const bookTitle = (pdf as any).book?.title ?? "a book";
     items.push({
       id: pdf.id,
-      date: pdf.updated_at ?? pdf.submitted_at,
+      date: (pdf.reviewed_at ?? pdf.submitted_at)?.toISOString() ?? new Date().toISOString(),
       type: pdf.status === "approved" ? "pdf_approved" : "pdf_rejected",
       title: pdf.status === "approved" ? "PDF Reading Approved" : "PDF Reading Rejected",
       message: `Your reading submission for "${bookTitle}" was ${pdf.status}.`,
@@ -829,7 +854,7 @@ export async function getUserNotifications(userId: string): Promise<Notification
     });
   }
 
-  for (const log of logs ?? []) {
+  for (const log of logs) {
     let title = "";
     let message = log.details ?? "Action taken on your account.";
     let type: NotificationItem["type"] = "user_joined";
@@ -854,7 +879,7 @@ export async function getUserNotifications(userId: string): Promise<Notification
     if (log.action_type !== "user_joined") {
       items.push({
         id: log.id,
-        date: log.created_at,
+        date: log.created_at?.toISOString() ?? new Date().toISOString(),
         type,
         title,
         message,
@@ -866,17 +891,23 @@ export async function getUserNotifications(userId: string): Promise<Notification
   return items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
+/** Get notifications for a user (cached). */
+export async function getUserNotifications(userId: string): Promise<NotificationItem[]> {
+  return loadUserNotificationsCached(userId);
+}
+
 export async function getAdminLogs(days: number = 30): Promise<ActionLog[]> {
-  const supabase = createServiceClient();
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
 
-  const { data, error } = await supabase
-    .from("action_logs")
-    .select("*, actor:profiles!actor_id(id, full_name, username), target:profiles!target_id(id, full_name, username)")
-    .gte("created_at", cutoff.toISOString())
-    .order("created_at", { ascending: false });
+  const data = await db.query.actionLogs.findMany({
+    where: gte(schema.actionLogs.created_at, cutoff),
+    with: {
+      actor: { columns: { id: true, full_name: true, username: true } },
+      target: { columns: { id: true, full_name: true, username: true } }
+    },
+    orderBy: [desc(schema.actionLogs.created_at)]
+  });
 
-  if (error || !data) return [];
   return data as unknown as ActionLog[];
 }

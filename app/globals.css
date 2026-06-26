@@ -160,6 +160,12 @@ body {
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    font-family: var(--font-noto-sans-bengali), var(--font-sans), sans-serif;
+    font-weight: 400;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   body {
     @apply bg-background text-foreground;

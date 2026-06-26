@@ -1,29 +1,38 @@
+import Avatar from "@/components/Avatar";
 import { RankBadge } from "@/components/ui/rank-badge";
 import { getTranslation } from "@/lib/i18n/server";
 import { getUserChecklistProgress } from "@/server/checklists";
 import { getProfile } from "@/server/geo";
-import { getUserStats } from "@/server/library";
+import { getPdfSubmissions, getUserStats, getUserTransactions } from "@/server/library";
 import { getClaims } from "@/server/user";
-import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   FaCheckCircle,
   FaEdit,
   FaEnvelope,
+  FaFileAlt,
   FaMapMarkerAlt,
   FaPhone,
   FaShieldAlt,
 } from "react-icons/fa";
 
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? "?";
+  return (parts[0][0]?.toUpperCase() ?? "") + (parts[parts.length - 1][0]?.toUpperCase() ?? "");
+}
+
 export default async function DashboardProfilePage() {
   const claims = await getClaims();
   if (!claims) redirect("/login");
   const { t, language } = await getTranslation();
-  const [profile, stats, checklistProgress] = await Promise.all([
+  const [profile, stats, checklistProgress, transactions, pdfSubmissions] = await Promise.all([
     getProfile(claims.sub),
     getUserStats(claims.sub),
     getUserChecklistProgress(claims.sub),
+    getUserTransactions(claims.sub),
+    getPdfSubmissions({ userId: claims.sub }),
   ]);
   if (!profile) redirect("/login");
 
@@ -44,19 +53,13 @@ export default async function DashboardProfilePage() {
       {/* ── Hero card ── */}
       <section className="dashboard-surface tron-border rounded-sm p-6 sm:p-8">
         <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
-          {profile.avatar_url ? (
-            <Image
-              src={profile.avatar_url}
-              alt={profile.full_name}
-              width={96}
-              height={96}
-              className="w-24 h-24 rounded-full object-cover border-2 border-[#8a7966] shrink-0"
-            />
-          ) : (
-            <div className="w-24 h-24 rounded-full bg-[#d9cbb7] border-2 border-[#8a7966] flex items-center justify-center text-3xl font-bold text-[#4a3e33] shrink-0 ink-title">
-              {profile.full_name.charAt(0).toUpperCase()}
-            </div>
-          )}
+          <Avatar
+            src={profile.avatar_url}
+            alt={profile.full_name}
+            initials={getInitials(profile.full_name)}
+            size="xl"
+            className="border-2"
+          />
           <div className="flex-1 text-center sm:text-left">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
               <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
@@ -85,13 +88,22 @@ export default async function DashboardProfilePage() {
               {t.profile.header.joinedOn}: <b>{joinedDate}</b>
             </p>
           </div>
-          <Link
-            href="/dashboard/profile/edit"
-            className="flex items-center gap-2 px-4 py-2 bg-[#eadcc8] text-[#4e4033] border border-[#b5a490] rounded-sm hover:bg-[#e1d0ba] transition-colors text-sm font-semibold ink-text shrink-0"
-          >
-            <FaEdit className="w-3.5 h-3.5" />
-            {t.profile.header.editProfile}
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+            <Link
+              href={`/dashboard/report?user=${profile.id}`}
+              className="flex items-center gap-2 px-4 py-2 bg-stone-800 text-stone-100 border border-stone-600 rounded-sm hover:bg-stone-700 transition-colors text-sm font-semibold ink-text shrink-0"
+            >
+              <FaFileAlt className="w-3.5 h-3.5 text-stone-300" />
+              {t.profile.header.report || "View Report"}
+            </Link>
+            <Link
+              href="/dashboard/profile/edit"
+              className="flex items-center gap-2 px-4 py-2 bg-[#eadcc8] text-[#4e4033] border border-[#b5a490] rounded-sm hover:bg-[#e1d0ba] transition-colors text-sm font-semibold ink-text shrink-0"
+            >
+              <FaEdit className="w-3.5 h-3.5" />
+              {t.profile.header.editProfile}
+            </Link>
+          </div>
         </div>
       </section>
 

@@ -3,7 +3,6 @@
 import { RankBadge } from "@/components/ui/rank-badge";
 import { useTranslation } from "@/lib/i18n/context";
 import type { UserWithStats } from "@/types/library";
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -405,19 +404,12 @@ export default function UsersClient({ users }: Props) {
                     <td className="px-4 sm:px-6 py-3">
                       <div className="flex items-center gap-3">
                         <div className="shrink-0 relative">
-                          {user.avatar_url ? (
-                            <Image
-                              src={user.avatar_url}
-                              alt={user.full_name}
-                              width={32}
-                              height={32}
-                              className="w-8 h-8 rounded-full border border-[#8a7966] object-cover"
-                            />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-[#d9cbb7] border border-[#8a7966] flex items-center justify-center text-[10px] font-bold text-[#4a3e33]">
-                              {getInitials(user.full_name)}
-                            </div>
-                          )}
+                          <Avatar
+                            src={user.avatar_url}
+                            alt={user.full_name}
+                            initials={getInitials(user.full_name)}
+                            size="sm"
+                          />
                           <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5">
                             <VerificationBadge verified={user.is_verified} />
                           </div>

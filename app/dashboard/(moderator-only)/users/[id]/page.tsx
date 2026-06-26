@@ -4,8 +4,8 @@ import { getTranslation } from "@/lib/i18n/server";
 import { getChecklists, getUserChecklistCompletions, getUserChecklistProgress } from "@/server/checklists";
 import { getProfile, getRanks } from "@/server/geo";
 import { getPdfSubmissions, getUserStats, getUserTransactions } from "@/server/library";
+
 import { moderatorPermissions } from "@/server/profiles";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -15,6 +15,7 @@ import {
   FaCheckSquare,
   FaClock,
   FaExclamationTriangle,
+  FaFileAlt,
   FaSquare
 } from "react-icons/fa";
 import UserActions from "./UserActions";
@@ -81,19 +82,13 @@ export default async function UserProfilePage({
       <div className="dashboard-surface tron-border rounded-sm p-6">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex items-center gap-4">
-            {profile.avatar_url ? (
-              <Image
-                src={profile.avatar_url}
-                alt={profile.full_name}
-                width={64}
-                height={64}
-                className="w-16 h-16 rounded-full object-cover border-2 border-[#8a7966] shrink-0"
-              />
-            ) : (
-              <div className="w-16 h-16 rounded-full bg-[#d9cbb7] border-2 border-[#8a7966] flex items-center justify-center text-xl font-bold text-[#4a3e33] shrink-0 ink-title select-none">
-                {getInitials(profile.full_name)}
-              </div>
-            )}
+            <Avatar
+              src={profile.avatar_url}
+              alt={profile.full_name}
+              initials={getInitials(profile.full_name)}
+              size="md"
+              className="border-2 select-none"
+            />
 
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
@@ -102,6 +97,15 @@ export default async function UserProfilePage({
               <p className="text-[#5a4b3f] ink-text mt-0.5">
                 @{profile.username}
               </p>
+              <div className="mt-4">
+                <Link
+                  href={`/dashboard/report?user=${profile.id}`}
+                  className="flex items-center gap-2 px-4 py-2 bg-stone-800 text-stone-100 border border-stone-600 rounded-sm hover:bg-stone-700 transition-colors text-sm font-semibold ink-text shrink-0 w-fit"
+                >
+                  <FaFileAlt className="w-3.5 h-3.5 text-stone-300" />
+                  {t.profile.header.report || "View Report"}
+                </Link>
+              </div>
             </div>
           </div>
 

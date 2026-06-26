@@ -4,6 +4,7 @@ export const profile = {
     editProfile: "প্রোফাইল এডিট করুন",
     verified: "যাচাইকৃত",
     joinedOn: "যোগদান করেছেন",
+    report: "প্রোফাইল রিপোর্ট",
   },
   roles: {
     admin: "অ্যাডমিন",

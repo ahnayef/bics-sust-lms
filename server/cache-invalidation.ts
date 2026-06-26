@@ -41,6 +41,13 @@ export function invalidateAfterPdfMutation() {
 export function invalidateUsersAndOverview() {
   clearTag("users");
   clearTag("overview");
+  clearTag("actionLogs");
+  refresh();
+}
+
+/** Action logs changes (e.g., verification, role changes). */
+export function invalidateActionLogs() {
+  clearTag("actionLogs");
   refresh();
 }
 
