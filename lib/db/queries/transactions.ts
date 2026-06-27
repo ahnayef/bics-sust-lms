@@ -1,37 +1,44 @@
 import { db } from "@/lib/db";
+import { retry } from "@/lib/db/retry";
 import * as schema from "@/lib/db/schema";
-import { and, desc, eq, ilike, inArray, sql } from "drizzle-orm";
+import { and, eq, ilike, inArray, sql } from "drizzle-orm";
 
 export async function getTransactionById(id: string) {
-  return db.query.transactions.findFirst({
-    where: eq(schema.transactions.id, id),
-    with: { user: true, book: true, copy: true, reviewer: true },
-  });
+  return retry(() =>
+    db.query.transactions.findFirst({
+      where: eq(schema.transactions.id, id),
+      with: { user: true, book: true, copy: true, reviewer: true },
+    })
+  );
 }
 
 export async function getTransactionsByUserId(userId: string) {
-  return db.query.transactions.findMany({
-    where: eq(schema.transactions.user_id, userId),
-    with: {
-      user: true,
-      book: true,
-      copy: true,
-      reviewer: true,
-    },
-    orderBy: (transactions, { desc }) => [desc(transactions.request_date)],
-  });
+  return retry(() =>
+    db.query.transactions.findMany({
+      where: eq(schema.transactions.user_id, userId),
+      with: {
+        user: true,
+        book: true,
+        copy: true,
+        reviewer: true,
+      },
+      orderBy: (transactions, { desc }) => [desc(transactions.request_date)],
+    })
+  );
 }
 
 export async function getAllTransactions() {
-  return db.query.transactions.findMany({
-    with: {
-      user: true,
-      book: true,
-      copy: true,
-      reviewer: true,
-    },
-    orderBy: (transactions, { desc }) => [desc(transactions.request_date)],
-  });
+  return retry(() =>
+    db.query.transactions.findMany({
+      with: {
+        user: true,
+        book: true,
+        copy: true,
+        reviewer: true,
+      },
+      orderBy: (transactions, { desc }) => [desc(transactions.request_date)],
+    })
+  );
 }
 
 export async function getTransactionsByFilters(filters: {
@@ -47,24 +54,26 @@ export async function getTransactionsByFilters(filters: {
   if (filters.userId)
     whereConditions.push(eq(schema.transactions.user_id, filters.userId));
 
-  return db.query.transactions.findMany({
-    where: and(...whereConditions),
-    with: {
-      user: {
-        columns: { id: true, full_name: true, username: true, email: true, avatar_url: true },
+  return retry(() =>
+    db.query.transactions.findMany({
+      where: and(...whereConditions),
+      with: {
+        user: {
+          columns: { id: true, full_name: true, username: true, email: true, avatar_url: true },
+        },
+        copy: {
+          columns: { id: true, copy_number: true, status: true, book_id: true },
+        },
+        book: {
+          columns: { id: true, title: true, author: true, is_syllabus: true },
+        },
+        reviewer: {
+          columns: { id: true, full_name: true },
+        },
       },
-      copy: {
-        columns: { id: true, copy_number: true, status: true, book_id: true },
-      },
-      book: {
-        columns: { id: true, title: true, author: true, is_syllabus: true },
-      },
-      reviewer: {
-        columns: { id: true, full_name: true },
-      },
-    },
-    orderBy: (transactions, { desc }) => [desc(transactions.request_date)],
-  });
+      orderBy: (transactions, { desc }) => [desc(transactions.request_date)],
+    })
+  );
 }
 
 export async function getDuplicateTransaction(
@@ -73,34 +82,40 @@ export async function getDuplicateTransaction(
   type: string,
   statuses: string[],
 ) {
-  return db.query.transactions.findFirst({
-    where: and(
-      eq(schema.transactions.user_id, userId),
-      ilike(schema.transactions.copy_id, copyId),
-      eq(schema.transactions.type, type),
-      inArray(schema.transactions.status, statuses),
-    ),
-  });
+  return retry(() =>
+    db.query.transactions.findFirst({
+      where: and(
+        eq(schema.transactions.user_id, userId),
+        ilike(schema.transactions.copy_id, copyId),
+        eq(schema.transactions.type, type),
+        inArray(schema.transactions.status, statuses),
+      ),
+    })
+  );
 }
 
 export async function createTransaction(
   txn: typeof schema.transactions.$inferInsert,
 ) {
-  return db.insert(schema.transactions).values({
-    ...txn,
-    copy_id: txn.copy_id.toUpperCase(),
-    book_id: txn.book_id.toUpperCase(),
-  });
+  return retry(() =>
+    db.insert(schema.transactions).values({
+      ...txn,
+      copy_id: txn.copy_id.toUpperCase(),
+      book_id: txn.book_id.toUpperCase(),
+    })
+  );
 }
 
 export async function updateTransaction(
   id: string,
   updates: Partial<typeof schema.transactions.$inferInsert>,
 ) {
-  return db
-    .update(schema.transactions)
-    .set({ ...updates, updated_at: new Date() })
-    .where(eq(schema.transactions.id, id));
+  return retry(() =>
+    db
+      .update(schema.transactions)
+      .set({ ...updates, updated_at: new Date() })
+      .where(eq(schema.transactions.id, id))
+  );
 }
 
 export async function updateBorrowStatus(
@@ -109,37 +124,43 @@ export async function updateBorrowStatus(
   status: string,
   returnDate?: Date,
 ) {
-  return db
-    .update(schema.transactions)
-    .set({ status, return_date: returnDate, updated_at: new Date() })
-    .where(
-      and(
-        eq(schema.transactions.user_id, userId),
-        ilike(schema.transactions.copy_id, copyId),
-        eq(schema.transactions.type, "borrow"),
-        inArray(schema.transactions.status, ["active", "overdue"]),
-      ),
-    );
+  return retry(() =>
+    db
+      .update(schema.transactions)
+      .set({ status, return_date: returnDate, updated_at: new Date() })
+      .where(
+        and(
+          eq(schema.transactions.user_id, userId),
+          ilike(schema.transactions.copy_id, copyId),
+          eq(schema.transactions.type, "borrow"),
+          inArray(schema.transactions.status, ["active", "overdue"]),
+        ),
+      )
+  );
 }
 
 export async function getRecentTransactions(limit: number = 15) {
-  return db.query.transactions.findMany({
-    with: {
-      user: { columns: { id: true, full_name: true, username: true, avatar_url: true } },
-      book: { columns: { id: true, title: true, author: true } },
-      copy: { columns: { id: true, copy_number: true } }
-    },
-    orderBy: (transactions, { desc }) => [desc(transactions.request_date)],
-    limit,
-  });
+  return retry(() =>
+    db.query.transactions.findMany({
+      with: {
+        user: { columns: { id: true, full_name: true, username: true, avatar_url: true } },
+        book: { columns: { id: true, title: true, author: true } },
+        copy: { columns: { id: true, copy_number: true } }
+      },
+      orderBy: (transactions, { desc }) => [desc(transactions.request_date)],
+      limit,
+    })
+  );
 }
 
 export async function getCompletedSince(date: string) {
-  return db.query.transactions.findMany({
-    where: and(
-      eq(schema.transactions.status, "completed"),
-      sql`${schema.transactions.updated_at} >= ${date}`
-    ),
-    columns: { id: true },
-  });
+  return retry(() =>
+    db.query.transactions.findMany({
+      where: and(
+        eq(schema.transactions.status, "completed"),
+        sql`${schema.transactions.updated_at} >= ${date}`
+      ),
+      columns: { id: true },
+    })
+  );
 }

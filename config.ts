@@ -6,4 +6,4 @@
  *   - "default"  → uses the per-function cache profiles (max, minutes, etc.)
  *   - number     → overrides all cache lifetimes to this many seconds
  */
-export const CACHE_MODE: "off" | "default" | number = "off";
+export const CACHE_MODE: "off" | "default" | number = "default";

@@ -14,6 +14,7 @@ import { getCategoriesForProgress } from "@/lib/db/queries/geo";
 import { getPdfSubmissionsByFilters } from "@/lib/db/queries/pdfSubmissions";
 import { getAllProfiles } from "@/lib/db/queries/profiles";
 import { getCompletedSince, getRecentTransactions, getTransactionsByFilters } from "@/lib/db/queries/transactions";
+import { retry } from "@/lib/db/retry";
 import * as schema from "@/lib/db/schema";
 import type {
   Book,
@@ -29,7 +30,7 @@ import type {
   UserWithStats,
 } from "@/types/library";
 import type { Profile } from "@/types/profile";
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { cacheTag } from "next/cache";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -435,6 +436,7 @@ export async function getUsers(): Promise<UserWithStats[]> {
 async function loadOverviewDataCached(): Promise<OverviewData> {
   "use cache";
   cacheTag("overview");
+  // Cache for longer (10 mins) to reduce load
   applyCacheLife("minutes");
 
   const firstOfMonth = new Date(
@@ -443,143 +445,175 @@ async function loadOverviewDataCached(): Promise<OverviewData> {
     1,
   ).toISOString();
 
-  await db.execute(sql`SELECT mark_overdue_transactions()`);
+  try {
+    const [
+      booksData,
+      copiesData,
+      membersData,
+      allOpenTransactions,
+      recentActivityData,
+      borrowHistoryData,
+      pendingPdfsData,
+      completedThisMonthData,
+    ] = await retry(async () =>
+      Promise.all([
+        db.query.books.findMany({ columns: { id: true, is_syllabus: true } }),
+        db.query.copies.findMany({ columns: { id: true, status: true } }),
+        db.query.profiles.findMany({
+          where: eq(schema.profiles.role, "member"),
+          columns: { id: true, is_verified: true }
+        }),
+        db.query.transactions.findMany({
+          where: inArray(schema.transactions.status, ["active", "overdue", "pending"]),
+          with: {
+            user: { columns: { id: true, full_name: true, username: true, avatar_url: true } },
+            book: { columns: { id: true, title: true, author: true, is_syllabus: true } },
+            copy: { columns: { id: true, copy_number: true } }
+          },
+          orderBy: [asc(schema.transactions.due_date)]
+        }),
+        getRecentTransactions(15),
+        db.query.transactions.findMany({
+          where: and(
+            eq(schema.transactions.type, "borrow"),
+            inArray(schema.transactions.status, ["active", "completed", "overdue"])
+          ),
+          with: {
+            user: { columns: { id: true, full_name: true, username: true, avatar_url: true } },
+            book: { columns: { id: true, title: true, author: true, is_syllabus: true } }
+          },
+          orderBy: [desc(schema.transactions.request_date)],
+          limit: 300
+        }),
+        getPdfSubmissionsByFilters({ status: "pending" }),
+        getCompletedSince(firstOfMonth),
+      ])
+    );
 
-  const [
-    booksData,
-    copiesData,
-    membersData,
-    allOpenTransactions,
-    recentActivityData,
-    borrowHistoryData,
-    pendingPdfsData,
-    completedThisMonthData,
-  ] = await Promise.all([
-    db.query.books.findMany({ columns: { id: true, is_syllabus: true } }),
-    db.query.copies.findMany({ columns: { id: true, status: true } }),
-    db.query.profiles.findMany({
-      where: eq(schema.profiles.role, "member"),
-      columns: { id: true, is_verified: true }
-    }),
-    db.query.transactions.findMany({
-      where: inArray(schema.transactions.status, ["active", "overdue", "pending"]),
-      with: {
-        user: { columns: { id: true, full_name: true, username: true, avatar_url: true } },
-        book: { columns: { id: true, title: true, author: true, is_syllabus: true } },
-        copy: { columns: { id: true, copy_number: true } }
+    const now = new Date();
+    const overdueItems = allOpenTransactions.filter(
+      (t) =>
+        t.type === "borrow" &&
+        (t.status === "overdue" ||
+          (t.status === "active" && t.due_date && new Date(t.due_date) < now)),
+    );
+    const pendingBorrows = allOpenTransactions.filter(
+      (t) => t.type === "borrow" && t.status === "pending",
+    );
+    const pendingReturns = allOpenTransactions.filter(
+      (t) => t.type === "return" && t.status === "pending",
+    );
+    const activeBorrows = allOpenTransactions.filter(
+      (t) =>
+        t.status === "active" ||
+        t.status === "overdue" ||
+        (t.status === "active" && t.due_date && new Date(t.due_date) < now),
+    );
+
+    // Aggregate top borrowers
+    const memberMap = new Map<
+      string,
+      { meta: NonNullable<Transaction["user"]>; count: number }
+    >();
+    for (const tx of borrowHistoryData) {
+      const user = tx.user;
+      if (!user) continue;
+      const entry = memberMap.get(tx.user_id) ?? { meta: user as any, count: 0 };
+      entry.count++;
+      memberMap.set(tx.user_id, entry);
+    }
+    const topMembers: TopMember[] = [...memberMap.values()]
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
+      .map(({ meta, count }) => ({
+        id: meta.id,
+        full_name: meta.full_name,
+        username: meta.username,
+        avatar_url: meta.avatar_url,
+        totalBorrows: count,
+      }));
+
+    // Aggregate most-borrowed books
+    const bookMap = new Map<
+      string,
+      { meta: NonNullable<Transaction["book"]>; count: number }
+    >();
+    for (const tx of borrowHistoryData) {
+      const book = tx.book;
+      if (!book) continue;
+      const entry = bookMap.get(tx.book_id) ?? { meta: book as any, count: 0 };
+      entry.count++;
+      bookMap.set(tx.book_id, entry);
+    }
+    const popularBooks: PopularBook[] = [...bookMap.values()]
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
+      .map(({ meta, count }) => ({
+        id: meta.id,
+        title: meta.title,
+        author: meta.author,
+        is_syllabus: meta.is_syllabus,
+        totalBorrows: count,
+      }));
+
+    return {
+      stats: {
+        totalBooks: booksData.length,
+        syllabusBooks: booksData.filter((b) => b.is_syllabus).length,
+        generalBooks: booksData.filter((b) => !b.is_syllabus).length,
+        totalCopies: copiesData.length,
+        availableCopies: copiesData.filter((c) => c.status === "available").length,
+        borrowedCopies: copiesData.filter((c) => c.status === "borrowed").length,
+        damagedCopies: copiesData.filter((c) => c.status === "damaged").length,
+        totalMembers: membersData.length,
+        verifiedMembers: membersData.filter((m) => m.is_verified).length,
+        unverifiedMembers: membersData.filter((m) => !m.is_verified).length,
+        activeBorrows: activeBorrows.length,
+        overdueCount: overdueItems.length,
+        pendingBorrowRequests: pendingBorrows.length,
+        pendingReturnRequests: pendingReturns.length,
+        pendingPdfSubmissions: pendingPdfsData.length,
+        completedThisMonth: completedThisMonthData.length,
       },
-      orderBy: [asc(schema.transactions.due_date)]
-    }),
-    getRecentTransactions(15),
-    db.query.transactions.findMany({
-      where: and(
-        eq(schema.transactions.type, "borrow"),
-        inArray(schema.transactions.status, ["active", "completed", "overdue"])
-      ),
-      with: {
-        user: { columns: { id: true, full_name: true, username: true, avatar_url: true } },
-        book: { columns: { id: true, title: true, author: true, is_syllabus: true } }
+      overdueItems: overdueItems as unknown as Transaction[],
+      pendingBorrows: pendingBorrows as unknown as Transaction[],
+      pendingReturns: pendingReturns as unknown as Transaction[],
+      recentActivity: recentActivityData as unknown as Transaction[],
+      topMembers,
+      popularBooks,
+      pendingPdfs: pendingPdfsData as unknown as PdfSubmission[],
+    };
+  } catch (error) {
+    console.error("Failed to load overview data:", error);
+    // Fallback if any part of the data fails
+    return {
+      stats: {
+        totalBooks: 0,
+        syllabusBooks: 0,
+        generalBooks: 0,
+        totalCopies: 0,
+        availableCopies: 0,
+        borrowedCopies: 0,
+        damagedCopies: 0,
+        totalMembers: 0,
+        verifiedMembers: 0,
+        unverifiedMembers: 0,
+        activeBorrows: 0,
+        overdueCount: 0,
+        pendingBorrowRequests: 0,
+        pendingReturnRequests: 0,
+        pendingPdfSubmissions: 0,
+        completedThisMonth: 0
       },
-      orderBy: [desc(schema.transactions.request_date)],
-      limit: 300
-    }),
-    getPdfSubmissionsByFilters({ status: "pending" }),
-    getCompletedSince(firstOfMonth),
-  ]);
-
-  const now = new Date();
-  const overdueItems = allOpenTransactions.filter(
-    (t) =>
-      t.type === "borrow" &&
-      (t.status === "overdue" ||
-        (t.status === "active" && t.due_date && new Date(t.due_date) < now)),
-  );
-  const pendingBorrows = allOpenTransactions.filter(
-    (t) => t.type === "borrow" && t.status === "pending",
-  );
-  const pendingReturns = allOpenTransactions.filter(
-    (t) => t.type === "return" && t.status === "pending",
-  );
-  const activeBorrows = allOpenTransactions.filter(
-    (t) =>
-      t.status === "active" ||
-      t.status === "overdue" ||
-      (t.status === "active" && t.due_date && new Date(t.due_date) < now),
-  );
-
-  // Aggregate top borrowers
-  const memberMap = new Map<
-    string,
-    { meta: NonNullable<Transaction["user"]>; count: number }
-  >();
-  for (const tx of borrowHistoryData) {
-    const user = tx.user;
-    if (!user) continue;
-    const entry = memberMap.get(tx.user_id) ?? { meta: user as any, count: 0 };
-    entry.count++;
-    memberMap.set(tx.user_id, entry);
+      overdueItems: [],
+      pendingBorrows: [],
+      pendingReturns: [],
+      recentActivity: [],
+      topMembers: [],
+      popularBooks: [],
+      pendingPdfs: []
+    };
   }
-  const topMembers: TopMember[] = [...memberMap.values()]
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5)
-    .map(({ meta, count }) => ({
-      id: meta.id,
-      full_name: meta.full_name,
-      username: meta.username,
-      avatar_url: meta.avatar_url,
-      totalBorrows: count,
-    }));
-
-  // Aggregate most-borrowed books
-  const bookMap = new Map<
-    string,
-    { meta: NonNullable<Transaction["book"]>; count: number }
-  >();
-  for (const tx of borrowHistoryData) {
-    const book = tx.book;
-    if (!book) continue;
-    const entry = bookMap.get(tx.book_id) ?? { meta: book as any, count: 0 };
-    entry.count++;
-    bookMap.set(tx.book_id, entry);
-  }
-  const popularBooks: PopularBook[] = [...bookMap.values()]
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5)
-    .map(({ meta, count }) => ({
-      id: meta.id,
-      title: meta.title,
-      author: meta.author,
-      is_syllabus: meta.is_syllabus,
-      totalBorrows: count,
-    }));
-
-  return {
-    stats: {
-      totalBooks: booksData.length,
-      syllabusBooks: booksData.filter((b) => b.is_syllabus).length,
-      generalBooks: booksData.filter((b) => !b.is_syllabus).length,
-      totalCopies: copiesData.length,
-      availableCopies: copiesData.filter((c) => c.status === "available").length,
-      borrowedCopies: copiesData.filter((c) => c.status === "borrowed").length,
-      damagedCopies: copiesData.filter((c) => c.status === "damaged").length,
-      totalMembers: membersData.length,
-      verifiedMembers: membersData.filter((m) => m.is_verified).length,
-      unverifiedMembers: membersData.filter((m) => !m.is_verified).length,
-      activeBorrows: activeBorrows.length,
-      overdueCount: overdueItems.length,
-      pendingBorrowRequests: pendingBorrows.length,
-      pendingReturnRequests: pendingReturns.length,
-      pendingPdfSubmissions: pendingPdfsData.length,
-      completedThisMonth: completedThisMonthData.length,
-    },
-    overdueItems: overdueItems as unknown as Transaction[],
-    pendingBorrows: pendingBorrows as unknown as Transaction[],
-    pendingReturns: pendingReturns as unknown as Transaction[],
-    recentActivity: recentActivityData as unknown as Transaction[],
-    topMembers,
-    popularBooks,
-    pendingPdfs: pendingPdfsData as unknown as PdfSubmission[],
-  };
 }
 
 export async function getOverviewData(): Promise<OverviewData> {
