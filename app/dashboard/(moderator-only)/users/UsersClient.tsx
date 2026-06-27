@@ -1,6 +1,7 @@
 "use client";
 
 import { RankBadge } from "@/components/ui/rank-badge";
+import Avatar from "@/components/Avatar";
 import { useTranslation } from "@/lib/i18n/context";
 import type { UserWithStats } from "@/types/library";
 import Link from "next/link";

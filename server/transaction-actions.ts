@@ -12,18 +12,24 @@ import {
   invalidateAfterTransactionMutation,
 } from "@/server/cache-invalidation";
 import {
-  createPdfSubmission,
   createTransaction,
-  getCopyById,
-  getDuplicatePdfSubmission,
   getDuplicateTransaction,
-  getProfileById,
   getTransactionById,
   updateBorrowStatus,
-  updateCopy,
-  updatePdfSubmission,
   updateTransaction,
-} from "@/server/db-access";
+} from "@/lib/db/queries/transactions";
+import {
+  createPdfSubmission,
+  getDuplicatePdfSubmission,
+  updatePdfSubmission,
+} from "@/lib/db/queries/pdfSubmissions";
+import {
+  getCopyById,
+  updateCopy,
+} from "@/lib/db/queries/copies";
+import {
+  getProfileById,
+} from "@/lib/db/queries/profiles";
 import { logActionError } from "@/server/error-log";
 import { getBookByQR } from "@/server/library";
 import type { Copy } from "@/types/library";

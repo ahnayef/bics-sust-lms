@@ -1,7 +1,10 @@
 import { applyCacheLife } from "@/lib/cache";
-import { db } from "@/lib/db";
+import {
+  getAllChecklists,
+  getChecklistsByVisibility,
+  getUserChecklistCompletions as getUserChecklistCompletionsQuery
+} from "@/lib/db/queries/checklists";
 import * as schema from "@/lib/db/schema";
-import { asc } from "drizzle-orm";
 import { cacheTag } from "next/cache";
 
 export type ChecklistWithItems = typeof schema.checklists.$inferSelect & {
@@ -19,21 +22,13 @@ async function loadChecklistsCached(): Promise<ChecklistWithItems[]> {
   "use cache";
   cacheTag("checklists");
   applyCacheLife("max");
-
-  const checklists = await db.query.checklists.findMany({
-    with: { items: { orderBy: [asc(schema.checklistItems.order)] } },
-    orderBy: [asc(schema.checklists.created_at)],
-  });
-
+  const checklists = await getAllChecklists();
   return checklists as unknown as ChecklistWithItems[];
 }
 
 export async function getChecklists(onlyVisible = false): Promise<ChecklistWithItems[]> {
-  const checklists = await loadChecklistsCached();
-  if (onlyVisible) {
-    return checklists.filter(c => c.visible);
-  }
-  return checklists;
+  const checklists = onlyVisible ? await getChecklistsByVisibility(true) : await loadChecklistsCached();
+  return checklists as unknown as ChecklistWithItems[];
 }
 
 async function loadUserChecklistCompletionsCached(userId: string): Promise<Set<string>> {
@@ -42,10 +37,7 @@ async function loadUserChecklistCompletionsCached(userId: string): Promise<Set<s
   cacheTag("users");
   applyCacheLife("max");
 
-  const completions = await db.query.checklistCompletions.findMany({
-    where: (completions, { eq }) => eq(completions.user_id, userId),
-  });
-
+  const completions = await getUserChecklistCompletionsQuery(userId);
   return new Set(completions.map(c => c.checklist_item_id));
 }
 

@@ -5,17 +5,19 @@
  */
 
 import { USER_ROLES } from "@/lib/constants";
-import { requireAuth } from "@/server/auth-utils";
-import { invalidateUsersAndOverview } from "@/server/cache-invalidation";
 import {
-  createActionLog,
+  insertActionLog as insertActionLogQuery,
+} from "@/lib/db/queries/actionLogs";
+import {
   getProfileByEmail,
   getProfileById,
   getProfileByUsername,
   getProfileByUsernameExcludingId,
   updateProfile,
   upsertProfile,
-} from "@/server/db-access";
+} from "@/lib/db/queries/profiles";
+import { requireAuth } from "@/server/auth-utils";
+import { invalidateUsersAndOverview } from "@/server/cache-invalidation";
 import type { ActionLogType } from "@/types/library";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -31,7 +33,7 @@ async function insertActionLog(
   actorId: string | null = null,
   details: string | null = null
 ) {
-  await createActionLog({
+  await insertActionLogQuery({
     action_type: actionType,
     target_id: targetId,
     actor_id: actorId,

@@ -12,16 +12,18 @@ import { isModerator, requireAuth } from "@/server/auth-utils";
 import { invalidateAfterBookOrCopyMutation } from "@/server/cache-invalidation";
 import {
   deleteBook,
-  deleteCopy,
   getBookById,
-  getBorrowedCopiesCountByBookId,
-  getCopyById,
-  getMaxCopyNumber,
   insertBook,
-  insertCopy,
   updateBook,
+} from "@/lib/db/queries/books";
+import {
+  deleteCopy,
+  getCopyById,
+  getBorrowedCopiesCountByBookId,
+  getMaxCopyNumber,
+  insertCopy,
   updateCopy,
-} from "@/server/db-access";
+} from "@/lib/db/queries/copies";
 import { logActionError } from "@/server/error-log";
 import { and, eq, ilike, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";

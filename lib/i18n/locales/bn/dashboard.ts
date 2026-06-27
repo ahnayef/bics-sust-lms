@@ -30,9 +30,9 @@ export const dashboard = {
   },
   home: {
     title: "আপনার লাইব্রেরি হোম",
-    description: "নিচের সাধারণ কাজগুলোতে যান। আপনার প্রোফাইল কার্ড, পড়ার অগ্রগতি এবং যোগাযোগের তথ্য রয়েছে",
+    description: "নিচের সাধারণ কাজগুলোতে যান। আপনার প্রোফাইল কার্ড, পড়ার অগ্রগতি এবং যোগাযোগের তথ্য রয়েছে",
     myProfile: "আমার প্রোফাইলে",
-    quickActions: "দ্রুত অ্যাকশন",
+    quickActions: "দ্রুত কাজ",
     actions: {
       bookList: "বইয়ের তালিকা",
       bookListSub: "ব্রাউজ ও অনুরোধ",
@@ -41,7 +41,7 @@ export const dashboard = {
       return: "ফেরত দিন",
       returnSub: "একটি কপি ফেরত দিন",
       history: "ইতিহাস",
-      historySub: "আপনার ধার নেওয়ার ইতিহাস",
+      historySub: "আপনার ধার নেওয়ার ইতিহাস",
     },
     notifications: {
       title: "সাম্প্রতিক নোটিফিকেশন",
@@ -51,20 +51,20 @@ export const dashboard = {
     },
   },
   recentBorrows: {
-    title: "বর্তমানে ধার নেওয়া বই",
-    empty: "আপনার বর্তমানে কোনো ধার নেওয়া বই নেই।",
-    browseLink: "বইয়ের তালিকা দেখুন",
-    toBorrow: "ধার নেওয়ার জন্য।",
+    title: "বর্তমানে ধার নেওয়া বই",
+    empty: "আপনার বর্তমানে কোনো ধার নেওয়া বই নেই।",
+    browseLink: "বইয়ের তালিকা দেখুন",
+    toBorrow: "ধার নেওয়ার জন্য।",
     unknownBook: "অজানা বই",
     copy: "কপি",
     due: "ফেরত",
     status: {
-      overdue: "ওভারডিউ",
+      overdue: "সময় ব্যতীত",
       dueToday: "আজকেই শেষ তারিখ",
       dueInDays: "{days} দিন বাকি",
       dueInDay: "{days} দিন বাকি",
       active: "সচল",
-      pending: "পেন্ডিং",
+      pending: "অপেক্ষমান",
     },
   },
 } as const;

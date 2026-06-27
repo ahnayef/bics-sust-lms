@@ -14,6 +14,7 @@ import { nav } from "./nav";
 import { notifications } from "./notifications";
 import { overview } from "./overview";
 import { profile } from "./profile";
+import { report } from "./report";
 import { returnPage } from "./return";
 import { thanas } from "./thanas";
 import { transactions } from "./transactions";
@@ -34,6 +35,7 @@ export const en = {
   thanas,
   logs,
   profile,
+  report,
   borrow,
   return: returnPage,
   history,

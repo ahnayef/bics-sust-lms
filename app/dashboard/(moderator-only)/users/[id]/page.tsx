@@ -1,5 +1,6 @@
 import HistoryClient from "@/app/dashboard/history/HistoryClient";
 import { RankBadge } from "@/components/ui/rank-badge";
+import Avatar from "@/components/Avatar";
 import { getTranslation } from "@/lib/i18n/server";
 import { getChecklists, getUserChecklistCompletions, getUserChecklistProgress } from "@/server/checklists";
 import { getProfile, getRanks } from "@/server/geo";

@@ -1,11 +1,18 @@
 "use server";
 
-import { db } from "@/lib/db";
-import * as schema from "@/lib/db/schema";
-import { requireAuth, getMyProfile } from "@/server/auth-utils";
 import { USER_ROLES } from "@/lib/constants";
+import {
+  deleteChecklistCompletion,
+  deleteChecklistItem as deleteChecklistItemQuery,
+  deleteChecklist as deleteChecklistQuery,
+  insertChecklist,
+  insertChecklistCompletion,
+  insertChecklistItem,
+  updateChecklistItem as updateChecklistItemQuery,
+  updateChecklist as updateChecklistQuery,
+} from "@/lib/db/queries/checklists";
+import { getMyProfile, requireAuth } from "@/server/auth-utils";
 import { invalidateAfterChecklistCompletionMutation, invalidateAfterChecklistMutation } from "@/server/cache-invalidation";
-import { and, desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 async function requireAdmin() {
@@ -21,12 +28,7 @@ export async function createChecklist(name: string, visible: boolean) {
   try {
     await requireAdmin();
 
-    await db.insert(schema.checklists).values({
-      name,
-      visible,
-      created_at: new Date(),
-      updated_at: new Date(),
-    });
+    await insertChecklist({ name, visible });
 
     invalidateAfterChecklistMutation();
     revalidatePath("/dashboard");
@@ -40,11 +42,7 @@ export async function updateChecklist(id: string, name: string, visible: boolean
   try {
     await requireAdmin();
 
-    await db.update(schema.checklists).set({
-      name,
-      visible,
-      updated_at: new Date(),
-    }).where(eq(schema.checklists.id, id));
+    await updateChecklistQuery(id, { name, visible });
 
     invalidateAfterChecklistMutation();
     revalidatePath("/dashboard");
@@ -58,7 +56,7 @@ export async function deleteChecklist(id: string) {
   try {
     await requireAdmin();
 
-    await db.delete(schema.checklists).where(eq(schema.checklists.id, id));
+    await deleteChecklistQuery(id);
 
     invalidateAfterChecklistMutation();
     revalidatePath("/dashboard");
@@ -72,20 +70,7 @@ export async function addChecklistItem(checklistId: string, name: string) {
   try {
     await requireAdmin();
 
-    const lastItem = await db.query.checklistItems.findFirst({
-      where: eq(schema.checklistItems.checklist_id, checklistId),
-      orderBy: [desc(schema.checklistItems.order)],
-    });
-
-    const newOrder = lastItem ? lastItem.order + 1 : 0;
-
-    await db.insert(schema.checklistItems).values({
-      checklist_id: checklistId,
-      name,
-      order: newOrder,
-      created_at: new Date(),
-      updated_at: new Date(),
-    });
+    await insertChecklistItem({ checklist_id: checklistId, name });
 
     invalidateAfterChecklistMutation();
     revalidatePath("/dashboard");
@@ -99,10 +84,7 @@ export async function updateChecklistItem(id: string, name: string) {
   try {
     await requireAdmin();
 
-    await db.update(schema.checklistItems).set({
-      name,
-      updated_at: new Date(),
-    }).where(eq(schema.checklistItems.id, id));
+    await updateChecklistItemQuery(id, { name });
 
     invalidateAfterChecklistMutation();
     revalidatePath("/dashboard");
@@ -116,7 +98,7 @@ export async function deleteChecklistItem(id: string) {
   try {
     await requireAdmin();
 
-    await db.delete(schema.checklistItems).where(eq(schema.checklistItems.id, id));
+    await deleteChecklistItemQuery(id);
 
     invalidateAfterChecklistMutation();
     revalidatePath("/dashboard");
@@ -132,18 +114,9 @@ export async function toggleChecklistItem(itemId: string, checked: boolean) {
     const userId = user.id;
 
     if (checked) {
-      await db.insert(schema.checklistCompletions).values({
-        user_id: userId,
-        checklist_item_id: itemId,
-        created_at: new Date(),
-      }).onConflictDoNothing();
+      await insertChecklistCompletion({ user_id: userId, checklist_item_id: itemId });
     } else {
-      await db.delete(schema.checklistCompletions).where(
-        and(
-          eq(schema.checklistCompletions.user_id, userId),
-          eq(schema.checklistCompletions.checklist_item_id, itemId)
-        )
-      );
+      await deleteChecklistCompletion(userId, itemId);
     }
 
     invalidateAfterChecklistCompletionMutation();

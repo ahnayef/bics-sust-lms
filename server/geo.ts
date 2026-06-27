@@ -12,6 +12,8 @@ import { logActionError } from "@/server/error-log";
 import { getClaims } from "@/server/user";
 import type { Profile, Rank, Thana } from "@/types/profile";
 import { asc, eq, ilike, inArray } from "drizzle-orm";
+import { getProfileById, getProfileByUsername as getProfileByUsernameQuery, getModeratorsAndAdmin as getModeratorsAndAdminQuery, checkUsernameAvailable as checkUsernameAvailableQuery } from "@/lib/db/queries/profiles";
+import { getThanas as getThanasQuery, getRanks as getRanksQuery } from "@/lib/db/queries/geo";
 
 export type GeoSource = "supabase" | "unavailable";
 
@@ -34,14 +36,7 @@ export async function getProfile(userId?: string): Promise<Profile | null> {
   if (!resolvedId) return null;
 
   try {
-    const data = await db.query.profiles.findFirst({
-      where: eq(schema.profiles.id, resolvedId),
-      with: {
-        thana: true,
-        rank: true,
-      },
-    });
-
+    const data = await getProfileById(resolvedId);
     if (!data) return null;
     return data as unknown as Profile;
   } catch (error: any) {
@@ -54,14 +49,7 @@ export async function getProfileByUsername(
   username: string,
 ): Promise<Profile | null> {
   try {
-    const data = await db.query.profiles.findFirst({
-      where: ilike(schema.profiles.username, username),
-      with: {
-        thana: true,
-        rank: true,
-      },
-    });
-
+    const data = await getProfileByUsernameQuery(username);
     if (!data) return null;
     return data as unknown as Profile;
   } catch (error: any) {
@@ -72,19 +60,7 @@ export async function getProfileByUsername(
 
 export async function getModeratorsAndAdmin(): Promise<Profile[]> {
   try {
-    const data = await db.query.profiles.findMany({
-      where: inArray(schema.profiles.role, ["admin", "moderator"]),
-      with: {
-        rank: true,
-      },
-      orderBy: [asc(schema.profiles.created_at)],
-    });
-
-    return (data as unknown as Profile[]).sort((a, b) => {
-      if (a.role === "admin" && b.role !== "admin") return -1;
-      if (a.role !== "admin" && b.role === "admin") return 1;
-      return 0;
-    });
+    return await getModeratorsAndAdminQuery();
   } catch (error: any) {
     logActionError("getModeratorsAndAdmin", error.message);
     return [];
@@ -95,11 +71,7 @@ export async function checkUsernameAvailable(
   username: string,
 ): Promise<boolean> {
   try {
-    const data = await db.query.profiles.findFirst({
-      where: eq(schema.profiles.username, username),
-      columns: { id: true },
-    });
-    return data === null;
+    return await checkUsernameAvailableQuery(username);
   } catch (error) {
     return false;
   }
@@ -111,10 +83,7 @@ export async function checkUsernameAvailable(
 
 export async function getThanas(): Promise<GeoResult<Thana>> {
   try {
-    const data = await db.query.thanas.findMany({
-      orderBy: [asc(schema.thanas.name)],
-    });
-
+    const data = await getThanasQuery();
     if (data.length > 0) {
       return { data: data as Thana[], source: "supabase" };
     }
@@ -130,10 +99,7 @@ export async function getThanas(): Promise<GeoResult<Thana>> {
 
 export async function getRanks(): Promise<GeoResult<Rank>> {
   try {
-    const data = await db.query.ranks.findMany({
-      orderBy: [asc(schema.ranks.name)],
-    });
-
+    const data = await getRanksQuery();
     if (data.length > 0) {
       return { data: data as Rank[], source: "supabase" };
     }

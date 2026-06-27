@@ -1,18 +1,20 @@
-/**
- * server/library.ts — plain async data-fetching helpers (NO "use server").
- *
- * Called directly from Server Components. Keep mutation-free.
- * All mutations live in server/library-actions.ts and server/transaction-actions.ts.
- */
-
 import { applyCacheLife } from "@/lib/cache";
 import { db } from "@/lib/db";
-import * as schema from "@/lib/db/schema";
 import {
-  getBookWithCopies,
-  getCopyByQR,
-  getCopyStatus
-} from "@/server/db-access";
+  getAllBooks,
+  getBookById,
+  getBooksByIds,
+} from "@/lib/db/queries/books";
+import {
+  getAllCopies,
+  getCopyById,
+  getCopyStatus,
+} from "@/lib/db/queries/copies";
+import { getCategoriesForProgress } from "@/lib/db/queries/geo";
+import { getPdfSubmissionsByFilters } from "@/lib/db/queries/pdfSubmissions";
+import { getAllProfiles } from "@/lib/db/queries/profiles";
+import { getCompletedSince, getRecentTransactions, getTransactionsByFilters } from "@/lib/db/queries/transactions";
+import * as schema from "@/lib/db/schema";
 import type {
   Book,
   Category,
@@ -27,36 +29,18 @@ import type {
   UserWithStats,
 } from "@/types/library";
 import type { Profile } from "@/types/profile";
-import { and, asc, desc, eq, gte, inArray, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { cacheTag } from "next/cache";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Books
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * All books with their copies — cached across requests and invalidated on writes
- * via `updateTag("books")` (see server/cache-invalidation.ts).
- */
 async function loadBooksCached(): Promise<Book[]> {
   "use cache";
   cacheTag("books");
   applyCacheLife("max");
-
-  const data = await db.query.books.findMany({
-    with: {
-      category: true,
-      copies: {
-        columns: {
-          id: true,
-          copy_number: true,
-          status: true,
-        },
-      },
-    },
-    orderBy: [asc(schema.books.title)],
-  });
-
+  const data = await getAllBooks();
   return data as unknown as Book[];
 }
 
@@ -64,29 +48,24 @@ export async function getBooks(): Promise<Book[]> {
   return loadBooksCached();
 }
 
-/** All categories. */
 export async function getCategories(): Promise<Category[]> {
-  const data = await db.query.categories.findMany({
-    orderBy: [asc(schema.categories.name)],
-  });
+  const { getCategories } = await import("@/lib/db/queries/geo");
+  const data = await getCategories();
   return data as unknown as Category[];
 }
 
-/** Single book with all copies. */
 export async function getBook(id: string): Promise<Book | null> {
-  const data = await getBookWithCopies(id);
+  const data = await getBookById(id);
   if (!data) return null;
   return data as unknown as Book;
 }
 
-/** Look up a single copy (with its parent book) by QR code. */
 export async function getBookByQR(copyId: string): Promise<Copy | null> {
-  const data = await getCopyByQR(copyId);
+  const data = await getCopyById(copyId);
   if (!data) return null;
   return data as unknown as Copy;
 }
 
-/** Current status of a specific copy. */
 export async function bookStatus(
   copyId: string,
 ): Promise<Copy["status"] | null> {
@@ -102,36 +81,7 @@ async function loadCopiesCached(): Promise<Copy[]> {
   "use cache";
   cacheTag("copies");
   applyCacheLife("max");
-
-  const data = await db.query.copies.findMany({
-    with: {
-      book: {
-        columns: {
-          id: true,
-          title: true,
-          author: true,
-          is_syllabus: true,
-        },
-      },
-      transactions: {
-        where: and(
-          eq(schema.transactions.type, "borrow"),
-          inArray(schema.transactions.status, ["active", "overdue"])
-        ),
-        with: {
-          user: {
-            columns: {
-              id: true,
-              full_name: true,
-            },
-          },
-        },
-      },
-    },
-    orderBy: [asc(schema.copies.book_id), asc(schema.copies.created_at)],
-  });
-
-  // Flatten the join: take the first active borrower if it exists
+  const data = await getAllCopies();
   return data.map((row: any) => {
     const { transactions, ...copy } = row;
     const borrower =
@@ -142,7 +92,6 @@ async function loadCopiesCached(): Promise<Copy[]> {
   }) as unknown as Copy[];
 }
 
-/** All copies with their parent book info. */
 export async function getCopies(): Promise<Copy[]> {
   return loadCopiesCached();
 }
@@ -163,61 +112,16 @@ async function loadTransactionsCached(
   "use cache";
   cacheTag("transactions");
   applyCacheLife("max");
-
-  const whereConditions = [];
-  if (filters.type) whereConditions.push(eq(schema.transactions.type, filters.type));
-  if (filters.status) whereConditions.push(eq(schema.transactions.status, filters.status));
-  if (filters.userId) whereConditions.push(eq(schema.transactions.user_id, filters.userId));
-
-  const data = await db.query.transactions.findMany({
-    where: and(...whereConditions),
-    with: {
-      user: {
-        columns: {
-          id: true,
-          full_name: true,
-          username: true,
-          email: true,
-          avatar_url: true,
-        },
-      },
-      copy: {
-        columns: {
-          id: true,
-          copy_number: true,
-          status: true,
-          book_id: true,
-        },
-      },
-      book: {
-        columns: {
-          id: true,
-          title: true,
-          author: true,
-          is_syllabus: true,
-        },
-      },
-      reviewer: {
-        columns: {
-          id: true,
-          full_name: true,
-        },
-      },
-    },
-    orderBy: [desc(schema.transactions.request_date)],
-  });
-
+  const data = await getTransactionsByFilters(filters);
   return data as unknown as Transaction[];
 }
 
-/** All transactions matching optional filters, newest first. */
 export async function getTransactions(
   filters?: TransactionFilters,
 ): Promise<Transaction[]> {
   return loadTransactionsCached(filters ?? {});
 }
 
-/** Transactions for a specific user. */
 export async function getUserTransactions(
   userId: string,
 ): Promise<Transaction[]> {
@@ -239,44 +143,10 @@ async function loadPdfSubmissionsCached(
   "use cache";
   cacheTag("pdf-submissions");
   applyCacheLife("max");
-
-  const whereConditions = [];
-  if (filters.userId) whereConditions.push(eq(schema.pdfSubmissions.user_id, filters.userId));
-  if (filters.status) whereConditions.push(eq(schema.pdfSubmissions.status, filters.status));
-
-  const data = await db.query.pdfSubmissions.findMany({
-    where: and(...whereConditions),
-    with: {
-      user: {
-        columns: {
-          id: true,
-          full_name: true,
-          username: true,
-          avatar_url: true,
-        },
-      },
-      book: {
-        columns: {
-          id: true,
-          title: true,
-          author: true,
-          is_syllabus: true,
-        },
-      },
-      reviewer: {
-        columns: {
-          id: true,
-          full_name: true,
-        },
-      },
-    },
-    orderBy: [desc(schema.pdfSubmissions.submitted_at)],
-  });
-
+  const data = await getPdfSubmissionsByFilters(filters);
   return data as unknown as PdfSubmission[];
 }
 
-/** All PDF reading submissions, newest first. */
 export async function getPdfSubmissions(
   filters?: PdfFilters,
 ): Promise<PdfSubmission[]> {
@@ -290,22 +160,14 @@ export async function getPdfSubmissions(
 async function loadUserStatsCached(userId: string): Promise<UserStats> {
   "use cache";
   cacheTag("users", "books", "transactions", "pdf-submissions");
-  applyCacheLife("short");
+  applyCacheLife("minutes");
 
   // 1. Fetch all categories that count in progress
-  const categories = await db.query.categories.findMany({
-    where: eq(schema.categories.count_in_progress, true),
-    columns: { id: true, name: true },
-  });
-
+  const categories = await getCategoriesForProgress();
   const categoryIds = categories.map((c) => c.id);
 
   // 2. Fetch total books per category
-  const categoryTotals = await db.query.books.findMany({
-    where: inArray(schema.books.category_id, categoryIds),
-    columns: { category_id: true },
-  });
-
+  const categoryTotals = await getBooksByIds(categoryIds);
   const totalPerCategory = new Map<string, number>();
   for (const b of categoryTotals) {
     if (b.category_id) {
@@ -419,7 +281,6 @@ async function loadUserStatsCached(userId: string): Promise<UserStats> {
   };
 }
 
-/** Reading progress and active borrow info for one user (cached). */
 export async function getUserStats(userId: string): Promise<UserStats> {
   return loadUserStatsCached(userId);
 }
@@ -428,37 +289,21 @@ export async function getUserStats(userId: string): Promise<UserStats> {
 // Users list with computed stats (for the users management page)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * All profiles (members, mods, admins) with their reading progress and
- * borrow counts. Uses batch queries to avoid N+1.
- */
 async function loadUsersCached(): Promise<UserWithStats[]> {
   "use cache";
   cacheTag("users");
   applyCacheLife("max");
 
-  const profilesData = await db.query.profiles.findMany({
-    with: {
-      thana: true,
-      rank: true,
-    },
-    orderBy: [desc(schema.profiles.created_at)],
-  });
+  const profilesData = await getAllProfiles();
 
   if (!profilesData || profilesData.length === 0) return [];
-
   const ids = profilesData.map((p) => p.id);
 
   // Fetch categories for progress tracking
-  const progressCategories = await db.query.categories.findMany({
-    where: eq(schema.categories.count_in_progress, true),
-    columns: { id: true, name: true },
-  });
+  const progressCategories = await getCategoriesForProgress();
 
   // Fetch total books per category
-  const categoryTotals = await db.query.books.findMany({
-    columns: { category_id: true },
-  });
+  const categoryTotals = await getBooksByIds(progressCategories.map(c => c.id));
   const totalPerCategory = new Map<string, number>();
   for (const b of categoryTotals) {
     if (b.category_id) {
@@ -587,18 +432,17 @@ export async function getUsers(): Promise<UserWithStats[]> {
 // Dashboard Overview
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Fetches everything the overview dashboard needs in parallel.
- */
-async function loadOverviewDataCached(
-  firstOfMonth: string,
-): Promise<OverviewData> {
+async function loadOverviewDataCached(): Promise<OverviewData> {
   "use cache";
   cacheTag("overview");
   applyCacheLife("minutes");
 
-  // In Drizzle, we don't have a direct equivalent to supabase.rpc unless we use db.execute
-  // But we can just rely on the application logic for overdue checks or run a raw query
+  const firstOfMonth = new Date(
+    new Date().getFullYear(),
+    new Date().getMonth(),
+    1,
+  ).toISOString();
+
   await db.execute(sql`SELECT mark_overdue_transactions()`);
 
   const [
@@ -626,15 +470,7 @@ async function loadOverviewDataCached(
       },
       orderBy: [asc(schema.transactions.due_date)]
     }),
-    db.query.transactions.findMany({
-      with: {
-        user: { columns: { id: true, full_name: true, username: true, avatar_url: true } },
-        book: { columns: { id: true, title: true, author: true } },
-        copy: { columns: { id: true, copy_number: true } }
-      },
-      orderBy: [desc(schema.transactions.request_date)],
-      limit: 15
-    }),
+    getRecentTransactions(15),
     db.query.transactions.findMany({
       where: and(
         eq(schema.transactions.type, "borrow"),
@@ -647,22 +483,8 @@ async function loadOverviewDataCached(
       orderBy: [desc(schema.transactions.request_date)],
       limit: 300
     }),
-    db.query.pdfSubmissions.findMany({
-      where: eq(schema.pdfSubmissions.status, "pending"),
-      with: {
-        user: { columns: { id: true, full_name: true, username: true, avatar_url: true } },
-        book: { columns: { id: true, title: true, author: true, is_syllabus: true } }
-      },
-      orderBy: [asc(schema.pdfSubmissions.submitted_at)],
-      limit: 10
-    }),
-    db.query.transactions.findMany({
-      where: and(
-        eq(schema.transactions.status, "completed"),
-        sql`${schema.transactions.updated_at} >= ${firstOfMonth}`
-      ),
-      columns: { id: true }
-    })
+    getPdfSubmissionsByFilters({ status: "pending" }),
+    getCompletedSince(firstOfMonth),
   ]);
 
   const now = new Date();
@@ -761,23 +583,20 @@ async function loadOverviewDataCached(
 }
 
 export async function getOverviewData(): Promise<OverviewData> {
-  const firstOfMonth = new Date(
-    new Date().getFullYear(),
-    new Date().getMonth(),
-    1,
-  ).toISOString();
-  return loadOverviewDataCached(firstOfMonth);
+  return loadOverviewDataCached();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Notifications & Admin Logs
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { getActionLogsForTarget } from "@/lib/db/queries/actionLogs";
 import type { ActionLog, NotificationItem } from "@/types/library";
+
 async function loadUserNotificationsCached(userId: string): Promise<NotificationItem[]> {
   "use cache";
   cacheTag("users", "transactions", "pdf-submissions", "actionLogs");
-  applyCacheLife("short");
+  applyCacheLife("minutes");
 
   const [txs, pdfs, logs] = await Promise.all([
     db.query.transactions.findMany({
@@ -794,12 +613,7 @@ async function loadUserNotificationsCached(userId: string): Promise<Notification
       ),
       with: { book: { columns: { title: true } } }
     }),
-    db.query.actionLogs.findMany({
-      where: and(
-        eq(schema.actionLogs.target_id, userId),
-        ne(schema.actionLogs.action_type, "error")
-      )
-    })
+    getActionLogsForTarget(userId),
   ]);
 
   const items: NotificationItem[] = [];
@@ -836,7 +650,7 @@ async function loadUserNotificationsCached(userId: string): Promise<Notification
         title,
         message,
         reason: tx.rejection_reason,
-        link: `/dashboard/history`,
+        link: "/dashboard/history",
       });
     }
   }
@@ -850,7 +664,7 @@ async function loadUserNotificationsCached(userId: string): Promise<Notification
       title: pdf.status === "approved" ? "PDF Reading Approved" : "PDF Reading Rejected",
       message: `Your reading submission for "${bookTitle}" was ${pdf.status}.`,
       reason: pdf.rejection_reason,
-      link: `/dashboard/transactions?tab=pdf`,
+      link: "/dashboard/transactions?tab=pdf",
     });
   }
 
@@ -891,23 +705,12 @@ async function loadUserNotificationsCached(userId: string): Promise<Notification
   return items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
-/** Get notifications for a user (cached). */
 export async function getUserNotifications(userId: string): Promise<NotificationItem[]> {
   return loadUserNotificationsCached(userId);
 }
 
 export async function getAdminLogs(days: number = 30): Promise<ActionLog[]> {
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - days);
-
-  const data = await db.query.actionLogs.findMany({
-    where: gte(schema.actionLogs.created_at, cutoff),
-    with: {
-      actor: { columns: { id: true, full_name: true, username: true } },
-      target: { columns: { id: true, full_name: true, username: true } }
-    },
-    orderBy: [desc(schema.actionLogs.created_at)]
-  });
-
+  const { getActionLogs } = await import("@/lib/db/queries/actionLogs");
+  const data = await getActionLogs(days);
   return data as unknown as ActionLog[];
 }

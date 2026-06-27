@@ -1,5 +1,6 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import * as queries from "./queries";
 import * as schema from "./schema";
 
 const connectionString = process.env.DATABASE_URL;
@@ -21,6 +22,8 @@ const client = postgres(connectionString || "postgres://localhost:5432/postgres"
   idle_timeout: 20,
   max_lifetime: 60 * 60, // 1 hour
   max: 10, // Limit max connections
-  onnotice: () => {}, // Supabase sends a lot of notices, ignore them
+  onnotice: () => { }, // Supabase sends a lot of notices, ignore them
 });
 export const db = drizzle(client, { schema });
+export { queries };
+

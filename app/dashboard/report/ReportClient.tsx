@@ -45,7 +45,7 @@ export default function ReportClient({
           className="inline-flex items-center gap-2 text-sm text-[#5a4b3f] hover:text-[#221910] transition-colors ink-text"
         >
           <FaHistory className="w-3.5 h-3.5 rotate-180" />
-          Back
+          {t.report.back}
         </Link>
         <div className="flex items-center gap-3">
           <button
@@ -55,12 +55,12 @@ export default function ReportClient({
             {isWhiteTheme ? (
               <>
                 <FaSun className="w-3.5 h-3.5" />
-                Color Theme
+                {t.report.colorTheme}
               </>
             ) : (
               <>
                 <FaMoon className="w-3.5 h-3.5" />
-                White Theme
+                {t.report.whiteTheme}
               </>
             )}
           </button>
@@ -69,7 +69,7 @@ export default function ReportClient({
             className="px-4 py-2 bg-stone-800 text-stone-100 border border-stone-600 rounded-sm hover:bg-stone-700 transition-colors text-sm font-semibold shrink-0 flex items-center gap-2"
           >
             <FaBook className="w-3.5 h-3.5" />
-            Print Report
+            {t.report.printReport}
           </button>
         </div>
       </div>
@@ -110,7 +110,7 @@ export default function ReportClient({
             </p>
             <div className="flex flex-wrap justify-center sm:justify-start gap-3 text-sm">
               <span className={`italic ${isWhiteTheme ? "text-gray-500" : "text-[#7a6a5c] ink-text"}`}>
-                Report Generated on: {reportDate}
+                {t.report.reportGeneratedOn}: {reportDate}
               </span>
             </div>
           </div>
@@ -126,7 +126,7 @@ export default function ReportClient({
             <div className="space-y-3">
               <div className={`flex justify-between py-1 border-b ${isWhiteTheme ? "border-gray-100" : "border-[#eadcc8]"}`}>
                 <span className={`font-semibold ${isWhiteTheme ? "text-gray-600" : "text-[#6a5a4c] ink-text"}`}>
-                  Role:
+                  {t.report.role}:
                 </span>
                 <span className={`uppercase flex items-center gap-1 ${isWhiteTheme ? "text-gray-900" : "text-[#221910] ink-text"}`}>
                   <FaShieldAlt className={`w-3 h-3 ${isWhiteTheme ? "text-gray-500" : "text-[#8a7966]"}`} />
@@ -135,7 +135,7 @@ export default function ReportClient({
               </div>
               <div className={`flex justify-between py-1 border-b ${isWhiteTheme ? "border-gray-100" : "border-[#eadcc8]"}`}>
                 <span className={`font-semibold ${isWhiteTheme ? "text-gray-600" : "text-[#6a5a4c] ink-text"}`}>
-                  Rank:
+                  {t.report.rank}:
                 </span>
                 <span className={isWhiteTheme ? "text-gray-900" : "text-[#221910] ink-text"}>
                   {profile.rank?.name || "N/A"}
@@ -143,7 +143,7 @@ export default function ReportClient({
               </div>
               <div className={`flex justify-between py-1 border-b ${isWhiteTheme ? "border-gray-100" : "border-[#eadcc8]"}`}>
                 <span className={`font-semibold ${isWhiteTheme ? "text-gray-600" : "text-[#6a5a4c] ink-text"}`}>
-                  Location:
+                  {t.report.location}:
                 </span>
                 <span className={`flex items-center gap-1 ${isWhiteTheme ? "text-gray-900" : "text-[#221910] ink-text"}`}>
                   <FaMapMarkerAlt className={`w-3 h-3 ${isWhiteTheme ? "text-gray-500" : "text-[#8a7966]"}`} />
@@ -152,7 +152,7 @@ export default function ReportClient({
               </div>
               <div className={`flex justify-between py-1 border-b ${isWhiteTheme ? "border-gray-100" : "border-[#eadcc8]"}`}>
                 <span className={`font-semibold ${isWhiteTheme ? "text-gray-600" : "text-[#6a5a4c] ink-text"}`}>
-                  Phone:
+                  {t.report.phone}:
                 </span>
                 <span className={`flex items-center gap-1 ${isWhiteTheme ? "text-gray-900" : "text-[#221910] ink-text"}`}>
                   <FaPhone className={`w-3 h-3 ${isWhiteTheme ? "text-gray-500" : "text-[#8a7966]"}`} />
@@ -161,7 +161,7 @@ export default function ReportClient({
               </div>
               <div className={`flex justify-between py-1 border-b ${isWhiteTheme ? "border-gray-100" : "border-[#eadcc8]"}`}>
                 <span className={`font-semibold ${isWhiteTheme ? "text-gray-600" : "text-[#6a5a4c] ink-text"}`}>
-                  Member Since:
+                  {t.report.memberSince}:
                 </span>
                 <span className={isWhiteTheme ? "text-gray-900" : "text-[#221910] ink-text"}>
                   {joinedDate}
@@ -169,7 +169,7 @@ export default function ReportClient({
               </div>
               <div className={`flex justify-between py-1 border-b ${isWhiteTheme ? "border-gray-100" : "border-[#eadcc8]"}`}>
                 <span className={`font-semibold ${isWhiteTheme ? "text-gray-600" : "text-[#6a5a4c] ink-text"}`}>
-                  Status:
+                  {t.report.status}:
                 </span>
                 <span className={`flex items-center gap-1 font-bold ${profile.is_verified ? "text-teal-600" : "text-amber-600"}`}>
                   {profile.is_verified ? <FaCheckCircle /> : null}
@@ -215,7 +215,7 @@ export default function ReportClient({
           <section className="space-y-4">
             <h2 className={`text-base font-bold pb-2 flex items-center gap-2 border-b ${isWhiteTheme ? "text-gray-900 border-gray-200" : "text-[#221910] ink-title border-[#c9b89a]"}`}>
               <FaListUl className={isWhiteTheme ? "text-gray-500" : "text-[#8a7966]"} />
-              Checklist Progress
+              {t.report.checklistProgress}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {checklistProgress.map((cp: any) => {
@@ -233,7 +233,7 @@ export default function ReportClient({
                       />
                     </div>
                     <p className={`text-right text-[10px] font-medium ${isWhiteTheme ? "text-gray-500" : "text-[#7a6a5c] ink-text"}`}>
-                      {cp.completed} / {cp.total} Items Completed
+                      {cp.completed} / {cp.total} {t.report.itemsCompleted}
                     </p>
                   </div>
                 );
@@ -246,23 +246,23 @@ export default function ReportClient({
         <section className="space-y-4">
           <h2 className={`text-base font-bold pb-2 flex items-center gap-2 border-b ${isWhiteTheme ? "text-gray-900 border-gray-200" : "text-[#221910] ink-title border-[#c9b89a]"}`}>
             <FaHistory className={isWhiteTheme ? "text-gray-500" : "text-[#8a7966]"} />
-            Recent Library Activity
+            {t.report.recentLibraryActivity}
           </h2>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm border-collapse">
               <thead>
                 <tr className={`border-b ${isWhiteTheme ? "bg-gray-50 border-gray-200" : "bg-[#eadcc8] border-[#b5a490]"}`}>
                   <th className={`py-2 px-3 font-bold ${isWhiteTheme ? "text-gray-700" : "text-[#4e4033] ink-title"}`}>
-                    Book Title
+                    {t.report.bookTitle}
                   </th>
                   <th className={`py-2 px-3 font-bold ${isWhiteTheme ? "text-gray-700" : "text-[#4e4033] ink-title"}`}>
-                    Type
+                    {t.report.type}
                   </th>
                   <th className={`py-2 px-3 font-bold ${isWhiteTheme ? "text-gray-700" : "text-[#4e4033] ink-title"}`}>
-                    Status
+                    {t.report.status}
                   </th>
                   <th className={`py-2 px-3 font-bold ${isWhiteTheme ? "text-gray-700" : "text-[#4e4033] ink-title"}`}>
-                    Date
+                    {t.report.date}
                   </th>
                 </tr>
               </thead>
@@ -286,7 +286,7 @@ export default function ReportClient({
                 {transactions.length === 0 && (
                   <tr>
                     <td colSpan={4} className={`py-8 text-center italic ${isWhiteTheme ? "text-gray-500" : "text-[#8a7966]"}`}>
-                      No recent activity recorded
+                      {t.report.noRecentActivity}
                     </td>
                   </tr>
                 )}
@@ -298,7 +298,7 @@ export default function ReportClient({
         {/* Footer */}
         <footer className={`pt-8 border-t text-center ${isWhiteTheme ? "border-gray-200" : "border-[#c9b89a]"}`}>
           <p className={`text-xs font-bold tracking-widest uppercase ${isWhiteTheme ? "text-gray-400" : "text-[#8a7966]"}`}>
-            BICS SUST LMS - Official Member Report
+            {t.report.footerText}
           </p>
         </footer>
       </div>
