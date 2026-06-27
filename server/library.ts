@@ -177,10 +177,10 @@ async function loadUserStatsCached(userId: string): Promise<UserStats> {
   const categories = await getCategoriesForProgress();
   const categoryIds = categories.map((c) => c.id);
 
-  // 2. Fetch total books per category
-  const categoryTotals = await getBooksByIds(categoryIds);
+  // 2. Fetch all books to count total per category
+  const allBooks = await getAllBooks();
   const totalPerCategory = new Map<string, number>();
-  for (const b of categoryTotals) {
+  for (const b of allBooks) {
     if (b.category_id) {
       totalPerCategory.set(
         b.category_id,

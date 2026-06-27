@@ -220,7 +220,7 @@ export default function TransactionsClient({
     );
 
     // Map approved/rejected PDFs to look like transactions for the history table
-    const pdfToTx: Transaction[] = pdfSubmissions
+    const pdfToTx = pdfSubmissions
       .filter((pdf) => pdf.status === "approved" || pdf.status === "rejected")
       .map(
         (pdf) =>
@@ -231,9 +231,11 @@ export default function TransactionsClient({
             copy_id: "—",
             copy: null,
             type: t.transactions.tabs.pdf as any, // Type override for UI
-            status: pdf.status === "approved" ? "completed" : "rejected",
+            status: pdf.status as any,
             request_date: pdf.submitted_at,
-          }) as unknown as Transaction,
+            _isPdf: true, // Custom marker for PDF submissions
+            _pdfStatus: pdf.status,
+          }) as unknown as Transaction & { _isPdf?: boolean; _pdfStatus?: string },
       );
 
     const combined = [...base, ...pdfToTx];
@@ -925,28 +927,49 @@ export default function TransactionsClient({
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          <StatusBadge
-                            tone={
-                              tx.type === "borrow"
-                                ? "info"
-                                : tx.type === "return"
-                                  ? "accent"
-                                  : "success"
-                            }
-                            size="xs"
-                          >
-                            {tx.type === "borrow" ? t.history.table.borrowed : tx.type === "return" ? t.history.table.returned : tx.type}
-                          </StatusBadge>
+                          {(tx as any)._isPdf ? (
+                            <StatusBadge tone="info" size="xs">
+                              {t.transactions.tabs.pdf}
+                            </StatusBadge>
+                          ) : (
+                            <StatusBadge
+                              tone={
+                                tx.type === "borrow"
+                                  ? "info"
+                                  : tx.type === "return"
+                                    ? "accent"
+                                    : "success"
+                              }
+                              size="xs"
+                            >
+                              {tx.type === "borrow" ? t.history.table.borrowed : tx.type === "return" ? t.history.table.returned : tx.type}
+                            </StatusBadge>
+                          )}
                         </td>
                         <td className="px-4 py-3">
-                          <StatusBadge
-                            tone={
-                              tx.status === "completed" ? "success" : "danger"
-                            }
-                            size="xs"
-                          >
-                            {tx.status === "completed" ? t.history.status.returned : t.history.status.rejected_borrow}
-                          </StatusBadge>
+                          {(tx as any)._isPdf ? (
+                            <StatusBadge
+                              tone={
+                                (tx as any)._pdfStatus === "approved"
+                                  ? "success"
+                                  : "danger"
+                              }
+                              size="xs"
+                            >
+                              {(tx as any)._pdfStatus === "approved"
+                                ? t.bookList.bookCard.pdfStatus.approved
+                                : t.bookList.bookCard.pdfStatus.rejected}
+                            </StatusBadge>
+                          ) : (
+                            <StatusBadge
+                              tone={
+                                tx.status === "completed" ? "success" : "danger"
+                              }
+                              size="xs"
+                            >
+                              {tx.status === "completed" ? t.history.status.returned : t.history.status.rejected_borrow}
+                            </StatusBadge>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-[#5a4b3f] whitespace-nowrap">
                           <span

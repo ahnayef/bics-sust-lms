@@ -37,7 +37,28 @@ export default async function ReportPage({
 
   // Get profile
   const profile = await getProfile(userId);
-  if (!profile) notFound();
+  if (!profile) {
+    // User not found, show friendly message instead of 404
+    const { t } = await getTranslation();
+    return (
+      <div className="max-w-2xl mx-auto mt-12 space-y-6">
+        <div className="dashboard-surface tron-border rounded-sm p-8 text-center">
+          <h2 className="text-xl font-bold text-[#221910] ink-title mb-2">
+            User Not Found
+          </h2>
+          <p className="text-[#5c4f42] ink-text mb-6">
+            The user you're looking for doesn't exist.
+          </p>
+          <Link
+            href={isAdminOrMod ? "/dashboard/users" : "/dashboard/profile"}
+            className="px-4 py-2 bg-[#5a4d40] text-[#f4e8d4] rounded-sm hover:bg-[#4a3d30] transition-colors font-medium"
+          >
+            {t.report.back || "Go Back"}
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   // Get all data
   const { t, language } = await getTranslation();
