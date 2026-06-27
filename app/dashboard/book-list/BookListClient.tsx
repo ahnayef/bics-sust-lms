@@ -555,7 +555,7 @@ export default function BookListClient({
       {showPdfModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div
-            className="book-list-surface tron-border rounded-lg w-full max-md bg-[#f1e7d8] border border-[#5f4d42] p-6 shadow-xl"
+            className="book-list-surface tron-border rounded-lg w-full max-w-md bg-[#f1e7d8] border border-[#5f4d42] p-6 shadow-xl"
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-[#221910] ink-title">

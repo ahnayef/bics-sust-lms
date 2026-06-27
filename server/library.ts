@@ -113,8 +113,13 @@ async function loadTransactionsCached(
   "use cache";
   cacheTag("transactions");
   applyCacheLife("max");
-  const data = await getTransactionsByFilters(filters);
-  return data as unknown as Transaction[];
+  try {
+    const data = await getTransactionsByFilters(filters);
+    return data as unknown as Transaction[];
+  } catch (error) {
+    console.error("Failed to load transactions:", error);
+    return [];
+  }
 }
 
 export async function getTransactions(
@@ -144,8 +149,13 @@ async function loadPdfSubmissionsCached(
   "use cache";
   cacheTag("pdf-submissions");
   applyCacheLife("max");
-  const data = await getPdfSubmissionsByFilters(filters);
-  return data as unknown as PdfSubmission[];
+  try {
+    const data = await getPdfSubmissionsByFilters(filters);
+    return data as unknown as PdfSubmission[];
+  } catch (error) {
+    console.error("Failed to load PDF submissions:", error);
+    return [];
+  }
 }
 
 export async function getPdfSubmissions(
