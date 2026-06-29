@@ -1,8 +1,8 @@
 "use client";
 
+import { addRank } from "@/server/rank-actions";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { addRank } from "@/server/rank-actions";
 
 export default function RankAddForm() {
   const router = useRouter();
@@ -44,7 +44,7 @@ export default function RankAddForm() {
           id="rank-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="e.g. Quran"
+          placeholder="e.g. Supporter"
           required
           className="w-full px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
         />
