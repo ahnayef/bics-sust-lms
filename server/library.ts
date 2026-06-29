@@ -107,25 +107,16 @@ export interface TransactionFilters {
   userId?: string;
 }
 
-async function loadTransactionsCached(
-  filters: TransactionFilters,
+export async function getTransactions(
+  filters?: TransactionFilters,
 ): Promise<Transaction[]> {
-  "use cache";
-  cacheTag("transactions");
-  applyCacheLife("max");
   try {
-    const data = await getTransactionsByFilters(filters);
+    const data = await getTransactionsByFilters(filters ?? {});
     return data as unknown as Transaction[];
   } catch (error) {
     console.error("Failed to load transactions:", error);
     return [];
   }
-}
-
-export async function getTransactions(
-  filters?: TransactionFilters,
-): Promise<Transaction[]> {
-  return loadTransactionsCached(filters ?? {});
 }
 
 export async function getUserTransactions(
@@ -143,14 +134,11 @@ export interface PdfFilters {
   status?: string;
 }
 
-async function loadPdfSubmissionsCached(
-  filters: PdfFilters,
+export async function getPdfSubmissions(
+  filters?: PdfFilters,
 ): Promise<PdfSubmission[]> {
-  "use cache";
-  cacheTag("pdf-submissions");
-  applyCacheLife("max");
   try {
-    const data = await getPdfSubmissionsByFilters(filters);
+    const data = await getPdfSubmissionsByFilters(filters ?? {});
     return data as unknown as PdfSubmission[];
   } catch (error) {
     console.error("Failed to load PDF submissions:", error);
@@ -158,21 +146,11 @@ async function loadPdfSubmissionsCached(
   }
 }
 
-export async function getPdfSubmissions(
-  filters?: PdfFilters,
-): Promise<PdfSubmission[]> {
-  return loadPdfSubmissionsCached(filters ?? {});
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // User stats (reading progress, active borrows, etc.)
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function loadUserStatsCached(userId: string): Promise<UserStats> {
-  "use cache";
-  cacheTag("users", "books", "transactions", "pdf-submissions");
-  applyCacheLife("minutes");
-
+export async function getUserStats(userId: string): Promise<UserStats> {
   // 1. Fetch all categories that count in progress
   const categories = await getCategoriesForProgress();
   const categoryIds = categories.map((c) => c.id);
@@ -290,10 +268,6 @@ async function loadUserStatsCached(userId: string): Promise<UserStats> {
     pendingRequests: pendingRequests.length,
     currentBorrows: activeBorrows as unknown as Transaction[],
   };
-}
-
-export async function getUserStats(userId: string): Promise<UserStats> {
-  return loadUserStatsCached(userId);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -637,11 +611,7 @@ export async function getOverviewData(): Promise<OverviewData> {
 import { getActionLogsForTarget } from "@/lib/db/queries/actionLogs";
 import type { ActionLog, NotificationItem } from "@/types/library";
 
-async function loadUserNotificationsCached(userId: string): Promise<NotificationItem[]> {
-  "use cache";
-  cacheTag("users", "transactions", "pdf-submissions", "actionLogs");
-  applyCacheLife("minutes");
-
+export async function getUserNotifications(userId: string): Promise<NotificationItem[]> {
   const [txs, pdfs, logs] = await Promise.all([
     db.query.transactions.findMany({
       where: and(
@@ -747,10 +717,6 @@ async function loadUserNotificationsCached(userId: string): Promise<Notification
   }
 
   return items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-}
-
-export async function getUserNotifications(userId: string): Promise<NotificationItem[]> {
-  return loadUserNotificationsCached(userId);
 }
 
 export async function getAdminLogs(days: number = 30): Promise<ActionLog[]> {
