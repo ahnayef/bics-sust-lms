@@ -31,9 +31,18 @@ export async function getChecklists(onlyVisible = false): Promise<ChecklistWithI
   return checklists as unknown as ChecklistWithItems[];
 }
 
-export async function getUserChecklistCompletions(userId: string): Promise<Set<string>> {
+async function loadUserChecklistCompletionsCached(userId: string): Promise<Set<string>> {
+  "use cache";
+  cacheTag("checklists");
+  cacheTag("users");
+  applyCacheLife("max");
+
   const completions = await getUserChecklistCompletionsQuery(userId);
   return new Set(completions.map(c => c.checklist_item_id));
+}
+
+export async function getUserChecklistCompletions(userId: string): Promise<Set<string>> {
+  return loadUserChecklistCompletionsCached(userId);
 }
 
 export async function getUserChecklistProgress(userId: string): Promise<ChecklistProgress[]> {
