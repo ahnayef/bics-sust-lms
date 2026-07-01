@@ -79,9 +79,9 @@ export default function NotificationBell({ userId, notifications }: Props) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 max-h-96 bg-[#f4ebdf] border border-[#bfa687] rounded-sm shadow-lg z-50 overflow-hidden flex flex-col">
-          <div className="p-4 border-b border-[#e8d9c4] flex items-center justify-between">
-            <h3 className="text-sm font-bold ink-title text-[#221910]">{t.notifications.title}</h3>
+        <div className="fixed left-[calc(50%+1.75rem)] -translate-x-1/2 sm:absolute sm:left-auto sm:translate-x-0 sm:right-0 sm:mt-2 w-[80vw] sm:w-80 max-h-[75vh] sm:max-h-96 bg-[#f4ebdf] border border-[#bfa687] rounded-sm shadow-lg z-50 overflow-hidden flex flex-col sm:origin-top-right">
+          <div className="p-3 sm:p-4 border-b border-[#e8d9c4] flex items-center justify-between">
+            <h3 className="text-xs sm:text-sm font-bold ink-title text-[#221910]">{t.notifications.title}</h3>
             {unreadCount > 0 && (
               <button
                 onClick={(e) => {
@@ -107,7 +107,7 @@ export default function NotificationBell({ userId, notifications }: Props) {
                   return (
                     <li
                       key={notif.id}
-                      className={`p-4 border-b transition-colors cursor-pointer relative ${isUnread
+                      className={`p-3 sm:p-4 border-b transition-colors cursor-pointer relative ${isUnread
                         ? "bg-[#efe9dc] border-[#d3c1a9] shadow-sm"
                         : "bg-[#efdec2]/50 border-[#e4d4bf] opacity-80"
                         }`}
@@ -125,21 +125,21 @@ export default function NotificationBell({ userId, notifications }: Props) {
                       <div className="flex items-start gap-3 pr-6">
                         <div className="shrink-0">{getIcon(notif.type)}</div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <p className={`text-sm font-semibold ink-title ${isUnread ? "text-[#221910]" : "text-[#3f3328]"
+                          <div className="flex items-start justify-between gap-1 sm:gap-2 mb-1">
+                            <p className={`text-xs sm:text-sm font-semibold ink-title ${isUnread ? "text-[#221910]" : "text-[#3f3328]"
                               }`}>
                               {notif.title}
                             </p>
-                            <span className="text-[10px] text-[#8a7a6c] ink-text whitespace-nowrap shrink-0">
+                            <span className="text-[9px] sm:text-[10px] text-[#8a7a6c] ink-text whitespace-nowrap shrink-0">
                               {getRelativeTime(notif.date)}
                             </span>
                           </div>
-                          <p className={`text-xs ink-text mb-1 ${isUnread ? "text-[#4a3e33]" : "text-[#5a4b3f]"
+                          <p className={`text-[11px] sm:text-xs ink-text mb-1 ${isUnread ? "text-[#4a3e33]" : "text-[#5a4b3f]"
                             }`}>
                             {notif.message}
                           </p>
                           {notif.reason && (
-                            <div className="text-[10px] text-[#5a4b3f] ink-text italic">
+                            <div className="text-[9px] sm:text-[10px] text-[#5a4b3f] ink-text italic mt-1">
                               {notif.reason}
                             </div>
                           )}
@@ -152,11 +152,11 @@ export default function NotificationBell({ userId, notifications }: Props) {
             )}
           </div>
 
-          <div className="p-3 border-t border-[#e8d9c4] bg-[#f4ede0]">
+          <div className="p-2 sm:p-3 border-t border-[#e8d9c4] bg-[#f4ede0]">
             <Link
               href="/dashboard/notifications"
               onClick={() => setIsOpen(false)}
-              className="block text-center text-xs font-semibold text-[#5a4b3f] hover:text-[#221910] ink-text transition-colors"
+              className="block text-center text-[11px] sm:text-xs font-semibold text-[#5a4b3f] hover:text-[#221910] ink-text transition-colors"
             >
               {t.notifications.seeAll || "See all notifications"}
             </Link>

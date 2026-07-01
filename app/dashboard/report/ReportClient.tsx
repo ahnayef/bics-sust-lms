@@ -39,14 +39,7 @@ export default function ReportClient({
   return (
     <div className="p-4 sm:p-0 space-y-5">
       {/* Controls */}
-      <div className="flex justify-between items-center">
-        <Link
-          href={backUrl}
-          className="inline-flex items-center gap-2 text-sm text-[#5a4b3f] hover:text-[#221910] transition-colors ink-text"
-        >
-          <FaHistory className="w-3.5 h-3.5 rotate-180" />
-          {t.report.back}
-        </Link>
+      <div className="flex justify-end items-center">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsWhiteTheme(!isWhiteTheme)}
