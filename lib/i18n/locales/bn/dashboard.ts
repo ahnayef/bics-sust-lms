@@ -8,7 +8,7 @@ export const dashboard = {
     overview: "ওভারভিউ",
     moderators: "মডারেটর",
     users: "ব্যবহারকারী",
-    books: "বই ব্যবস্থাপনা",
+    books: "বই",
     copies: "কপি",
     transactions: "লেনদেন",
     logs: "লগ",

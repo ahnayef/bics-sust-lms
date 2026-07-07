@@ -32,7 +32,7 @@ export default async function BorrowPage({
   const completedBooks = allTxns
     .filter((tx) => tx.type === "borrow" && tx.status === "completed")
     .map((tx) => ({
-      bookId: tx.book_id.toUpperCase(),
+      bookId: String(tx.book_id),
       completedOn: tx.updated_at,
       copyId: tx.copy_id.toUpperCase(),
     }));

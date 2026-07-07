@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { retry } from "@/lib/db/retry";
 import * as schema from "@/lib/db/schema";
-import { eq, ilike, inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 export async function getAllBooks() {
   return retry(() =>
@@ -20,7 +20,7 @@ export async function getAllBooks() {
 export async function getBookById(id: string) {
   return retry(() =>
     db.query.books.findFirst({
-      where: ilike(schema.books.id, id),
+      where: eq(schema.books.id, id),
       with: {
         category: true,
         copies: true,
@@ -57,12 +57,12 @@ export async function updateBook(
   updates: Partial<typeof schema.books.$inferInsert>,
 ) {
   return retry(() =>
-    db.update(schema.books).set(updates).where(ilike(schema.books.id, id))
+    db.update(schema.books).set(updates).where(eq(schema.books.id, id))
   );
 }
 
 export async function deleteBook(id: string) {
   return retry(() =>
-    db.delete(schema.books).where(ilike(schema.books.id, id))
+    db.delete(schema.books).where(eq(schema.books.id, id))
   );
 }

@@ -51,7 +51,6 @@ create table if not exists public.profiles (
 
 create table if not exists public.books (
   id          uuid primary key default gen_random_uuid(),
-  short_id    text not null unique default substr(md5(random()::text), 1, 6),
   title       text not null,
   author      text not null,
   is_syllabus boolean not null default false,

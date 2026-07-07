@@ -77,6 +77,7 @@ export default function ReportClient({
                 src={profile.avatar_url}
                 alt={profile.full_name}
                 className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = 'none';
                   const parent = (e.target as HTMLImageElement).parentElement;

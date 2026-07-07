@@ -8,7 +8,7 @@ export const dashboard = {
     overview: "Overview",
     moderators: "Moderators",
     users: "Users",
-    books: "Book Management",
+    books: "Books",
     copies: "Copies",
     transactions: "Transactions",
     logs: "Logs",

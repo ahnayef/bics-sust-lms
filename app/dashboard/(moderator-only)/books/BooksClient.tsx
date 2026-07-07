@@ -11,7 +11,6 @@ import { FaDownload, FaEdit, FaPlus, FaSearch, FaTimes, FaTrash } from "react-ic
 type BookTypeFilter = "all" | string;
 
 interface BookForm {
-  id: string;
   title: string;
   author: string;
   category_id: string;
@@ -22,7 +21,6 @@ interface BookForm {
 }
 
 const EMPTY_FORM: BookForm = {
-  id: "",
   title: "",
   author: "",
   category_id: "",
@@ -31,6 +29,11 @@ const EMPTY_FORM: BookForm = {
   pdf_link: "",
   first_copy_id: "",
 };
+
+function isValidUrl(urlString: string) {
+  // const prefix = urlString.startsWith("http") ? "" : "http://";
+  return URL.canParse(urlString);
+}
 
 interface Props {
   initialBooks: Book[];
@@ -52,6 +55,7 @@ export default function BooksClient({ initialBooks, categories }: Props) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<BookForm>(EMPTY_FORM);
+  const [copyIdError, setCopyIdError] = useState<string | null>(null);
   const [flash, setFlash] = useState<{
     type: "success" | "error";
     text: string;
@@ -109,14 +113,18 @@ export default function BooksClient({ initialBooks, categories }: Props) {
       ...EMPTY_FORM,
       category_id: categories.find((c) => c.name === "Syllabus")?.id || "",
     });
+    setCopyIdError(null);
     setShowAddModal(true);
   };
 
   const handleAdd = () => {
-    if (!formData.title.trim() || !formData.author.trim() || !formData.id.trim()) return;
+    if (!formData.title.trim() || !formData.author.trim()) return;
+    if (formData.pdf_link.trim() && !isValidUrl(formData.pdf_link)) {
+      showFlash("error", "Please enter a valid PDF Link URL");
+      return;
+    }
     startTransition(async () => {
       const fd = new FormData();
-      fd.set("id", formData.id.trim());
       fd.set("title", formData.title.trim());
       fd.set("author", formData.author.trim());
       fd.set("category_id", formData.category_id);
@@ -127,7 +135,11 @@ export default function BooksClient({ initialBooks, categories }: Props) {
 
       const result = await addBook(fd);
       if (result.error) {
-        showFlash("error", result.error);
+        if (result.error.toLowerCase().includes("already exists")) {
+          setCopyIdError(result.error);
+        } else {
+          showFlash("error", result.error);
+        }
       } else {
         showFlash("success", t.books.flash.addSuccess);
         closeModal();
@@ -140,7 +152,6 @@ export default function BooksClient({ initialBooks, categories }: Props) {
     const book = books.find((b) => b.id === id);
     if (!book) return;
     setFormData({
-      id: book.id,
       title: book.title,
       author: book.author,
       category_id: book.category_id ?? "",
@@ -155,9 +166,13 @@ export default function BooksClient({ initialBooks, categories }: Props) {
 
   const handleUpdate = () => {
     if (!formData.title.trim() || !formData.author.trim()) return;
+    if (formData.pdf_link.trim() && !isValidUrl(formData.pdf_link)) {
+      showFlash("error", "Please enter a valid PDF Link URL");
+      return;
+    }
     startTransition(async () => {
       const fd = new FormData();
-      fd.set("id", formData.id);
+      if (editingId) fd.set("id", editingId);
       fd.set("title", formData.title.trim());
       fd.set("author", formData.author.trim());
       fd.set("category_id", formData.category_id);
@@ -214,6 +229,7 @@ export default function BooksClient({ initialBooks, categories }: Props) {
     setShowAddModal(false);
     setEditingId(null);
     setFormData(EMPTY_FORM);
+    setCopyIdError(null);
   };
 
   return (
@@ -325,9 +341,6 @@ export default function BooksClient({ initialBooks, categories }: Props) {
             <thead>
               <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
                 <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
-                  ID
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
                   {t.books.table.title}
                 </th>
                 <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
@@ -356,9 +369,6 @@ export default function BooksClient({ initialBooks, categories }: Props) {
                   key={book.id}
                   className="border-b border-[#d2bfa5] hover:bg-[#f4ebdc] transition-colors"
                 >
-                  <td className="px-4 sm:px-6 py-3 font-mono font-medium text-[#2b2119]">
-                    {book.id}
-                  </td>
                   <td className="px-4 sm:px-6 py-3 font-medium text-[#2b2119]">
                     {book.title}
                   </td>
@@ -439,15 +449,15 @@ export default function BooksClient({ initialBooks, categories }: Props) {
       {/* Add / Edit modal */}
       {showAddModal && (
         <div
-          className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-4 z-80"
+          className="fixed inset-0 z-80 flex justify-center overflow-y-auto bg-[#1f170f]/42 p-4 backdrop-blur-[1px] sm:p-6"
           onClick={(e) => e.target === e.currentTarget && closeModal()}
         >
           <div
-            className="dashboard-surface tron-border rounded-sm max-w-md w-full p-6 max-h-[90vh] overflow-y-auto"
+            className="dashboard-surface tron-border my-auto h-fit w-full max-w-md rounded-sm p-4 sm:p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <h2 className="text-xl font-bold text-[#221910] ink-title">
+            <div className="flex items-start justify-between gap-3 mb-3 sm:mb-4">
+              <h2 className="text-lg sm:text-xl font-bold text-[#221910] ink-title">
                 {editingId ? t.books.modal.editTitle : t.books.modal.addTitle}
               </h2>
               <button
@@ -460,24 +470,9 @@ export default function BooksClient({ initialBooks, categories }: Props) {
               </button>
             </div>
 
-            <div className="space-y-4 ink-text">
+            <div className="space-y-3 sm:space-y-4 ink-text">
               <div>
-                <label className="block text-sm font-medium text-[#4f4134] mb-1">
-                  Book ID *
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. B001"
-                  value={formData.id}
-                  disabled={!!editingId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, id: e.target.value.toUpperCase() })
-                  }
-                  className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none disabled:opacity-50"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-[#4f4134] mb-1">
                   {t.books.modal.labels.title} *
                 </label>
                 <input
@@ -487,11 +482,11 @@ export default function BooksClient({ initialBooks, categories }: Props) {
                   onChange={(e) =>
                     setFormData({ ...formData, title: e.target.value })
                   }
-                  className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-[#4f4134] mb-1">
                   {t.books.modal.labels.author} *
                 </label>
                 <input
@@ -501,46 +496,49 @@ export default function BooksClient({ initialBooks, categories }: Props) {
                   onChange={(e) =>
                     setFormData({ ...formData, author: e.target.value })
                   }
-                  className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-[#4f4134] mb-1">
-                  {t.books.modal.labels.type} *
-                </label>
-                <select
-                  value={formData.category_id}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      category_id: e.target.value,
-                    })
-                  }
-                  className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
-                >
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+              {/* select & page number */}
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-between">
+                <div className="flex-1">
+                  <label className="block text-xs sm:text-sm font-medium text-[#4f4134] mb-1">
+                    {t.books.modal.labels.type} *
+                  </label>
+                  <select
+                    value={formData.category_id}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        category_id: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
+                  >
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="w-full sm:w-1/3">
+                  <label className="block text-xs sm:text-sm font-medium text-[#4f4134] mb-1">
+                    {t.books.modal.labels.pages}
+                  </label>
+                  <input
+                    type="number"
+                    placeholder={t.books.modal.placeholders.pages}
+                    value={formData.pages}
+                    onChange={(e) =>
+                      setFormData({ ...formData, pages: Math.max(Number(e.target.value), 0).toString() })
+                    }
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
+                  />
+                </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#4f4134] mb-1">
-                  {t.books.modal.labels.pages}
-                </label>
-                <input
-                  type="number"
-                  placeholder={t.books.modal.placeholders.pages}
-                  value={formData.pages}
-                  onChange={(e) =>
-                    setFormData({ ...formData, pages: e.target.value })
-                  }
-                  className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-[#4f4134] mb-1">
                   {t.books.modal.labels.pdfLink}
                 </label>
                 <input
@@ -550,45 +548,64 @@ export default function BooksClient({ initialBooks, categories }: Props) {
                   onChange={(e) =>
                     setFormData({ ...formData, pdf_link: e.target.value })
                   }
-                  className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
+                  className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border rounded-sm focus:ring-2 focus:border-transparent outline-none transition-colors ${formData.pdf_link.trim() && !isValidUrl(formData.pdf_link)
+                    ? "border-red-500 focus:ring-red-500 bg-[#fdf2f2] text-red-900"
+                    : "border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] focus:ring-[#6e5d4a]"
+                    }`}
                 />
+                {formData.pdf_link.trim() && !isValidUrl(formData.pdf_link) && (
+                  <p className="text-[10px] sm:text-xs text-red-600 mt-1 font-medium">
+                    Please enter a valid URL (e.g., https://example.com/file.pdf)
+                  </p>
+                )}
               </div>
 
               {!editingId && (
                 <div>
-                  <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                  <label className="block text-xs sm:text-sm font-medium text-[#4f4134] mb-1">
                     First Copy ID (Optional)
                   </label>
                   <input
                     type="text"
                     placeholder="e.g. C001"
                     value={formData.first_copy_id}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      if (copyIdError) setCopyIdError(null);
                       setFormData({
                         ...formData,
                         first_copy_id: e.target.value.toUpperCase(),
-                      })
-                    }
-                    className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
+                      });
+                    }}
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border rounded-sm focus:ring-2 focus:border-transparent outline-none transition-colors ${
+                      copyIdError
+                        ? "border-red-500 focus:ring-red-500 bg-[#fdf2f2] text-red-900"
+                        : "border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] focus:ring-[#6e5d4a]"
+                    }`}
                   />
-                  <p className="text-[10px] text-[#8a7966] mt-1">
-                    Leave blank if you don't want to add a copy right now.
-                  </p>
+                  {copyIdError ? (
+                    <p className="text-[10px] sm:text-xs text-red-600 mt-1 font-medium">
+                      {copyIdError}
+                    </p>
+                  ) : (
+                    <p className="text-[10px] text-[#8a7966] mt-1">
+                      Leave blank if you don't want to add a copy right now.
+                    </p>
+                  )}
                 </div>
               )}
 
-              <div className="pt-4 flex gap-3">
+              <div className="pt-2 sm:pt-4 flex gap-2 sm:gap-3">
                 <button
                   onClick={closeModal}
                   disabled={isPending}
-                  className="flex-1 py-2.5 px-4 bg-[#f4e8d4] text-[#4a3825] border border-[#c9b99a] font-bold rounded-sm hover:bg-[#ece0ce] transition-colors disabled:opacity-55"
+                  className="flex-1 py-2 sm:py-2.5 px-4 text-sm bg-[#f4e8d4] text-[#4a3825] border border-[#c9b99a] font-bold rounded-sm hover:bg-[#ece0ce] transition-colors disabled:opacity-55"
                 >
                   {t.books.modal.cancel}
                 </button>
                 <button
                   onClick={editingId ? handleUpdate : handleAdd}
                   disabled={isPending}
-                  className="flex-1 py-2.5 px-4 bg-[#3f3328] text-[#f4e8d4] font-bold rounded-sm hover:bg-[#221910] transition-colors disabled:opacity-55"
+                  className="flex-1 py-2 sm:py-2.5 px-4 text-sm bg-[#3f3328] text-[#f4e8d4] font-bold rounded-sm hover:bg-[#221910] transition-colors disabled:opacity-55"
                 >
                   {isPending
                     ? "..."

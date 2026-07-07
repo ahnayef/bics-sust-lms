@@ -158,6 +158,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
   const [bookSearchTerm, setBookSearchTerm] = useState("");
   const [showBookDropdown, setShowBookDropdown] = useState(false);
   const [formData, setFormData] = useState<CopyForm>(EMPTY_FORM);
+  const [copyIdError, setCopyIdError] = useState<string | null>(null);
 
   const [qrModalCopyId, setQrModalCopyId] = useState<string | null>(null);
   const [qrImageUrl, setQrImageUrl] = useState<string>("");
@@ -264,18 +265,24 @@ export default function CopiesClient({ initialCopies, books }: Props) {
     setFormData(EMPTY_FORM);
     setBookSearchTerm("");
     setShowBookDropdown(false);
+    setCopyIdError(null);
     setShowAddModal(true);
   };
 
   const handleAdd = () => {
     if (!formData.book_id || !formData.copy_id.trim()) return;
+    setCopyIdError(null);
     startTransition(async () => {
       const fd = new FormData();
       fd.set("book_id", formData.book_id);
       fd.set("copy_id", formData.copy_id.trim());
       const result = await addCopyOfBook(fd);
       if (result.error) {
-        showFlash("error", result.error);
+        if (result.error.toLowerCase().includes("already exists")) {
+          setCopyIdError(result.error);
+        } else {
+          showFlash("error", result.error);
+        }
       } else {
         showFlash("success", t.copies.flash.addSuccess);
         closeModal();
@@ -319,6 +326,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
     setFormData(EMPTY_FORM);
     setBookSearchTerm("");
     setShowBookDropdown(false);
+    setCopyIdError(null);
   };
 
   // ── QR modal ─────────────────────────────────────────────────────────────
@@ -605,11 +613,21 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                   type="text"
                   placeholder="e.g. C001"
                   value={formData.copy_id}
-                  onChange={(e) =>
-                    setFormData({ ...formData, copy_id: e.target.value.toUpperCase() })
-                  }
-                  className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
+                  onChange={(e) => {
+                    if (copyIdError) setCopyIdError(null);
+                    setFormData({ ...formData, copy_id: e.target.value.toUpperCase() });
+                  }}
+                  className={`w-full px-4 py-2.5 border rounded-sm focus:ring-2 focus:border-transparent outline-none transition-colors ${
+                    copyIdError
+                      ? "border-red-500 focus:ring-red-500 bg-[#fdf2f2] text-red-900"
+                      : "border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] focus:ring-[#6e5d4a]"
+                  }`}
                 />
+                {copyIdError && (
+                  <p className="text-xs text-red-600 mt-1 font-medium">
+                    {copyIdError}
+                  </p>
+                )}
               </div>
 
               {/* Book search dropdown */}

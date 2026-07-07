@@ -167,6 +167,7 @@ export default function EditProfileForm({
                   alt={profile.full_name}
                   width={56}
                   height={56}
+                  referrerPolicy="no-referrer"
                   className="w-14 h-14 rounded-full object-cover border-2 border-[#8a7966] shrink-0"
                 />
               ) : (

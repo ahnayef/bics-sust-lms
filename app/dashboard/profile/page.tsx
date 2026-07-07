@@ -11,10 +11,9 @@ import {
   FaCheckCircle,
   FaEdit,
   FaEnvelope,
-  FaFileAlt,
   FaMapMarkerAlt,
   FaPhone,
-  FaShieldAlt,
+  FaShieldAlt
 } from "react-icons/fa";
 
 function getInitials(name: string): string {
@@ -87,15 +86,34 @@ export default async function DashboardProfilePage() {
             <p className="text-xs text-[#7a6a5c] ink-text mt-3">
               {t.profile.header.joinedOn}: <b>{joinedDate}</b>
             </p>
+            <div className="mt-4 flex flex-col sm:flex-row flex-wrap items-center justify-center sm:justify-start gap-3 sm:gap-6 text-sm text-[#4f4134]">
+              <div className="flex items-center gap-1.5" title={t.profile.info.email}>
+                <FaEnvelope className="w-3.5 h-3.5 text-[#8a7966]" />
+                <span className="truncate max-w-[200px]">{profile.email}</span>
+              </div>
+              <div className="flex items-center gap-1.5" title={t.profile.info.phone}>
+                <FaPhone className="w-3.5 h-3.5 text-[#8a7966]" />
+                <span>{profile.phone || t.profile.info.noPhone}</span>
+              </div>
+              <div className="flex items-center gap-1.5" title={t.profile.info.location}>
+                <FaMapMarkerAlt className="w-3.5 h-3.5 text-[#8a7966]" />
+                <span className="truncate max-w-[200px]">
+                  {locationParts.length > 0
+                    ? locationParts.join(", ")
+                    : t.profile.info.noLocation}
+                </span>
+              </div>
+            </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 shrink-0">
-            <Link
+            {/* commented for now */}
+            {/* <Link
               href={`/dashboard/report?user=${profile.id}`}
               className="flex items-center gap-2 px-4 py-2 bg-stone-800 text-stone-100 border border-stone-600 rounded-sm hover:bg-stone-700 transition-colors text-sm font-semibold ink-text shrink-0"
             >
               <FaFileAlt className="w-3.5 h-3.5 text-stone-300" />
               {t.profile.header.report || "View Report"}
-            </Link>
+            </Link> */}
             <Link
               href="/dashboard/profile/edit"
               className="flex items-center gap-2 px-4 py-2 bg-[#eadcc8] text-[#4e4033] border border-[#b5a490] rounded-sm hover:bg-[#e1d0ba] transition-colors text-sm font-semibold ink-text shrink-0"
@@ -107,53 +125,9 @@ export default async function DashboardProfilePage() {
         </div>
       </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {/* ── Contact Info ── */}
-        <section className="dashboard-surface tron-border rounded-sm p-6">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-[#6a5a4c] ink-text mb-4 border-b border-[#c9b89a] pb-2">
-            {t.profile.sections.contactInfo}
-          </h2>
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <FaEnvelope className="w-4 h-4 text-[#8a7966] mt-0.5" />
-              <div>
-                <p className="text-[10px] text-[#8a7966] uppercase font-bold tracking-tight">
-                  {t.profile.info.email}
-                </p>
-                <p className="text-sm text-[#221910] font-medium break-all">
-                  {profile.email}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <FaPhone className="w-4 h-4 text-[#8a7966] mt-0.5" />
-              <div>
-                <p className="text-[10px] text-[#8a7966] uppercase font-bold tracking-tight">
-                  {t.profile.info.phone}
-                </p>
-                <p className="text-sm text-[#221910] font-medium">
-                  {profile.phone || t.profile.info.noPhone}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <FaMapMarkerAlt className="w-4 h-4 text-[#8a7966] mt-0.5" />
-              <div>
-                <p className="text-[10px] text-[#8a7966] uppercase font-bold tracking-tight">
-                  {t.profile.info.location}
-                </p>
-                <p className="text-sm text-[#221910] font-medium">
-                  {locationParts.length > 0
-                    ? locationParts.join(", ")
-                    : t.profile.info.noLocation}
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
+      <div className="flex flex-col md:flex-row gap-5 items-stretch">
         {/* ── Reading Progress ── */}
-        <section className="dashboard-surface tron-border rounded-sm p-6">
+        <section className="dashboard-surface tron-border rounded-sm p-6 flex-1 flex flex-col">
           <h2 className="text-sm font-bold uppercase tracking-wider text-[#6a5a4c] ink-text mb-4 border-b border-[#c9b89a] pb-2">
             {t.profile.sections.readingProgress}
           </h2>
@@ -214,15 +188,14 @@ export default async function DashboardProfilePage() {
             </div>
           </div>
         </section>
-      </div>
 
-      {/* ── Checklist Progress ── */}
-      {checklistProgress.length > 0 && (
-        <section className="dashboard-surface tron-border rounded-sm p-6">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-[#6a5a4c] ink-text mb-4 border-b border-[#c9b89a] pb-2">
-            {t.profile.sections.checklistProgress}
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {/* ── Checklist Progress ── */}
+        {checklistProgress.length > 0 && (
+          <section className="dashboard-surface tron-border rounded-sm p-6 flex-1 flex flex-col">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-[#6a5a4c] ink-text mb-4 border-b border-[#c9b89a] pb-2">
+              {t.profile.sections.checklistProgress}
+            </h2>
+            <div className="space-y-6 flex-1">
             {checklistProgress.map((cp) => {
               const percent =
                 cp.total > 0 ? Math.round((cp.completed / cp.total) * 100) : 0;
@@ -248,9 +221,10 @@ export default async function DashboardProfilePage() {
                 </div>
               );
             })}
-          </div>
-        </section>
-      )}
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   );
 }

@@ -14,8 +14,8 @@ export const returnPage = {
     returnAnother: "Return Another",
   },
   errors: {
-    copyNotFound: "Copy not found or not currently borrowed by you.",
-    notBorrowed: "This copy is not currently marked as borrowed.",
+    copyNotFound: "Invalid ID",
+    notBorrowed: "This book not borrowed by You",
     cameraPermission: "Camera permission denied. Please enable camera access or use manual entry.",
     generic: "Something went wrong. Please try again.",
   },

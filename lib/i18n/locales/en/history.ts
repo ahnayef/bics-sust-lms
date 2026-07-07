@@ -10,9 +10,9 @@ export const history = {
     status: "Status",
   },
   status: {
-    pending_borrow: "Pending Borrow",
+    pending_borrow: "Pending",
     borrowed: "Borrowed",
-    pending_return: "Pending Return",
+    pending_return: "Pending",
     returned: "Returned",
     rejected_borrow: "Rejected",
     rejected_return: "Return Rejected",
@@ -25,7 +25,7 @@ export const history = {
     active: "Borrowed",
     completed: "Returned",
     overdue: "Overdue",
-    pending: "Pending Borrow",
+    pending: "Pending",
     rejected: "Rejected",
   },
 } as const;

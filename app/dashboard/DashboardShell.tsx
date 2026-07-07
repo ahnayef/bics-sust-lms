@@ -113,13 +113,13 @@ export default function DashboardShell({
           label: t.dashboard.sidebar.checklistsManage,
           href: "/dashboard/checklists-manage",
           icon: FaCheckSquare,
-          requiresRole: [USER_ROLES.ADMIN],
+          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
         },
         {
           label: t.dashboard.sidebar.categories,
           href: "/dashboard/categories",
           icon: FaClipboardList,
-          requiresRole: [USER_ROLES.ADMIN],
+          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
         },
         {
           label: t.dashboard.sidebar.users,
@@ -131,13 +131,13 @@ export default function DashboardShell({
           label: t.dashboard.sidebar.moderators,
           href: "/dashboard/moderators",
           icon: FaShieldAlt,
-          requiresRole: [USER_ROLES.ADMIN],
+          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
         },
         {
           label: t.dashboard.sidebar.ranks,
           href: "/dashboard/ranks",
           icon: FaShieldAlt,
-          requiresRole: [USER_ROLES.ADMIN],
+          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
         },
         {
           label: t.dashboard.sidebar.thanas,
@@ -146,16 +146,16 @@ export default function DashboardShell({
           requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
         },
         {
-          label: t.dashboard.sidebar.logs,
-          href: "/dashboard/logs",
-          icon: FaClipboardList,
-          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-        },
-        {
           label: t.dashboard.sidebar.printQr,
           href: "/dashboard/print-qr",
           icon: FaPrint,
           requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
+        },
+        {
+          label: t.dashboard.sidebar.logs,
+          href: "/dashboard/logs",
+          icon: FaClipboardList,
+          requiresRole: [USER_ROLES.ADMIN],
         },
       ],
     },
@@ -324,6 +324,7 @@ export default function DashboardShell({
                         width={28}
                         height={28}
                         priority
+                        referrerPolicy="no-referrer"
                         className="w-7 h-7 rounded-full object-cover border border-[#8a7966]"
                       />
                     ) : (
@@ -380,6 +381,7 @@ export default function DashboardShell({
                         width={32}
                         height={32}
                         priority
+                        referrerPolicy="no-referrer"
                         className="w-8 h-8 rounded-full object-cover border border-[#8a7966]"
                       />
                     ) : (

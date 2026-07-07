@@ -200,6 +200,7 @@ export default function ModeratorsClient({ initialModerators }: Props) {
                       alt={person.full_name}
                       width={44}
                       height={44}
+                      referrerPolicy="no-referrer"
                       className="w-11 h-11 rounded-full object-cover border border-[#8a7966] shrink-0"
                     />
                   ) : (

@@ -39,7 +39,7 @@ export async function getCopyById(id: string) {
 export async function getCopiesByBookId(bookId: string) {
   return retry(() =>
     db.query.copies.findMany({
-      where: ilike(schema.copies.book_id, bookId),
+      where: eq(schema.copies.book_id, bookId),
       orderBy: (copies, { asc }) => [asc(copies.copy_number)],
     })
   );
@@ -59,7 +59,7 @@ export async function getBorrowedCopiesCountByBookId(bookId: string) {
   const result = await retry(() =>
     db.query.copies.findMany({
       where: and(
-        ilike(schema.copies.book_id, bookId),
+        eq(schema.copies.book_id, bookId),
         eq(schema.copies.status, "borrowed")
       ),
       columns: { id: true },
@@ -72,7 +72,7 @@ export async function getBorrowedCopiesCountByBookId(bookId: string) {
 export async function getMaxCopyNumber(bookId: string) {
   const result = await retry(() =>
     db.query.copies.findFirst({
-      where: ilike(schema.copies.book_id, bookId),
+      where: eq(schema.copies.book_id, bookId),
       orderBy: (copies, { desc }) => [desc(copies.copy_number)],
       columns: { copy_number: true },
     })

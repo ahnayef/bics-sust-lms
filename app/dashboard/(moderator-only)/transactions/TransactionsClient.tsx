@@ -379,6 +379,7 @@ export default function TransactionsClient({
                       src={tx.user.avatar_url}
                       alt={tx.user.full_name || ""}
                       fill
+                      referrerPolicy="no-referrer"
                       className="object-cover"
                     />
                   ) : (
@@ -519,6 +520,7 @@ export default function TransactionsClient({
                       src={tx.user.avatar_url}
                       alt={tx.user.full_name || ""}
                       fill
+                      referrerPolicy="no-referrer"
                       className="object-cover"
                     />
                   ) : (
@@ -780,6 +782,7 @@ export default function TransactionsClient({
                                     src={tx.user.avatar_url}
                                     alt={tx.user.full_name || ""}
                                     fill
+                                    referrerPolicy="no-referrer"
                                     className="object-cover"
                                   />
                                 ) : (
@@ -900,6 +903,7 @@ export default function TransactionsClient({
                                       src={tx.user.avatar_url}
                                       alt={tx.user.full_name || ""}
                                       fill
+                                      referrerPolicy="no-referrer"
                                       className="object-cover"
                                     />
                                   ) : (
@@ -1021,6 +1025,7 @@ export default function TransactionsClient({
                                     src={pdf.user.avatar_url}
                                     alt={pdf.user.full_name || ""}
                                     fill
+                                    referrerPolicy="no-referrer"
                                     className="object-cover"
                                   />
                                 ) : (

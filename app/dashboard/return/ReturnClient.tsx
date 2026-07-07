@@ -1,10 +1,10 @@
 "use client";
 
-import { returnBook } from "@/server/transaction-actions";
+import { lookupCopy, returnBook } from "@/server/transaction-actions";
 import type { Transaction } from "@/types/library";
 import { Scanner, useDevices } from "@yudiel/react-qr-scanner";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import {
   FaExclamationTriangle,
   FaKeyboard,
@@ -17,12 +17,14 @@ import { useTranslation } from "@/lib/i18n/context";
 interface ReturnClientProps {
   currentBorrows: Transaction[];
   userId: string;
+  pendingReturnCopyIds: Set<string>;
 }
 
 export default function ReturnClient({
   currentBorrows,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   userId: _userId,
+  pendingReturnCopyIds,
 }: ReturnClientProps) {
   const router = useRouter();
   const { t, language } = useTranslation();
@@ -36,11 +38,20 @@ export default function ReturnClient({
   // QR / manual input section
   const [copyId, setCopyId] = useState("");
   const [scannedCopyId, setScannedCopyId] = useState<string | null>(null);
-  const [inputMode, setInputMode] = useState<"qr" | "manual">("qr");
+  const [inputMode, setInputMode] = useState<"qr" | "manual">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("return-input-mode");
+      if (saved === "qr" || saved === "manual") return saved;
+    }
+    return "qr";
+  });
   const [deviceId, setDeviceId] = useState<string | undefined>(undefined);
   const [scanPaused, setScanPaused] = useState(false);
   const [scannerInitialized, setScannerInitialized] = useState(true);
   const [cameraPermissionDenied, setCameraPermissionDenied] = useState(false);
+  const [isLookingUp, setIsLookingUp] = useState(false);
+  const [scannedBorrow, setScannedBorrow] = useState<Transaction | null>(null);
+  const lookupCounterRef = useRef(0);
 
   const devices = useDevices();
 
@@ -65,10 +76,67 @@ export default function ReturnClient({
         setScannedCopyId(null);
         setCopyId("");
         setScanPaused(false);
+        setScannedBorrow(null);
         router.refresh();
       }
     });
   }
+
+  // ── Copy lookup ─────────────────────────────────────────────────────────────
+
+  const performLookup = async (value: string): Promise<boolean> => {
+    const upper = value.toUpperCase().trim();
+    if (!upper) return false;
+
+    setError("");
+    setScannedBorrow(null);
+    setIsLookingUp(true);
+
+    const thisLookup = ++lookupCounterRef.current;
+    try {
+      const { copy } = await lookupCopy(upper);
+
+      // Discard if a newer lookup has already started
+      if (thisLookup !== lookupCounterRef.current) return false;
+
+      setIsLookingUp(false);
+
+      if (!copy) {
+        setError(t.return.errors.copyNotFound);
+        setScannedCopyId(null);
+        return false;
+      }
+
+      // Check if there's already a pending return for this copy
+      if (pendingReturnCopyIds.has(upper)) {
+        setError("You already have a pending return request for this copy");
+        setScannedCopyId(upper);
+        setScannedBorrow(null);
+        return false;
+      }
+
+      // Check if user has borrowed this copy
+      const borrow = currentBorrows.find(
+        (b) => b.copy_id.toUpperCase() === upper.toUpperCase(),
+      );
+
+      if (!borrow) {
+        setError(t.return.errors.notBorrowed);
+        setScannedCopyId(upper);
+        return false;
+      }
+
+      setScannedCopyId(upper);
+      setScannedBorrow(borrow);
+      return true;
+    } catch (err) {
+      if (thisLookup === lookupCounterRef.current) {
+        setIsLookingUp(false);
+        setError(t.return.errors.generic);
+      }
+      return false;
+    }
+  };
 
   // ── QR scanner helpers ──────────────────────────────────────────────────────
 
@@ -77,16 +145,17 @@ export default function ReturnClient({
     setCopyId(upper);
     setError("");
     if (upper.length > 0) {
-      setScannedCopyId(upper);
+      performLookup(upper).then((valid) => {
+        if (valid) setScanPaused(true);
+      });
       return true;
     }
     setScannedCopyId(null);
+    setScannedBorrow(null);
     return false;
   }
 
-  function handleCopyIdChange(e: React.ChangeEvent<HTMLInputElement>) {
-    processCopyId(e.target.value);
-  }
+
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function handleScan(detectedCodes: any[]) {
@@ -113,6 +182,7 @@ export default function ReturnClient({
 
   function resetScanner() {
     setScannedCopyId(null);
+    setScannedBorrow(null);
     setCopyId("");
     setScanPaused(false);
     setError("");
@@ -125,11 +195,6 @@ export default function ReturnClient({
 
   // When showing the QR confirmation panel, try to find the book title from
   // the current borrows list so the success message is meaningful.
-  const scannedBorrow = scannedCopyId
-    ? currentBorrows.find(
-      (b) => b.copy_id.toUpperCase() === scannedCopyId.toUpperCase(),
-    )
-    : null;
   const scannedBookTitle = scannedBorrow?.book?.title ?? scannedCopyId ?? "";
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -150,11 +215,6 @@ export default function ReturnClient({
       {success && (
         <div className="p-4 bg-[#e8f1e7] border border-[#8faa8f] rounded-lg">
           <p className="text-sm text-[#3a5a3a] ink-text">{success}</p>
-        </div>
-      )}
-      {error && (
-        <div className="p-4 bg-[#f6e3df] border border-[#b0665c] rounded-lg">
-          <p className="text-sm text-[#7d2d23] ink-text">{error}</p>
         </div>
       )}
 
@@ -251,10 +311,12 @@ export default function ReturnClient({
                     {/* Return button */}
                     <button
                       onClick={() => handleReturn(txn.copy_id, bookTitle, txn.id)}
-                      disabled={isPending}
+                      disabled={isPending || (processingId !== null && processingId !== txn.id) || pendingReturnCopyIds.has(txn.copy_id.toUpperCase())}
                       className="shrink-0 px-4 py-2 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text text-sm"
                     >
-                      {processingId === txn.id && isPending ? "…" : t.return.form.submit.replace("Request to ", "")}
+                      {pendingReturnCopyIds.has(txn.copy_id.toUpperCase())
+                        ? "Pending"
+                        : processingId === txn.id && isPending ? "…" : t.return.form.submit.replace("Request to ", "")}
                     </button>
                   </div>
                 </div>
@@ -273,7 +335,10 @@ export default function ReturnClient({
         {/* Mode toggle */}
         <div className="flex gap-2 mb-4 dashboard-surface tron-border rounded-lg p-1">
           <button
-            onClick={() => setInputMode("qr")}
+            onClick={() => {
+              setInputMode("qr");
+              localStorage.setItem("return-input-mode", "qr");
+            }}
             className={`flex-1 px-3 sm:px-4 py-2 rounded font-medium transition-colors text-sm sm:text-base ink-text ${inputMode === "qr"
               ? "bg-[#5a4d40] text-[#f6ede1]"
               : "text-[#4e4033] hover:bg-[#eadcca]"
@@ -283,7 +348,10 @@ export default function ReturnClient({
             {t.return.qrMode}
           </button>
           <button
-            onClick={() => setInputMode("manual")}
+            onClick={() => {
+              setInputMode("manual");
+              localStorage.setItem("return-input-mode", "manual");
+            }}
             className={`flex-1 px-3 sm:px-4 py-2 rounded font-medium transition-colors text-sm sm:text-base ink-text ${inputMode === "manual"
               ? "bg-[#5a4d40] text-[#f6ede1]"
               : "text-[#4e4033] hover:bg-[#eadcca]"
@@ -389,25 +457,68 @@ export default function ReturnClient({
           ) : (
             /* ── Manual input ──────────────────────────────────────────────── */
             <div className="space-y-4">
-              <label className="block">
-                <p className="text-sm font-medium text-[#4e4033] mb-2 ink-text">
-                  {t.return.form.copyId}
-                </p>
-                <input
-                  type="text"
-                  value={copyId}
-                  onChange={handleCopyIdChange}
-                  placeholder={t.return.inputPlaceholder}
-                  maxLength={20}
-                  className="w-full px-4 py-3 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-lg focus:ring-2 focus:ring-[#5a4d40] focus:border-transparent outline-none text-lg font-mono tracking-widest"
-                  autoFocus
-                />
-              </label>
+              <div className="space-y-2">
+                <label className="block">
+                  <p className="text-sm font-medium text-[#4e4033] mb-2 ink-text">
+                    {t.return.form.copyId}
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={copyId}
+                      onChange={(e) => {
+                        const val = e.target.value.toUpperCase().trim();
+                        setCopyId(val);
+                        if (scannedCopyId || error) {
+                          setScannedCopyId(null);
+                          setScannedBorrow(null);
+                          setError("");
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          if (!copyId.trim()) {
+                            setError(t.return.errors.copyNotFound);
+                            return;
+                          }
+                          performLookup(copyId);
+                        }
+                      }}
+                      placeholder={t.return.inputPlaceholder}
+                      maxLength={20}
+                      className="flex-1 px-4 py-3 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-lg focus:ring-2 focus:ring-[#5a4d40] focus:border-transparent outline-none text-lg font-mono tracking-widest"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!copyId.trim()) {
+                          setError(t.return.errors.copyNotFound);
+                          return;
+                        }
+                        performLookup(copyId);
+                      }}
+                      disabled={isLookingUp || !copyId.trim()}
+                      className="px-6 py-3 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text whitespace-nowrap"
+                    >
+                      {isLookingUp ? t.return.lookingUp : t.return.lookup}
+                    </button>
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* ── Error message for invalid copy ────────────────────────────── */}
+          {error && !success && (
+            <div className="p-4 bg-[#f6e3df] border border-[#b0665c] rounded-lg">
+              <p className="text-sm text-[#7d2d23] ink-text">{error}</p>
             </div>
           )}
 
           {/* ── Confirmation panel (shared by QR and manual) ──────────────── */}
-          {scannedCopyId && (
+          {scannedBorrow && (
             <div className="border border-[#8faa8f] bg-[#edf4ec] rounded-lg p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <FaUndoAlt className="w-4 h-4 text-[#4a6a4a] shrink-0" />
@@ -440,8 +551,8 @@ export default function ReturnClient({
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleReturn(scannedCopyId, scannedBookTitle)}
-                  disabled={isPending}
+                  onClick={() => handleReturn(scannedCopyId!, scannedBookTitle)}
+                  disabled={isPending || (processingId !== null && processingId !== scannedCopyId)}
                   className="flex-1 px-3 py-2 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text text-sm"
                 >
                   {processingId === scannedCopyId && isPending ? t.return.form.submitting : t.return.form.submit}

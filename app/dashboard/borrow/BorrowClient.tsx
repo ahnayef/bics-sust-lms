@@ -70,9 +70,15 @@ export default function BorrowClient({
     return "";
   });
   const [success, setSuccess] = useState(false);
-  const [inputMode, setInputMode] = useState<"qr" | "manual">(
-    initialCopyId ? "manual" : "qr",
-  );
+  const [inputMode, setInputMode] = useState<"qr" | "manual">(() => {
+    // If there's initialCopyId, use manual mode; otherwise check localStorage
+    if (initialCopyId) return "manual";
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("borrow-input-mode");
+      if (saved === "qr" || saved === "manual") return saved;
+    }
+    return "qr";
+  });
   const [deviceId, setDeviceId] = useState<string | undefined>(undefined);
   const [scanPaused, setScanPaused] = useState(false);
   const [scannerInitialized, setScannerInitialized] = useState(true);
@@ -87,7 +93,7 @@ export default function BorrowClient({
   // ── Derived ────────────────────────────────────────────────────────────────
 
   const alreadyCompletedBook = selectedCopy?.book
-    ? completedBooks.find((b) => b.bookId === selectedCopy.book!.id)
+    ? completedBooks.find((b) => String(b.bookId).toLowerCase() === String(selectedCopy.book!.id).toLowerCase())
     : null;
 
   // ── Helpers ───────────────────────────────────────────────────────────────
@@ -329,7 +335,10 @@ export default function BorrowClient({
         {/* Mode selector */}
         <div className="flex gap-2 mb-6 borrow-surface tron-border rounded-lg p-1">
           <button
-            onClick={() => setInputMode("qr")}
+            onClick={() => {
+              setInputMode("qr");
+              localStorage.setItem("borrow-input-mode", "qr");
+            }}
             className={`flex-1 px-4 py-2 rounded font-medium transition-colors ink-text ${inputMode === "qr"
               ? "bg-[#5a4d40] text-[#f6ede1]"
               : "text-[#4e4033] hover:bg-[#eadcca]"
@@ -339,7 +348,10 @@ export default function BorrowClient({
             {t.borrow.qrMode}
           </button>
           <button
-            onClick={() => setInputMode("manual")}
+            onClick={() => {
+              setInputMode("manual");
+              localStorage.setItem("borrow-input-mode", "manual");
+            }}
             className={`flex-1 px-4 py-2 rounded font-medium transition-colors ink-text ${inputMode === "manual"
               ? "bg-[#5a4d40] text-[#f6ede1]"
               : "text-[#4e4033] hover:bg-[#eadcca]"
@@ -596,12 +608,9 @@ export default function BorrowClient({
                   <div className="flex items-start gap-3">
                     <FaExclamationTriangle className="w-5 h-5 text-[#7a6338] mt-0.5 shrink-0" />
                     <div>
-                      <p className="text-sm font-semibold text-[#6b5428] ink-text mb-1">
-                        {t.borrow.form.alreadyRead.split(".")[0]}
-                      </p>
                       <p className="text-xs text-[#6b5428] ink-text">
                         {t.borrow.form.alreadyRead
-                          .replace("{date}", new Date(alreadyCompletedBook.completedOn).toLocaleDateString())
+                          .replace("{date}", new Date(alreadyCompletedBook.completedOn).toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB"))
                           .replace("{copyId}", alreadyCompletedBook.copyId)}
                       </p>
                     </div>
@@ -651,7 +660,9 @@ export default function BorrowClient({
                   <p className="text-sm font-semibold text-[#7d2d23] ink-text mb-1">
                     {unavailableCopy.status === "damaged"
                       ? t.borrow.errors.damaged
-                      : t.borrow.errors.borrowed}
+                      : activeBorrowCopyIds.includes(unavailableCopy.id)
+                        ? t.borrow.errors.alreadyBorrowed
+                        : t.borrow.errors.borrowed}
                   </p>
                   <p className="text-sm text-[#5b3a33] ink-text font-semibold">
                     {unavailableCopy.book?.title ?? "—"}
@@ -664,8 +675,8 @@ export default function BorrowClient({
             </div>
           )}
 
-          {/* Error message */}
-          {error && (
+          {/* Error message — only show if there's no unavailableCopy */}
+          {error && !unavailableCopy && (
             <div className="p-4 bg-[#f6e3df] border border-[#b0665c] rounded-lg">
               <p className="text-sm text-[#7d2d23] ink-text">{error}</p>
             </div>
