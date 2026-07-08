@@ -7,6 +7,14 @@ export const copies = {
     borrowed: "Borrowed",
     damaged: "Damaged",
   },
+  sort: {
+    titleAsc: "Title (A-Z)",
+    titleDesc: "Title (Z-A)",
+    copiesAsc: "Copies (Low to High)",
+    copiesDesc: "Copies (High to Low)",
+    createdAtAsc: "Created At (Oldest First)",
+    createdAtDesc: "Created At (Newest First)",
+  },
   filters: {
     searchPlaceholder: "Search Copy ID, title or author...",
     all: "All Status",
@@ -18,11 +26,14 @@ export const copies = {
     addCopy: "Add Copy",
     downloadQr: "Download QR",
     delete: "Delete",
+    markAsDamaged: "Mark as Damaged",
+    markAsAvailable: "Mark as Available",
   },
   table: {
     copyId: "Copy ID",
     bookTitle: "Book Title",
     status: "Status",
+    createdAt: "Created At",
     actions: "Actions",
   },
   empty: "No copies match this search/filter combination.",
@@ -48,6 +59,7 @@ export const copies = {
   flash: {
     addSuccess: "New copy added successfully.",
     deleteSuccess: "Copy removed successfully.",
+    statusUpdated: "Copy status updated successfully.",
   },
   confirmDelete: {
     title: "Remove Copy",

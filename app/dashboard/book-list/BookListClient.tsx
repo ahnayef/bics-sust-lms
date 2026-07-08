@@ -22,14 +22,9 @@ import {
   FaTimes
 } from "react-icons/fa";
 
-type SortKey =
-  | "title"
-  | "pages-asc"
-  | "pages-desc"
-  | "copies-asc"
-  | "copies-desc";
+type SortKey = "title-asc" | "title-desc" | "pages-asc" | "pages-desc" | "copies-asc" | "copies-desc";
 type TypeFilter = "all" | "syllabus" | "additional";
-type AvailabilityFilter = "all" | "available" | "unavailable";
+type AvailabilityFilter = "all" | "available" | "borrowed" | "damaged";
 
 interface Props {
   books: Book[];
@@ -78,7 +73,7 @@ export default function BookListClient({
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [availabilityFilter, setAvailabilityFilter] = useState<AvailabilityFilter>("all");
-  const [sortBy, setSortBy] = useState<SortKey>("title");
+  const [sortBy, setSortBy] = useState<SortKey>("title-asc");
   const [expandedBookId, setExpandedBookId] = useState<string | null>(null);
 
   // PDF modal state
@@ -179,10 +174,7 @@ export default function BookListClient({
 
         const copies = (book.copies ?? []).filter((copy) => {
           const matchesAvailability =
-            availabilityFilter === "all" ||
-            (availabilityFilter === "available"
-              ? copy.status === "available"
-              : copy.status !== "available");
+            availabilityFilter === "all" || copy.status === availabilityFilter;
 
           const matchesQuery =
             !query ||
@@ -199,21 +191,22 @@ export default function BookListClient({
       .filter((book) => book.matchesType && book.copies.length > 0);
 
     result.sort((a, b) => {
-      if (sortBy === "title") return a.title.localeCompare(b.title, "bn");
+      if (sortBy === "title-asc") return a.title.localeCompare(b.title, "bn");
+      if (sortBy === "title-desc") return b.title.localeCompare(a.title, "bn");
       if (sortBy === "pages-asc")
         return (
-          (a.pages ?? 0) - (b.pages ?? 0) || a.title.localeCompare(b.title)
+          (a.pages ?? 0) - (b.pages ?? 0) || a.title.localeCompare(b.title, "bn")
         );
       if (sortBy === "pages-desc")
         return (
-          (b.pages ?? 0) - (a.pages ?? 0) || a.title.localeCompare(b.title)
+          (b.pages ?? 0) - (a.pages ?? 0) || a.title.localeCompare(b.title, "bn")
         );
       if (sortBy === "copies-asc")
         return (
-          a.copies.length - b.copies.length || a.title.localeCompare(b.title)
+          a.copies.length - b.copies.length || a.title.localeCompare(b.title, "bn")
         );
       return (
-        b.copies.length - a.copies.length || a.title.localeCompare(b.title)
+        b.copies.length - a.copies.length || a.title.localeCompare(b.title, "bn")
       );
     });
 
@@ -224,13 +217,13 @@ export default function BookListClient({
     searchTerm.trim() !== "" ||
     typeFilter !== "all" ||
     availabilityFilter !== "all" ||
-    sortBy !== "title";
+    sortBy !== "title-asc";
 
   const clearFilters = () => {
     setSearchTerm("");
     setTypeFilter("all");
     setAvailabilityFilter("all");
-    setSortBy("title");
+    setSortBy("title-asc");
     setExpandedBookId(null);
   };
 
@@ -242,7 +235,7 @@ export default function BookListClient({
       <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
         {/* ── Header + Filters ──────────────────────────────────────────────── */}
         <div className="dashboard-surface border border-[#7d6d5a] rounded-sm p-4 sm:p-6 shadow-sm">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="flex flex-col gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
                 {t.bookList.header.title}
@@ -263,66 +256,44 @@ export default function BookListClient({
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
+              <select
+                className="bg-[#f8f1e6] border border-[#b9a58b] rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text"
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
+              >
+                <option value="all">{t.bookList.filters.type.all}</option>
+                <option value="syllabus">{t.bookList.filters.type.syllabus}</option>
+                <option value="additional">{t.bookList.filters.type.additional}</option>
+              </select>
+              <select
+                className="bg-[#f8f1e6] border border-[#b9a58b] rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text"
+                value={availabilityFilter}
+                onChange={(e) =>
+                  setAvailabilityFilter(e.target.value as AvailabilityFilter)
+                }
+              >
+                <option value="all">{t.bookList.filters.availability.all}</option>
+                <option value="available">{t.bookList.filters.availability.available}</option>
+                <option value="borrowed">{t.bookList.copyStatus.borrowed}</option>
+                <option value="damaged">{t.bookList.copyStatus.damaged}</option>
+              </select>
+              <button
+                className="flex items-center gap-2 px-3 py-2 bg-[#eadcc8] border border-[#7d6d5a] rounded-sm text-sm font-bold text-[#221910] hover:bg-[#d9cbb7] transition-colors"
+                onClick={() => {
+                  setSortBy(sortBy === "title-asc" ? "title-desc" : "title-asc");
+                }}
+              >
+                {t.bookList.sorting.title}
+                {sortBy === "title-asc" ? <FaSortAmountDown className="w-3 h-3" /> : <FaSortAmountDown className="w-3 h-3 rotate-180" />}
+              </button>
               <div className="flex items-center gap-2">
                 <button
                   className="flex items-center gap-2 px-3 py-2 bg-[#eadcc8] border border-[#7d6d5a] rounded-sm text-xs font-bold text-[#221910] hover:bg-[#d9cbb7] transition-colors uppercase tracking-wider"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setTypeFilter("all");
-                    setAvailabilityFilter("all");
-                    setSortBy("title");
-                  }}
+                  onClick={clearFilters}
                 >
                   <FaTimes className="w-3 h-3" /> {t.bookList.empty.clearFilters}
                 </button>
               </div>
-            </div>
-          </div>
-
-          <div className="mt-6 pt-6 border-t border-[#d2bfa5]/60 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            <div className="space-y-2">
-              <label className="text-[10px] uppercase font-bold tracking-widest text-[#7d6d5a] flex items-center gap-1.5">
-                <FaFilter className="w-2.5 h-2.5" /> {t.bookList.header.filters}
-              </label>
-              <div className="flex gap-2">
-                <select
-                  className="flex-1 bg-[#f8f1e6] border border-[#b9a58b] rounded-sm px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text"
-                  value={typeFilter}
-                  onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
-                >
-                  <option value="all">{t.bookList.filters.type.all}</option>
-                  <option value="syllabus">{t.bookList.filters.type.syllabus}</option>
-                  <option value="additional">{t.bookList.filters.type.additional}</option>
-                </select>
-                <select
-                  className="flex-1 bg-[#f8f1e6] border border-[#b9a58b] rounded-sm px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text"
-                  value={availabilityFilter}
-                  onChange={(e) =>
-                    setAvailabilityFilter(e.target.value as AvailabilityFilter)
-                  }
-                >
-                  <option value="all">{t.bookList.filters.availability.all}</option>
-                  <option value="available">{t.bookList.filters.availability.available}</option>
-                  <option value="unavailable">{t.bookList.filters.availability.unavailable}</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] uppercase font-bold tracking-widest text-[#7d6d5a] flex items-center gap-1.5">
-                <FaSortAmountDown className="w-2.5 h-2.5" /> {t.bookList.header.sortBy}
-              </label>
-              <select
-                className="w-full bg-[#f8f1e6] border border-[#b9a58b] rounded-sm px-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortKey)}
-              >
-                <option value="title">{t.bookList.sorting.title}</option>
-                <option value="pages-asc">{t.bookList.sorting.pagesAsc}</option>
-                <option value="pages-desc">{t.bookList.sorting.pagesDesc}</option>
-                <option value="copies-asc">{t.bookList.sorting.copiesAsc}</option>
-                <option value="copies-desc">{t.bookList.sorting.copiesDesc}</option>
-              </select>
             </div>
           </div>
         </div>

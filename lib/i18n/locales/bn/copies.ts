@@ -7,6 +7,14 @@ export const copies = {
     borrowed: "ধারে দেওয়া",
     damaged: "ক্ষতিগ্রস্ত",
   },
+  sort: {
+    titleAsc: "শিরোনাম (A-Z)",
+    titleDesc: "শিরোনাম (Z-A)",
+    copiesAsc: "কপি (কম থেকে বেশি)",
+    copiesDesc: "কপি (বেশি থেকে কম)",
+    createdAtAsc: "তৈরির তারিখ (প্রথমে পুরনো)",
+    createdAtDesc: "তৈরির তারিখ (প্রথমে নতুন)",
+  },
   filters: {
     searchPlaceholder: "কপি আইডি, শিরোনাম বা লেখক দিয়ে খুঁজুন...",
     all: "সব অবস্থা",
@@ -18,11 +26,14 @@ export const copies = {
     addCopy: "কপি যুক্ত করুন",
     downloadQr: "কিউআর ডাউনলোড",
     delete: "মুছুন",
+    markAsDamaged: "ক্ষতিগ্রস্ত হিসেবে চিহ্নিত করুন",
+    markAsAvailable: "উপলব্ধ হিসেবে চিহ্নিত করুন",
   },
   table: {
     copyId: "কপি আইডি",
     bookTitle: "বইয়ের শিরোনাম",
     status: "অবস্থা",
+    createdAt: "তৈরির তারিখ",
     actions: "কার্যক্রম",
   },
   empty: "এই অনুসন্ধান বা ফিল্টারের সাথে কোনো কপি মেলেনি।",
@@ -48,6 +59,7 @@ export const copies = {
   flash: {
     addSuccess: "নতুন কপিটি সফলভাবে যুক্ত করা হয়েছে।",
     deleteSuccess: "কপিটি সফলভাবে মুছে ফেলা হয়েছে।",
+    statusUpdated: "কপির অবস্থা সফলভাবে আপডেট করা হয়েছে।",
   },
   confirmDelete: {
     title: "কপি মুছে ফেলুন",

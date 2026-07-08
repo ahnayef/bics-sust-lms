@@ -7,23 +7,29 @@ import {
   addCopyOfBook,
   getBookRefCount,
   removeCopy,
+  updateCopyMetadata,
 } from "@/server/library-actions";
 import type { Book, Copy, CopyStatus } from "@/types/library";
 import NextImage from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
+  FaCheck,
   FaDownload,
+  FaExclamationTriangle,
   FaPlus,
   FaQrcode,
   FaSearch,
+  FaSortAmountDown,
   FaTimes,
-  FaTrash,
+  FaTrash
 } from "react-icons/fa";
 
+type TypeFilter = "all" | "syllabus" | "additional";
 type StatusFilter = "all" | CopyStatus;
+type SortKey = "title-asc" | "title-desc" | "copies-asc" | "copies-desc";
 
 // ── QR card generation ───────────────────────────────────────────────────────
 
@@ -131,20 +137,19 @@ const buildQrCardImage = async (copyId: string, bookTitle: string, copyIdLabel: 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 interface CopyForm {
-  book_id: string; // Manual ID of the selected book
-  copy_id: string; // Manual ID for the copy
+  book_id: string;
+  copy_id: string;
 }
 
 const EMPTY_FORM: CopyForm = { book_id: "", copy_id: "" };
+
+type PendingAction =
+  | { type: "delete"; copyId: string; bookTitle: string };
 
 interface Props {
   initialCopies: Copy[];
   books: Book[];
 }
-
-type PendingAction =
-  | { type: "add" }
-  | { type: "delete"; copyId: string; bookTitle: string };
 
 export default function CopiesClient({ initialCopies, books }: Props) {
   const router = useRouter();
@@ -153,12 +158,29 @@ export default function CopiesClient({ initialCopies, books }: Props) {
 
   const [copies, setCopies] = useState<Copy[]>(initialCopies);
   const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [sortBy, setSortBy] = useState<SortKey>("title-asc");
   const [showAddModal, setShowAddModal] = useState(false);
   const [bookSearchTerm, setBookSearchTerm] = useState("");
   const [showBookDropdown, setShowBookDropdown] = useState(false);
   const [formData, setFormData] = useState<CopyForm>(EMPTY_FORM);
   const [copyIdError, setCopyIdError] = useState<string | null>(null);
+  const [expandedBookId, setExpandedBookId] = useState<string | null>(null);
+
+  const hasActiveFilters =
+    searchTerm.trim() !== "" ||
+    typeFilter !== "all" ||
+    statusFilter !== "all" ||
+    sortBy !== "title-asc";
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setTypeFilter("all");
+    setStatusFilter("all");
+    setSortBy("title-asc");
+    setExpandedBookId(null);
+  };
 
   const [qrModalCopyId, setQrModalCopyId] = useState<string | null>(null);
   const [qrImageUrl, setQrImageUrl] = useState<string>("");
@@ -196,24 +218,75 @@ export default function CopiesClient({ initialCopies, books }: Props) {
     setTimeout(() => setFlash(null), 4500);
   };
 
-  // ── Derived state ────────────────────────────────────────────────────────
+  // ── Group copies by book ─────────────────────────────────────────────────
+  const groupedCopies = useMemo(() => {
+    const groups = new Map<string, { book: Book; copies: Copy[] }>();
 
-  const query = searchTerm.toLowerCase().trim();
+    // First, initialize groups with all books
+    books.forEach((book) => {
+      groups.set(book.id, { book, copies: [] });
+    });
 
-  const filteredCopies = copies.filter((copy) => {
-    const matchesSearch =
-      copy.id.toLowerCase().includes(query) ||
-      (copy.book?.title.toLowerCase().includes(query) ?? false) ||
-      (copy.book?.author.toLowerCase().includes(query) ?? false);
-    const matchesStatus =
-      statusFilter === "all" || copy.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+    // Then, add copies to their respective groups
+    copies.forEach((copy) => {
+      const group = groups.get(copy.book_id);
+      if (group) {
+        group.copies.push(copy);
+      }
+    });
+
+    return Array.from(groups.values());
+  }, [copies, books]);
+
+  // ── Filtering and Sorting ─────────────────────────────────────────────────────
+  const filteredGroups = useMemo(() => {
+    const query = searchTerm.toLowerCase().trim();
+
+    const result = groupedCopies.filter((group) => {
+      const matchesType =
+        typeFilter === "all" ||
+        (typeFilter === "syllabus" ? group.book.is_syllabus : !group.book.is_syllabus);
+
+      const matchesSearch = !query ||
+        group.book.title.toLowerCase().includes(query) ||
+        group.book.author.toLowerCase().includes(query) ||
+        group.copies.some((copy) =>
+          copy.id.toLowerCase().includes(query)
+        );
+
+      const filteredCopies = group.copies.filter((copy) =>
+        statusFilter === "all" || copy.status === statusFilter
+      );
+
+      return matchesType && matchesSearch && filteredCopies.length > 0;
+    }).map((group) => ({
+      ...group,
+      copies: group.copies.filter((copy) =>
+        statusFilter === "all" || copy.status === statusFilter
+      ),
+    }));
+
+    // Sort the results exactly like BookListClient
+    result.sort((a, b) => {
+      if (sortBy === "title-asc") return a.book.title.localeCompare(b.book.title, "bn");
+      if (sortBy === "title-desc") return b.book.title.localeCompare(a.book.title, "bn");
+      if (sortBy === "copies-asc")
+        return (
+          a.copies.length - b.copies.length || a.book.title.localeCompare(b.book.title, "bn")
+        );
+      return (
+        b.copies.length - a.copies.length || a.book.title.localeCompare(b.book.title, "bn")
+      );
+    });
+
+    return result;
+  }, [groupedCopies, searchTerm, typeFilter, statusFilter, sortBy]);
 
   const counts = {
     total: copies.length,
     available: copies.filter((c) => c.status === "available").length,
     borrowed: copies.filter((c) => c.status === "borrowed").length,
+    damaged: copies.filter((c) => c.status === "damaged").length,
   };
 
   const getStatusBadgeTone = (
@@ -232,7 +305,6 @@ export default function CopiesClient({ initialCopies, books }: Props) {
   };
 
   // ── Book search dropdown (for the Add modal) ────────────────────────────
-
   const getBookOptionLabel = (book: Book) => `${book.title} — ${book.author}`;
 
   const filteredBookOptions = books.filter((book) => {
@@ -260,10 +332,20 @@ export default function CopiesClient({ initialCopies, books }: Props) {
   };
 
   // ── CRUD handlers ────────────────────────────────────────────────────────
-
-  const openAddModal = () => {
-    setFormData(EMPTY_FORM);
-    setBookSearchTerm("");
+  const openAddModal = (bookId?: string) => {
+    if (bookId) {
+      const book = books.find((b) => b.id === bookId);
+      if (book) {
+        setFormData({ book_id: book.id, copy_id: "" });
+        setBookSearchTerm(getBookOptionLabel(book));
+      } else {
+        setFormData(EMPTY_FORM);
+        setBookSearchTerm("");
+      }
+    } else {
+      setFormData(EMPTY_FORM);
+      setBookSearchTerm("");
+    }
     setShowBookDropdown(false);
     setCopyIdError(null);
     setShowAddModal(true);
@@ -303,6 +385,21 @@ export default function CopiesClient({ initialCopies, books }: Props) {
     setRefCount(count);
   };
 
+  const handleMarkAsDamaged = async (copyId: string, currentStatus: string) => {
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("id", copyId);
+      fd.set("status", currentStatus === "damaged" ? "available" : "damaged");
+      const result = await updateCopyMetadata(fd);
+      if (result.error) {
+        showFlash("error", result.error);
+      } else {
+        showFlash("success", t.copies.flash.statusUpdated);
+        router.refresh();
+      }
+    });
+  };
+
   const confirmDelete = () => {
     if (!pendingAction || pendingAction.type !== "delete") return;
     const { copyId } = pendingAction;
@@ -330,7 +427,6 @@ export default function CopiesClient({ initialCopies, books }: Props) {
   };
 
   // ── QR modal ─────────────────────────────────────────────────────────────
-
   const openQrModal = async (copyId: string) => {
     const requestId = qrRequestIdRef.current + 1;
     qrRequestIdRef.current = requestId;
@@ -404,7 +500,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
           </div>
 
           <button
-            onClick={openAddModal}
+            onClick={() => openAddModal()}
             disabled={isPending}
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 transition-colors font-medium ink-text"
           >
@@ -413,7 +509,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
           </button>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-4 sm:mt-5">
+        <div className="grid grid-cols-4 gap-2 sm:gap-3 mt-4 sm:mt-5">
           <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-2 sm:p-3">
             <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight">
               {t.copies.stats.total}
@@ -438,143 +534,273 @@ export default function CopiesClient({ initialCopies, books }: Props) {
               {counts.borrowed}
             </p>
           </div>
+          <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-2 sm:p-3">
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight">
+              {t.copies.stats.damaged}
+            </p>
+            <p className="text-xl sm:text-2xl font-bold text-[#221910] ink-title leading-none mt-1">
+              {counts.damaged}
+            </p>
+          </div>
         </div>
-      </section>
 
-      {/* Copies table */}
-      <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
-        {/* Filters */}
-        <div className="p-4 sm:p-5 border-b border-[#7d6d5a] bg-[#eadcc8]/40 flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a7966] w-4 h-4" />
+        {/* Filters and Sort (exact match to BookListClient) */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-4 sm:mt-5">
+          <div className="relative flex-1 sm:w-64">
+            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d6d5a] w-3.5 h-3.5" />
             <input
               type="text"
               placeholder={t.copies.filters.searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none ink-text"
+              className="w-full pl-9 pr-4 py-2 bg-[#f8f1e6] border border-[#b9a58b] rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text placeholder:text-[#a6917c]"
             />
           </div>
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-              className="px-4 py-2 rounded-sm text-xs font-bold whitespace-nowrap border bg-[#f6ecdd] text-[#5c4f42] border-[#b9a58b] hover:bg-[#ece0ce] transition-all"
+          <select
+            className="bg-[#f8f1e6] border border-[#b9a58b] rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text"
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
+          >
+            <option value="all">{t.bookList.filters.type.all}</option>
+            <option value="syllabus">{t.bookList.filters.type.syllabus}</option>
+            <option value="additional">{t.bookList.filters.type.additional}</option>
+          </select>
+          <select
+            className="bg-[#f8f1e6] border border-[#b9a58b] rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+          >
+            <option value="all">{t.bookList.filters.availability.all}</option>
+            <option value="available">{t.bookList.filters.availability.available}</option>
+            <option value="borrowed">{t.bookList.copyStatus.borrowed}</option>
+            <option value="damaged">{t.bookList.copyStatus.damaged}</option>
+          </select>
+          <button
+            className="flex items-center gap-2 px-3 py-2 bg-[#eadcc8] border border-[#7d6d5a] rounded-sm text-sm font-bold text-[#221910] hover:bg-[#d9cbb7] transition-colors"
+            onClick={() => {
+              setSortBy(sortBy === "title-asc" ? "title-desc" : "title-asc");
+            }}
+          >
+            {t.bookList.sorting.title}
+            {sortBy === "title-asc" ? <FaSortAmountDown className="w-3 h-3" /> : <FaSortAmountDown className="w-3 h-3 rotate-180" />}
+          </button>
+          <div className="flex items-center gap-2">
+            <button
+              className="flex items-center gap-2 px-3 py-2 bg-[#eadcc8] border border-[#7d6d5a] rounded-sm text-xs font-bold text-[#221910] hover:bg-[#d9cbb7] transition-colors uppercase tracking-wider"
+              onClick={clearFilters}
             >
-              <option value="all">{t.copies.filters.all}</option>
-              <option value="available">{t.copies.filters.available}</option>
-              <option value="borrowed">{t.copies.filters.borrowed}</option>
-              <option value="damaged">{t.copies.filters.damaged}</option>
-            </select>
+              <FaTimes className="w-3 h-3" /> {t.bookList.empty.clearFilters}
+            </button>
           </div>
         </div>
+      </section>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm ink-text text-left min-w-[700px]">
-            <thead>
-              <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
-                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
-                  {t.copies.table.copyId}
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
-                  {t.copies.table.bookTitle}
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
-                  {t.books.table.author}
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
-                  {t.books.table.copies} #
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
-                  {t.copies.table.status}
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
-                  Created At
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
-                  {t.copies.table.actions}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredCopies.map((copy) => (
-                <tr
-                  key={copy.id}
-                  className="border-b border-[#d2bfa5] hover:bg-[#f4ebdc] transition-colors"
-                >
-                  <td className="px-4 sm:px-6 py-3 font-mono font-medium text-[#2b2119]">
-                    {copy.id}
-                  </td>
-                  <td className="px-4 sm:px-6 py-3 font-medium text-[#2b2119]">
-                    {copy.book?.title ?? "Unknown"}
-                  </td>
-                  <td className="px-4 sm:px-6 py-3 text-[#5a4b3f]">
-                    {copy.book?.author ?? "Unknown"}
-                  </td>
-                  <td className="px-4 sm:px-6 py-3">
-                    <StatusBadge tone="muted">{copy.copy_number}</StatusBadge>
-                  </td>
-                  <td className="px-4 sm:px-6 py-3">
-                    <div className="space-y-1">
-                      <StatusBadge tone={getStatusBadgeTone(copy.status)}>
-                        {t.copies.filters[copy.status]}
-                      </StatusBadge>
-                      {copy.status === "borrowed" && copy.borrower && (
-                        <p className="text-[10px] text-[#5a4b3f] ink-text">
-                          by{" "}
-                          <Link
-                            href={`/dashboard/users/${copy.borrower.id}`}
-                            className="font-semibold underline hover:text-[#2b2119]"
-                          >
-                            {copy.borrower.full_name}
-                          </Link>
-                        </p>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 sm:px-6 py-3">
-                    <span
-                      className="text-[#5a4b3f]"
-                      title={new Date(copy.created_at).toLocaleString()}
+      {/* Books table */}
+      <section
+        className="book-list-surface tron-border rounded-lg overflow-hidden border border-[#5f4f40]"
+      >
+        {filteredGroups.length === 0 ? (
+          <div className="p-10 text-center">
+            <p className="text-[#5c4f42] ink-text">
+              {t.copies.empty}
+            </p>
+          </div>
+        ) : (
+          <div className="w-full overflow-x-auto">
+            <table className="w-full min-w-180 text-sm ink-text">
+              <thead>
+                <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
+                  {[
+                    t.copies.table.bookTitle,
+                    t.books.table.author,
+                    t.bookList.table.copies,
+                    t.copies.table.actions,
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="px-3 sm:px-4 py-2 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]"
                     >
-                      {new Date(copy.created_at).toLocaleDateString(undefined, {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </span>
-                  </td>
-                  <td className="px-4 sm:px-6 py-3">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => openQrModal(copy.id)}
-                        disabled={isPending}
-                        className="p-2 text-[#5b4c3f] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors disabled:opacity-55"
-                        aria-label={`${t.copies.actions.downloadQr} ${copy.id}`}
-                        title={t.copies.actions.downloadQr}
-                      >
-                        <FaQrcode className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(copy.id)}
-                        disabled={isPending}
-                        className="p-2 text-[#6a4e3d] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors disabled:opacity-55"
-                        aria-label={`${t.copies.actions.delete} ${copy.id}`}
-                        title={t.copies.actions.delete}
-                      >
-                        <FaTrash className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
 
-        {filteredCopies.length === 0 && (
-          <div className="text-center py-12 text-[#6a5a4c] ink-text">
-            <p>{t.copies.empty}</p>
+              <tbody>
+                {filteredGroups.map((group) => {
+                  const isExpanded = expandedBookId === group.book.id;
+
+                  return (
+                    <Fragment key={group.book.id}>
+                      {/* Book row */}
+                      <tr
+                        className="border-b border-[#d2bfa5] hover:bg-[#f4ebdc] transition-colors align-top cursor-pointer"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() =>
+                          setExpandedBookId(isExpanded ? null : group.book.id)
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setExpandedBookId(isExpanded ? null : group.book.id);
+                          }
+                        }}
+                        aria-expanded={isExpanded}
+                      >
+                        <td className="px-3 sm:px-4 py-2">
+                          <div className="flex items-start gap-2">
+                            <span className="mt-0.5 h-6 w-6 shrink-0 rounded-sm border border-[#b59f84] bg-[#f6ecdd] text-[#4e4033] text-xs font-bold inline-flex items-center justify-center">
+                              {isExpanded ? "−" : "+"}
+                            </span>
+                            <div className="min-w-0">
+                              <p className="font-semibold text-[#221910] leading-snug text-sm">
+                                {group.book.title}
+                              </p>
+                              <p className="text-[10px] text-[#6a5a4c] mt-0.5">
+                                {group.copies.length} {t.bookList.bookCard.copies}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 sm:px-4 py-2 text-[#5a4b3f] text-sm">
+                          {group.book.author}
+                        </td>
+                        <td className="px-3 sm:px-4 py-2 text-sm">
+                          {group.copies.length}
+                        </td>
+                        <td className="px-3 sm:px-4 py-2 text-sm">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openAddModal(group.book.id);
+                            }}
+                            className="inline-flex items-center justify-center gap-1 px-2 py-1 rounded-sm border border-[#4f4134] bg-[#3f3328] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors text-[10px] font-semibold whitespace-nowrap"
+                          >
+                            <FaPlus className="w-3 h-3" />
+                            {t.copies.actions.addCopy}
+                          </button>
+                        </td>
+                      </tr>
+
+                      {/* Expanded copies */}
+                      {isExpanded && (
+                        <tr className="bg-[#f8f1e5] border-b border-[#d2bfa5]">
+                          <td colSpan={4} className="px-3 sm:px-4 py-2">
+                            {group.copies.length === 0 ? (
+                              <p className="text-[#6a5a4c] ink-text text-sm">
+                                {t.copies.empty}
+                              </p>
+                            ) : (
+                              <div className="w-full overflow-x-auto">
+                                <table className="w-full min-w-150 text-[11px] sm:text-xs">
+                                  <thead>
+                                    <tr className="text-[#6a5a4c] uppercase tracking-[0.08em] border-b border-[#d9c6ab]">
+                                      <th className="py-1.5 pr-2 text-left font-semibold">
+                                        {t.copies.table.copyId}
+                                      </th>
+                                      <th className="py-1.5 pr-2 text-left font-semibold">
+                                        {t.copies.table.status}
+                                      </th>
+                                      <th className="py-1.5 pr-2 text-left font-semibold">
+                                        {t.copies.table.createdAt}
+                                      </th>
+                                      <th className="py-1.5 pr-2 text-left font-semibold">
+                                        {t.copies.table.actions}
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {group.copies.map((copy) => (
+                                      <tr
+                                        key={copy.id}
+                                        className="border-b border-[#e4d4bf] last:border-b-0"
+                                      >
+                                        <td className="py-1.5 pr-2 font-mono text-[#3f3328]">
+                                          {copy.id}
+                                        </td>
+                                        <td className="py-1.5 pr-2">
+                                          <div className="space-y-1">
+                                            <StatusBadge tone={getStatusBadgeTone(copy.status)}>
+                                              {t.copies.filters[copy.status]}
+                                            </StatusBadge>
+                                            {copy.status === "borrowed" && copy.borrower && (
+                                              <p className="text-[10px] text-[#5a4b3f] ink-text">
+                                                by{" "}
+                                                <Link
+                                                  href={`/dashboard/users/${copy.borrower.id}`}
+                                                  className="font-semibold underline hover:text-[#2b2119]"
+                                                >
+                                                  {copy.borrower.full_name}
+                                                </Link>
+                                              </p>
+                                            )}
+                                          </div>
+                                        </td>
+                                        <td className="py-1.5 pr-2">
+                                          <span
+                                            className="text-[#5a4b3f]"
+                                            title={new Date(copy.created_at).toLocaleString()}
+                                          >
+                                            {new Date(copy.created_at).toLocaleDateString(undefined, {
+                                              year: "numeric",
+                                              month: "short",
+                                              day: "numeric",
+                                            })}
+                                          </span>
+                                        </td>
+                                        <td className="py-1.5 pr-2">
+                                          <div className="flex items-center gap-2">
+                                            <button
+                                              onClick={() => openQrModal(copy.id)}
+                                              disabled={isPending}
+                                              className="p-2 text-[#5b4c3f] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors disabled:opacity-55"
+                                              aria-label={`${t.copies.actions.downloadQr} ${copy.id}`}
+                                              title={t.copies.actions.downloadQr}
+                                            >
+                                              <FaQrcode className="w-4 h-4" />
+                                            </button>
+                                            {copy.status !== "borrowed" && (
+                                              <button
+                                                onClick={() => handleMarkAsDamaged(copy.id, copy.status)}
+                                                disabled={isPending}
+                                                className="p-2 text-[#5b4c3f] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors disabled:opacity-55"
+                                                aria-label={copy.status === "damaged" ? t.copies.actions.markAsAvailable : t.copies.actions.markAsDamaged}
+                                                title={copy.status === "damaged" ? t.copies.actions.markAsAvailable : t.copies.actions.markAsDamaged}
+                                              >
+                                                {copy.status === "damaged" ? (
+                                                  <FaCheck className="w-4 h-4" />
+                                                ) : (
+                                                  <FaExclamationTriangle className="w-4 h-4" />
+                                                )}
+                                              </button>
+                                            )}
+                                            <button
+                                              onClick={() => handleDelete(copy.id)}
+                                              disabled={isPending}
+                                              className="p-2 text-[#6a4e3d] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors disabled:opacity-55"
+                                              aria-label={`${t.copies.actions.delete} ${copy.id}`}
+                                              title={t.copies.actions.delete}
+                                            >
+                                              <FaTrash className="w-4 h-4" />
+                                            </button>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </section>
@@ -617,11 +843,10 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                     if (copyIdError) setCopyIdError(null);
                     setFormData({ ...formData, copy_id: e.target.value.toUpperCase() });
                   }}
-                  className={`w-full px-4 py-2.5 border rounded-sm focus:ring-2 focus:border-transparent outline-none transition-colors ${
-                    copyIdError
-                      ? "border-red-500 focus:ring-red-500 bg-[#fdf2f2] text-red-900"
-                      : "border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] focus:ring-[#6e5d4a]"
-                  }`}
+                  className={`w-full px-4 py-2.5 border rounded-sm focus:ring-2 focus:border-transparent outline-none transition-colors ${copyIdError
+                    ? "border-red-500 focus:ring-red-500 bg-[#fdf2f2] text-red-900"
+                    : "border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] focus:ring-[#6e5d4a]"
+                    }`}
                 />
                 {copyIdError && (
                   <p className="text-xs text-red-600 mt-1 font-medium">
@@ -674,8 +899,6 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                   )}
                 </div>
               </div>
-
-
             </div>
 
             <div className="flex gap-3 mt-6">
