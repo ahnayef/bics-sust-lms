@@ -1,5 +1,5 @@
 import { getBookByQR, getUserTransactions } from "@/server/library";
-import { getClaims } from "@/server/user";
+import { getClaims, getCurrentProfile } from "@/server/user";
 import { redirect } from "next/navigation";
 import BorrowClient from "./BorrowClient";
 
@@ -14,9 +14,10 @@ export default async function BorrowPage({
   const params = await searchParams;
   const copyId = params.copyId?.trim().toUpperCase() ?? "";
 
-  const [allTxns, initialCopy] = await Promise.all([
+  const [allTxns, initialCopy, profile] = await Promise.all([
     getUserTransactions(claims.sub),
     copyId ? getBookByQR(copyId) : Promise.resolve(null),
+    getCurrentProfile()
   ]);
 
   // Copy IDs the user currently has in active / pending borrow status
@@ -43,6 +44,7 @@ export default async function BorrowPage({
       initialCopy={initialCopy}
       activeBorrowCopyIds={activeBorrowCopyIds}
       completedBooks={completedBooks}
+      isVerified={profile?.is_verified ?? false}
     />
   );
 }

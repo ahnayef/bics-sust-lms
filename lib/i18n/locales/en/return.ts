@@ -18,6 +18,7 @@ export const returnPage = {
     notBorrowed: "This book not borrowed by You",
     cameraPermission: "Camera permission denied. Please enable camera access or use manual entry.",
     generic: "Something went wrong. Please try again.",
+    notVerified: "You need to be verified to return books.",
   },
   form: {
     bookTitle: "Book Title",

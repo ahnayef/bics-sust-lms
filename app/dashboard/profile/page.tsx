@@ -89,7 +89,7 @@ export default async function DashboardProfilePage() {
             <div className="mt-4 flex flex-col sm:flex-row flex-wrap items-center justify-center sm:justify-start gap-3 sm:gap-6 text-sm text-[#4f4134]">
               <div className="flex items-center gap-1.5" title={t.profile.info.email}>
                 <FaEnvelope className="w-3.5 h-3.5 text-[#8a7966]" />
-                <span className="truncate max-w-[200px]">{profile.email}</span>
+                <span className="break-all">{profile.email}</span>
               </div>
               <div className="flex items-center gap-1.5" title={t.profile.info.phone}>
                 <FaPhone className="w-3.5 h-3.5 text-[#8a7966]" />

@@ -18,6 +18,7 @@ interface ReturnClientProps {
   currentBorrows: Transaction[];
   userId: string;
   pendingReturnCopyIds: Set<string>;
+  isVerified: boolean;
 }
 
 export default function ReturnClient({
@@ -25,6 +26,7 @@ export default function ReturnClient({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   userId: _userId,
   pendingReturnCopyIds,
+  isVerified,
 }: ReturnClientProps) {
   const router = useRouter();
   const { t, language } = useTranslation();
@@ -58,6 +60,7 @@ export default function ReturnClient({
   // ── Shared return logic ─────────────────────────────────────────────────────
 
   function handleReturn(targetCopyId: string, bookTitle: string, transactionId?: string) {
+    if (!isVerified) return;
     setError("");
     setSuccess("");
     setProcessingId(transactionId || targetCopyId);
@@ -85,6 +88,7 @@ export default function ReturnClient({
   // ── Copy lookup ─────────────────────────────────────────────────────────────
 
   const performLookup = async (value: string): Promise<boolean> => {
+    if (!isVerified) return false;
     const upper = value.toUpperCase().trim();
     if (!upper) return false;
 
@@ -159,6 +163,7 @@ export default function ReturnClient({
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function handleScan(detectedCodes: any[]) {
+    if (!isVerified) return;
     if (detectedCodes.length > 0) {
       const scannedValue = (detectedCodes[0].rawValue as string).trim();
       const isValid = processCopyId(scannedValue);
@@ -210,6 +215,20 @@ export default function ReturnClient({
           {t.return.subtitle}
         </p>
       </div>
+
+      {/* Not Verified Warning */}
+      {!isVerified && (
+        <div className="dashboard-surface tron-border rounded-lg p-4 border-2 border-[#b0665c] border-l-4 border-l-[#8d4f45] bg-[#f8e7e3] mb-5">
+          <div className="flex items-start gap-3">
+            <FaExclamationTriangle className="w-5 h-5 text-[#8d4f45] mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-[#7d2d23] ink-text">
+                {t.return.errors.notVerified}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Global feedback */}
       {success && (
@@ -311,7 +330,7 @@ export default function ReturnClient({
                     {/* Return button */}
                     <button
                       onClick={() => handleReturn(txn.copy_id, bookTitle, txn.id)}
-                      disabled={isPending || (processingId !== null && processingId !== txn.id) || pendingReturnCopyIds.has(txn.copy_id.toUpperCase())}
+                      disabled={isPending || (processingId !== null && processingId !== txn.id) || pendingReturnCopyIds.has(txn.copy_id.toUpperCase()) || !isVerified}
                       className="shrink-0 px-4 py-2 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text text-sm"
                     >
                       {pendingReturnCopyIds.has(txn.copy_id.toUpperCase())
@@ -489,6 +508,7 @@ export default function ReturnClient({
                       maxLength={20}
                       className="flex-1 px-4 py-3 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-lg focus:ring-2 focus:ring-[#5a4d40] focus:border-transparent outline-none text-lg font-mono tracking-widest"
                       autoFocus
+                      disabled={!isVerified}
                     />
                     <button
                       type="button"
@@ -499,7 +519,7 @@ export default function ReturnClient({
                         }
                         performLookup(copyId);
                       }}
-                      disabled={isLookingUp || !copyId.trim()}
+                      disabled={isLookingUp || !copyId.trim() || !isVerified}
                       className="px-6 py-3 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text whitespace-nowrap"
                     >
                       {isLookingUp ? t.return.lookingUp : t.return.lookup}
@@ -552,7 +572,7 @@ export default function ReturnClient({
                 <button
                   type="button"
                   onClick={() => handleReturn(scannedCopyId!, scannedBookTitle)}
-                  disabled={isPending || (processingId !== null && processingId !== scannedCopyId)}
+                  disabled={isPending || (processingId !== null && processingId !== scannedCopyId) || !isVerified}
                   className="flex-1 px-3 py-2 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text text-sm"
                 >
                   {processingId === scannedCopyId && isPending ? t.return.form.submitting : t.return.form.submit}

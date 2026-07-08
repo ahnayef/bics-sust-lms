@@ -315,7 +315,7 @@ export default function DashboardShell({
                 <div className="relative">
                   <button
                     onClick={() => setIsProfileOpen(!isProfileOpen)}
-                    className="flex items-center gap-2 text-sm text-[#5a4b3f] ink-text hover:text-[#221910] transition-colors focus:outline-none"
+                    className="flex items-center gap-2 text-sm text-[#5a4b3f] ink-text hover:text-[#221910] transition-colors focus:outline-none cursor-pointer"
                   >
                     {userAvatar ? (
                       <Image
@@ -332,12 +332,6 @@ export default function DashboardShell({
                         {userName.charAt(0).toUpperCase()}
                       </div>
                     )}
-                    <span>
-                      {t.dashboard.header.welcome}{" "}
-                      <span className="font-semibold text-[#2f251d]">
-                        {userName}
-                      </span>
-                    </span>
                   </button>
 
                   {isProfileOpen && (
@@ -372,7 +366,7 @@ export default function DashboardShell({
                 <div className="relative">
                   <button
                     onClick={() => setIsProfileOpen(!isProfileOpen)}
-                    className="flex items-center focus:outline-none"
+                    className="flex items-center focus:outline-none cursor-pointer"
                   >
                     {userAvatar ? (
                       <Image

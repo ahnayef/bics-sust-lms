@@ -6,11 +6,18 @@
  */
 
 import { COPY_STATUS, TRANSACTION_STATUS, USER_ROLES } from "@/lib/constants";
-import { createClient } from "@/lib/supabase/server";
 import {
-  invalidateAfterPdfMutation,
-  invalidateAfterTransactionMutation,
-} from "@/server/cache-invalidation";
+  getCopyById,
+  updateCopy,
+} from "@/lib/db/queries/copies";
+import {
+  createPdfSubmission,
+  getDuplicatePdfSubmission,
+  updatePdfSubmission,
+} from "@/lib/db/queries/pdfSubmissions";
+import {
+  getProfileById,
+} from "@/lib/db/queries/profiles";
 import {
   createTransaction,
   getDuplicateTransaction,
@@ -18,18 +25,11 @@ import {
   updateBorrowStatus,
   updateTransaction,
 } from "@/lib/db/queries/transactions";
+import { createClient } from "@/lib/supabase/server";
 import {
-  createPdfSubmission,
-  getDuplicatePdfSubmission,
-  updatePdfSubmission,
-} from "@/lib/db/queries/pdfSubmissions";
-import {
-  getCopyById,
-  updateCopy,
-} from "@/lib/db/queries/copies";
-import {
-  getProfileById,
-} from "@/lib/db/queries/profiles";
+  invalidateAfterPdfMutation,
+  invalidateAfterTransactionMutation,
+} from "@/server/cache-invalidation";
 import { logActionError } from "@/server/error-log";
 import { getBookByQR } from "@/server/library";
 import type { Copy } from "@/types/library";
@@ -46,7 +46,12 @@ async function getCaller() {
   if (!sub) return null;
 
   const profile = await getProfileById(sub);
-  return { sub, role: (profile?.role ?? USER_ROLES.MEMBER) as string, supabase };
+  return {
+    sub,
+    role: (profile?.role ?? USER_ROLES.MEMBER) as string,
+    isVerified: profile?.is_verified ?? false,
+    supabase
+  };
 }
 
 async function requireModOrAdmin() {
@@ -82,6 +87,7 @@ export async function borrowBook(
 ): Promise<{ error?: string }> {
   const caller = await getCaller();
   if (!caller) return { error: "Not authenticated" };
+  if (!caller.isVerified) return { error: "You need to be verified to borrow books." };
 
   const { sub } = caller;
   const copy_id = (formData.get("copy_id") as string)?.trim().toUpperCase();
@@ -131,6 +137,7 @@ export async function returnBook(
 ): Promise<{ error?: string }> {
   const caller = await getCaller();
   if (!caller) return { error: "Not authenticated" };
+  if (!caller.isVerified) return { error: "You need to be verified to return books." };
 
   const { sub } = caller;
   const copy_id = (formData.get("copy_id") as string)?.trim().toUpperCase();

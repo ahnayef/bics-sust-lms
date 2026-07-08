@@ -21,6 +21,7 @@ interface Props {
   userName: string;
   userRole: string;
   isAdmin: boolean;
+  canManageModerators: boolean;
   currentRankId: string | null;
   availableRanks: Rank[];
 }
@@ -31,6 +32,7 @@ export default function UserActions({
   userName,
   userRole,
   isAdmin,
+  canManageModerators,
   currentRankId,
   availableRanks,
 }: Props) {
@@ -176,7 +178,7 @@ export default function UserActions({
           </button>
         )}
 
-        {isAdmin && userRole === "moderator" && (
+        {canManageModerators && userRole === "moderator" && (
           <button
             type="button"
             onClick={() => setShowDemoteModModal(true)}

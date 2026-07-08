@@ -275,7 +275,7 @@ export async function moderatorPermissions(): Promise<{
       canApproveTransactions: isMod,
       canVerifyUsers: isMod,
       canManageUsers: isMod,
-      canManageModerators: isAdminRole,
+      canManageModerators: isMod, // TODO: To revoke this, change back to isAdminRole
       canManageThanas: isMod,
       role,
     };
@@ -299,8 +299,8 @@ export async function promoteToModerator(
   try {
     const user = await requireAuth();
     const callerProfile = await getProfileById(user.id);
-    if (callerProfile?.role !== USER_ROLES.ADMIN)
-      return { error: "Only admins can promote moderators" };
+    if (callerProfile?.role !== USER_ROLES.ADMIN && callerProfile?.role !== USER_ROLES.MODERATOR)
+      return { error: "Only admins and moderators can promote moderators" }; // TODO: To revoke, change back to only ADMIN
 
     const email = (formData.get("email") as string)?.trim().toLowerCase();
     if (!email) return { error: "Email is required" };
@@ -377,8 +377,8 @@ export async function demoteModerator(
   try {
     const user = await requireAuth();
     const callerProfile = await getProfileById(user.id);
-    if (callerProfile?.role !== USER_ROLES.ADMIN)
-      return { error: "Only admins can demote moderators" };
+    if (callerProfile?.role !== USER_ROLES.ADMIN && callerProfile?.role !== USER_ROLES.MODERATOR)
+      return { error: "Only admins and moderators can demote moderators" }; // TODO: To revoke, change back to only ADMIN
 
     const userId = formData.get("userId") as string;
     if (!userId) return { error: "User ID is required" };

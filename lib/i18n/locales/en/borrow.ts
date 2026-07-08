@@ -20,6 +20,7 @@ export const borrow = {
     alreadyBorrowed: "You already have this book borrowed.",
     cameraPermission: "Camera permission denied. Please enable camera access or use manual entry.",
     generic: "Something went wrong. Please try again.",
+    notVerified: "You need to be verified to borrow books.",
   },
   form: {
     bookTitle: "Book Title",

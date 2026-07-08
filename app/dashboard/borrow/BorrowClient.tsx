@@ -28,6 +28,7 @@ interface Props {
   initialCopy: Copy | null;
   activeBorrowCopyIds: string[];
   completedBooks: CompletedBook[];
+  isVerified: boolean;
 }
 
 export default function BorrowClient({
@@ -35,6 +36,7 @@ export default function BorrowClient({
   initialCopy,
   activeBorrowCopyIds,
   completedBooks,
+  isVerified,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -218,6 +220,7 @@ export default function BorrowClient({
 
   const handleManualCheck = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isVerified) return;
     if (!copyId.trim()) {
       setError(t.borrow.errors.copyNotFound);
       return;
@@ -227,6 +230,7 @@ export default function BorrowClient({
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleScan = (detectedCodes: any[]) => {
+    if (!isVerified) return;
     if (detectedCodes.length > 0 && !isLookingUp) {
       const scannedValue = detectedCodes[0].rawValue.trim();
       setCopyId(scannedValue.toUpperCase());
@@ -253,7 +257,7 @@ export default function BorrowClient({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedCopy || !returnDate) return;
+    if (!isVerified || !selectedCopy || !returnDate) return;
 
     startTransition(async () => {
       const fd = new FormData();
@@ -362,6 +366,19 @@ export default function BorrowClient({
           </button>
         </div>
 
+        {/* ── Not Verified Warning ────────────────────────────────────────────── */}
+        {!isVerified && (
+          <div className="borrow-surface tron-border rounded-lg p-4 border-2 border-[#b0665c] border-l-4 border-l-[#8d4f45] bg-[#f8e7e3] mb-5">
+            <div className="flex items-start gap-3">
+              <FaExclamationTriangle className="w-5 h-5 text-[#8d4f45] mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-[#7d2d23] ink-text">
+                  {t.borrow.errors.notVerified}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* ── Scanner / input ────────────────────────────────────────────── */}
           <div className="borrow-surface tron-border rounded-lg p-6">
@@ -522,11 +539,12 @@ export default function BorrowClient({
                         maxLength={16}
                         className="flex-1 px-4 py-3 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-lg focus:ring-2 focus:ring-[#5a4d40] outline-none text-lg font-mono tracking-widest"
                         autoFocus
+                        disabled={!isVerified}
                       />
                       <button
                         type="button"
                         onClick={handleManualCheck}
-                        disabled={isLookingUp || !copyId.trim()}
+                        disabled={isLookingUp || !copyId.trim() || !isVerified}
                         className="px-6 py-3 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text whitespace-nowrap"
                       >
                         {isLookingUp ? t.borrow.lookingUp : t.borrow.lookup}
@@ -631,6 +649,7 @@ export default function BorrowClient({
                     min={new Date().toISOString().split("T")[0]}
                     className="w-full px-4 py-3 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-lg focus:ring-2 focus:ring-[#5a4d40] focus:border-transparent outline-none ink-text"
                     required
+                    disabled={!isVerified}
                   />
                 </label>
                 <p className="text-xs text-[#6f6256] mt-2 ink-text">
@@ -642,7 +661,7 @@ export default function BorrowClient({
               <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
                 <button
                   type="submit"
-                  disabled={!returnDate || isPending}
+                  disabled={!returnDate || isPending || !isVerified}
                   className="flex-1 px-4 py-3 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text"
                 >
                   {isPending ? t.borrow.form.submitting : t.borrow.form.submit}

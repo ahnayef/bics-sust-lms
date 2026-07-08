@@ -1,6 +1,6 @@
 import HistoryClient from "@/app/dashboard/history/HistoryClient";
-import { RankBadge } from "@/components/ui/rank-badge";
 import Avatar from "@/components/Avatar";
+import { RankBadge } from "@/components/ui/rank-badge";
 import { getTranslation } from "@/lib/i18n/server";
 import { getChecklists, getUserChecklistCompletions, getUserChecklistProgress } from "@/server/checklists";
 import { getProfile, getRanks } from "@/server/geo";
@@ -16,7 +16,6 @@ import {
   FaCheckSquare,
   FaClock,
   FaExclamationTriangle,
-  FaFileAlt,
   FaSquare
 } from "react-icons/fa";
 import UserActions from "./UserActions";
@@ -98,7 +97,7 @@ export default async function UserProfilePage({
               <p className="text-[#5a4b3f] ink-text mt-0.5">
                 @{profile.username}
               </p>
-              <div className="mt-4">
+              {/* <div className="mt-4">
                 <Link
                   href={`/dashboard/report?user=${profile.id}`}
                   className="flex items-center gap-2 px-4 py-2 bg-stone-800 text-stone-100 border border-stone-600 rounded-sm hover:bg-stone-700 transition-colors text-sm font-semibold ink-text shrink-0 w-fit"
@@ -106,7 +105,7 @@ export default async function UserProfilePage({
                   <FaFileAlt className="w-3.5 h-3.5 text-stone-300" />
                   {t.profile.header.report || "View Report"}
                 </Link>
-              </div>
+              </div> */}
             </div>
           </div>
 
@@ -393,6 +392,7 @@ export default async function UserProfilePage({
           userName={profile.full_name}
           userRole={profile.role}
           isAdmin={perms.role === "admin"}
+          canManageModerators={perms.canManageModerators}
           currentRankId={profile.rank_id}
           availableRanks={ranksResponse.data}
         />

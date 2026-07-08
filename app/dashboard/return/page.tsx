@@ -1,12 +1,15 @@
-import { getClaims } from "@/server/user";
 import { getUserTransactions } from "@/server/library";
+import { getClaims, getCurrentProfile } from "@/server/user";
 import { redirect } from "next/navigation";
 import ReturnClient from "./ReturnClient";
 
 export default async function ReturnPage() {
   const claims = await getClaims();
   if (!claims) redirect("/login");
-  const transactions = await getUserTransactions(claims.sub);
+  const [transactions, profile] = await Promise.all([
+    getUserTransactions(claims.sub),
+    getCurrentProfile()
+  ]);
   // Filter active/overdue borrows
   const currentBorrows = transactions.filter(
     (tx) =>
@@ -25,6 +28,7 @@ export default async function ReturnPage() {
       currentBorrows={currentBorrows} 
       userId={claims.sub} 
       pendingReturnCopyIds={pendingReturnCopyIds}
+      isVerified={profile?.is_verified ?? false}
     />
   );
 }
