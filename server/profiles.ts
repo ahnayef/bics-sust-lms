@@ -323,6 +323,35 @@ export async function promoteToModerator(
   }
 }
 
+export async function makeModerator(
+  formData: FormData,
+): Promise<{ error?: string; success?: string }> {
+  try {
+    const user = await requireAuth();
+    const callerProfile = await getProfileById(user.id);
+    if (callerProfile?.role !== USER_ROLES.ADMIN && callerProfile?.role !== USER_ROLES.MODERATOR)
+      return { error: "Only admins and moderators can promote moderators" }; // TODO: To revoke, change back to only ADMIN
+
+    const userId = formData.get("userId") as string;
+    if (!userId) return { error: "User ID is required" };
+
+    const targetProfile = await getProfileById(userId);
+    if (!targetProfile) return { error: "User not found" };
+    if (targetProfile.role === USER_ROLES.ADMIN)
+      return { error: "Cannot change role of an admin" };
+    if (targetProfile.role === USER_ROLES.MODERATOR)
+      return { error: "User is already a moderator" };
+
+    await updateProfile(userId, { role: USER_ROLES.MODERATOR });
+    await insertActionLog("role_changed", userId, user.id, "Promoted to moderator");
+
+    invalidateUsersAndOverview();
+    return { success: `${targetProfile.full_name} is now a moderator` };
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}
+
 export async function changeUserRank(
   userId: string,
   rankId: string | null,
@@ -424,8 +453,6 @@ export async function demoteFromAdminAction(
     return { error: error.message };
   }
 }
-
-export const makeModerator = promoteToModerator;
 
 export async function checkUsernameAvailability(username: string): Promise<"available" | "unavailable" | "invalid"> {
   const parsed = profileSchema.shape.username.safeParse(username);

@@ -219,7 +219,7 @@ export default function DashboardShell({
         <aside
           className={`absolute top-0 left-0 flex flex-col shrink-0 h-screen overflow-y-auto dashboard-surface tron-border border-r border-[#5e4e3e] transition-all duration-300 ${isMobileOpen ? "w-64 shadow-2xl" : "w-14"} lg:w-64`}
         >
-          <div className={`flex items-center border-b border-[#6d5c4a] overflow-hidden hover:bg-[#ece0ce] transition-colors w-full ${isMobileOpen ? "px-4" : "justify-center lg:justify-start lg:px-4"}`}>
+          <div className={`flex items-center border-b border-[#6d5c4a] overflow-hidden hover:bg-[#ece0ce] transition-colors w-full shrink-0 ${isMobileOpen ? "px-4" : "justify-center lg:justify-start lg:px-4"}`}>
             <button
               onClick={() => setIsMobileOpen(!isMobileOpen)}
               className={cn("shrink-0 flex items-center justify-center text-[#554738] lg:hidden", isMobileOpen ? "py-[18px]" : "py-5")}
@@ -239,7 +239,7 @@ export default function DashboardShell({
             </Link>
           </div>
 
-          <nav className="py-4 pb-8">
+          <nav className="py-4 pb-8 flex-1 overflow-y-auto">
             {visibleNavGroups.map((group, groupIndex) => (
               <div key={groupIndex}>
                 {groupIndex > 0 && (

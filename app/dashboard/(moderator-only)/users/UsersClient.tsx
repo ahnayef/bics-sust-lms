@@ -1,11 +1,11 @@
 "use client";
 
-import { RankBadge } from "@/components/ui/rank-badge";
 import Avatar from "@/components/Avatar";
+import { RankBadge } from "@/components/ui/rank-badge";
 import { useTranslation } from "@/lib/i18n/context";
 import type { UserWithStats } from "@/types/library";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   FaCheckCircle,
   FaChevronDown,
@@ -50,41 +50,12 @@ function VerificationBadge({ verified }: { verified: boolean }) {
 
 export default function UsersClient({ users }: Props) {
   const { t, language } = useTranslation();
-  const progressCategories = useMemo(() => {
-    const categories = new Map<string, string>();
-    for (const u of users) {
-      if (u.categoryProgress) {
-        for (const cp of u.categoryProgress) {
-          categories.set(cp.categoryId, cp.categoryName);
-        }
-      }
-    }
-    // Sort so Syllabus is first, then alphabetical
-    return Array.from(categories.entries()).sort((a, b) => {
-      if (a[1] === "Syllabus") return -1;
-      if (b[1] === "Syllabus") return 1;
-      return a[1].localeCompare(b[1]);
-    });
-  }, [users]);
-
-  const syllabusId = useMemo(() => {
-    return progressCategories.find((c) => c[1] === "Syllabus")?.[0] ?? "all";
-  }, [progressCategories]);
-
   const [tab, setTab] = useState<Tab>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [rankFilter, setRankFilter] = useState<string>("all");
   const [thanaFilter, setThanaFilter] = useState<string>("all");
-  const [progressCategoryFilter, setProgressCategoryFilter] = useState<string>("all");
   const [sortField, setSortField] = useState<SortField>("joinDate");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
-
-  // Set default category to Syllabus once categories are loaded
-  useEffect(() => {
-    if (progressCategoryFilter === "all" && syllabusId !== "all") {
-      setProgressCategoryFilter(syllabusId);
-    }
-  }, [syllabusId, progressCategoryFilter]);
 
   const uniqueRanks = useMemo(() => {
     const ranks = new Map<string, string>();
@@ -154,18 +125,8 @@ export default function UsersClient({ users }: Props) {
         cmp =
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       } else if (sortField === "progress") {
-        let pa = 0;
-        let pb = 0;
-
-        if (progressCategoryFilter === "all") {
-          pa = a.syllabusTotal > 0 ? a.syllabusCompleted / a.syllabusTotal : 0;
-          pb = b.syllabusTotal > 0 ? b.syllabusCompleted / b.syllabusTotal : 0;
-        } else {
-          const cpa = a.categoryProgress?.find((c) => c.categoryId === progressCategoryFilter);
-          const cpb = b.categoryProgress?.find((c) => c.categoryId === progressCategoryFilter);
-          pa = cpa && cpa.total > 0 ? cpa.completed / cpa.total : 0;
-          pb = cpb && cpb.total > 0 ? cpb.completed / cpb.total : 0;
-        }
+        let pa = a.syllabusTotal > 0 ? a.syllabusCompleted / a.syllabusTotal : 0;
+        let pb = b.syllabusTotal > 0 ? b.syllabusCompleted / b.syllabusTotal : 0;
         cmp = pa - pb;
       } else if (sortField === "rank") {
         const ra = a.rank?.name ?? t.users.filters.noRank;
@@ -199,7 +160,6 @@ export default function UsersClient({ users }: Props) {
     searchTerm !== "" ||
     rankFilter !== "all" ||
     thanaFilter !== "all" ||
-    progressCategoryFilter !== syllabusId ||
     sortField !== "joinDate" ||
     sortDir !== "desc";
 
@@ -207,7 +167,6 @@ export default function UsersClient({ users }: Props) {
     setSearchTerm("");
     setRankFilter("all");
     setThanaFilter("all");
-    setProgressCategoryFilter(syllabusId);
     setSortField("joinDate");
     setSortDir("desc");
   };
@@ -307,20 +266,6 @@ export default function UsersClient({ users }: Props) {
                 </select>
               </SelectWrapper>
 
-              <SelectWrapper>
-                <select
-                  value={progressCategoryFilter}
-                  onChange={(e) => setProgressCategoryFilter(e.target.value)}
-                  className={selectClass}
-                >
-                  {progressCategories.map(([id, name]) => (
-                    <option key={id} value={id}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
-              </SelectWrapper>
-
               <div className="flex items-center gap-2">
                 <SelectWrapper>
                   <select
@@ -382,20 +327,9 @@ export default function UsersClient({ users }: Props) {
             </thead>
             <tbody>
               {filteredUsers.map((user) => {
-                let pct = 0;
-                let completed = 0;
-                let total = 0;
-
-                if (progressCategoryFilter === "all") {
-                  pct = user.syllabusTotal > 0 ? Math.round((user.syllabusCompleted / user.syllabusTotal) * 100) : 0;
-                  completed = user.syllabusCompleted;
-                  total = user.syllabusTotal;
-                } else {
-                  const cp = user.categoryProgress?.find((c) => c.categoryId === progressCategoryFilter);
-                  pct = cp && cp.total > 0 ? Math.round((cp.completed / cp.total) * 100) : 0;
-                  completed = cp?.completed ?? 0;
-                  total = cp?.total ?? 0;
-                }
+                let pct = user.syllabusTotal > 0 ? Math.round((user.syllabusCompleted / user.syllabusTotal) * 100) : 0;
+                let completed = user.syllabusCompleted;
+                let total = user.syllabusTotal;
 
                 return (
                   <tr

@@ -524,7 +524,7 @@ export default function BorrowClient({
                     <p className="text-sm font-medium text-[#4e4033] mb-2 ink-text">
                       {t.borrow.form.copyId}
                     </p>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <input
                         type="text"
                         value={copyId}
@@ -537,7 +537,7 @@ export default function BorrowClient({
                         }}
                         placeholder={t.borrow.inputPlaceholder}
                         maxLength={16}
-                        className="flex-1 px-4 py-3 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-lg focus:ring-2 focus:ring-[#5a4d40] outline-none text-lg font-mono tracking-widest"
+                        className="flex-1 px-3 py-3 border border-[#7b6d5f] bg-[#f8f1e6] text-[#1f1812] rounded-lg focus:ring-2 focus:ring-[#5a4d40] outline-none text-sm md:text-lg font-mono tracking-wide md:tracking-widest"
                         autoFocus
                         disabled={!isVerified}
                       />
@@ -545,7 +545,7 @@ export default function BorrowClient({
                         type="button"
                         onClick={handleManualCheck}
                         disabled={isLookingUp || !copyId.trim() || !isVerified}
-                        className="px-6 py-3 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text whitespace-nowrap"
+                        className="px-4 py-3 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text whitespace-nowrap text-sm md:text-base"
                       >
                         {isLookingUp ? t.borrow.lookingUp : t.borrow.lookup}
                       </button>

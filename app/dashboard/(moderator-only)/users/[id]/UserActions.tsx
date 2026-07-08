@@ -7,8 +7,9 @@ import {
   demoteFromAdminAction,
   demoteModerator,
   makeAdmin,
+  makeModerator,
   unverifyUser,
-  verifyUser,
+  verifyUser
 } from "@/server/profiles";
 import type { Rank } from "@/types/profile";
 import { useRouter } from "next/navigation";
@@ -45,6 +46,7 @@ export default function UserActions({
   const [actionError, setActionError] = useState<string | null>(null);
   const [showMakeAdminModal1, setShowMakeAdminModal1] = useState(false);
   const [showMakeAdminModal2, setShowMakeAdminModal2] = useState(false);
+  const [showMakeModeratorModal, setShowMakeModeratorModal] = useState(false);
   const [showDemoteModModal, setShowDemoteModModal] = useState(false);
   const [showDemoteAdminModal, setShowDemoteAdminModal] = useState(false);
 
@@ -112,6 +114,20 @@ export default function UserActions({
     });
   };
 
+  const handleMakeModerator = () => {
+    setActionError(null);
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("userId", userId);
+      const result = await makeModerator(fd);
+      if (result?.error) {
+        setActionError(result.error);
+      }
+      setShowMakeModeratorModal(false);
+      router.refresh();
+    });
+  };
+
   const handleDemoteAdmin = () => {
     setActionError(null);
     startTransition(async () => {
@@ -164,6 +180,17 @@ export default function UserActions({
           >
             <FaUserTag className="w-4 h-4" />
             Change Rank
+          </button>
+        )}
+
+        {canManageModerators && userRole !== "admin" && userRole !== "moderator" && (
+          <button
+            type="button"
+            onClick={() => setShowMakeModeratorModal(true)}
+            disabled={isPending}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#5a4b3f] text-[#f4e8d4] border border-[#4a3d31] rounded-sm hover:bg-[#6a5b4f] transition-colors font-medium text-sm ink-text disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Promote to Moderator
           </button>
         )}
 
@@ -279,6 +306,17 @@ export default function UserActions({
         preview={`Target User: ${userName}`}
         danger={true}
         confirmLabel="Yes, Make Admin"
+        loading={isPending}
+      />
+
+      <ConfirmModal
+        open={showMakeModeratorModal}
+        onClose={() => setShowMakeModeratorModal(false)}
+        onConfirm={handleMakeModerator}
+        title="Promote to Moderator"
+        description="Are you sure you want to promote this user to moderator? They will have access to manage books, copies, transactions, and other users."
+        preview={userName}
+        confirmLabel="Promote to Moderator"
         loading={isPending}
       />
 

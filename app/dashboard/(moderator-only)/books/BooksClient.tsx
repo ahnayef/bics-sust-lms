@@ -84,15 +84,20 @@ export default function BooksClient({ initialBooks, categories }: Props) {
     setTimeout(() => setFlash(null), 4500);
   };
 
-  const counts = useMemo(
-    () => ({
+  const counts = useMemo(() => {
+    const categoryCounts = new Map<string, number>();
+    categories.forEach(c => categoryCounts.set(c.id, 0));
+    books.forEach(b => {
+      if (b.category_id && categoryCounts.has(b.category_id)) {
+        categoryCounts.set(b.category_id, (categoryCounts.get(b.category_id) ?? 0) + 1);
+      }
+    });
+    return {
       total: books.length,
-      syllabus: books.filter((b) => b.category?.name === "Syllabus").length,
-      additional: books.filter((b) => b.category?.name === "Additional").length,
+      categoryCounts,
       copies: books.reduce((sum, b) => sum + (b.copies?.length ?? 0), 0),
-    }),
-    [books],
-  );
+    };
+  }, [books, categories]);
 
   const filteredBooks = useMemo(() => {
     const query = searchTerm.toLowerCase().trim();
@@ -279,22 +284,16 @@ export default function BooksClient({ initialBooks, categories }: Props) {
               {counts.total}
             </p>
           </div>
-          <div className="bg-[#f6ecdd] border border-[#b9a58b] p-3 rounded-sm">
-            <p className="text-[10px] uppercase tracking-wider text-[#5c4f42] ink-text">
-              {t.books.stats.syllabus}
-            </p>
-            <p className="text-xl font-bold text-[#221910] ink-title">
-              {counts.syllabus}
-            </p>
-          </div>
-          <div className="bg-[#f6ecdd] border border-[#b9a58b] p-3 rounded-sm">
-            <p className="text-[10px] uppercase tracking-wider text-[#5c4f42] ink-text">
-              {t.books.stats.additional}
-            </p>
-            <p className="text-xl font-bold text-[#221910] ink-title">
-              {counts.additional}
-            </p>
-          </div>
+          {categories.slice(0, 2).map((cat) => (
+            <div key={cat.id} className="bg-[#f6ecdd] border border-[#b9a58b] p-3 rounded-sm">
+              <p className="text-[10px] uppercase tracking-wider text-[#5c4f42] ink-text">
+                {cat.name}
+              </p>
+              <p className="text-xl font-bold text-[#221910] ink-title">
+                {counts.categoryCounts.get(cat.id) ?? 0}
+              </p>
+            </div>
+          ))}
           <div className="bg-[#f6ecdd] border border-[#b9a58b] p-3 rounded-sm">
             <p className="text-[10px] uppercase tracking-wider text-[#5c4f42] ink-text">
               {t.books.stats.copies}
@@ -586,11 +585,10 @@ export default function BooksClient({ initialBooks, categories }: Props) {
                         first_copy_id: e.target.value.toUpperCase(),
                       });
                     }}
-                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border rounded-sm focus:ring-2 focus:border-transparent outline-none transition-colors ${
-                      copyIdError
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border rounded-sm focus:ring-2 focus:border-transparent outline-none transition-colors ${copyIdError
                         ? "border-red-500 focus:ring-red-500 bg-[#fdf2f2] text-red-900"
                         : "border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] focus:ring-[#6e5d4a]"
-                    }`}
+                      }`}
                   />
                   {copyIdError ? (
                     <p className="text-[10px] sm:text-xs text-red-600 mt-1 font-medium">

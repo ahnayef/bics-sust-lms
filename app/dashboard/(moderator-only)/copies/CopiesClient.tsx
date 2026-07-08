@@ -27,7 +27,9 @@ import {
   FaTrash
 } from "react-icons/fa";
 
-type TypeFilter = "all" | "syllabus" | "additional";
+import type { Category } from "@/types/library";
+
+type TypeFilter = "all" | string; // category id
 type StatusFilter = "all" | CopyStatus;
 type SortKey = "title-asc" | "title-desc" | "copies-asc" | "copies-desc";
 
@@ -149,9 +151,10 @@ type PendingAction =
 interface Props {
   initialCopies: Copy[];
   books: Book[];
+  categories: Category[];
 }
 
-export default function CopiesClient({ initialCopies, books }: Props) {
+export default function CopiesClient({ initialCopies, books, categories }: Props) {
   const router = useRouter();
   const { t } = useTranslation();
   const [isPending, startTransition] = useTransition();
@@ -244,8 +247,7 @@ export default function CopiesClient({ initialCopies, books }: Props) {
 
     const result = groupedCopies.filter((group) => {
       const matchesType =
-        typeFilter === "all" ||
-        (typeFilter === "syllabus" ? group.book.is_syllabus : !group.book.is_syllabus);
+        typeFilter === "all" || group.book.category_id === typeFilter;
 
       const matchesSearch = !query ||
         group.book.title.toLowerCase().includes(query) ||
@@ -562,8 +564,9 @@ export default function CopiesClient({ initialCopies, books }: Props) {
             onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
           >
             <option value="all">{t.bookList.filters.type.all}</option>
-            <option value="syllabus">{t.bookList.filters.type.syllabus}</option>
-            <option value="additional">{t.bookList.filters.type.additional}</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
           </select>
           <select
             className="bg-[#f8f1e6] border border-[#b9a58b] rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text"

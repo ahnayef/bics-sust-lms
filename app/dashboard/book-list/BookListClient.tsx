@@ -16,14 +16,15 @@ import {
   FaDownload,
   FaExclamationTriangle,
   FaFileAlt,
-  FaFilter,
   FaSearch,
   FaSortAmountDown,
   FaTimes
 } from "react-icons/fa";
 
+import type { Category } from "@/types/library";
+
 type SortKey = "title-asc" | "title-desc" | "pages-asc" | "pages-desc" | "copies-asc" | "copies-desc";
-type TypeFilter = "all" | "syllabus" | "additional";
+type TypeFilter = "all" | string; // category id
 type AvailabilityFilter = "all" | "available" | "borrowed" | "damaged";
 
 interface Props {
@@ -31,6 +32,7 @@ interface Props {
   userId: string;
   activeBorrowCopyIds: string[];
   pdfSubmissions: PdfSubmission[];
+  categories: Category[];
 }
 
 // ── Copy status badge ──────────────────────────────────────────────────────
@@ -64,6 +66,7 @@ export default function BookListClient({
   books,
   activeBorrowCopyIds,
   pdfSubmissions,
+  categories,
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -169,8 +172,7 @@ export default function BookListClient({
     const result = books
       .map((book) => {
         const matchesType =
-          typeFilter === "all" ||
-          (typeFilter === "syllabus" ? book.is_syllabus : !book.is_syllabus);
+          typeFilter === "all" || book.category_id === typeFilter;
 
         const copies = (book.copies ?? []).filter((copy) => {
           const matchesAvailability =
@@ -262,8 +264,9 @@ export default function BookListClient({
                 onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
               >
                 <option value="all">{t.bookList.filters.type.all}</option>
-                <option value="syllabus">{t.bookList.filters.type.syllabus}</option>
-                <option value="additional">{t.bookList.filters.type.additional}</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
               </select>
               <select
                 className="bg-[#f8f1e6] border border-[#b9a58b] rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text"
