@@ -1,7 +1,17 @@
 import { getChecklists } from "@/server/checklists";
+import { getMyProfile } from "@/server/auth-utils";
+import { USER_ROLES } from "@/lib/constants";
+import { redirect } from "next/navigation";
 import ChecklistsManageClient from "./ChecklistsManageClient";
 
 export default async function ChecklistsManagePage() {
+  const profile = await getMyProfile();
+  if (!profile) redirect("/login");
+
+  if (profile.role !== USER_ROLES.ADMIN) {
+    redirect("/dashboard");
+  }
+
   const checklists = await getChecklists();
 
   return (

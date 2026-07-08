@@ -1,5 +1,6 @@
-import { TRANSACTION_STATUS_COLORS } from "@/lib/constants";
+import { TRANSACTION_STATUS_COLORS, USER_ROLES } from "@/lib/constants";
 import { getTranslation } from "@/lib/i18n/server";
+import { getMyProfile } from "@/server/auth-utils";
 import { getOverviewData } from "@/server/library";
 import type {
   PdfSubmission,
@@ -9,6 +10,7 @@ import type {
 } from "@/types/library";
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   FaArrowRight,
   FaExchangeAlt,
@@ -189,6 +191,13 @@ function TH({ children }: { children: React.ReactNode }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default async function Overview() {
+  const profile = await getMyProfile();
+  if (!profile) redirect("/login");
+
+  if (profile.role !== USER_ROLES.ADMIN && profile.role !== USER_ROLES.MODERATOR) {
+    redirect("/dashboard");
+  }
+
   const {
     stats,
     overdueItems,

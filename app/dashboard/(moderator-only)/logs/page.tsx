@@ -1,6 +1,6 @@
 import { getAdminLogs } from "@/server/library";
-import { getClaims } from "@/server/user";
-import { createClient } from "@/lib/supabase/server";
+import { getMyProfile } from "@/server/auth-utils";
+import { USER_ROLES } from "@/lib/constants";
 import { redirect } from "next/navigation";
 import LogsClient from "./LogsClient";
 
@@ -9,17 +9,10 @@ export default async function AdminLogsPage({
 }: {
   searchParams: Promise<{ days?: string }>;
 }) {
-  const claims = await getClaims();
-  if (!claims) redirect("/login");
+  const profile = await getMyProfile();
+  if (!profile) redirect("/login");
 
-  const supabase = await createClient();
-  const { data: caller } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", claims.sub)
-    .single();
-
-  if (caller?.role !== "admin" && caller?.role !== "moderator") {
+  if (profile.role !== USER_ROLES.ADMIN) {
     redirect("/dashboard");
   }
 
