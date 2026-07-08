@@ -470,7 +470,17 @@ export default function BooksClient({ initialBooks, categories }: Props) {
               </button>
             </div>
 
-            <div className="space-y-3 sm:space-y-4 ink-text">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (editingId) {
+                  handleUpdate();
+                } else {
+                  handleAdd();
+                }
+              }}
+              className="space-y-3 sm:space-y-4 ink-text"
+            >
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-[#4f4134] mb-1">
                   {t.books.modal.labels.title} *
@@ -596,6 +606,7 @@ export default function BooksClient({ initialBooks, categories }: Props) {
 
               <div className="pt-2 sm:pt-4 flex gap-2 sm:gap-3">
                 <button
+                  type="button"
                   onClick={closeModal}
                   disabled={isPending}
                   className="flex-1 py-2 sm:py-2.5 px-4 text-sm bg-[#f4e8d4] text-[#4a3825] border border-[#c9b99a] font-bold rounded-sm hover:bg-[#ece0ce] transition-colors disabled:opacity-55"
@@ -603,7 +614,7 @@ export default function BooksClient({ initialBooks, categories }: Props) {
                   {t.books.modal.cancel}
                 </button>
                 <button
-                  onClick={editingId ? handleUpdate : handleAdd}
+                  type="submit"
                   disabled={isPending}
                   className="flex-1 py-2 sm:py-2.5 px-4 text-sm bg-[#3f3328] text-[#f4e8d4] font-bold rounded-sm hover:bg-[#221910] transition-colors disabled:opacity-55"
                 >
@@ -614,7 +625,7 @@ export default function BooksClient({ initialBooks, categories }: Props) {
                       : t.books.modal.add}
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}

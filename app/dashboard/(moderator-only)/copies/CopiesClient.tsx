@@ -829,7 +829,13 @@ export default function CopiesClient({ initialCopies, books }: Props) {
               </button>
             </div>
 
-            <div className="space-y-4 ink-text">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleAdd();
+              }}
+              className="space-y-4 ink-text"
+            >
               {/* Copy ID */}
               <div>
                 <label className="block text-sm font-medium text-[#4f4134] mb-1">
@@ -899,28 +905,29 @@ export default function CopiesClient({ initialCopies, books }: Props) {
                   )}
                 </div>
               </div>
-            </div>
 
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={closeModal}
-                disabled={isPending}
-                className="flex-1 px-4 py-2.5 border border-[#8a7966] text-[#4f4134] rounded-sm hover:bg-[#eadcc8] disabled:opacity-55 transition-colors font-medium ink-text"
-              >
-                {t.copies.modal.cancel}
-              </button>
-              <button
-                onClick={handleAdd}
-                disabled={
-                  isPending ||
-                  !formData.book_id ||
-                  !formData.copy_id.trim()
-                }
-                className="flex-1 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 disabled:cursor-not-allowed transition-colors font-medium ink-text"
-              >
-                {isPending ? "..." : t.copies.modal.add}
-              </button>
-            </div>
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  disabled={isPending}
+                  className="flex-1 px-4 py-2.5 border border-[#8a7966] text-[#4f4134] rounded-sm hover:bg-[#eadcc8] disabled:opacity-55 transition-colors font-medium ink-text"
+                >
+                  {t.copies.modal.cancel}
+                </button>
+                <button
+                  type="submit"
+                  disabled={
+                    isPending ||
+                    !formData.book_id ||
+                    !formData.copy_id.trim()
+                  }
+                  className="flex-1 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 disabled:cursor-not-allowed transition-colors font-medium ink-text"
+                >
+                  {isPending ? "..." : t.copies.modal.add}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
