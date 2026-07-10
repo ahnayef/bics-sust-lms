@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { retry } from "@/lib/db/retry";
 import * as schema from "@/lib/db/schema";
-import { and, eq, ilike, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 export async function getAllPdfSubmissions() {
   return retry(() =>
@@ -64,7 +64,7 @@ export async function getDuplicatePdfSubmission(userId: string, bookId: string) 
     db.query.pdfSubmissions.findFirst({
       where: and(
         eq(schema.pdfSubmissions.user_id, userId),
-        ilike(schema.pdfSubmissions.book_id, bookId),
+        eq(schema.pdfSubmissions.book_id, bookId),
         inArray(schema.pdfSubmissions.status, ["pending", "approved"]),
       ),
     })

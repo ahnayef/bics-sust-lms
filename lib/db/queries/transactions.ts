@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { retry } from "@/lib/db/retry";
 import * as schema from "@/lib/db/schema";
-import { and, eq, ilike, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 export async function getTransactionById(id: string) {
   return retry(() =>
@@ -86,7 +86,7 @@ export async function getDuplicateTransaction(
     db.query.transactions.findFirst({
       where: and(
         eq(schema.transactions.user_id, userId),
-        ilike(schema.transactions.copy_id, copyId),
+        eq(schema.transactions.copy_id, copyId),
         eq(schema.transactions.type, type),
         inArray(schema.transactions.status, statuses),
       ),
@@ -131,7 +131,7 @@ export async function updateBorrowStatus(
       .where(
         and(
           eq(schema.transactions.user_id, userId),
-          ilike(schema.transactions.copy_id, copyId),
+          eq(schema.transactions.copy_id, copyId),
           eq(schema.transactions.type, "borrow"),
           inArray(schema.transactions.status, ["active", "overdue"]),
         ),

@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { retry } from "@/lib/db/retry";
 import * as schema from "@/lib/db/schema";
-import { and, eq, ilike, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 export async function getAllCopies() {
   return retry(() =>
@@ -30,7 +30,7 @@ export async function getAllCopies() {
 export async function getCopyById(id: string) {
   return retry(() =>
     db.query.copies.findFirst({
-      where: ilike(schema.copies.id, id),
+      where: eq(schema.copies.id, id),
       with: { book: true },
     })
   );
@@ -48,7 +48,7 @@ export async function getCopiesByBookId(bookId: string) {
 export async function getCopyStatus(id: string) {
   const copy = await retry(() =>
     db.query.copies.findFirst({
-      where: ilike(schema.copies.id, id),
+      where: eq(schema.copies.id, id),
       columns: { status: true },
     })
   );
@@ -91,12 +91,12 @@ export async function updateCopy(
   updates: Partial<typeof schema.copies.$inferInsert>,
 ) {
   return retry(() =>
-    db.update(schema.copies).set(updates).where(ilike(schema.copies.id, id))
+    db.update(schema.copies).set(updates).where(eq(schema.copies.id, id))
   );
 }
 
 export async function deleteCopy(id: string) {
   return retry(() =>
-    db.delete(schema.copies).where(ilike(schema.copies.id, id))
+    db.delete(schema.copies).where(eq(schema.copies.id, id))
   );
 }
