@@ -146,50 +146,57 @@ async def sendToTelegram(filePaths):
     client = TelegramClient(StringSession(), api_id_int, API_HASH)
     await client.start(bot_token=BOT_TOKEN) # type: ignore
 
-    # Loop through our files (.dump and .sql) and send each one
+    # Build one caption per file - Telethon shows each caption on its
+    # matching item once the group is sent as a single album/message.
+    captions = []
     for filePath in filePaths:
         fileName = os.path.basename(filePath)
         fileSizeMb = os.path.getsize(filePath) / (1024 * 1024)
         fileType = "📄 Plain Text (Human Readable)" if fileName.endswith(".sql") else "📦 Binary (Best for DB Restore)"
-        
-        lastError = None
-        uploadSucceeded = False
+        captions.append(
+            f"<b>Supabase Backup</b>\n"
+            f"<b>Type:</b> {fileType}\n"
+            f"<b>File:</b> {fileName}\n"
+            f"<b>Size:</b> {fileSizeMb:.2f} MB\n"
+            f"<b>Date:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        )
 
-        for attempt in range(1, MAX_RETRIES + 1):
-            try:
-                print(f"Uploading {fileName} (attempt {attempt}/{MAX_RETRIES})...")
-                caption = (
-                    f"<b>Supabase Backup</b>\n"
-                    f"<b>Type:</b> {fileType}\n"
-                    f"<b>File:</b> {fileName}\n"
-                    f"<b>Size:</b> {fileSizeMb:.2f} MB\n"
-                    f"<b>Date:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-                )
-                await client.send_file(
-                    chat_id_int,
-                    filePath,
-                    caption=caption,
-                    parse_mode="html",
-                )
-                print(f"{fileName} sent successfully.")
-                uploadSucceeded = True
-                break
-            except Exception as uploadError:
-                lastError = uploadError
-                print(f"Upload attempt {attempt} failed: {uploadError}")
-                if attempt < MAX_RETRIES:
-                    await asyncio.sleep(RETRY_DELAY_SECONDS * attempt)
+    lastError = None
+    uploadSucceeded = False
 
-        if not uploadSucceeded:
-            failureMessage = (
-                f"<b>⚠️ Backup Upload Failed</b>\n"
-                f"<b>File:</b> {fileName}\n"
-                f"<b>Reason:</b> {str(lastError)}"
+    # Send all files together in one call so Telegram groups them into a
+    # single message (album) instead of one message per file.
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            fileNames = ", ".join(os.path.basename(f) for f in filePaths)
+            print(f"Uploading {fileNames} as one grouped message (attempt {attempt}/{MAX_RETRIES})...")
+            await client.send_file(
+                chat_id_int,
+                filePaths,
+                caption=captions,
+                parse_mode="html",
+                force_document=True,
             )
-            try:
-                await client.send_message(chat_id_int, failureMessage, parse_mode="html")
-            except Exception:
-                pass
+            print("Files sent successfully as a single grouped message.")
+            uploadSucceeded = True
+            break
+        except Exception as uploadError:
+            lastError = uploadError
+            print(f"Upload attempt {attempt} failed: {uploadError}")
+            if attempt < MAX_RETRIES:
+                await asyncio.sleep(RETRY_DELAY_SECONDS * attempt)
+
+    if not uploadSucceeded:
+        fileNames = ", ".join(os.path.basename(f) for f in filePaths)
+        failureMessage = (
+            f"<b>⚠️ Backup Upload Failed</b>\n"
+            f"<b>Files:</b> {fileNames}\n"
+            f"<b>Reason:</b> {str(lastError)}"
+        )
+        try:
+            await client.send_message(chat_id_int, failureMessage, parse_mode="html")
+        except Exception:
+            pass
 
     await client.disconnect()
 
