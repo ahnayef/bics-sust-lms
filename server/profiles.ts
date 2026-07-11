@@ -25,6 +25,11 @@ import { z } from "zod";
 import { cacheAvatarLocally } from "./avatar";
 
 // ---------------------------------------------------------------------------
+// Reserved usernames — must match static route segments under /profile/
+// ---------------------------------------------------------------------------
+const RESERVED_USERNAMES = new Set(["edit"]);
+
+// ---------------------------------------------------------------------------
 // Helper: Insert Action Log
 // ---------------------------------------------------------------------------
 async function insertActionLog(
@@ -83,7 +88,7 @@ const profileSchema = z.object({
     .optional()
     .or(z.literal("")),
   rank_id: optionalUuid,
-  thana_id: z.string().uuid("Please select a valid thana"),
+  thana_id: optionalUuid,
 });
 
 // ---------------------------------------------------------------------------
@@ -111,7 +116,10 @@ export async function setupProfile(
 
     const validated = profileSchema.parse(raw);
 
-    // Check username uniqueness
+    // Check username uniqueness + reserved words
+    if (RESERVED_USERNAMES.has(validated.username.toLowerCase())) {
+      return { error: "This username is reserved and cannot be used" };
+    }
     const existing = await getProfileByUsernameExcludingId(validated.username, user.id);
     if (existing) {
       return { error: "Username is already taken" };
@@ -126,7 +134,7 @@ export async function setupProfile(
       username: validated.username,
       phone: validated.phone || null,
       rank_id: validated.rank_id,
-      thana_id: validated.thana_id,
+      thana_id: validated.thana_id ?? null,
       avatar_url: localAvatarUrl,
       role: USER_ROLES.MEMBER,
       is_verified: false,
@@ -458,6 +466,8 @@ export async function demoteFromAdminAction(
 export async function checkUsernameAvailability(username: string): Promise<"available" | "unavailable" | "invalid"> {
   const parsed = profileSchema.shape.username.safeParse(username);
   if (!parsed.success) return "invalid";
+
+  if (RESERVED_USERNAMES.has(username.toLowerCase())) return "unavailable";
 
   const existing = await getProfileByUsername(username);
   return existing ? "unavailable" : "available";

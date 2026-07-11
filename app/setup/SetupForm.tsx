@@ -43,6 +43,7 @@ export default function SetupForm({
   >("idle");
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
+  const [atSymbolWarning, setAtSymbolWarning] = useState(false);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -169,29 +170,47 @@ export default function SetupForm({
                     <span className="text-xs text-red-600 font-semibold ink-text">Invalid</span>
                   )}
                 </div>
-                <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  required
-                  minLength={3}
-                  maxLength={30}
-                  pattern="^[a-zA-Z0-9_]+$"
-                  autoComplete="username"
-                  placeholder="your_username"
-                  className={`${inputClass} ${usernameStatus === "unavailable" || usernameStatus === "invalid"
-                    ? "border-red-400 focus:ring-red-500"
+                <div className={`flex items-stretch border rounded-sm overflow-hidden transition-colors ${
+                  usernameStatus === "unavailable" || usernameStatus === "invalid"
+                    ? "border-red-400 focus-within:ring-2 focus-within:ring-red-500"
                     : usernameStatus === "available"
-                      ? "border-[#a3b994] focus:ring-[#6b9e5e]"
-                      : ""
-                    }`}
-                  value={username}
-                  onChange={(e) => {
-                    setUsername(e.target.value);
-                    if (usernameStatus !== "idle") setUsernameStatus("idle");
-                  }}
-                  onBlur={handleUsernameBlur}
-                />
+                      ? "border-[#a3b994] focus-within:ring-2 focus-within:ring-[#6b9e5e]"
+                      : "border-[#8a7966] focus-within:ring-2 focus-within:ring-[#6e5d4a]"
+                }`}>
+                  <span className="flex items-center px-3 bg-[#e8dcc8] text-[#5a4b3f] font-bold text-sm select-none border-r border-[#b9a58b]">
+                    @
+                  </span>
+                  <input
+                    id="username"
+                    name="username"
+                    type="text"
+                    required
+                    minLength={3}
+                    maxLength={30}
+                    pattern="^[a-zA-Z0-9_]+$"
+                    autoComplete="username"
+                    placeholder="your_username"
+                    className="flex-1 px-4 py-2.5 bg-[#f6ecdd] text-[#2f251d] outline-none ink-text"
+                    value={username}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      if (raw.includes("@")) {
+                        setAtSymbolWarning(true);
+                        setUsername(raw.replace(/@/g, ""));
+                      } else {
+                        setAtSymbolWarning(false);
+                        setUsername(raw);
+                      }
+                      if (usernameStatus !== "idle") setUsernameStatus("idle");
+                    }}
+                    onBlur={handleUsernameBlur}
+                  />
+                </div>
+                {atSymbolWarning && (
+                  <p className="mt-1 text-xs text-amber-700 font-medium ink-text">
+                    No need to include the @  — just type your username.
+                  </p>
+                )}
                 <p className="mt-1 text-xs text-[#7a6a5c] ink-text">
                   3–30 chars · letters, numbers, underscores only · must be
                   unique
@@ -265,7 +284,7 @@ export default function SetupForm({
                   <span className="text-sm font-semibold ink-text tracking-wide uppercase">
                     Thana
                   </span>
-                  <span className="text-red-500 text-sm">*</span>
+                  <span className="text-[#7a6a5c] text-xs font-normal">(optional)</span>
                 </div>
 
                 {geoSource === "unavailable" && (
@@ -280,7 +299,7 @@ export default function SetupForm({
 
                 <div>
                   <label className={labelClass}>
-                    Select thana <span className="text-red-500">*</span>
+                    Select thana
                   </label>
                   <ThanaCombobox
                     name="thana_id"
@@ -303,7 +322,7 @@ export default function SetupForm({
               <div className="pt-2">
                 <button
                   type="submit"
-                  disabled={isPending || thanas.length === 0 || !!phoneError}
+                  disabled={isPending || !!phoneError}
                   className="w-full py-3 px-6 bg-[#3f3328] text-[#f4e8d4] font-semibold rounded-sm hover:bg-[#221910] active:scale-[0.98] transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed ink-title text-base tracking-wide"
                   style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
                 >
