@@ -6,7 +6,7 @@ import { FaTimes } from "react-icons/fa";
 interface ConfirmModalProps {
   open: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm?: () => void;
   title: string;
   description?: ReactNode;
   /** A preview card showing exactly what will change */
@@ -42,7 +42,7 @@ export default function ConfirmModal({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose();
-      } else if (e.key === "Enter") {
+      } else if (e.key === "Enter" && onConfirm) {
         e.preventDefault();
         if (!loading) {
           onConfirm();
@@ -102,17 +102,19 @@ export default function ConfirmModal({
           >
             {cancelLabel}
           </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={loading}
-            className={`flex-1 py-2.5 rounded-sm font-medium ink-text transition-colors disabled:opacity-50 disabled:cursor-not-allowed border ${danger
-                ? "bg-[#8b5c4a] text-[#f6ecdd] border-[#6b4437] hover:bg-[#6b4437]"
-                : "bg-[#3f3328] text-[#f4e8d4] border-[#4e4033] hover:bg-[#4a3d31]"
-              }`}
-          >
-            {loading ? "Working…" : confirmLabel}
-          </button>
+          {onConfirm && (
+            <button
+              type="button"
+              onClick={onConfirm}
+              disabled={loading}
+              className={`flex-1 py-2.5 rounded-sm font-medium ink-text transition-colors disabled:opacity-50 disabled:cursor-not-allowed border ${danger
+                  ? "bg-[#8b5c4a] text-[#f6ecdd] border-[#6b4437] hover:bg-[#6b4437]"
+                  : "bg-[#3f3328] text-[#f4e8d4] border-[#4e4033] hover:bg-[#4a3d31]"
+                }`}
+            >
+              {loading ? "Working…" : confirmLabel}
+            </button>
+          )}
         </div>
       </div>
     </div>

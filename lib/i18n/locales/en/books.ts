@@ -62,5 +62,6 @@ export const books = {
     title: "Delete Book",
     message: "Are you sure you want to delete this book? This will also remove all its copies.",
     warning: "This book is currently being used in {count} transactions (borrows/returns). Deleting it will cause data inconsistency.",
+    blocked: "This book is being borrowed by {count} people, can't delete it until they return it.",
   },
 } as const;

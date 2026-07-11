@@ -5,6 +5,7 @@ import ConfirmModal from "@/components/ui/confirm-modal";
 import { useTranslation } from "@/lib/i18n/context";
 import {
   addCopyOfBook,
+  getCopyBorrowerName,
   getBookRefCount,
   removeCopy,
   updateCopyMetadata,
@@ -198,6 +199,15 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
     null,
   );
   const [refCount, setRefCount] = useState<number | null>(null);
+  // Map of copyId -> borrower name (fetched lazily when copy is borrowed)
+  const [borrowerNames, setBorrowerNames] = useState<Record<string, string | null>>({});
+
+  // Fetch borrower name for a borrowed copy on demand
+  const fetchBorrowerName = async (copyId: string) => {
+    if (copyId in borrowerNames) return;
+    const name = await getCopyBorrowerName(copyId);
+    setBorrowerNames((prev) => ({ ...prev, [copyId]: name }));
+  };
 
   useEffect(() => {
     if (!showAddModal && !qrModalCopyId) return;
@@ -256,11 +266,15 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
           copy.id.toLowerCase().includes(query)
         );
 
+      // When filtering by status, only show the book if it has matching copies
+      // OR if statusFilter is "all" (show all books, including empty ones)
       const filteredCopies = group.copies.filter((copy) =>
         statusFilter === "all" || copy.status === statusFilter
       );
 
-      return matchesType && matchesSearch && filteredCopies.length > 0;
+      const hasMatchingCopiesOrNoFilter = statusFilter === "all" || filteredCopies.length > 0;
+
+      return matchesType && matchesSearch && hasMatchingCopiesOrNoFilter;
     }).map((group) => ({
       ...group,
       copies: group.copies.filter((copy) =>
@@ -780,11 +794,20 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
                                               </button>
                                             )}
                                             <button
-                                              onClick={() => handleDelete(copy.id)}
-                                              disabled={isPending}
-                                              className="p-2 text-[#6a4e3d] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors disabled:opacity-55"
-                                              aria-label={`${t.copies.actions.delete} ${copy.id}`}
-                                              title={t.copies.actions.delete}
+                                              onClick={() => {
+                                                if (copy.status === "borrowed") return;
+                                                handleDelete(copy.id);
+                                              }}
+                                              onMouseEnter={() => {
+                                                if (copy.status === "borrowed") fetchBorrowerName(copy.id);
+                                              }}
+                                              disabled={isPending || copy.status === "borrowed"}
+                                              className="p-2 text-[#6a4e3d] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                              aria-label={copy.status === "borrowed" ? `Borrowed by ${borrowerNames[copy.id] ?? "someone"}` : `${t.copies.actions.delete} ${copy.id}`}
+                                              title={copy.status === "borrowed"
+                                                ? `Borrowed by ${borrowerNames[copy.id] ?? "…"}`
+                                                : t.copies.actions.delete
+                                              }
                                             >
                                               <FaTrash className="w-4 h-4" />
                                             </button>

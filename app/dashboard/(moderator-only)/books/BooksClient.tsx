@@ -2,7 +2,7 @@
 import StatusBadge from "@/app/components/StatusBadge";
 import ConfirmModal from "@/components/ui/confirm-modal";
 import { useTranslation } from "@/lib/i18n/context";
-import { addBook, editBook, getBookRefCount, removeBook } from "@/server/library-actions";
+import { addBook, editBook, getActiveBorrowersForBook, removeBook } from "@/server/library-actions";
 import type { Book, Category } from "@/types/library";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
@@ -200,8 +200,8 @@ export default function BooksClient({ initialBooks, categories }: Props) {
     const book = books.find((b) => b.id === id);
     if (!book) return;
 
-    // Check ref count
-    const count = await getBookRefCount(id);
+    // Check active borrow count first
+    const count = await getActiveBorrowersForBook(id);
     setRefCount(count);
     setPendingAction({
       type: "delete",
@@ -635,7 +635,7 @@ export default function BooksClient({ initialBooks, categories }: Props) {
           setPendingAction(null);
           setRefCount(null);
         }}
-        onConfirm={confirmDelete}
+        onConfirm={refCount === null || refCount > 0 ? undefined : confirmDelete}
         title={t.books.confirmDelete.title}
         confirmLabel={t.books.actions.delete}
         danger
@@ -652,12 +652,15 @@ export default function BooksClient({ initialBooks, categories }: Props) {
                 {pendingAction?.type === "delete" && pendingAction.author}
               </p>
             </div>
-            <p className="text-red-700 font-medium">
-              {t.books.confirmDelete.message}
-            </p>
-            {refCount !== null && refCount > 0 && (
-              <p className="text-amber-700 text-xs font-bold bg-amber-50 p-2 border border-amber-200 rounded-sm">
-                ⚠ {t.books.confirmDelete.warning.replace("{count}", refCount.toString())}
+            {refCount === null ? (
+              <p className="text-[#7a6a5c] text-xs">Checking borrow status...</p>
+            ) : refCount > 0 ? (
+              <p className="text-red-700 text-sm font-semibold bg-red-50 p-2.5 border border-red-200 rounded-sm">
+                🚫 {t.books.confirmDelete.blocked.replace("{count}", refCount.toString())}
+              </p>
+            ) : (
+              <p className="text-red-700 font-medium">
+                {t.books.confirmDelete.message}
               </p>
             )}
           </div>

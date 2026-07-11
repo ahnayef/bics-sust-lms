@@ -196,6 +196,40 @@ export async function getBookRefCount(bookId: string): Promise<number> {
   return result.length;
 }
 
+/**
+ * Returns the number of people currently borrowing this book (active/overdue only).
+ * Used to block book deletion and show the borrower count message.
+ */
+export async function getActiveBorrowersForBook(bookId: string): Promise<number> {
+  const result = await db.query.transactions.findMany({
+    where: and(
+      eq(schema.transactions.book_id, bookId),
+      eq(schema.transactions.type, "borrow"),
+      inArray(schema.transactions.status, ["active", "overdue"])
+    ),
+    columns: { id: true },
+  });
+  return result.length;
+}
+
+/**
+ * Returns the full name of the person currently borrowing a specific copy,
+ * or null if nobody is borrowing it.
+ */
+export async function getCopyBorrowerName(copyId: string): Promise<string | null> {
+  const tx = await db.query.transactions.findFirst({
+    where: and(
+      eq(schema.transactions.copy_id, copyId),
+      eq(schema.transactions.type, "borrow"),
+      inArray(schema.transactions.status, ["active", "overdue"])
+    ),
+    with: {
+      user: { columns: { full_name: true } },
+    },
+  });
+  return tx?.user?.full_name ?? null;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Categories
 // ─────────────────────────────────────────────────────────────────────────────
