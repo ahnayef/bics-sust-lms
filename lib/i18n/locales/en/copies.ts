@@ -26,6 +26,7 @@ export const copies = {
     addCopy: "Add Copy",
     downloadQr: "Download QR",
     delete: "Delete",
+    editCopyId: "Edit Copy ID",
     markAsDamaged: "Mark as Damaged",
     markAsAvailable: "Mark as Available",
   },
@@ -60,6 +61,15 @@ export const copies = {
     addSuccess: "New copy added successfully.",
     deleteSuccess: "Copy removed successfully.",
     statusUpdated: "Copy status updated successfully.",
+    renameSuccess: "Copy ID updated successfully.",
+  },
+  editModal: {
+    title: "Edit Copy ID",
+    label: "New Copy ID",
+    placeholder: "e.g. C001",
+    save: "Save",
+    cancel: "Cancel",
+    collision: "A copy with this ID already exists.",
   },
   confirmDelete: {
     title: "Remove Copy",

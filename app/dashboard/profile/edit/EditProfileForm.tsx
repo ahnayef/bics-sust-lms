@@ -89,6 +89,7 @@ export default function EditProfileForm({
   }
 
   const rankChanged = rankId !== profile.rank_id;
+  const rankRequiresReverification = rankChanged && rankId !== null;
   const currentRankName = ranks.find(r => r.id === rankId)?.name ?? "None";
 
   const thanaOptions = useMemo(
@@ -113,12 +114,12 @@ export default function EditProfileForm({
       </p>
       <p className="flex items-center gap-2">
         <span className="text-[#7a6a5c]">{t.profile.editForm.preview.rank}:</span>{" "}
-        <RankBadge name={currentRankName} className={rankChanged ? "border-amber-500 bg-amber-50" : ""} />
+        <RankBadge name={currentRankName} className={rankRequiresReverification ? "border-amber-500 bg-amber-50" : ""} />
       </p>
       <p>
         <span className="text-[#7a6a5c]">{t.profile.editForm.preview.thana}:</span> {selectedThanaLabel}
       </p>
-      {rankChanged && (
+      {rankRequiresReverification && (
         <p className="mt-2 text-amber-700">
           ⚠ {t.profile.editForm.rankNote}
         </p>
@@ -283,12 +284,14 @@ export default function EditProfileForm({
                     </option>
                   ))}
                 </select>
-                <div className="flex items-start gap-2 mt-2 px-3 py-2 rounded-sm border border-amber-400/60 bg-amber-50/80 text-amber-800 text-xs ink-text">
-                  <FaExclamationTriangle className="shrink-0 mt-0.5 w-3 h-3" />
-                  <span>
-                    {t.profile.editForm.rankNote}
-                  </span>
-                </div>
+                {rankRequiresReverification && (
+                  <div className="flex items-start gap-2 mt-2 px-3 py-2 rounded-sm border border-amber-400/60 bg-amber-50/80 text-amber-800 text-xs ink-text">
+                    <FaExclamationTriangle className="shrink-0 mt-0.5 w-3 h-3" />
+                    <span>
+                      {t.profile.editForm.rankNote}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="border border-[#c9b99a] bg-[#ede0cc] rounded-sm p-4 space-y-4">

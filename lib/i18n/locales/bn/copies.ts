@@ -26,6 +26,7 @@ export const copies = {
     addCopy: "কপি যুক্ত করুন",
     downloadQr: "কিউআর ডাউনলোড",
     delete: "মুছুন",
+    editCopyId: "কপি আইডি সম্পাদনা",
     markAsDamaged: "ক্ষতিগ্রস্ত হিসেবে চিহ্নিত করুন",
     markAsAvailable: "উপলব্ধ হিসেবে চিহ্নিত করুন",
   },
@@ -60,6 +61,15 @@ export const copies = {
     addSuccess: "নতুন কপিটি সফলভাবে যুক্ত করা হয়েছে।",
     deleteSuccess: "কপিটি সফলভাবে মুছে ফেলা হয়েছে।",
     statusUpdated: "কপির অবস্থা সফলভাবে আপডেট করা হয়েছে।",
+    renameSuccess: "কপি আইডি সফলভাবে আপডেট করা হয়েছে।",
+  },
+  editModal: {
+    title: "কপি আইডি সম্পাদনা",
+    label: "নতুন কপি আইডি",
+    placeholder: "যেমন: C001",
+    save: "সংরক্ষণ",
+    cancel: "বাতিল করুন",
+    collision: "এই আইডিতে আগে থেকেই একটি কপি রয়েছে।",
   },
   confirmDelete: {
     title: "কপি মুছে ফেলুন",

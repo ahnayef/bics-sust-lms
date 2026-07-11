@@ -1,4 +1,4 @@
-import { getUsers } from "@/server/library";
+import { getUsers, getCategories } from "@/server/library";
 import { getMyProfile } from "@/server/auth-utils";
 import { USER_ROLES } from "@/lib/constants";
 import { redirect } from "next/navigation";
@@ -12,6 +12,10 @@ export default async function UsersPage() {
     redirect("/dashboard");
   }
 
-  const users = await getUsers();
-  return <UsersClient users={users} />;
+  const [users, categories] = await Promise.all([
+    getUsers(),
+    getCategories(),
+  ]);
+
+  return <UsersClient users={users} categories={categories} />;
 }

@@ -186,6 +186,7 @@ export async function updateProfileInfo(
 
     const current = await getProfileById(user.id);
     const rankChanged = current?.rank_id !== validated.rank_id;
+    const rankRequiresReverification = rankChanged && validated.rank_id !== null;
 
     await updateProfile(user.id, {
       full_name: validated.full_name,
@@ -193,7 +194,7 @@ export async function updateProfileInfo(
       rank_id: validated.rank_id,
       thana_id: validated.thana_id,
       hide_sensitive_info: validated.hide_sensitive_info ?? false,
-      ...(rankChanged ? { is_verified: false } : {}),
+      ...(rankRequiresReverification ? { is_verified: false } : {}),
     });
 
     invalidateUsersAndOverview();

@@ -353,6 +353,7 @@ export async function submitPdfReport(
 ): Promise<{ error?: string }> {
   const caller = await getCaller();
   if (!caller) return { error: "Not authenticated" };
+  if (!caller.isVerified) return { error: "You need to be verified to mark PDFs as read." };
 
   const { sub } = caller;
   const book_id = (formData.get("book_id") as string)?.trim().toUpperCase();

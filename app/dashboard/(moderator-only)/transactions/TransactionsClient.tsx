@@ -216,7 +216,7 @@ export default function TransactionsClient({
 
   const historyTransactions = useMemo(() => {
     const base = transactions.filter(
-      (tx) => tx.status === "completed" || tx.status === "rejected",
+      (tx) => (tx.status === "completed" || tx.status === "rejected") && !(tx.type === "return" && tx.status === "completed"),
     );
 
     // Map approved/rejected PDFs to look like transactions for the history table

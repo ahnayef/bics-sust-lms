@@ -197,6 +197,18 @@ export async function getBookRefCount(bookId: string): Promise<number> {
 }
 
 /**
+ * Returns the total number of transactions for a specific copy.
+ * Used to warn about data inconsistency before deletion.
+ */
+export async function getCopyRefCount(copyId: string): Promise<number> {
+  const result = await db.query.transactions.findMany({
+    where: eq(schema.transactions.copy_id, copyId),
+    columns: { id: true },
+  });
+  return result.length;
+}
+
+/**
  * Returns the number of people currently borrowing this book (active/overdue only).
  * Used to block book deletion and show the borrower count message.
  */
@@ -412,6 +424,64 @@ export async function updateCopyMetadata(
     if (!status) return { error: "Status is required" };
 
     await updateCopy(id, { status });
+
+    invalidateAfterBookOrCopyMutation();
+    revalidatePath("/dashboard/books");
+    revalidatePath("/dashboard/copies");
+    return {};
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}
+
+/**
+ * Rename a copy's ID (primary key).
+ * Updates the copy row and all related transaction rows atomically.
+ *
+ * FormData fields: old_id (required), new_id (required)
+ */
+export async function renameCopyId(
+  formData: FormData,
+): Promise<{ error?: string }> {
+  try {
+    await requireModOrAdmin();
+
+    const oldId = (formData.get("old_id") as string)?.trim().toUpperCase();
+    const newId = (formData.get("new_id") as string)?.trim().toUpperCase();
+
+    if (!oldId) return { error: "Old Copy ID is required" };
+    if (!newId) return { error: "New Copy ID is required" };
+    if (oldId === newId) return { error: "New ID is the same as the current ID" };
+
+    // Ensure the copy exists
+    const existing = await getCopyById(oldId);
+    if (!existing) return { error: "Copy not found" };
+
+    // Check for collision
+    const collision = await getCopyById(newId);
+    if (collision) return { error: `A copy with ID "${newId}" already exists` };
+
+    // Rename atomically: update copies PK then cascade to transactions
+    await db.transaction(async (tx) => {
+      // 1. Insert the copy with the new ID
+      await tx.insert(schema.copies).values({
+        id: newId,
+        book_id: existing.book_id,
+        copy_number: existing.copy_number,
+        status: existing.status,
+        created_at: existing.created_at,
+        updated_at: new Date(),
+      });
+
+      // 2. Re-point all transactions to the new copy ID
+      await tx
+        .update(schema.transactions)
+        .set({ copy_id: newId })
+        .where(eq(schema.transactions.copy_id, oldId));
+
+      // 3. Delete the old copy row (transactions no longer reference it)
+      await tx.delete(schema.copies).where(eq(schema.copies.id, oldId));
+    });
 
     invalidateAfterBookOrCopyMutation();
     revalidatePath("/dashboard/books");

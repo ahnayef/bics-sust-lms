@@ -314,7 +314,7 @@ async function loadUsersCached(): Promise<UserWithStats[]> {
   const progressCategories = await getCategoriesForProgress();
 
   // Fetch total books per category
-  const categoryTotals = await getBooksByIds(progressCategories.map(c => c.id));
+  const categoryTotals = await getAllBooks();
   const totalPerCategory = new Map<string, number>();
   for (const b of categoryTotals) {
     if (b.category_id) {
@@ -467,7 +467,10 @@ async function loadOverviewDataCached(): Promise<OverviewData> {
       completedThisMonthData,
     ] = await retry(async () =>
       Promise.all([
-        db.query.books.findMany({ columns: { id: true, is_syllabus: true } }),
+        db.query.books.findMany({ 
+          columns: { id: true, is_syllabus: true },
+          with: { category: { columns: { name: true } } }
+        }),
         db.query.copies.findMany({ columns: { id: true, status: true } }),
         db.query.profiles.findMany({
           where: eq(schema.profiles.role, "member"),
@@ -490,7 +493,10 @@ async function loadOverviewDataCached(): Promise<OverviewData> {
           ),
           with: {
             user: { columns: { id: true, full_name: true, username: true, avatar_url: true } },
-            book: { columns: { id: true, title: true, author: true, is_syllabus: true } }
+            book: { 
+              columns: { id: true, title: true, author: true, is_syllabus: true },
+              with: { category: { columns: { name: true } } }
+            }
           },
           orderBy: [desc(schema.transactions.request_date)],
           limit: 300
@@ -563,14 +569,25 @@ async function loadOverviewDataCached(): Promise<OverviewData> {
         title: meta.title,
         author: meta.author,
         is_syllabus: meta.is_syllabus,
+        category_name: (meta as any).category?.name,
         totalBorrows: count,
       }));
+
+    const categoryCounts = new Map<string, number>();
+    for (const b of booksData) {
+      const catName = (b as any).category?.name || "Uncategorized";
+      categoryCounts.set(catName, (categoryCounts.get(catName) || 0) + 1);
+    }
+    const booksByCategory = Array.from(categoryCounts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
 
     return {
       stats: {
         totalBooks: booksData.length,
         syllabusBooks: booksData.filter((b) => b.is_syllabus).length,
         generalBooks: booksData.filter((b) => !b.is_syllabus).length,
+        booksByCategory,
         totalCopies: copiesData.length,
         availableCopies: copiesData.filter((c) => c.status === "available").length,
         borrowedCopies: copiesData.filter((c) => c.status === "borrowed").length,
@@ -601,6 +618,7 @@ async function loadOverviewDataCached(): Promise<OverviewData> {
         totalBooks: 0,
         syllabusBooks: 0,
         generalBooks: 0,
+        booksByCategory: [],
         totalCopies: 0,
         availableCopies: 0,
         borrowedCopies: 0,

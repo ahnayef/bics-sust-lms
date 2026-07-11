@@ -8,7 +8,9 @@ import {
   getCopyBorrowerName,
   getBookRefCount,
   removeCopy,
+  renameCopyId,
   updateCopyMetadata,
+  getCopyRefCount,
 } from "@/server/library-actions";
 import type { Book, Copy, CopyStatus } from "@/types/library";
 import NextImage from "next/image";
@@ -16,10 +18,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import {
   FaCheck,
   FaDownload,
   FaExclamationTriangle,
+  FaPencilAlt,
   FaPlus,
   FaQrcode,
   FaSearch,
@@ -149,6 +153,12 @@ const EMPTY_FORM: CopyForm = { book_id: "", copy_id: "" };
 type PendingAction =
   | { type: "delete"; copyId: string; bookTitle: string };
 
+interface EditCopyIdState {
+  copyId: string;
+  newId: string;
+  error: string | null;
+}
+
 interface Props {
   initialCopies: Copy[];
   books: Book[];
@@ -168,9 +178,12 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
   const [showAddModal, setShowAddModal] = useState(false);
   const [bookSearchTerm, setBookSearchTerm] = useState("");
   const [showBookDropdown, setShowBookDropdown] = useState(false);
+  const bookInputRef = useRef<HTMLInputElement>(null);
+  const [dropdownRect, setDropdownRect] = useState<DOMRect | null>(null);
   const [formData, setFormData] = useState<CopyForm>(EMPTY_FORM);
   const [copyIdError, setCopyIdError] = useState<string | null>(null);
   const [expandedBookId, setExpandedBookId] = useState<string | null>(null);
+  const [editCopyId, setEditCopyId] = useState<EditCopyIdState | null>(null);
 
   const hasActiveFilters =
     searchTerm.trim() !== "" ||
@@ -210,16 +223,17 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
   };
 
   useEffect(() => {
-    if (!showAddModal && !qrModalCopyId) return;
+    if (!showAddModal && !qrModalCopyId && !editCopyId) return;
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         closeModal();
         closeQrModal();
+        setEditCopyId(null);
       }
     };
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
-  }, [showAddModal, qrModalCopyId]);
+  }, [showAddModal, qrModalCopyId, editCopyId]);
 
   // Sync when server re-renders after router.refresh()
   useEffect(() => {
@@ -397,7 +411,7 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
       copyId,
       bookTitle: copy?.book?.title ?? "Unknown",
     });
-    const count = await getBookRefCount(copyId);
+    const count = await getCopyRefCount(copyId);
     setRefCount(count);
   };
 
@@ -429,6 +443,39 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
         showFlash("error", result.error);
       } else {
         showFlash("success", t.copies.flash.deleteSuccess);
+        router.refresh();
+      }
+    });
+  };
+
+  const openEditCopyIdModal = (copyId: string) => {
+    setEditCopyId({ copyId, newId: copyId, error: null });
+  };
+
+  const handleRenameCopyId = () => {
+    if (!editCopyId) return;
+    const trimmed = editCopyId.newId.trim().toUpperCase();
+    if (!trimmed) return;
+    if (trimmed === editCopyId.copyId) {
+      setEditCopyId(null);
+      return;
+    }
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("old_id", editCopyId.copyId);
+      fd.set("new_id", trimmed);
+      const result = await renameCopyId(fd);
+      if (result.error) {
+        const isCollision = result.error.toLowerCase().includes("already exists");
+        if (isCollision) {
+          setEditCopyId((prev) => prev ? { ...prev, error: result.error! } : null);
+        } else {
+          setEditCopyId(null);
+          showFlash("error", result.error);
+        }
+      } else {
+        setEditCopyId(null);
+        showFlash("success", t.copies.flash.renameSuccess);
         router.refresh();
       }
     });
@@ -778,6 +825,15 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
                                             >
                                               <FaQrcode className="w-4 h-4" />
                                             </button>
+                                            <button
+                                              onClick={() => openEditCopyIdModal(copy.id)}
+                                              disabled={isPending}
+                                              className="p-2 text-[#5b4c3f] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors disabled:opacity-55"
+                                              aria-label={`${t.copies.actions.editCopyId} ${copy.id}`}
+                                              title={t.copies.actions.editCopyId}
+                                            >
+                                              <FaPencilAlt className="w-3.5 h-3.5" />
+                                            </button>
                                             {copy.status !== "borrowed" && (
                                               <button
                                                 onClick={() => handleMarkAsDamaged(copy.id, copy.status)}
@@ -888,25 +944,65 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
               </div>
 
               {/* Book search dropdown */}
-              <div>
+              <div className="relative z-50">
                 <label className="block text-sm font-medium text-[#4f4134] mb-1">
                   {t.copies.modal.labels.selectBook} *
                 </label>
-                <div className="relative">
+                
+                {/* Native select for small screens */}
+                <select
+                  value={formData.book_id}
+                  onChange={(e) => {
+                    const selected = books.find((b) => b.id === e.target.value);
+                    if (selected) handleSelectBook(selected);
+                  }}
+                  className="sm:hidden w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
+                  required
+                >
+                  <option value="" disabled>
+                    {t.copies.modal.placeholders.searchBook}
+                  </option>
+                  {books.map((book) => (
+                    <option key={book.id} value={book.id}>
+                      {book.title} — {book.author}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Custom dropdown for larger screens — rendered via portal so it escapes any overflow:hidden ancestor */}
+                <div className="hidden sm:block">
                   <input
+                    ref={bookInputRef}
                     type="text"
                     value={bookSearchTerm}
-                    onFocus={() => setShowBookDropdown(true)}
+                    onFocus={() => {
+                      const rect = bookInputRef.current?.getBoundingClientRect();
+                      if (rect) setDropdownRect(rect);
+                      setShowBookDropdown(true);
+                    }}
                     onBlur={() => {
                       setTimeout(() => setShowBookDropdown(false), 120);
                     }}
-                    onChange={(e) => handleBookSearchChange(e.target.value)}
-                    placeholder={t.copies.modal.placeholders.searchBook}
+                    onChange={(e) => {
+                      const rect = bookInputRef.current?.getBoundingClientRect();
+                      if (rect) setDropdownRect(rect);
+                      handleBookSearchChange(e.target.value);
+                    }}
+                    placeholder={formData.book_id ? books.find(b => b.id === formData.book_id)?.title ?? t.copies.modal.placeholders.searchBook : t.copies.modal.placeholders.searchBook}
                     className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
                   />
 
-                  {showBookDropdown && (
-                    <div className="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto rounded-sm border border-[#8a7966] bg-[#f6ecdd] shadow-lg">
+                  {showBookDropdown && dropdownRect && typeof document !== "undefined" && createPortal(
+                    <div
+                      style={{
+                        position: "fixed",
+                        top: dropdownRect.bottom + 4,
+                        left: dropdownRect.left,
+                        width: dropdownRect.width,
+                        zIndex: 9999,
+                      }}
+                      className="max-h-56 overflow-y-auto rounded-sm border border-[#8a7966] bg-[#f6ecdd] shadow-xl"
+                    >
                       {filteredBookOptions.length > 0 ? (
                         filteredBookOptions.map((book) => (
                           <button
@@ -916,10 +1012,7 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
                             className="w-full px-3 py-2 text-left text-sm text-[#2f251d] hover:bg-[#eadcc8] transition-colors"
                           >
                             <span className="font-medium">{book.title}</span>
-                            <span className="text-[#5a4b3f]">
-                              {" "}
-                              — {book.author}
-                            </span>
+                            <span className="text-[#5a4b3f]"> — {book.author}</span>
                           </button>
                         ))
                       ) : (
@@ -927,7 +1020,8 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
                           No matching book found
                         </div>
                       )}
-                    </div>
+                    </div>,
+                    document.body
                   )}
                 </div>
               </div>
@@ -951,6 +1045,95 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
                   className="flex-1 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 disabled:cursor-not-allowed transition-colors font-medium ink-text"
                 >
                   {isPending ? "..." : t.copies.modal.add}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Copy ID modal */}
+      {editCopyId && (
+        <div
+          className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-4 z-80"
+          onClick={(e) => e.target === e.currentTarget && setEditCopyId(null)}
+        >
+          <div
+            className="dashboard-surface tron-border rounded-sm max-w-sm w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <h2 className="text-xl font-bold text-[#221910] ink-title">
+                {t.copies.editModal.title}
+              </h2>
+              <button
+                onClick={() => setEditCopyId(null)}
+                disabled={isPending}
+                className="p-2 text-[#655648] hover:bg-[#e7d8c3] rounded-sm transition-colors"
+                aria-label="Close edit copy ID modal"
+              >
+                <FaTimes className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-[#6a5a4c] ink-text mb-4">
+              {t.copies.table.copyId}:{" "}
+              <span className="font-mono font-semibold text-[#3f3328]">{editCopyId.copyId}</span>
+            </p>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleRenameCopyId();
+              }}
+              className="space-y-4 ink-text"
+            >
+              <div>
+                <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                  {t.copies.editModal.label} *
+                </label>
+                <input
+                  type="text"
+                  id="edit-copy-id-input"
+                  placeholder={t.copies.editModal.placeholder}
+                  value={editCopyId.newId}
+                  autoFocus
+                  onChange={(e) => {
+                    const val = e.target.value.toUpperCase();
+                    setEditCopyId((prev) => prev ? { ...prev, newId: val, error: null } : null);
+                  }}
+                  className={`w-full px-4 py-2.5 border rounded-sm focus:ring-2 focus:border-transparent outline-none transition-colors font-mono ${
+                    editCopyId.error
+                      ? "border-red-500 focus:ring-red-500 bg-[#fdf2f2] text-red-900"
+                      : "border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] focus:ring-[#6e5d4a]"
+                  }`}
+                />
+                {editCopyId.error && (
+                  <p className="text-xs text-red-600 mt-1 font-medium">
+                    {editCopyId.error}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setEditCopyId(null)}
+                  disabled={isPending}
+                  className="flex-1 px-4 py-2.5 border border-[#8a7966] text-[#4f4134] rounded-sm hover:bg-[#eadcc8] disabled:opacity-55 transition-colors font-medium ink-text"
+                >
+                  {t.copies.editModal.cancel}
+                </button>
+                <button
+                  type="submit"
+                  disabled={
+                    isPending ||
+                    !editCopyId.newId.trim() ||
+                    editCopyId.newId.trim().toUpperCase() === editCopyId.copyId
+                  }
+                  className="flex-1 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 disabled:cursor-not-allowed transition-colors font-medium ink-text"
+                >
+                  {isPending ? "..." : t.copies.editModal.save}
                 </button>
               </div>
             </form>

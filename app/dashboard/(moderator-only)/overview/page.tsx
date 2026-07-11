@@ -386,6 +386,12 @@ export default async function Overview() {
                 total={stats.totalCopies}
                 color="bg-[#5a7ab5]"
               />
+              <BarRow
+                label={t.overview.stats.damaged}
+                value={stats.damagedCopies}
+                total={stats.totalCopies}
+                color="bg-[#c4614a]"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4 pt-3 border-t border-[#d2bfa5]">
@@ -394,16 +400,13 @@ export default async function Overview() {
                   {t.overview.stats.books}
                 </p>
                 <div className="space-y-1.5 text-sm ink-text">
-                  {[
-                    [t.overview.sections.syllabus, stats.syllabusBooks],
-                    [t.overview.stats.general, stats.generalBooks],
-                  ].map(([l, v]) => (
+                  {stats.booksByCategory.map(({ name, count }) => (
                     <div
-                      key={String(l)}
+                      key={name}
                       className="flex justify-between text-[#3f3328]"
                     >
-                      <span>{l}</span>
-                      <span className="font-bold">{v}</span>
+                      <span>{name}</span>
+                      <span className="font-bold">{count}</span>
                     </div>
                   ))}
                 </div>
@@ -496,9 +499,9 @@ export default async function Overview() {
                     </p>
                     <p className="text-xs text-[#7a6a5a] ink-text flex items-center gap-1.5">
                       {b.author}
-                      {b.is_syllabus && (
+                      {b.category_name && (
                         <span className="px-1.5 py-0.5 text-[9px] font-semibold border border-[#8aa06f] bg-[#eef5e9] text-[#3d5c2e] rounded-sm">
-                          {t.overview.sections.syllabus}
+                          {b.category_name}
                         </span>
                       )}
                     </p>
@@ -570,7 +573,7 @@ export default async function Overview() {
                         <p className="truncate">{tx.book?.title}</p>
                       </td>
                       <td className="px-4 sm:px-5 py-3 text-[#5a4b3f]">
-                        {tx.copy ? `#${tx.copy.copy_number}` : "—"}
+                        {tx.copy_id || "—"}
                       </td>
                       <td className="px-4 sm:px-5 py-3 text-[#5a4b3f] whitespace-nowrap">
                         {fmtDate(tx.due_date, language)}
@@ -719,7 +722,7 @@ export default async function Overview() {
                       <p className="truncate">{tx.book?.title}</p>
                     </td>
                     <td className="px-4 sm:px-5 py-3 text-[#5a4b3f]">
-                      {tx.copy ? `#${tx.copy.copy_number}` : "—"}
+                      {tx.copy_id || "—"}
                     </td>
                     <td className="px-4 sm:px-5 py-3 text-[#5a4b3f] whitespace-nowrap">
                       {fmtDate(tx.request_date, language)}

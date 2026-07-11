@@ -173,6 +173,7 @@ export interface OverviewStats {
   totalBooks: number;
   syllabusBooks: number;
   generalBooks: number;
+  booksByCategory: { name: string; count: number }[];
   totalCopies: number;
   availableCopies: number;
   borrowedCopies: number;
@@ -201,6 +202,7 @@ export interface PopularBook {
   title: string;
   author: string;
   is_syllabus: boolean;
+  category_name?: string;
   totalBorrows: number;
 }
 

@@ -155,8 +155,8 @@ export default function HistoryClient({ transactions, pdfSubmissions, initialFil
     else router.replace(`${pathname}?filter=${f}`, { scroll: false });
   };
 
-  // Show all transactions (both borrow and return)
-  const borrowTransactions = transactions;
+  // Show transactions, but hide completed returns since the completed borrow encapsulates the full lifecycle
+  const borrowTransactions = transactions.filter(tx => !(tx.type === "return" && tx.status === "completed"));
 
   const filteredBorrows = useMemo(() => {
     const q = borrowSearch.toLowerCase().trim();

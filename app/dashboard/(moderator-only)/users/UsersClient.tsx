@@ -3,7 +3,7 @@
 import Avatar from "@/components/Avatar";
 import { RankBadge } from "@/components/ui/rank-badge";
 import { useTranslation } from "@/lib/i18n/context";
-import type { UserWithStats } from "@/types/library";
+import type { Category, UserWithStats } from "@/types/library";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
@@ -22,6 +22,7 @@ type SortDir = "asc" | "desc";
 
 interface Props {
   users: UserWithStats[];
+  categories: Category[];
 }
 
 function getInitials(name: string): string {
@@ -48,7 +49,7 @@ function VerificationBadge({ verified }: { verified: boolean }) {
   );
 }
 
-export default function UsersClient({ users }: Props) {
+export default function UsersClient({ users, categories }: Props) {
   const { t, language } = useTranslation();
   const [tab, setTab] = useState<Tab>("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -56,6 +57,9 @@ export default function UsersClient({ users }: Props) {
   const [thanaFilter, setThanaFilter] = useState<string>("all");
   const [sortField, setSortField] = useState<SortField>("joinDate");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
+    categories[0]?.id ?? ""
+  );
 
   const uniqueRanks = useMemo(() => {
     const ranks = new Map<string, string>();
@@ -125,17 +129,22 @@ export default function UsersClient({ users }: Props) {
         cmp =
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       } else if (sortField === "progress") {
-        let pa = a.syllabusTotal > 0 ? a.syllabusCompleted / a.syllabusTotal : 0;
-        let pb = b.syllabusTotal > 0 ? b.syllabusCompleted / b.syllabusTotal : 0;
+        const catA = a.categoryProgress.find(c => c.categoryId === selectedCategoryId);
+        const catB = b.categoryProgress.find(c => c.categoryId === selectedCategoryId);
+        let pa = catA && catA.total > 0 ? catA.completed / catA.total : 0;
+        let pb = catB && catB.total > 0 ? catB.completed / catB.total : 0;
         cmp = pa - pb;
       } else if (sortField === "rank") {
         const ra = a.rank?.name ?? t.users.filters.noRank;
         const rb = b.rank?.name ?? t.users.filters.noRank;
         cmp = ra.localeCompare(rb);
       }
+      if (cmp === 0) {
+        return a.full_name.localeCompare(b.full_name, language === "bn" ? "bn" : "en");
+      }
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [baseUsers, searchTerm, rankFilter, thanaFilter, sortField, sortDir, t.users.filters.noRank]);
+  }, [baseUsers, searchTerm, rankFilter, thanaFilter, sortField, sortDir, t.users.filters.noRank, selectedCategoryId]);
 
   const tabCounts = {
     all: users.length,
@@ -266,6 +275,25 @@ export default function UsersClient({ users }: Props) {
                 </select>
               </SelectWrapper>
 
+              {categories.length > 0 && (
+                <SelectWrapper>
+                  <select
+                    value={selectedCategoryId}
+                    onChange={(e) => {
+                      setSelectedCategoryId(e.target.value);
+                      setSortField("progress");
+                    }}
+                    className={selectClass}
+                  >
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} {t.users.filters.sortBy.progress}
+                      </option>
+                    ))}
+                  </select>
+                </SelectWrapper>
+              )}
+
               <div className="flex items-center gap-2">
                 <SelectWrapper>
                   <select
@@ -315,7 +343,7 @@ export default function UsersClient({ users }: Props) {
                   {t.users.table.rank}
                 </th>
                 <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
-                  {t.users.table.progress}
+                  {categories.find(c => c.id === selectedCategoryId)?.name ?? t.users.table.progress}
                 </th>
                 <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
                   {t.users.table.overdue}
@@ -327,9 +355,10 @@ export default function UsersClient({ users }: Props) {
             </thead>
             <tbody>
               {filteredUsers.map((user) => {
-                let pct = user.syllabusTotal > 0 ? Math.round((user.syllabusCompleted / user.syllabusTotal) * 100) : 0;
-                let completed = user.syllabusCompleted;
-                let total = user.syllabusTotal;
+                const cat = user.categoryProgress.find(c => c.categoryId === selectedCategoryId);
+                const completed = cat?.completed ?? 0;
+                const total = cat?.total ?? 0;
+                let pct = total > 0 ? Math.round((completed / total) * 100) : 0;
 
                 return (
                   <tr
