@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 import asyncio
+import csv
+import io
 import os
+import sqlite3
 import subprocess
 import sys
 from datetime import datetime
@@ -24,11 +27,7 @@ API_HASH = os.environ.get("API_HASH")
 MAX_RETRIES = 5
 RETRY_DELAY_SECONDS = 10
 
-# Supabase free-tier projects auto-pause after 7 days without database
-# activity, and a read-only pg_dump connection alone does not reset that
-# timer - only an actual write (INSERT/UPDATE/DELETE) does. This SQL creates
-# a small dedicated table (capped at exactly one row) and upserts a
-# timestamp into it, purely to register real write activity.
+# Supabase free-tier auto-pause prevention keepalive script
 KEEPALIVE_SQL = """
 CREATE TABLE IF NOT EXISTS _backup_keepalive (
     id integer PRIMARY KEY DEFAULT 1,
@@ -46,7 +45,7 @@ SET last_ping = now(), ping_count = _backup_keepalive.ping_count + 1;
 def run_pg_dump(command, file_path):
     print(f"Starting backup -> {file_path}")
     try:
-        result = subprocess.run(
+        subprocess.run(
             command,
             capture_output=True,
             text=True,
@@ -63,13 +62,6 @@ def run_pg_dump(command, file_path):
 
 
 def keepDatabaseAlive():
-    """
-    Run a lightweight write against the database so Supabase registers real
-    activity and doesn't auto-pause the project after 7 days of inactivity.
-    Uses psql, which ships alongside pg_dump in the postgresql-client
-    package, so no extra dependency is needed. Failure here is non-fatal -
-    it should never block an otherwise-successful backup.
-    """
     if not DB_URL:
         print("WARNING: DATABASE_URL not set. Skipping keepalive ping.")
         return
@@ -77,18 +69,79 @@ def keepDatabaseAlive():
     print("Pinging database (keepalive write) to prevent Supabase auto-pause...")
     pingCommand = ["psql", DB_URL, "-v", "ON_ERROR_STOP=1", "-c", KEEPALIVE_SQL]
     try:
-        subprocess.run(
-            pingCommand,
-            capture_output=True,
-            text=True,
-            check=True,
-        )
+        subprocess.run(pingCommand, capture_output=True, text=True, check=True)
         print("Keepalive ping successful.")
     except subprocess.CalledProcessError as pingError:
         print("WARNING: Keepalive ping failed.")
         print(pingError.stderr)
     except FileNotFoundError:
-        print("WARNING: psql not found. Install postgresql-client to enable the keepalive ping.")
+        print("WARNING: psql not found. Install postgresql-client to enable keepalive.")
+
+
+def create_sqlite_backup(db_url, sqlite_path):
+    """
+    Connects to Postgres, gets all public tables, dumps their data as CSV, 
+    and writes them into a native SQLite database on the fly.
+    """
+    print(f"Starting native SQLite generation -> {sqlite_path}")
+    try:
+        # 1. Get a list of all tables in the public schema
+        table_cmd = [
+            "psql", db_url, "-A", "-t",
+            "-c", "SELECT tablename FROM pg_tables WHERE schemaname='public';"
+        ]
+        table_res = subprocess.run(table_cmd, capture_output=True, text=True, check=True)
+        tables = [t.strip() for t in table_res.stdout.splitlines() if t.strip()]
+
+        if not tables:
+            print("No public tables found to convert to SQLite.")
+            return False
+
+        # 2. Connect to the local SQLite database
+        conn = sqlite3.connect(sqlite_path)
+        cursor = conn.cursor()
+
+        for table in tables:
+            # Tell Postgres to output the table data directly as CSV
+            csv_cmd = [
+                "psql", db_url,
+                "-c", f'COPY "{table}" TO STDOUT WITH CSV HEADER'
+            ]
+            csv_res = subprocess.run(csv_cmd, capture_output=True, text=True, check=True)
+            
+            csv_data = csv_res.stdout
+            if not csv_data.strip(): continue # Skip completely empty tables
+                
+            reader = csv.reader(io.StringIO(csv_data))
+            try:
+                headers = next(reader)
+            except StopIteration:
+                continue
+            
+            if not headers: continue
+
+            # Create SQLite table schema dynamically (using TEXT for all cols for ease of browsing)
+            cols_def = ", ".join([f'"{h}" TEXT' for h in headers]) 
+            cursor.execute(f'DROP TABLE IF EXISTS "{table}"')
+            cursor.execute(f'CREATE TABLE "{table}" ({cols_def})')
+
+            # Insert all CSV data into SQLite
+            placeholders = ", ".join(["?"] * len(headers))
+            insert_sql = f'INSERT INTO "{table}" VALUES ({placeholders})'
+            
+            rows = [row for row in reader]
+            if rows:
+                cursor.executemany(insert_sql, rows)
+            
+        conn.commit()
+        conn.close()
+        print(f"Successfully generated native SQLite DB: {os.path.basename(sqlite_path)}")
+        return True
+    except Exception as e:
+        print(f"ERROR: Failed to generate SQLite db: {e}")
+        if isinstance(e, subprocess.CalledProcessError):
+            print("psql error:", getattr(e, 'stderr', ''))
+        return False
 
 
 def runBackup():
@@ -97,16 +150,14 @@ def runBackup():
         sys.exit(1)
 
     os.makedirs(BACKUP_DIR, exist_ok=True)
-
-    # Keepalive write runs first and on its own, so activity is registered
-    # with Supabase even if pg_dump or the Telegram upload fails afterward
     keepDatabaseAlive()
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     
-    # Define file paths
+    # Define file paths for ALL THREE formats
     dumpFilePath = os.path.join(BACKUP_DIR, f"supabase_backup_{timestamp}.dump")
     sqlFilePath = os.path.join(BACKUP_DIR, f"supabase_backup_{timestamp}.sql")
+    sqliteFilePath = os.path.join(BACKUP_DIR, f"supabase_backup_{timestamp}.sqlite")
 
     # Command 1: Custom binary format (.dump) - Best for database restorations
     dumpCommand = [
@@ -114,23 +165,30 @@ def runBackup():
         "--no-owner", "--no-privileges", "-v"
     ]
     
-    # Command 2: Plain text format (.sql) - Human readable, editable in VS Code
+    # Command 2: Plain text format (.sql) WITH INSERTS for easier parsing
     sqlCommand = [
         "pg_dump", DB_URL, "-f", sqlFilePath,
-        "--no-owner", "--no-privileges", "-v"
+        "--no-owner", "--no-privileges", "--inserts", "-v"
     ]
 
-    # Run both backups
+    # Generate Postgres formats
     run_pg_dump(dumpCommand, dumpFilePath)
     run_pg_dump(sqlCommand, sqlFilePath)
 
-    # Send both to Telegram
-    asyncio.run(sendToTelegram([dumpFilePath, sqlFilePath]))
+    # Generate SQLite format dynamically using Python
+    sqlite_success = create_sqlite_backup(DB_URL, sqliteFilePath)
+
+    # Collect successful files
+    files_to_send = [dumpFilePath, sqlFilePath]
+    if sqlite_success:
+        files_to_send.append(sqliteFilePath)
+
+    # Send all files together to Telegram
+    asyncio.run(sendToTelegram(files_to_send))
     cleanOldBackups()
 
 
 async def sendToTelegram(filePaths):
-    """Send backup files to a Telegram chat using Telethon, with retry logic."""
     if (not API_ID or not API_HASH or not BOT_TOKEN or not CHAT_ID or 
         API_ID == "..." or API_HASH == "..."):
         print("WARNING: Telegram credentials missing. Skipping upload.")
@@ -146,13 +204,19 @@ async def sendToTelegram(filePaths):
     client = TelegramClient(StringSession(), api_id_int, API_HASH)
     await client.start(bot_token=BOT_TOKEN) # type: ignore
 
-    # Build one caption per file - Telethon shows each caption on its
-    # matching item once the group is sent as a single album/message.
     captions = []
     for filePath in filePaths:
         fileName = os.path.basename(filePath)
         fileSizeMb = os.path.getsize(filePath) / (1024 * 1024)
-        fileType = "📄 Plain Text (Human Readable)" if fileName.endswith(".sql") else "📦 Binary (Best for DB Restore)"
+        
+        # Label the specific file types nicely in Telegram
+        if fileName.endswith(".sql"):
+            fileType = "📄 Plain Text (SQL Inserts)"
+        elif fileName.endswith(".sqlite"):
+            fileType = "🗄️ Native SQLite (Open in DB Browser)"
+        else:
+            fileType = "📦 Binary (Best for Postgres Restore)"
+
         captions.append(
             f"<b>Supabase Backup</b>\n"
             f"<b>Type:</b> {fileType}\n"
@@ -164,8 +228,6 @@ async def sendToTelegram(filePaths):
     lastError = None
     uploadSucceeded = False
 
-    # Send all files together in one call so Telegram groups them into a
-    # single message (album) instead of one message per file.
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             fileNames = ", ".join(os.path.basename(f) for f in filePaths)
@@ -213,11 +275,8 @@ def cleanOldBackups():
     if deletedCount:
         print(f"Removed {deletedCount} old backup files.")
 
+
 if __name__ == "__main__":
-    # Run with `--ping-only` to do just the keepalive write without a full
-    # backup - useful for a more frequent cron entry (e.g. daily) alongside
-    # a heavier backup schedule (e.g. weekly), since only writes reset
-    # Supabase's pause timer
     if len(sys.argv) > 1 and sys.argv[1] == "--ping-only":
         keepDatabaseAlive()
     else:
