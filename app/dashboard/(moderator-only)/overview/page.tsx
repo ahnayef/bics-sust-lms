@@ -79,21 +79,31 @@ function StatCard({
 
   const inner = (
     <div
-      className={`border rounded-sm p-3 sm:p-4 transition-colors h-full ${cls}`}
+      className={`border rounded-xl p-2.5 sm:p-4 transition-colors h-full flex flex-col justify-between ${cls}`}
     >
-      <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight">
+      <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight truncate">
         {label}
       </p>
       <p
-        className={`text-xl sm:text-2xl font-bold ink-title mt-1 leading-none ${valCls}`}
+        className={`text-lg sm:text-2xl font-bold ink-title mt-1 leading-none ${valCls}`}
       >
         {value}
       </p>
-      {sub && <p className="text-[10px] text-[#7a6a5a] ink-text mt-1">{sub}</p>}
+      {sub && (
+        <p className="text-[9px] sm:text-[10px] text-[#7a6a5a] ink-text mt-1 truncate">
+          {sub}
+        </p>
+      )}
     </div>
   );
 
-  return href ? <Link href={href}>{inner}</Link> : <div>{inner}</div>;
+  return href ? (
+    <Link href={href} className="block h-full">
+      {inner}
+    </Link>
+  ) : (
+    <div className="h-full">{inner}</div>
+  );
 }
 
 function SectionHeader({
@@ -106,16 +116,16 @@ function SectionHeader({
   hrefLabel?: string;
 }) {
   return (
-    <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-[#7d6d5a]">
-      <h3 className="font-bold text-[#221910] ink-title uppercase tracking-wider text-xs sm:text-sm">
+    <div className="flex items-center justify-between px-3.5 sm:px-5 py-2.5 sm:py-3.5 border-b border-[#7d6d5a]">
+      <h3 className="font-bold text-[#221910] ink-title uppercase tracking-wider text-xs sm:text-sm truncate">
         {title}
       </h3>
       {href && (
         <Link
           href={href}
-          className="text-[10px] sm:text-xs font-bold text-[#5c4f42] hover:text-[#221910] flex items-center gap-1.5 transition-colors uppercase tracking-widest"
+          className="text-[10px] sm:text-xs font-bold text-[#5c4f42] hover:text-[#221910] flex items-center gap-1 transition-colors uppercase tracking-wider shrink-0 ml-2"
         >
-          {hrefLabel} <FaArrowRight className="w-2 h-2" />
+          <span>{hrefLabel}</span> <FaArrowRight className="w-2 h-2" />
         </Link>
       )}
     </div>
@@ -130,12 +140,12 @@ function Avatar({ url, name }: { url: string | null; name: string }) {
         alt={name}
         width={32}
         height={32}
-        className="w-8 h-8 rounded-full border border-[#8a7966] object-cover shrink-0"
+        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-[#8a7966] object-cover shrink-0"
       />
     );
   }
   return (
-    <div className="w-8 h-8 rounded-full bg-[#d9cbb7] border border-[#8a7966] flex items-center justify-center text-[10px] font-bold text-[#4a3e33] shrink-0">
+    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#d9cbb7] border border-[#8a7966] flex items-center justify-center text-[10px] font-bold text-[#4a3e33] shrink-0">
       {getInitials(name)}
     </div>
   );
@@ -241,81 +251,85 @@ export default async function Overview() {
   };
 
   return (
-    <div className="space-y-5 sm:space-y-6">
-      {/* ── Sub-Navigation for Circulation Hub ─────────────────────────── */}
-      <CirculationNav />
+    <div className="space-y-3 sm:space-y-5">
+      {/* ── Sub-Navigation for Circulation Hub (Desktop/Tablet) ─────────── */}
+      <div className="hidden md:block">
+        <CirculationNav />
+      </div>
 
       {/* ── Action Center: Needs Your Attention (Zero Training!) ──────── */}
       {urgentCount > 0 && (
-        <section className="bg-[#fce8e4] border-2 border-[#d0604a] rounded-xl p-4 sm:p-5 shadow-xs">
-          <div className="flex items-center gap-2 mb-3">
-            <FaExclamationTriangle className="w-5 h-5 text-[#8b2c1a]" />
-            <h2 className="text-sm sm:text-base font-bold text-[#8b2c1a] ink-title uppercase tracking-wider">
-              Needs Your Immediate Attention ({urgentCount})
+        <section className="bg-[#fce8e4] border-2 border-[#d0604a] rounded-xl p-3 sm:p-5 shadow-xs">
+          <div className="flex items-center gap-2 mb-2.5 sm:mb-3">
+            <FaExclamationTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-[#8b2c1a] shrink-0" />
+            <h2 className="text-xs sm:text-base font-bold text-[#8b2c1a] ink-title uppercase tracking-wider truncate">
+              {language === "bn"
+                ? `জরুরি মনোযোগ প্রয়োজন (${urgentCount})`
+                : `Needs Your Immediate Attention (${urgentCount})`}
             </h2>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
             {stats.pendingBorrowRequests > 0 && (
               <Link
                 href="/dashboard/transactions?tab=pending"
-                className="p-3 bg-white/80 hover:bg-white rounded-lg border border-[#d0604a]/40 text-center transition-all shadow-xs group"
+                className="p-2.5 sm:p-3 bg-white/80 hover:bg-white rounded-lg border border-[#d0604a]/40 text-center transition-all shadow-xs group"
               >
-                <span className="text-2xl font-bold text-[#8b2c1a] block leading-none">
+                <span className="text-xl sm:text-2xl font-bold text-[#8b2c1a] block leading-none">
                   {stats.pendingBorrowRequests}
                 </span>
-                <span className="text-xs font-semibold text-[#221910] mt-1 block">
-                  Borrow Requests
+                <span className="text-[11px] sm:text-xs font-semibold text-[#221910] mt-1 block truncate">
+                  {language === "bn" ? "ধার নেওয়ার আবেদন" : "Borrow Requests"}
                 </span>
-                <span className="text-[10px] text-[#8b2c1a] font-bold group-hover:underline">
-                  Approve now →
+                <span className="text-[9px] sm:text-[10px] text-[#8b2c1a] font-bold group-hover:underline block mt-0.5">
+                  {language === "bn" ? "অনুমোদন করুন →" : "Approve now →"}
                 </span>
               </Link>
             )}
             {stats.pendingReturnRequests > 0 && (
               <Link
                 href="/dashboard/transactions?tab=pending"
-                className="p-3 bg-white/80 hover:bg-white rounded-lg border border-[#d0604a]/40 text-center transition-all shadow-xs group"
+                className="p-2.5 sm:p-3 bg-white/80 hover:bg-white rounded-lg border border-[#d0604a]/40 text-center transition-all shadow-xs group"
               >
-                <span className="text-2xl font-bold text-[#9a3412] block leading-none">
+                <span className="text-xl sm:text-2xl font-bold text-[#9a3412] block leading-none">
                   {stats.pendingReturnRequests}
                 </span>
-                <span className="text-xs font-semibold text-[#221910] mt-1 block">
-                  Return Requests
+                <span className="text-[11px] sm:text-xs font-semibold text-[#221910] mt-1 block truncate">
+                  {language === "bn" ? "ফেরতের আবেদন" : "Return Requests"}
                 </span>
-                <span className="text-[10px] text-[#9a3412] font-bold group-hover:underline">
-                  Verify now →
+                <span className="text-[9px] sm:text-[10px] text-[#9a3412] font-bold group-hover:underline block mt-0.5">
+                  {language === "bn" ? "যাচাই করুন →" : "Verify now →"}
                 </span>
               </Link>
             )}
             {stats.overdueCount > 0 && (
               <Link
                 href="/dashboard/transactions?tab=active"
-                className="p-3 bg-white/80 hover:bg-white rounded-lg border border-[#d0604a]/40 text-center transition-all shadow-xs group"
+                className="p-2.5 sm:p-3 bg-white/80 hover:bg-white rounded-lg border border-[#d0604a]/40 text-center transition-all shadow-xs group"
               >
-                <span className="text-2xl font-bold text-[#8b2c1a] block leading-none">
+                <span className="text-xl sm:text-2xl font-bold text-[#8b2c1a] block leading-none">
                   {stats.overdueCount}
                 </span>
-                <span className="text-xs font-semibold text-[#221910] mt-1 block">
-                  Overdue Books
+                <span className="text-[11px] sm:text-xs font-semibold text-[#221910] mt-1 block truncate">
+                  {language === "bn" ? "মেয়াদোত্তীর্ণ বই" : "Overdue Books"}
                 </span>
-                <span className="text-[10px] text-[#8b2c1a] font-bold group-hover:underline">
-                  Inspect →
+                <span className="text-[9px] sm:text-[10px] text-[#8b2c1a] font-bold group-hover:underline block mt-0.5">
+                  {language === "bn" ? "দেখুন →" : "Inspect →"}
                 </span>
               </Link>
             )}
             {stats.pendingPdfSubmissions > 0 && (
               <Link
                 href="/dashboard/transactions?tab=pdf"
-                className="p-3 bg-white/80 hover:bg-white rounded-lg border border-[#d0604a]/40 text-center transition-all shadow-xs group"
+                className="p-2.5 sm:p-3 bg-white/80 hover:bg-white rounded-lg border border-[#d0604a]/40 text-center transition-all shadow-xs group"
               >
-                <span className="text-2xl font-bold text-[#234b7d] block leading-none">
+                <span className="text-xl sm:text-2xl font-bold text-[#234b7d] block leading-none">
                   {stats.pendingPdfSubmissions}
                 </span>
-                <span className="text-xs font-semibold text-[#221910] mt-1 block">
-                  PDF Reviews
+                <span className="text-[11px] sm:text-xs font-semibold text-[#221910] mt-1 block truncate">
+                  {language === "bn" ? "পিডিএফ রিভিউ" : "PDF Reviews"}
                 </span>
-                <span className="text-[10px] text-[#234b7d] font-bold group-hover:underline">
-                  Review now →
+                <span className="text-[9px] sm:text-[10px] text-[#234b7d] font-bold group-hover:underline block mt-0.5">
+                  {language === "bn" ? "রিভিউ করুন →" : "Review now →"}
                 </span>
               </Link>
             )}
@@ -324,56 +338,64 @@ export default async function Overview() {
       )}
 
       {/* ── Staff Quick Ops Bar ────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
         <Link
           href="/dashboard/transactions?tab=pending"
-          className="p-3 rounded-xl bg-[#3f3328] text-[#f4e8d4] text-xs font-bold hover:bg-[#4a3d31] transition-all flex items-center justify-center gap-2 shadow-xs"
+          className="p-2.5 sm:p-3 rounded-xl bg-[#3f3328] text-[#f4e8d4] text-[11px] sm:text-xs font-bold hover:bg-[#4a3d31] transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-xs"
         >
-          <FaHourglassHalf className="w-3.5 h-3.5" />
-          <span>Approve Requests</span>
+          <FaHourglassHalf className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">
+            {language === "bn" ? "আবেদন অনুমোদন" : "Approve Requests"}
+          </span>
         </Link>
         <Link
           href="/dashboard/transactions?tab=active"
-          className="p-3 rounded-xl bg-[#eadcc8] text-[#221910] text-xs font-bold hover:bg-[#ded0bc] transition-all flex items-center justify-center gap-2 shadow-xs border border-[#8a7966]/40"
+          className="p-2.5 sm:p-3 rounded-xl bg-[#eadcc8] text-[#221910] text-[11px] sm:text-xs font-bold hover:bg-[#ded0bc] transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-xs border border-[#8a7966]/40"
         >
-          <FaExchangeAlt className="w-3.5 h-3.5" />
-          <span>Return Desk</span>
+          <FaExchangeAlt className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">
+            {language === "bn" ? "বই ফেরত নিন" : "Return Desk"}
+          </span>
         </Link>
         <Link
           href="/dashboard/books"
-          className="p-3 rounded-xl bg-[#eadcc8] text-[#221910] text-xs font-bold hover:bg-[#ded0bc] transition-all flex items-center justify-center gap-2 shadow-xs border border-[#8a7966]/40"
+          className="p-2.5 sm:p-3 rounded-xl bg-[#eadcc8] text-[#221910] text-[11px] sm:text-xs font-bold hover:bg-[#ded0bc] transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-xs border border-[#8a7966]/40"
         >
-          <FaBook className="w-3.5 h-3.5" />
-          <span>Add / Edit Books</span>
+          <FaBook className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">
+            {language === "bn" ? "বই সংযোজন" : "Add / Edit Books"}
+          </span>
         </Link>
         <Link
           href="/dashboard/users"
-          className="p-3 rounded-xl bg-[#eadcc8] text-[#221910] text-xs font-bold hover:bg-[#ded0bc] transition-all flex items-center justify-center gap-2 shadow-xs border border-[#8a7966]/40"
+          className="p-2.5 sm:p-3 rounded-xl bg-[#eadcc8] text-[#221910] text-[11px] sm:text-xs font-bold hover:bg-[#ded0bc] transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-xs border border-[#8a7966]/40"
         >
-          <FaUsers className="w-3.5 h-3.5" />
-          <span>Verify Members</span>
+          <FaUsers className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">
+            {language === "bn" ? "সদস্য যাচাই" : "Verify Members"}
+          </span>
         </Link>
       </div>
 
       {/* ── Header + Key Stats ─────────────────────────────────────────── */}
-      <section className="dashboard-surface tron-border rounded-xl p-5 sm:p-6 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
+      <section className="dashboard-surface tron-border rounded-xl p-3.5 sm:p-5 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-3 mb-3.5 sm:mb-5">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
+            <h1 className="text-base sm:text-2xl font-bold text-[#221910] ink-title">
               {t.overview.header.title}
             </h1>
-            <p className="text-sm text-[#5c4f42] mt-1 ink-text">
+            <p className="text-[11px] sm:text-sm text-[#5c4f42] mt-0.5 ink-text">
               {t.overview.header.subtitle}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
             <Link
               href="/dashboard/transactions"
-              className="inline-flex items-center gap-2 px-3 py-1.5 border border-[#4e4033] bg-[#3f3328] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors text-xs font-medium rounded-lg ink-text"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#4e4033] bg-[#3f3328] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors text-xs font-medium rounded-lg ink-text"
             >
-              {t.overview.header.viewTransactions}{" "}
-              <FaArrowRight className="w-3 h-3" />
+              <span>{t.overview.header.viewTransactions}</span>
+              <FaArrowRight className="w-2.5 h-2.5" />
             </Link>
           </div>
         </div>
@@ -418,15 +440,15 @@ export default async function Overview() {
       </section>
 
       {/* ── Action Required + Collection Health ──────────────────────── */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-5">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-5">
         {/* Action Required */}
-        <section className="dashboard-surface tron-border rounded-sm">
+        <section className="dashboard-surface tron-border rounded-xl">
           <SectionHeader
             title={t.overview.sections.actionRequired}
             href="/dashboard/transactions"
             hrefLabel={t.overview.sections.openQueue}
           />
-          <div className="p-4 sm:p-5 space-y-2.5">
+          <div className="p-3 sm:p-5 space-y-2 sm:space-y-2.5">
             {[
               {
                 label: t.overview.actions.overdueBorrows,
@@ -460,24 +482,24 @@ export default async function Overview() {
               <Link
                 key={label}
                 href={`/dashboard/transactions?tab=${tab}`}
-                className={`flex items-center justify-between p-3 border rounded-sm transition-colors ${
+                className={`flex items-center justify-between p-2.5 sm:p-3 border rounded-lg transition-colors ${
                   urgent && count > 0
                     ? "border-[#c4614a] bg-[#fdf0ec] hover:bg-[#f9e6e1]"
                     : "border-[#c4b08a] bg-[#f8f1e6] hover:bg-[#ede3d4]"
                 }`}
               >
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2 sm:gap-2.5">
                   <Icon
                     className={`w-3.5 h-3.5 shrink-0 ${
                       urgent && count > 0 ? "text-[#c4614a]" : "text-[#7a6a5a]"
                     }`}
                   />
-                  <span className="text-sm ink-text text-[#3f3328]">
+                  <span className="text-xs sm:text-sm ink-text text-[#3f3328]">
                     {label}
                   </span>
                 </div>
                 <span
-                  className={`text-xl font-bold ink-title ${
+                  className={`text-lg sm:text-xl font-bold ink-title ${
                     urgent && count > 0 ? "text-[#9b3a25]" : "text-[#221910]"
                   }`}
                 >
@@ -489,11 +511,11 @@ export default async function Overview() {
         </section>
 
         {/* Collection Health */}
-        <section className="dashboard-surface tron-border rounded-sm">
+        <section className="dashboard-surface tron-border rounded-xl">
           <SectionHeader title={t.overview.sections.collectionHealth} />
-          <div className="p-4 sm:p-5 space-y-5">
-            <div className="space-y-2.5">
-              <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text font-semibold">
+          <div className="p-3 sm:p-5 space-y-4 sm:space-y-5">
+            <div className="space-y-2 sm:space-y-2.5">
+              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text font-semibold">
                 {t.overview.stats.copies}
               </p>
               <BarRow
@@ -516,12 +538,12 @@ export default async function Overview() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4 pt-3 border-t border-[#d2bfa5]">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 pt-3 border-t border-[#d2bfa5]">
               <div>
-                <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-2 ink-text font-semibold">
+                <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-2 ink-text font-semibold">
                   {t.overview.stats.books}
                 </p>
-                <div className="space-y-1.5 text-sm ink-text">
+                <div className="space-y-1 sm:space-y-1.5 text-xs sm:text-sm ink-text">
                   {stats.booksByCategory.map(({ name, count }) => (
                     <div
                       key={name}
@@ -534,10 +556,10 @@ export default async function Overview() {
                 </div>
               </div>
               <div>
-                <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-2 ink-text font-semibold">
+                <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] mb-2 ink-text font-semibold">
                   {t.overview.stats.members}
                 </p>
-                <div className="space-y-1.5 text-sm ink-text">
+                <div className="space-y-1 sm:space-y-1.5 text-xs sm:text-sm ink-text">
                   {[
                     [t.overview.stats.verified, stats.verifiedMembers],
                     [t.overview.stats.unverified, stats.unverifiedMembers],
@@ -558,15 +580,15 @@ export default async function Overview() {
       </div>
 
       {/* ── Top Borrowers + Popular Books ────────────────────────────── */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-5">
-        <section className="dashboard-surface tron-border rounded-sm">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-5">
+        <section className="dashboard-surface tron-border rounded-xl overflow-hidden">
           <SectionHeader
             title={t.overview.sections.topBorrowers}
             href="/dashboard/users"
             hrefLabel={t.common.viewAll}
           />
           {topMembers.length === 0 ? (
-            <p className="p-5 text-sm text-[#6a5a4c] ink-text">
+            <p className="p-4 sm:p-5 text-xs sm:text-sm text-[#6a5a4c] ink-text">
               {t.overview.empty.noBorrowHistory}
             </p>
           ) : (
@@ -575,21 +597,21 @@ export default async function Overview() {
                 <Link
                   key={m.id}
                   href={`/dashboard/users/${m.id}`}
-                  className="flex items-center gap-3 px-5 py-3.5 hover:bg-[#f4ebdc] transition-colors"
+                  className="flex items-center gap-2.5 sm:gap-3 px-3 sm:px-5 py-2.5 sm:py-3.5 hover:bg-[#f4ebdc] transition-colors"
                 >
-                  <span className="w-5 text-xs font-bold text-[#8a7966] ink-text shrink-0">
+                  <span className="w-4 sm:w-5 text-xs font-bold text-[#8a7966] ink-text shrink-0">
                     #{i + 1}
                   </span>
                   <Avatar url={m.avatar_url} name={m.full_name} />
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-[#2b2119] ink-text text-sm truncate">
+                    <p className="font-medium text-[#2b2119] ink-text text-xs sm:text-sm truncate">
                       {m.full_name}
                     </p>
-                    <p className="text-xs text-[#7a6a5a] ink-text">
+                    <p className="text-[11px] sm:text-xs text-[#7a6a5a] ink-text">
                       @{m.username}
                     </p>
                   </div>
-                  <span className="text-sm font-bold text-[#221910] ink-title shrink-0">
+                  <span className="text-xs sm:text-sm font-bold text-[#221910] ink-title shrink-0">
                     {m.totalBorrows}×
                   </span>
                 </Link>
@@ -598,37 +620,40 @@ export default async function Overview() {
           )}
         </section>
 
-        <section className="dashboard-surface tron-border rounded-sm">
+        <section className="dashboard-surface tron-border rounded-xl overflow-hidden">
           <SectionHeader
             title={t.overview.sections.mostBorrowedBooks}
             href="/dashboard/books"
             hrefLabel={t.common.viewAll}
           />
           {popularBooks.length === 0 ? (
-            <p className="p-5 text-sm text-[#6a5a4c] ink-text">
+            <p className="p-4 sm:p-5 text-xs sm:text-sm text-[#6a5a4c] ink-text">
               {t.overview.empty.noBorrowHistory}
             </p>
           ) : (
             <div className="divide-y divide-[#d2bfa5]">
               {popularBooks.map((b: PopularBook, i) => (
-                <div key={b.id} className="flex items-center gap-3 px-5 py-3.5">
-                  <span className="w-5 text-xs font-bold text-[#8a7966] ink-text shrink-0">
+                <div
+                  key={b.id}
+                  className="flex items-center gap-2.5 sm:gap-3 px-3 sm:px-5 py-2.5 sm:py-3.5"
+                >
+                  <span className="w-4 sm:w-5 text-xs font-bold text-[#8a7966] ink-text shrink-0">
                     #{i + 1}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-[#2b2119] ink-text text-sm truncate">
+                    <p className="font-medium text-[#2b2119] ink-text text-xs sm:text-sm truncate">
                       {b.title}
                     </p>
-                    <p className="text-xs text-[#7a6a5a] ink-text flex items-center gap-1.5">
-                      {b.author}
+                    <p className="text-[11px] sm:text-xs text-[#7a6a5a] ink-text flex items-center gap-1.5">
+                      <span className="truncate">{b.author}</span>
                       {b.category_name && (
-                        <span className="px-1.5 py-0.5 text-[9px] font-semibold border border-[#8aa06f] bg-[#eef5e9] text-[#3d5c2e] rounded-sm">
+                        <span className="px-1.5 py-0.5 text-[9px] font-semibold border border-[#8aa06f] bg-[#eef5e9] text-[#3d5c2e] rounded-md shrink-0">
                           {b.category_name}
                         </span>
                       )}
                     </p>
                   </div>
-                  <span className="text-sm font-bold text-[#221910] ink-title shrink-0">
+                  <span className="text-xs sm:text-sm font-bold text-[#221910] ink-title shrink-0">
                     {b.totalBorrows}×
                   </span>
                 </div>
@@ -641,7 +666,7 @@ export default async function Overview() {
       {/* ── Overdue Items ─────────────────────────────────────────────── */}
       {overdueItems.length > 0 && (
         <section
-          className="dashboard-surface tron-border rounded-sm overflow-hidden"
+          className="dashboard-surface tron-border rounded-xl overflow-hidden"
           style={{ borderColor: "#c4614a" }}
         >
           <SectionHeader
@@ -649,7 +674,53 @@ export default async function Overview() {
             href="/dashboard/transactions?tab=active"
             hrefLabel={t.overview.sections.manage}
           />
-          <div className="overflow-x-auto">
+          {/* Mobile Overdue Cards (block md:hidden) */}
+          <div className="block md:hidden divide-y divide-[#f0d4cc]">
+            {overdueItems.map((tx: Transaction) => {
+              const days = daysOverdue(tx.due_date);
+              return (
+                <div
+                  key={tx.id}
+                  className="p-3 space-y-2 hover:bg-[#fdf0ec] transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Avatar
+                        url={tx.user?.avatar_url ?? null}
+                        name={tx.user?.full_name ?? "?"}
+                      />
+                      <div className="min-w-0">
+                        <Link
+                          href={`/dashboard/users/${tx.user?.id}`}
+                          className="font-semibold text-xs text-[#2b2119] hover:underline truncate block"
+                        >
+                          {tx.user?.full_name}
+                        </Link>
+                        <span className="text-[10px] text-[#7a6a5a]">
+                          {tx.copy_id ? `Copy: ${tx.copy_id}` : ""}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="px-2 py-0.5 text-[11px] font-bold text-[#9b3a25] bg-[#fcdbd6] border border-[#d0604a] rounded-full shrink-0">
+                      {days}d {language === "bn" ? "বিলম্বে" : "overdue"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-[#5a4b3f] pt-0.5">
+                    <p className="truncate font-medium text-[#2b2119] flex-1 pr-2 text-xs">
+                      {tx.book?.title}
+                    </p>
+                    <span className="shrink-0 text-[10px] text-[#7a6a5a]">
+                      {t.overview.table.dueDate}:{" "}
+                      {fmtDate(tx.due_date, language)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop Overdue Table (hidden md:block) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm ink-text">
               <thead>
                 <tr className="bg-[#fce8e4] border-b border-[#d0604a]">
@@ -716,9 +787,9 @@ export default async function Overview() {
 
       {/* ── Pending Queues ────────────────────────────────────────────── */}
       {(pendingBorrows.length > 0 || pendingReturns.length > 0) && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-5">
           {pendingBorrows.length > 0 && (
-            <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
+            <section className="dashboard-surface tron-border rounded-xl overflow-hidden">
               <SectionHeader
                 title={`${t.overview.sections.borrowRequests} — ${pendingBorrows.length}`}
                 href="/dashboard/transactions?tab=pending"
@@ -728,7 +799,7 @@ export default async function Overview() {
                 {pendingBorrows.map((tx: Transaction) => (
                   <div
                     key={tx.id}
-                    className="flex items-center gap-3 px-5 py-3.5"
+                    className="flex items-center gap-2.5 sm:gap-3 px-3 sm:px-5 py-2.5 sm:py-3.5 hover:bg-[#f4ebdc] transition-colors"
                   >
                     <Avatar
                       url={tx.user?.avatar_url ?? null}
@@ -737,15 +808,15 @@ export default async function Overview() {
                     <div className="flex-1 min-w-0">
                       <Link
                         href={`/dashboard/users/${tx.user?.id}`}
-                        className="text-sm font-medium text-[#2b2119] ink-text truncate hover:underline hover:text-[#5a4b3f] transition-colors"
+                        className="text-xs sm:text-sm font-medium text-[#2b2119] ink-text truncate hover:underline hover:text-[#5a4b3f] transition-colors block"
                       >
                         {tx.user?.full_name}
                       </Link>
-                      <p className="text-xs text-[#7a6a5a] ink-text truncate">
+                      <p className="text-[11px] sm:text-xs text-[#7a6a5a] ink-text truncate">
                         {tx.book?.title}
                       </p>
                     </div>
-                    <p className="text-xs text-[#7a6a5a] ink-text whitespace-nowrap shrink-0">
+                    <p className="text-[10px] sm:text-xs text-[#7a6a5a] ink-text whitespace-nowrap shrink-0">
                       {fmtDate(tx.request_date, language)}
                     </p>
                   </div>
@@ -755,7 +826,7 @@ export default async function Overview() {
           )}
 
           {pendingReturns.length > 0 && (
-            <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
+            <section className="dashboard-surface tron-border rounded-xl overflow-hidden">
               <SectionHeader
                 title={`${t.overview.sections.returnRequests} — ${pendingReturns.length}`}
                 href="/dashboard/transactions?tab=pending"
@@ -765,7 +836,7 @@ export default async function Overview() {
                 {pendingReturns.map((tx: Transaction) => (
                   <div
                     key={tx.id}
-                    className="flex items-center gap-3 px-5 py-3.5"
+                    className="flex items-center gap-2.5 sm:gap-3 px-3 sm:px-5 py-2.5 sm:py-3.5 hover:bg-[#f4ebdc] transition-colors"
                   >
                     <Avatar
                       url={tx.user?.avatar_url ?? null}
@@ -774,15 +845,15 @@ export default async function Overview() {
                     <div className="flex-1 min-w-0">
                       <Link
                         href={`/dashboard/users/${tx.user?.id}`}
-                        className="text-sm font-medium text-[#2b2119] ink-text truncate hover:underline hover:text-[#5a4b3f] transition-colors"
+                        className="text-xs sm:text-sm font-medium text-[#2b2119] ink-text truncate hover:underline hover:text-[#5a4b3f] transition-colors block"
                       >
                         {tx.user?.full_name}
                       </Link>
-                      <p className="text-xs text-[#7a6a5a] ink-text truncate">
+                      <p className="text-[11px] sm:text-xs text-[#7a6a5a] ink-text truncate">
                         {tx.book?.title}
                       </p>
                     </div>
-                    <p className="text-xs text-[#7a6a5a] ink-text whitespace-nowrap shrink-0">
+                    <p className="text-[10px] sm:text-xs text-[#7a6a5a] ink-text whitespace-nowrap shrink-0">
                       {fmtDate(tx.request_date, language)}
                     </p>
                   </div>
@@ -794,86 +865,170 @@ export default async function Overview() {
       )}
 
       {/* ── Recent Activity ───────────────────────────────────────────── */}
-      <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
+      <section className="dashboard-surface tron-border rounded-xl overflow-hidden">
         <SectionHeader
           title={t.overview.sections.recentActivity}
           href="/dashboard/transactions?tab=history"
           hrefLabel={t.overview.header.viewTransactions}
         />
         {recentActivity.length === 0 ? (
-          <p className="p-5 text-sm text-[#6a5a4c] ink-text">
+          <p className="p-4 sm:p-5 text-xs sm:text-sm text-[#6a5a4c] ink-text">
             {t.overview.empty.noActivity}
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm ink-text">
-              <thead>
-                <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
-                  <TH>{t.overview.table.member}</TH>
-                  <TH>{t.overview.table.type}</TH>
-                  <TH>{t.overview.table.book}</TH>
-                  <TH>{t.overview.table.copy}</TH>
-                  <TH>{t.overview.table.date}</TH>
-                  <TH>{t.overview.table.status}</TH>
-                </tr>
-              </thead>
-              <tbody>
-                {recentActivity.map((tx: Transaction) => (
-                  <tr
-                    key={tx.id}
-                    className="border-b border-[#d2bfa5] hover:bg-[#f4ebdc] transition-colors"
-                  >
-                    <td className="px-4 sm:px-5 py-3">
-                      <div className="flex items-center gap-2">
-                        <Avatar
-                          url={tx.user?.avatar_url ?? null}
-                          name={tx.user?.full_name ?? "?"}
-                        />
+          <>
+            {/* Mobile Activity Cards (block md:hidden) */}
+            <div className="block md:hidden divide-y divide-[#d2bfa5]">
+              {recentActivity.map((tx: Transaction) => (
+                <div
+                  key={tx.id}
+                  className="p-3 space-y-1.5 hover:bg-[#f4ebdc] transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Avatar
+                        url={tx.user?.avatar_url ?? null}
+                        name={tx.user?.full_name ?? "?"}
+                      />
+                      <div className="min-w-0">
                         <Link
                           href={`/dashboard/users/${tx.user?.id}`}
-                          className="font-medium text-[#2b2119] hover:underline text-sm"
+                          className="font-semibold text-xs text-[#2b2119] hover:underline truncate block"
                         >
                           {tx.user?.full_name}
                         </Link>
+                        <span className="text-[10px] text-[#7a6a5a] capitalize">
+                          {tx.type === "borrow"
+                            ? t.history.table.borrowed
+                            : t.history.table.returned}
+                          {tx.copy_id ? ` • ${tx.copy_id}` : ""}
+                        </span>
                       </div>
-                    </td>
-                    <td className="px-4 sm:px-5 py-3 capitalize text-[#5a4b3f]">
-                      {tx.type === "borrow"
-                        ? t.history.table.borrowed
-                        : t.history.table.returned}
-                    </td>
-                    <td className="px-4 sm:px-5 py-3 text-[#3f3328] max-w-48">
-                      <p className="truncate">{tx.book?.title}</p>
-                    </td>
-                    <td className="px-4 sm:px-5 py-3 text-[#5a4b3f]">
-                      {tx.copy_id || "—"}
-                    </td>
-                    <td className="px-4 sm:px-5 py-3 text-[#5a4b3f] whitespace-nowrap">
+                    </div>
+                    <StatusPill status={tx.status} label={getStatusLabel(tx)} />
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-[#5a4b3f] pt-0.5">
+                    <p className="truncate font-medium text-[#2b2119] flex-1 pr-2 text-xs">
+                      {tx.book?.title}
+                    </p>
+                    <span className="shrink-0 text-[10px] text-[#7a6a5a]">
                       {fmtDate(tx.request_date, language)}
-                    </td>
-                    <td className="px-4 sm:px-5 py-3">
-                      <StatusPill
-                        status={tx.status}
-                        label={getStatusLabel(tx)}
-                      />
-                    </td>
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Activity Table (hidden md:block) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm ink-text">
+                <thead>
+                  <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
+                    <TH>{t.overview.table.member}</TH>
+                    <TH>{t.overview.table.type}</TH>
+                    <TH>{t.overview.table.book}</TH>
+                    <TH>{t.overview.table.copy}</TH>
+                    <TH>{t.overview.table.date}</TH>
+                    <TH>{t.overview.table.status}</TH>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {recentActivity.map((tx: Transaction) => (
+                    <tr
+                      key={tx.id}
+                      className="border-b border-[#d2bfa5] hover:bg-[#f4ebdc] transition-colors"
+                    >
+                      <td className="px-4 sm:px-5 py-3">
+                        <div className="flex items-center gap-2">
+                          <Avatar
+                            url={tx.user?.avatar_url ?? null}
+                            name={tx.user?.full_name ?? "?"}
+                          />
+                          <Link
+                            href={`/dashboard/users/${tx.user?.id}`}
+                            className="font-medium text-[#2b2119] hover:underline text-sm"
+                          >
+                            {tx.user?.full_name}
+                          </Link>
+                        </div>
+                      </td>
+                      <td className="px-4 sm:px-5 py-3 capitalize text-[#5a4b3f]">
+                        {tx.type === "borrow"
+                          ? t.history.table.borrowed
+                          : t.history.table.returned}
+                      </td>
+                      <td className="px-4 sm:px-5 py-3 text-[#3f3328] max-w-48">
+                        <p className="truncate">{tx.book?.title}</p>
+                      </td>
+                      <td className="px-4 sm:px-5 py-3 text-[#5a4b3f]">
+                        {tx.copy_id || "—"}
+                      </td>
+                      <td className="px-4 sm:px-5 py-3 text-[#5a4b3f] whitespace-nowrap">
+                        {fmtDate(tx.request_date, language)}
+                      </td>
+                      <td className="px-4 sm:px-5 py-3">
+                        <StatusPill
+                          status={tx.status}
+                          label={getStatusLabel(tx)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
 
       {/* ── Pending PDF Submissions ───────────────────────────────────── */}
       {pendingPdfs.length > 0 && (
-        <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
+        <section className="dashboard-surface tron-border rounded-xl overflow-hidden">
           <SectionHeader
             title={`${t.overview.sections.pendingPdfReviews} — ${pendingPdfs.length}`}
             href="/dashboard/transactions?tab=pdf"
             hrefLabel={t.overview.sections.review}
           />
-          <div className="overflow-x-auto">
+          {/* Mobile PDF Cards (block md:hidden) */}
+          <div className="block md:hidden divide-y divide-[#d2bfa5]">
+            {pendingPdfs.map((ps: PdfSubmission) => (
+              <div
+                key={ps.id}
+                className="p-3 space-y-1.5 hover:bg-[#f4ebdc] transition-colors"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Avatar
+                      url={ps.user?.avatar_url ?? null}
+                      name={ps.user?.full_name ?? "?"}
+                    />
+                    <Link
+                      href={`/dashboard/users/${ps.user?.id}`}
+                      className="font-semibold text-xs text-[#2b2119] hover:underline truncate"
+                    >
+                      {ps.user?.full_name}
+                    </Link>
+                  </div>
+                  <span className="text-[10px] text-[#7a6a5a] shrink-0">
+                    {fmtDate(ps.submitted_at, language)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-[#3f3328]">
+                  <p className="truncate font-medium flex-1">
+                    {ps.book?.title}
+                  </p>
+                  {ps.book?.is_syllabus && (
+                    <span className="px-1.5 py-0.5 text-[9px] font-semibold border border-[#8aa06f] bg-[#eef5e9] text-[#3d5c2e] rounded-md shrink-0">
+                      {t.overview.sections.syllabus}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop PDF Table (hidden md:block) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm ink-text">
               <thead>
                 <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
@@ -905,7 +1060,7 @@ export default async function Overview() {
                     <td className="px-4 sm:px-5 py-3 text-[#3f3328] max-w-48">
                       <p className="truncate">{ps.book?.title}</p>
                       {ps.book?.is_syllabus && (
-                        <span className="px-1.5 py-0.5 text-[9px] font-semibold border border-[#8aa06f] bg-[#eef5e9] text-[#3d5c2e] rounded-sm">
+                        <span className="px-1.5 py-0.5 text-[9px] font-semibold border border-[#8aa06f] bg-[#eef5e9] text-[#3d5c2e] rounded-md">
                           {t.overview.sections.syllabus}
                         </span>
                       )}
