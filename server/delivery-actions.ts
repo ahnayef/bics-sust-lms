@@ -97,24 +97,24 @@ export async function submitHomeDeliveryRequest(
     .map((b, index) => {
       const titleEsc = escapeTelegramHtml(b.title);
       const authorEsc = escapeTelegramHtml(b.author);
-      return `${index + 1}. 📖 <b>${titleEsc}</b>\n    ✍️ <i>${authorEsc}</i>`;
+      return `${index + 1}. <b>${titleEsc}</b>\n    <i>${authorEsc}</i>`;
     })
     .join("\n");
 
   const messageHtml = [
-    `🚚 <b>নতুন হোম ডেলিভারি অনুরোধ (Home Delivery Request)</b>`,
+    `<b>নতুন হোম ডেলিভারি অনুরোধ (Home Delivery Request)</b>`,
     `━━━━━━━━━━━━━━━━━━━━━━━━━`,
-    `👤 <b>সদস্য / Member:</b> ${memberNameEscaped} (@${usernameEscaped})`,
-    `📞 <b>মোবাইল / Phone:</b> <a href="tel:${phoneEscaped}">${phoneEscaped}</a>`,
-    `🏠 <b>ঠিকানা / Address:</b> ${addressEscaped}`,
-    `📍 <b>এলাকা / Thana:</b> ${thanaEscaped}`,
-    `🕒 <b>সময় / Time:</b> ${timeFormatted} (BD Time)`,
+    `<b>সদস্য / Member:</b> ${memberNameEscaped} (@${usernameEscaped})`,
+    `<b>মোবাইল / Phone:</b> <a href="tel:${phoneEscaped}">${phoneEscaped}</a>`,
+    `<b>ঠিকানা / Address:</b> ${addressEscaped}`,
+    `<b>এলাকা / Thana:</b> ${thanaEscaped}`,
+    `<b>সময় / Time:</b> ${timeFormatted} (BD Time)`,
     ``,
-    `📚 <b>অনুরোধকৃত বইসমূহ / Books (${requestedBooks.length} টি):</b>`,
+    `<b>অনুরোধকৃত বইসমূহ / Books (${requestedBooks.length} টি):</b>`,
     booksListHtml,
-    noteEscaped ? `\n📝 <b>অতিরিক্ত মন্তব্য / Note:</b>\n<i>${noteEscaped}</i>` : "",
+    noteEscaped ? `\n<b>অতিরিক্ত মন্তব্য / Note:</b>\n<i>${noteEscaped}</i>` : "",
     `━━━━━━━━━━━━━━━━━━━━━━━━━`,
-    `🔗 <a href="https://bics-sust-lms.vercel.app/dashboard/users/${userId}">সদস্য প্রোফাইল দেখুন (View Member Profile)</a>`,
+    `<a href="https://bics-sust-lms.vercel.app/dashboard/users/${userId}">সদস্য প্রোফাইল দেখুন (View Member Profile)</a>`,
   ]
     .filter(Boolean)
     .join("\n");
