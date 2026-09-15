@@ -63,9 +63,7 @@ export default function UsersClient({ users, categories }: Props) {
   const [thanaFilter, setThanaFilter] = useState<string>("all");
   const [sortField, setSortField] = useState<SortField>("joinDate");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
-    categories[0]?.id ?? "",
-  );
+  const [progressView, setProgressView] = useState<string>("overall");
   const [showFilters, setShowFilters] = useState(false);
 
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
@@ -137,6 +135,22 @@ export default function UsersClient({ users, categories }: Props) {
           ? overdueUsers
           : users;
 
+  function getProgressStats(u: UserWithStats, view: string) {
+    if (view === "overall") {
+      const completed = u.categoryProgress.reduce(
+        (sum, c) => sum + c.completed,
+        0,
+      );
+      const total = u.categoryProgress.reduce((sum, c) => sum + c.total, 0);
+      return { completed, total };
+    }
+    if (view === "syllabus") {
+      return { completed: u.syllabusCompleted, total: u.syllabusTotal };
+    }
+    const cat = u.categoryProgress.find((c) => c.categoryId === view);
+    return { completed: cat?.completed ?? 0, total: cat?.total ?? 0 };
+  }
+
   const filteredUsers = useMemo(() => {
     const query = searchTerm.toLowerCase().trim();
     const filtered = baseUsers.filter((user) => {
@@ -164,15 +178,17 @@ export default function UsersClient({ users, categories }: Props) {
         cmp =
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       } else if (sortField === "progress") {
-        const catA = a.categoryProgress.find(
-          (c) => c.categoryId === selectedCategoryId,
-        );
-        const catB = b.categoryProgress.find(
-          (c) => c.categoryId === selectedCategoryId,
-        );
-        const pa = catA && catA.total > 0 ? catA.completed / catA.total : 0;
-        const pb = catB && catB.total > 0 ? catB.completed / catB.total : 0;
-        cmp = pa - pb;
+        const statsA = getProgressStats(a, progressView);
+        const statsB = getProgressStats(b, progressView);
+        const pa = statsA.total > 0 ? statsA.completed / statsA.total : 0;
+        const pb = statsB.total > 0 ? statsB.completed / statsB.total : 0;
+
+        // If percentages are equal, sort by actual completed count
+        if (Math.abs(pa - pb) < 0.001) {
+          cmp = statsA.completed - statsB.completed;
+        } else {
+          cmp = pa - pb;
+        }
       } else if (sortField === "rank") {
         const ra = a.rank?.name ?? t.users.filters.noRank;
         const rb = b.rank?.name ?? t.users.filters.noRank;
@@ -194,7 +210,7 @@ export default function UsersClient({ users, categories }: Props) {
     sortField,
     sortDir,
     t.users.filters.noRank,
-    selectedCategoryId,
+    progressView,
   ]);
 
   const tabCounts = {
@@ -205,16 +221,16 @@ export default function UsersClient({ users, categories }: Props) {
   };
 
   const selectClass =
-    "px-3 py-1.5 sm:py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-lg focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-xs sm:text-sm cursor-pointer hover:bg-[#ece0ce] transition-colors appearance-none pr-8 relative";
+    "w-full px-2.5 sm:px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-lg focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-xs sm:text-sm cursor-pointer hover:bg-[#ece0ce] transition-colors appearance-none pr-7 sm:pr-8 relative truncate";
 
   const SelectWrapper = ({
     children,
-    icon: Icon,
+    className = "",
   }: {
     children: React.ReactNode;
-    icon?: any;
+    className?: string;
   }) => (
-    <div className="relative group">
+    <div className={`relative group w-full ${className}`}>
       {children}
       <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#8a7966] group-hover:text-[#5a4b3f] transition-colors">
         <FaChevronDown className="w-3 h-3" />
@@ -226,6 +242,7 @@ export default function UsersClient({ users, categories }: Props) {
     searchTerm !== "" ||
     rankFilter !== "all" ||
     thanaFilter !== "all" ||
+    progressView !== "overall" ||
     sortField !== "joinDate" ||
     sortDir !== "desc";
 
@@ -233,6 +250,7 @@ export default function UsersClient({ users, categories }: Props) {
     setSearchTerm("");
     setRankFilter("all");
     setThanaFilter("all");
+    setProgressView("overall");
     setSortField("joinDate");
     setSortDir("desc");
   };
@@ -308,7 +326,7 @@ export default function UsersClient({ users, categories }: Props) {
       </section>
 
       <section className="dashboard-surface tron-border rounded-xl overflow-hidden">
-        <div className="p-2.5 sm:p-4 border-b border-[#7d6d5a] bg-[#eadcc8]/40 space-y-2.5 sm:space-y-3">
+        <div className="p-3 sm:p-4 border-b border-[#7d6d5a] bg-[#eadcc8]/40 space-y-3">
           {/* Search bar */}
           <div className="relative w-full">
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a7966] w-3.5 h-3.5" />
@@ -317,62 +335,85 @@ export default function UsersClient({ users, categories }: Props) {
               placeholder={t.users.filters.searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-lg focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-xs sm:text-sm"
+              className="w-full pl-9 pr-8 py-2.5 sm:py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-lg focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-xs sm:text-sm"
             />
             {searchTerm && (
               <button
                 type="button"
                 onClick={() => setSearchTerm("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8a7966] hover:text-[#221910] cursor-pointer"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8a7966] hover:text-[#221910] p-1 cursor-pointer transition-colors"
+                aria-label="Clear search"
               >
                 <FaTimes className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
 
-          {/* Filter pills bar */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-            <SelectWrapper>
-              <select
-                value={rankFilter}
-                onChange={(e) => setRankFilter(e.target.value)}
-                className={selectClass}
-              >
-                <option value="all">{t.users.filters.allRanks}</option>
-                <option value="None">{t.users.filters.noRank}</option>
-                {uniqueRanks.map(([id, name]) => (
-                  <option key={id} value={id}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-            </SelectWrapper>
-
-            <SelectWrapper>
-              <select
-                value={thanaFilter}
-                onChange={(e) => setThanaFilter(e.target.value)}
-                className={selectClass}
-              >
-                <option value="all">{t.users.filters.allThanas}</option>
-                {uniqueThanas.map(([id, name]) => (
-                  <option key={id} value={id}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-            </SelectWrapper>
-
-            {categories.length > 0 && (
+          {/* Aggressively Responsive 2-col (mobile) / 4-col (desktop) Filter Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
+            {/* 1. Rank Filter */}
+            <div className="flex flex-col gap-1 min-w-0">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#6a5a4c] pl-0.5 truncate">
+                {t.users.table.rank}
+              </label>
               <SelectWrapper>
                 <select
-                  value={selectedCategoryId}
+                  value={rankFilter}
+                  onChange={(e) => setRankFilter(e.target.value)}
+                  className={selectClass}
+                >
+                  <option value="all">{t.users.filters.allRanks}</option>
+                  <option value="None">{t.users.filters.noRank}</option>
+                  {uniqueRanks.map(([id, name]) => (
+                    <option key={id} value={id}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </SelectWrapper>
+            </div>
+
+            {/* 2. Thana Filter */}
+            <div className="flex flex-col gap-1 min-w-0">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#6a5a4c] pl-0.5 truncate">
+                {language === "bn" ? "থানা" : "Thana"}
+              </label>
+              <SelectWrapper>
+                <select
+                  value={thanaFilter}
+                  onChange={(e) => setThanaFilter(e.target.value)}
+                  className={selectClass}
+                >
+                  <option value="all">{t.users.filters.allThanas}</option>
+                  {uniqueThanas.map(([id, name]) => (
+                    <option key={id} value={id}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </SelectWrapper>
+            </div>
+
+            {/* 3. Progress Metric Filter */}
+            <div className="flex flex-col gap-1 min-w-0">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#6a5a4c] pl-0.5 truncate">
+                {t.users.table.progress}
+              </label>
+              <SelectWrapper>
+                <select
+                  value={progressView}
                   onChange={(e) => {
-                    setSelectedCategoryId(e.target.value);
+                    setProgressView(e.target.value);
                     setSortField("progress");
                   }}
                   className={selectClass}
                 >
+                  <option value="overall">
+                    {language === "bn" ? "সার্বিক অগ্রগতি" : "Overall Progress"}
+                  </option>
+                  <option value="syllabus">
+                    {language === "bn" ? "সিলেবাস" : "Syllabus"}
+                  </option>
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name} {t.users.filters.sortBy.progress}
@@ -380,50 +421,81 @@ export default function UsersClient({ users, categories }: Props) {
                   ))}
                 </select>
               </SelectWrapper>
-            )}
+            </div>
 
-            <div className="flex items-center gap-1.5 shrink-0">
-              <SelectWrapper>
-                <select
-                  value={sortField}
-                  onChange={(e) => setSortField(e.target.value as SortField)}
-                  className={selectClass}
+            {/* 4. Sort Field & Direction */}
+            <div className="flex flex-col gap-1 min-w-0">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#6a5a4c] pl-0.5 truncate">
+                {language === "bn" ? "সাজান" : "Sort By"}
+              </label>
+              <div className="flex items-center gap-1.5 w-full">
+                <div className="flex-1 min-w-0">
+                  <SelectWrapper>
+                    <select
+                      value={sortField}
+                      onChange={(e) =>
+                        setSortField(e.target.value as SortField)
+                      }
+                      className={selectClass}
+                    >
+                      <option value="joinDate">
+                        {t.users.filters.sortBy.joinDate}
+                      </option>
+                      <option value="progress">
+                        {t.users.filters.sortBy.progress}
+                      </option>
+                      <option value="rank">
+                        {t.users.filters.sortBy.rank}
+                      </option>
+                    </select>
+                  </SelectWrapper>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSortDir(sortDir === "asc" ? "desc" : "asc")}
+                  className="p-2 sm:py-2 sm:px-2.5 bg-[#f6ecdd] border border-[#8a7966] text-[#4e4033] rounded-lg hover:bg-[#ece0ce] transition-colors flex items-center justify-center shrink-0 min-w-[36px] h-[36px] sm:h-[38px] cursor-pointer shadow-2xs"
+                  title={
+                    sortDir === "asc"
+                      ? t.common.sort.ascending
+                      : t.common.sort.descending
+                  }
+                  aria-label={
+                    sortDir === "asc"
+                      ? t.common.sort.ascending
+                      : t.common.sort.descending
+                  }
                 >
-                  <option value="joinDate">
-                    {t.users.filters.sortBy.joinDate}
-                  </option>
-                  <option value="progress">
-                    {t.users.filters.sortBy.progress}
-                  </option>
-                  <option value="rank">{t.users.filters.sortBy.rank}</option>
-                </select>
-              </SelectWrapper>
+                  {sortDir === "asc" ? (
+                    <FaSortAmountUp className="w-3.5 h-3.5" />
+                  ) : (
+                    <FaSortAmountDown className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
 
-              <button
-                type="button"
-                onClick={() => setSortDir(sortDir === "asc" ? "desc" : "asc")}
-                className="p-2 bg-[#f6ecdd] border border-[#8a7966] text-[#4e4033] rounded-sm hover:bg-[#ece0ce] transition-colors flex items-center justify-center min-w-[36px] cursor-pointer"
-                title={
-                  sortDir === "asc"
-                    ? t.common.sort.ascending
-                    : t.common.sort.descending
-                }
-              >
-                {sortDir === "asc" ? (
-                  <FaSortAmountUp className="w-3.5 h-3.5" />
-                ) : (
-                  <FaSortAmountDown className="w-3.5 h-3.5" />
-                )}
-              </button>
+          {/* Active Status & Results Counter Bar */}
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#d2bfa5]/60 flex-wrap">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#eadcc8] border border-[#d2bfa5] text-[11px] font-semibold text-[#4e4033]">
+              <span>
+                {t.common.pagination.showing}{" "}
+                <strong className="text-[#221910]">
+                  {filteredUsers.length}
+                </strong>{" "}
+                {t.common.pagination.of} {baseUsers.length}{" "}
+                {tab === "all" ? t.users.tabs.all : t.users.tabs[tab]}
+              </span>
             </div>
 
             {hasActiveFilters && (
               <button
                 type="button"
                 onClick={resetFilters}
-                className="text-xs font-bold text-[#8b2c1a] hover:text-[#9b3a25] flex items-center gap-1 transition-colors uppercase tracking-wider px-2 py-1 shrink-0 cursor-pointer"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#8b2c1a] hover:text-[#f4e8d4] hover:bg-[#8b2c1a] bg-[#fce8e4] border border-[#d0604a] rounded-lg px-2.5 py-1 transition-all uppercase tracking-wider cursor-pointer ml-auto shadow-2xs"
               >
-                <FaTimes className="w-3 h-3" /> {t.users.filters.reset}
+                <FaTimes className="w-3 h-3" />
+                <span>{t.users.filters.reset}</span>
               </button>
             )}
           </div>
@@ -437,11 +509,9 @@ export default function UsersClient({ users, categories }: Props) {
             </div>
           ) : (
             filteredUsers.map((user) => {
-              const cat = user.categoryProgress.find(
-                (c) => c.categoryId === selectedCategoryId,
-              );
-              const completed = cat?.completed ?? 0;
-              const total = cat?.total ?? 0;
+              const stats = getProgressStats(user, progressView);
+              const completed = stats.completed;
+              const total = stats.total;
               const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
               const isVerified = isUserVerified(user);
               const working = verifyingId === user.id && isPending;
@@ -499,8 +569,16 @@ export default function UsersClient({ users, categories }: Props) {
                   <div className="mt-2.5 pt-2 border-t border-[#dfceb9]">
                     <div className="flex items-center justify-between text-xs text-[#5c4f42] mb-1">
                       <span className="font-semibold text-[11px]">
-                        {categories.find((c) => c.id === selectedCategoryId)
-                          ?.name ?? t.users.table.progress}
+                        {progressView === "overall"
+                          ? language === "bn"
+                            ? "সার্বিক অগ্রগতি"
+                            : "Overall Progress"
+                          : progressView === "syllabus"
+                            ? language === "bn"
+                              ? "সিলেবাস"
+                              : "Syllabus"
+                            : (categories.find((c) => c.id === progressView)
+                                ?.name ?? t.users.table.progress)}
                       </span>
                       <span className="font-bold">
                         {pct}% ({completed}/{total})
@@ -582,8 +660,16 @@ export default function UsersClient({ users, categories }: Props) {
                   {t.users.table.rank}
                 </th>
                 <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
-                  {categories.find((c) => c.id === selectedCategoryId)?.name ??
-                    t.users.table.progress}
+                  {progressView === "overall"
+                    ? language === "bn"
+                      ? "সার্বিক অগ্রগতি"
+                      : "Overall Progress"
+                    : progressView === "syllabus"
+                      ? language === "bn"
+                        ? "সিলেবাস"
+                        : "Syllabus"
+                      : (categories.find((c) => c.id === progressView)?.name ??
+                        t.users.table.progress)}
                 </th>
                 <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
                   {t.users.table.overdue}
@@ -598,11 +684,9 @@ export default function UsersClient({ users, categories }: Props) {
             </thead>
             <tbody>
               {filteredUsers.map((user) => {
-                const cat = user.categoryProgress.find(
-                  (c) => c.categoryId === selectedCategoryId,
-                );
-                const completed = cat?.completed ?? 0;
-                const total = cat?.total ?? 0;
+                const stats = getProgressStats(user, progressView);
+                const completed = stats.completed;
+                const total = stats.total;
                 const pct =
                   total > 0 ? Math.round((completed / total) * 100) : 0;
                 const isVerified = isUserVerified(user);
