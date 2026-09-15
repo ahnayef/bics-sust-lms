@@ -1,7 +1,6 @@
 "use client";
 
 import StatusBadge from "@/app/components/StatusBadge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRelativeTime } from "@/lib/utils";
 import {
   allowBorrowRequest,
@@ -688,8 +687,9 @@ export default function TransactionsClient({
       </div>
 
       {/* Header & Stats Strip */}
+      {/* Header & Quick Filter Tabs */}
       <section className="dashboard-surface tron-border rounded-xl p-3 sm:p-5">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="flex flex-col gap-3">
           <div>
             <h1 className="text-base sm:text-2xl font-bold text-[#221910] ink-title">
               {t.transactions.header.title}
@@ -699,57 +699,111 @@ export default function TransactionsClient({
             </p>
           </div>
 
-          {/* Quick interactive stat pill buttons (Desktop) */}
-          <div className="hidden md:flex items-center gap-1.5 shrink-0">
+          {/* 100% Viewport-Fitting 2x2 Segmented Grid on Mobile, 4-Column on Desktop */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-2 p-1 bg-[#eadcc8] rounded-xl border border-[#8a7966]/40 w-full">
+            {/* Tab 1: Pending */}
             <button
               type="button"
               onClick={() => handleTabChange("pending")}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#f0e4d2] border border-[#c4b39b] hover:bg-[#e4d6c1] text-xs font-semibold text-[#3f3328] transition-colors shrink-0 cursor-pointer"
+              className={`flex items-center justify-center gap-1.5 py-2 sm:py-2.5 px-2 text-xs sm:text-sm font-semibold rounded-lg transition-all cursor-pointer ${
+                activeTab === "pending"
+                  ? "bg-[#3f3328] text-[#f4e8d4] shadow-xs font-bold"
+                  : "text-[#5a4a3a] hover:bg-[#dfcfb9] hover:text-[#221910]"
+              }`}
             >
               <span>⏳</span>
-              <span>{t.transactions.summary.pending}:</span>
-              <span className="font-bold text-[#221910]">
-                {summary.pending}
-              </span>
+              <span className="truncate">{t.transactions.tabs.pending}</span>
+              {pendingBorrows.length + pendingReturns.length > 0 && (
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold shrink-0 ${
+                    activeTab === "pending"
+                      ? "bg-[#5a4d40] text-[#fdf6ec]"
+                      : "bg-[#8b2c1a] text-[#fdf0ec]"
+                  }`}
+                >
+                  {pendingBorrows.length + pendingReturns.length}
+                </span>
+              )}
             </button>
+
+            {/* Tab 2: Active */}
             <button
               type="button"
               onClick={() => {
                 handleTabChange("active");
                 setStatusFilter("all");
               }}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#f0e4d2] border border-[#c4b39b] hover:bg-[#e4d6c1] text-xs font-semibold text-[#3f3328] transition-colors shrink-0 cursor-pointer"
-            >
-              <span>📖</span>
-              <span>{t.transactions.summary.active}:</span>
-              <span className="font-bold text-[#221910]">{summary.active}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                handleTabChange("active");
-                setStatusFilter("overdue");
-              }}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors shrink-0 cursor-pointer ${
-                summary.overdue > 0
-                  ? "bg-[#fbeae6] border border-[#d67b6a] text-[#8b2c1a] font-bold"
-                  : "bg-[#f0e4d2] border border-[#c4b39b] text-[#3f3328] hover:bg-[#e4d6c1]"
+              className={`flex items-center justify-center gap-1.5 py-2 sm:py-2.5 px-2 text-xs sm:text-sm font-semibold rounded-lg transition-all cursor-pointer ${
+                activeTab === "active"
+                  ? "bg-[#3f3328] text-[#f4e8d4] shadow-xs font-bold"
+                  : "text-[#5a4a3a] hover:bg-[#dfcfb9] hover:text-[#221910]"
               }`}
             >
-              <span>⚠️</span>
-              <span>{t.transactions.summary.overdue}:</span>
-              <span className="font-bold">{summary.overdue}</span>
+              <span>📖</span>
+              <span className="truncate">{t.transactions.tabs.active}</span>
+              {summary.active + summary.overdue > 0 && (
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold shrink-0 ${
+                    activeTab === "active"
+                      ? "bg-[#5a4d40] text-[#fdf6ec]"
+                      : summary.overdue > 0
+                        ? "bg-[#8b2c1a] text-[#fdf0ec]"
+                        : "bg-[#d2bfa5] text-[#3f2f20]"
+                  }`}
+                >
+                  {summary.active + summary.overdue}
+                </span>
+              )}
             </button>
+
+            {/* Tab 3: History */}
             <button
               type="button"
               onClick={() => handleTabChange("history")}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#f0e4d2] border border-[#c4b39b] hover:bg-[#e4d6c1] text-xs font-semibold text-[#3f3328] transition-colors shrink-0 cursor-pointer"
+              className={`flex items-center justify-center gap-1.5 py-2 sm:py-2.5 px-2 text-xs sm:text-sm font-semibold rounded-lg transition-all cursor-pointer ${
+                activeTab === "history"
+                  ? "bg-[#3f3328] text-[#f4e8d4] shadow-xs font-bold"
+                  : "text-[#5a4a3a] hover:bg-[#dfcfb9] hover:text-[#221910]"
+              }`}
             >
               <span>✓</span>
-              <span>{t.transactions.summary.completed}:</span>
-              <span className="font-bold text-[#221910]">
-                {summary.completed}
-              </span>
+              <span className="truncate">{t.transactions.tabs.history}</span>
+              {summary.completed > 0 && (
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold shrink-0 ${
+                    activeTab === "history"
+                      ? "bg-[#5a4d40] text-[#fdf6ec]"
+                      : "bg-[#d2bfa5] text-[#3f2f20]"
+                  }`}
+                >
+                  {summary.completed}
+                </span>
+              )}
+            </button>
+
+            {/* Tab 4: PDF */}
+            <button
+              type="button"
+              onClick={() => handleTabChange("pdf")}
+              className={`flex items-center justify-center gap-1.5 py-2 sm:py-2.5 px-2 text-xs sm:text-sm font-semibold rounded-lg transition-all cursor-pointer ${
+                activeTab === "pdf"
+                  ? "bg-[#3f3328] text-[#f4e8d4] shadow-xs font-bold"
+                  : "text-[#5a4a3a] hover:bg-[#dfcfb9] hover:text-[#221910]"
+              }`}
+            >
+              <FaFileAlt className="w-3 h-3 shrink-0" />
+              <span className="truncate">{t.transactions.tabs.pdf}</span>
+              {pendingPdfs.length > 0 && (
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold shrink-0 ${
+                    activeTab === "pdf"
+                      ? "bg-[#5a4d40] text-[#fdf6ec]"
+                      : "bg-[#8b2c1a] text-[#fdf0ec]"
+                  }`}
+                >
+                  {pendingPdfs.length}
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -761,57 +815,11 @@ export default function TransactionsClient({
         )}
       </section>
 
-      {/* Tabs */}
+      {/* Tab Content Section */}
       <section className="dashboard-surface tron-border rounded-xl border border-[#5f4f40] overflow-hidden">
-        <Tabs
-          value={activeTab}
-          onValueChange={handleTabChange}
-          className="w-full"
-        >
-          {/* 100% Viewport-Fitting 2x2 Segmented Grid on Mobile, 4-Column on Desktop */}
-          <TabsList className="w-full h-auto bg-[#eadcc8] border-b border-[#7d6d5a] p-1 sm:p-1.5 grid grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-2 rounded-none">
-            <TabsTrigger
-              value="pending"
-              className="w-full py-2 sm:py-2.5 px-2 text-xs sm:text-sm font-semibold rounded-lg ink-text text-[#6a5a4c] data-[state=active]:bg-[#3f3328] data-[state=active]:text-[#f4e8d4] data-[state=active]:shadow-xs data-[state=active]:font-bold hover:bg-[#dfcfb9] transition-all flex items-center justify-center cursor-pointer"
-            >
-              <span className="truncate">{t.transactions.tabs.pending}</span>
-              <CountBadge
-                n={pendingBorrows.length + pendingReturns.length}
-                urgent={pendingBorrows.length + pendingReturns.length > 0}
-              />
-            </TabsTrigger>
-            <TabsTrigger
-              value="active"
-              className="w-full py-2 sm:py-2.5 px-2 text-xs sm:text-sm font-semibold rounded-lg ink-text text-[#6a5a4c] data-[state=active]:bg-[#3f3328] data-[state=active]:text-[#f4e8d4] data-[state=active]:shadow-xs data-[state=active]:font-bold hover:bg-[#dfcfb9] transition-all flex items-center justify-center cursor-pointer"
-            >
-              <span className="truncate">{t.transactions.tabs.active}</span>
-              <CountBadge
-                n={summary.active + summary.overdue}
-                urgent={summary.overdue > 0}
-              />
-            </TabsTrigger>
-            <TabsTrigger
-              value="history"
-              className="w-full py-2 sm:py-2.5 px-2 text-xs sm:text-sm font-semibold rounded-lg ink-text text-[#6a5a4c] data-[state=active]:bg-[#3f3328] data-[state=active]:text-[#f4e8d4] data-[state=active]:shadow-xs data-[state=active]:font-bold hover:bg-[#dfcfb9] transition-all flex items-center justify-center cursor-pointer"
-            >
-              <span className="truncate">{t.transactions.tabs.history}</span>
-              <CountBadge n={summary.completed} />
-            </TabsTrigger>
-            <TabsTrigger
-              value="pdf"
-              className="w-full py-2 sm:py-2.5 px-2 text-xs sm:text-sm font-semibold rounded-lg ink-text text-[#6a5a4c] data-[state=active]:bg-[#3f3328] data-[state=active]:text-[#f4e8d4] data-[state=active]:shadow-xs data-[state=active]:font-bold hover:bg-[#dfcfb9] transition-all flex items-center justify-center cursor-pointer"
-            >
-              <FaFileAlt className="w-3 h-3 shrink-0 mr-1" />
-              <span className="truncate">{t.transactions.tabs.pdf}</span>
-              <CountBadge
-                n={pendingPdfs.length}
-                urgent={pendingPdfs.length > 0}
-              />
-            </TabsTrigger>
-          </TabsList>
-
-          {/* ── Pending ── */}
-          <TabsContent value="pending" className="p-2.5 sm:p-5 mt-0">
+        {/* ── Pending ── */}
+        {activeTab === "pending" && (
+          <div className="p-2.5 sm:p-5">
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
               <section className="space-y-3">
                 <header className="flex items-center justify-between">
@@ -851,13 +859,12 @@ export default function TransactionsClient({
                 )}
               </section>
             </div>
-          </TabsContent>
+          </div>
+        )}
 
-          {/* ── Active ── */}
-          <TabsContent
-            value="active"
-            className="p-2.5 sm:p-5 mt-0 space-y-3 sm:space-y-4"
-          >
+        {/* ── Active ── */}
+        {activeTab === "active" && (
+          <div className="p-2.5 sm:p-5 space-y-3 sm:space-y-4">
             {/* Quick Status Pill Filters & Search */}
             <div className="space-y-2 sm:space-y-2.5">
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
@@ -1078,13 +1085,12 @@ export default function TransactionsClient({
                 })
               )}
             </div>
-          </TabsContent>
+          </div>
+        )}
 
-          {/* ── History ── */}
-          <TabsContent
-            value="history"
-            className="p-2.5 sm:p-5 mt-0 space-y-3 sm:space-y-4"
-          >
+        {/* ── History ── */}
+        {activeTab === "history" && (
+          <div className="p-2.5 sm:p-5 space-y-3 sm:space-y-4">
             <div className="flex flex-col sm:grid sm:grid-cols-3 gap-2 sm:gap-3">
               <div className="relative sm:col-span-2">
                 <FaSearch className="absolute left-3 top-2.5 text-[#7a6a5a]" />
@@ -1302,10 +1308,12 @@ export default function TransactionsClient({
                 </tbody>
               </table>
             </div>
-          </TabsContent>
+          </div>
+        )}
 
-          {/* ── PDF Reports ── */}
-          <TabsContent value="pdf" className="p-2.5 sm:p-5 mt-0">
+        {/* ── PDF Reports ── */}
+        {activeTab === "pdf" && (
+          <div className="p-2.5 sm:p-5">
             {pendingPdfs.length === 0 ? (
               <div className="p-8 sm:p-10 text-center border border-[#b9a58b] rounded-xl text-[#6a5a4c] ink-text">
                 <FaFileAlt className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-3 opacity-40" />
@@ -1422,8 +1430,8 @@ export default function TransactionsClient({
                 })}
               </div>
             )}
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
       </section>
 
       {/* ── Reject Modal ── */}
