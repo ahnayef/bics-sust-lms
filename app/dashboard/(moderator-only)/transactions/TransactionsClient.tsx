@@ -17,6 +17,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import {
+  FaCalendarAlt,
   FaCheck,
   FaExclamationTriangle,
   FaFileAlt,
@@ -119,6 +120,39 @@ export default function TransactionsClient({
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("date");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [historyStartDate, setHistoryStartDate] = useState("");
+  const [historyEndDate, setHistoryEndDate] = useState("");
+
+  const handlePresetDate = (preset: "today" | "week" | "month" | "clear") => {
+    const now = new Date();
+    const toDateStr = (d: Date) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    if (preset === "clear") {
+      setHistoryStartDate("");
+      setHistoryEndDate("");
+      return;
+    }
+
+    const todayStr = toDateStr(now);
+    setHistoryEndDate(todayStr);
+
+    if (preset === "today") {
+      setHistoryStartDate(todayStr);
+    } else if (preset === "week") {
+      const past = new Date(now);
+      past.setDate(now.getDate() - 7);
+      setHistoryStartDate(toDateStr(past));
+    } else if (preset === "month") {
+      const past = new Date(now);
+      past.setDate(now.getDate() - 30);
+      setHistoryStartDate(toDateStr(past));
+    }
+  };
 
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
@@ -265,12 +299,29 @@ export default function TransactionsClient({
     const q = searchTerm.toLowerCase();
 
     return sortTxns(
-      combined.filter(
-        (tx) =>
+      combined.filter((tx) => {
+        const matchesSearch =
           (tx.user?.full_name ?? "").toLowerCase().includes(q) ||
           (tx.book?.title ?? "").toLowerCase().includes(q) ||
-          (tx.copy?.id ?? tx.copy_id).toLowerCase().includes(q),
-      ),
+          (tx.copy?.id ?? tx.copy_id).toLowerCase().includes(q);
+        if (!matchesSearch) return false;
+
+        const txDate = tx.request_date
+          ? new Date(tx.request_date).getTime()
+          : 0;
+
+        if (historyStartDate) {
+          const start = new Date(`${historyStartDate}T00:00:00`).getTime();
+          if (txDate < start) return false;
+        }
+
+        if (historyEndDate) {
+          const end = new Date(`${historyEndDate}T23:59:59.999`).getTime();
+          if (txDate > end) return false;
+        }
+
+        return true;
+      }),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -278,6 +329,8 @@ export default function TransactionsClient({
     pdfSubmissions,
     searchTerm,
     sortBy,
+    historyStartDate,
+    historyEndDate,
     t.transactions.tabs.pdf,
   ]);
 
@@ -1091,27 +1144,149 @@ export default function TransactionsClient({
         {/* ── History ── */}
         {activeTab === "history" && (
           <div className="p-2.5 sm:p-5 space-y-3 sm:space-y-4">
-            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-2 sm:gap-3">
-              <div className="relative sm:col-span-2">
-                <FaSearch className="absolute left-3 top-2.5 text-[#7a6a5a]" />
-                <input
-                  type="text"
-                  placeholder={t.transactions.filters.search}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-lg focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-xs sm:text-sm"
-                />
+            {/* History Filters & Date Range Picker */}
+            <div className="bg-[#eadcc8]/60 border border-[#b9a58b]/80 rounded-xl p-3 sm:p-4 space-y-3 shadow-2xs">
+              {/* Row 1: Search & Sort */}
+              <div className="flex flex-col sm:grid sm:grid-cols-3 gap-2 sm:gap-3">
+                <div className="relative sm:col-span-2">
+                  <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7a6a5a] w-3.5 h-3.5" />
+                  <input
+                    type="text"
+                    placeholder={t.transactions.filters.search}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-8 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-lg focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-xs sm:text-sm"
+                  />
+                  {searchTerm && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchTerm("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7a6a5a] hover:text-[#221910] p-1 cursor-pointer transition-colors"
+                      aria-label="Clear search"
+                    >
+                      <FaTimes className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortKey)}
+                  className="px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-lg focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-xs sm:text-sm cursor-pointer hover:bg-[#ece0ce] transition-colors"
+                >
+                  <option value="date">
+                    {t.transactions.filters.sort.date}
+                  </option>
+                  <option value="member">
+                    {t.transactions.filters.sort.member}
+                  </option>
+                </select>
               </div>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortKey)}
-                className="px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-lg focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-xs sm:text-sm"
-              >
-                <option value="date">{t.transactions.filters.sort.date}</option>
-                <option value="member">
-                  {t.transactions.filters.sort.member}
-                </option>
-              </select>
+
+              {/* Row 2: Custom Date Range Controls */}
+              <div className="pt-2.5 border-t border-[#d2bfa5]/70 space-y-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#5c4f42] flex items-center gap-1.5">
+                    <FaCalendarAlt className="w-3 h-3 text-[#7a6a5a]" />
+                    <span>
+                      {language === "bn"
+                        ? "তারিখ অনুযায়ী ফিল্টার"
+                        : "Date Range Filter"}
+                    </span>
+                  </span>
+
+                  {/* Date Quick Presets */}
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => handlePresetDate("today")}
+                      className="px-2 py-0.5 rounded-md text-[10px] font-semibold border border-[#b9a58b] bg-[#f6ecdd] text-[#4a3e33] hover:bg-[#ece0ce] transition-colors cursor-pointer"
+                    >
+                      {language === "bn" ? "আজ" : "Today"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePresetDate("week")}
+                      className="px-2 py-0.5 rounded-md text-[10px] font-semibold border border-[#b9a58b] bg-[#f6ecdd] text-[#4a3e33] hover:bg-[#ece0ce] transition-colors cursor-pointer"
+                    >
+                      {language === "bn" ? "গত ৭ দিন" : "7 Days"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePresetDate("month")}
+                      className="px-2 py-0.5 rounded-md text-[10px] font-semibold border border-[#b9a58b] bg-[#f6ecdd] text-[#4a3e33] hover:bg-[#ece0ce] transition-colors cursor-pointer"
+                    >
+                      {language === "bn" ? "গত ৩০ দিন" : "30 Days"}
+                    </button>
+                    {(historyStartDate || historyEndDate) && (
+                      <button
+                        type="button"
+                        onClick={() => handlePresetDate("clear")}
+                        className="px-2 py-0.5 rounded-md text-[10px] font-semibold text-[#8b2c1a] bg-[#fce8e4] border border-[#d0604a] hover:bg-[#8b2c1a] hover:text-[#f4e8d4] transition-colors cursor-pointer flex items-center gap-1"
+                      >
+                        <FaTimes className="w-2.5 h-2.5" />
+                        <span>{language === "bn" ? "মুছুন" : "Clear"}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Custom Start & End Date Inputs */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-[#6a5a4c] pl-0.5">
+                      {language === "bn"
+                        ? "শুরুর তারিখ (From)"
+                        : "Start Date (From)"}
+                    </label>
+                    <input
+                      type="date"
+                      value={historyStartDate}
+                      onChange={(e) => setHistoryStartDate(e.target.value)}
+                      className="w-full px-3 py-1.5 sm:py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-lg focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-xs sm:text-sm cursor-pointer"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-[#6a5a4c] pl-0.5">
+                      {language === "bn" ? "শেষ তারিখ (To)" : "End Date (To)"}
+                    </label>
+                    <input
+                      type="date"
+                      value={historyEndDate}
+                      onChange={(e) => setHistoryEndDate(e.target.value)}
+                      className="w-full px-3 py-1.5 sm:py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-lg focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-xs sm:text-sm cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Status & Counter Row */}
+              <div className="flex items-center justify-between gap-2 pt-1 text-xs text-[#5c4f42] flex-wrap">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#e2d3be] border border-[#c5b49d] text-[11px] font-semibold text-[#3b3026]">
+                  {language === "bn" ? "রেকর্ড সংখ্যা:" : "Showing:"}{" "}
+                  <strong className="text-[#221910]">
+                    {historyTransactions.length}
+                  </strong>
+                </span>
+
+                {(historyStartDate || historyEndDate) && (
+                  <span className="text-[11px] font-medium text-[#7a6a5a] italic ml-auto">
+                    {historyStartDate && (
+                      <span>
+                        {language === "bn" ? "শুরু: " : "From: "}
+                        {historyStartDate}
+                      </span>
+                    )}
+                    {historyStartDate && historyEndDate && <span> — </span>}
+                    {historyEndDate && (
+                      <span>
+                        {language === "bn" ? "শেষ: " : "To: "}
+                        {historyEndDate}
+                      </span>
+                    )}
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Mobile History Cards */}

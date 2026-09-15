@@ -48,9 +48,9 @@ export const bookList = {
     pdfReport: "Mark as Read",
     readPdf: "Read PDF",
     pdfStatus: {
-      pending: "PDF Pending",
-      approved: "PDF Approved",
-      rejected: "PDF Rejected",
+      pending: "Read Pending",
+      approved: "Read Approved",
+      rejected: "Read Rejected",
     },
   },
   copyStatus: {
