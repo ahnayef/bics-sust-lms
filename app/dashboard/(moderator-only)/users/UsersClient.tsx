@@ -66,6 +66,7 @@ export default function UsersClient({ users, categories }: Props) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
     categories[0]?.id ?? "",
   );
+  const [showFilters, setShowFilters] = useState(false);
 
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [verifiedIds, setVerifiedIds] = useState<Set<string>>(new Set());
