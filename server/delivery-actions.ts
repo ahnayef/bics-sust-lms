@@ -9,7 +9,10 @@ import { insertActionLog } from "@/lib/db/queries/actionLogs";
 import { getBooksByIds } from "@/lib/db/queries/books";
 import { getThanaById } from "@/lib/db/queries/geo";
 import { getProfile } from "@/server/geo";
-import { escapeTelegramHtml, sendTelegramNotification } from "@/server/telegram";
+import {
+  escapeTelegramHtml,
+  sendTelegramNotification,
+} from "@/server/telegram";
 import { getClaims } from "@/server/user";
 import { revalidatePath } from "next/cache";
 
@@ -25,7 +28,10 @@ export async function submitHomeDeliveryRequest(
 ): Promise<DeliverySubmissionResult> {
   const claims = await getClaims();
   if (!claims) {
-    return { success: false, error: "You must be signed in to request home delivery." };
+    return {
+      success: false,
+      error: "You must be signed in to request home delivery.",
+    };
   }
 
   const userId = claims.sub;
@@ -46,20 +52,37 @@ export async function submitHomeDeliveryRequest(
   }
 
   if (!bookIds || bookIds.length === 0) {
-    return { success: false, error: "Please select at least one book to request." };
+    return {
+      success: false,
+      error: "Please select at least one book to request.",
+    };
   }
 
-  const phone = ((formData.get("phone") as string) || profile.phone || "").trim();
+  const phone = (
+    (formData.get("phone") as string) ||
+    profile.phone ||
+    ""
+  ).trim();
   if (!phone) {
-    return { success: false, error: "A contact phone number is required for delivery coordination." };
+    return {
+      success: false,
+      error: "A contact phone number is required for delivery coordination.",
+    };
   }
 
   const address = ((formData.get("address") as string) || "").trim();
   if (!address) {
-    return { success: false, error: "A delivery address (e.g. Hall/Room, Home address) is required." };
+    return {
+      success: false,
+      error: "A delivery address (e.g. Hall/Room, Home address) is required.",
+    };
   }
 
-  const thanaId = ((formData.get("thana_id") as string) || profile.thana_id || "").trim();
+  const thanaId = (
+    (formData.get("thana_id") as string) ||
+    profile.thana_id ||
+    ""
+  ).trim();
   let thanaName = profile.thana?.name || "Unspecified";
   if (thanaId && thanaId !== profile.thana_id) {
     const th = await getThanaById(thanaId);
@@ -71,7 +94,10 @@ export async function submitHomeDeliveryRequest(
   // Retrieve book titles and authors from database
   const requestedBooks = await getBooksByIds(bookIds);
   if (requestedBooks.length === 0) {
-    return { success: false, error: "Selected books were not found in the library catalog." };
+    return {
+      success: false,
+      error: "Selected books were not found in the library catalog.",
+    };
   }
 
   // Format request timestamp in Bangladesh time
@@ -104,17 +130,17 @@ export async function submitHomeDeliveryRequest(
   const messageHtml = [
     `<b>নতুন হোম ডেলিভারি অনুরোধ (Home Delivery Request)</b>`,
     `━━━━━━━━━━━━━━━━━━━━━━━━━`,
-    `<b>সদস্য / Member:</b> ${memberNameEscaped} (@${usernameEscaped})`,
-    `<b>মোবাইল / Phone:</b> <a href="tel:${phoneEscaped}">${phoneEscaped}</a>`,
-    `<b>ঠিকানা / Address:</b> ${addressEscaped}`,
-    `<b>এলাকা / Thana:</b> ${thanaEscaped}`,
-    `<b>সময় / Time:</b> ${timeFormatted} (BD Time)`,
+    `<b>Member:</b> ${memberNameEscaped} (@${usernameEscaped})`,
+    `<b>Phone:</b> <a href="tel:${phoneEscaped}">${phoneEscaped}</a>`,
+    `<b>Address:</b> ${addressEscaped}`,
+    `<b>Thana:</b> ${thanaEscaped}`,
+    `<b>Time:</b> ${timeFormatted} (BD Time)`,
     ``,
-    `<b>অনুরোধকৃত বইসমূহ / Books (${requestedBooks.length} টি):</b>`,
+    `<b>অনুরোধকৃত বইসমূহ (${requestedBooks.length} টি):</b>`,
     booksListHtml,
-    noteEscaped ? `\n<b>অতিরিক্ত মন্তব্য / Note:</b>\n<i>${noteEscaped}</i>` : "",
+    noteEscaped ? `\n<b>Note:</b>\n<i>${noteEscaped}</i>` : "",
     `━━━━━━━━━━━━━━━━━━━━━━━━━`,
-    `<a href="https://bics-sust-lms.vercel.app/dashboard/users/${userId}">সদস্য প্রোফাইল দেখুন (View Member Profile)</a>`,
+    `<a href="https://pathagar-sust.vercel.app/dashboard/users/${userId}">সদস্য প্রোফাইল দেখুন</a>`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -131,7 +157,11 @@ export async function submitHomeDeliveryRequest(
       details: JSON.stringify({
         book_count: requestedBooks.length,
         book_ids: bookIds,
-        books: requestedBooks.map((b) => ({ id: b.id, title: b.title, author: b.author })),
+        books: requestedBooks.map((b) => ({
+          id: b.id,
+          title: b.title,
+          author: b.author,
+        })),
         phone,
         address,
         thana: thanaName,
