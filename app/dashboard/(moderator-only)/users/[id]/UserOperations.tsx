@@ -290,30 +290,26 @@ export default function UserOperations({
       )}
 
       {/* Staff Action Buttons Toolbar */}
-      <div className="flex items-center gap-2.5 flex-wrap">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5 w-full">
         <button
           type="button"
           onClick={() => setShowBorrowModal(true)}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold bg-[#3f3328] text-[#f4e8d4] hover:bg-[#282019] transition-all shadow-xs cursor-pointer border border-[#282019]"
+          className="inline-flex items-center justify-center gap-2 px-3 sm:px-3.5 py-2.5 rounded-lg text-xs sm:text-sm font-bold bg-[#3f3328] text-[#f4e8d4] hover:bg-[#282019] transition-all shadow-xs cursor-pointer border border-[#282019] text-center"
         >
-          <FaPlus className="w-3 h-3" />
-          <span>
-            {language === "bn"
-              ? "বই বরাদ্দ করুন (Borrow)"
-              : "Assign Book (Borrow)"}
+          <FaPlus className="w-3 h-3 shrink-0" />
+          <span className="truncate">
+            {language === "bn" ? "বই বরাদ্দ (Borrow)" : "Assign Book"}
           </span>
         </button>
 
         <button
           type="button"
           onClick={() => setShowMarkReadModal(true)}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold bg-[#2d521f] text-[#f4e8d4] hover:bg-[#203a16] transition-all shadow-xs cursor-pointer border border-[#203a16]"
+          className="inline-flex items-center justify-center gap-2 px-3 sm:px-3.5 py-2.5 rounded-lg text-xs sm:text-sm font-bold bg-[#2d521f] text-[#f4e8d4] hover:bg-[#203a16] transition-all shadow-xs cursor-pointer border border-[#203a16] text-center"
         >
-          <FaCheck className="w-3 h-3" />
-          <span>
-            {language === "bn"
-              ? "পড়া সম্পন্ন চিহ্নিত করুন (Mark Read)"
-              : "Mark Book as Read"}
+          <FaCheck className="w-3 h-3 shrink-0" />
+          <span className="truncate">
+            {language === "bn" ? "পড়া সম্পন্ন (Mark Read)" : "Mark as Read"}
           </span>
         </button>
 
@@ -325,10 +321,10 @@ export default function UserOperations({
             setEditThanaId(userThanaId ?? null);
             setShowEditProfileModal(true);
           }}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold bg-[#7b6957] text-[#f4e8d4] hover:bg-[#625242] transition-all shadow-xs cursor-pointer border border-[#625242]"
+          className="inline-flex items-center justify-center gap-2 px-3 sm:px-3.5 py-2.5 rounded-lg text-xs sm:text-sm font-bold bg-[#7b6957] text-[#f4e8d4] hover:bg-[#625242] transition-all shadow-xs cursor-pointer border border-[#625242] text-center"
         >
-          <FaEdit className="w-3 h-3" />
-          <span>
+          <FaEdit className="w-3 h-3 shrink-0" />
+          <span className="truncate">
             {language === "bn" ? "তথ্য সম্পাদন (Edit)" : "Edit Member Info"}
           </span>
         </button>
@@ -348,14 +344,15 @@ export default function UserOperations({
               return (
                 <div
                   key={tx.id}
-                  className="flex items-center justify-between p-2.5 bg-[#f6ecdd] border border-[#b9a58b] rounded-lg text-xs gap-2"
+                  className="flex flex-col xs:flex-row xs:items-center justify-between p-2.5 bg-[#f6ecdd] border border-[#b9a58b] rounded-lg text-xs gap-2"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-[#2b2119] truncate">
                       {tx.book?.title}
                     </p>
                     <p className="text-[11px] text-[#6a5a4c]">
-                      Copy #{tx.copy?.copy_number} ({tx.copy?.id})
+                      Copy #{tx.copy?.copy_number} &middot;{" "}
+                      <span className="font-mono">{tx.copy?.id}</span>
                     </p>
                   </div>
                   <button
@@ -364,9 +361,9 @@ export default function UserOperations({
                     onClick={() =>
                       handleReturnBorrow(tx.id, tx.book?.title || "Book")
                     }
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-bold text-xs bg-[#8b2c1a] text-[#fdf0ec] hover:bg-[#6e2214] transition-colors shadow-2xs disabled:opacity-50 cursor-pointer shrink-0"
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md font-bold text-xs bg-[#8b2c1a] text-[#fdf0ec] hover:bg-[#6e2214] transition-colors shadow-2xs disabled:opacity-50 cursor-pointer shrink-0 w-full xs:w-auto"
                   >
-                    <FaUndoAlt className="w-2.5 h-2.5" />
+                    <FaUndoAlt className="w-2.5 h-2.5 shrink-0" />
                     <span>
                       {working
                         ? language === "bn"
@@ -389,12 +386,12 @@ export default function UserOperations({
       ══════════════════════════════════════════════════════════════════════ */}
       {showBorrowModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-[#f6ecdd] border border-[#8a7966] rounded-xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl ink-text">
+          <div className="bg-[#f6ecdd] border border-[#8a7966] rounded-xl max-w-lg w-full max-h-[85vh] sm:max-h-[80vh] flex flex-col shadow-2xl ink-text">
             {/* Modal Header */}
-            <div className="p-4 border-b border-[#cfbba1] flex items-center justify-between bg-[#eadcc8]">
+            <div className="p-3.5 sm:p-4 border-b border-[#cfbba1] flex items-center justify-between bg-[#eadcc8]">
               <div className="flex items-center gap-2">
-                <FaBook className="w-4 h-4 text-[#5c4a3b]" />
-                <h3 className="font-bold text-base text-[#221910] ink-title">
+                <FaBook className="w-4 h-4 text-[#5c4a3b] shrink-0" />
+                <h3 className="font-bold text-sm sm:text-base text-[#221910] ink-title truncate">
                   {language === "bn"
                     ? `${userName}-কে বই বরাদ্দ করুন`
                     : `Assign Book to ${userName}`}
@@ -414,7 +411,7 @@ export default function UserOperations({
             </div>
 
             {/* Modal Body */}
-            <div className="p-4 overflow-y-auto space-y-4 flex-1">
+            <div className="p-3.5 sm:p-4 overflow-y-auto space-y-4 flex-1">
               {/* Step 1: Select Book */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] block">
@@ -547,11 +544,11 @@ export default function UserOperations({
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t border-[#cfbba1] flex items-center justify-end gap-2.5 bg-[#eadcc8]">
+            <div className="p-3 sm:p-4 border-t border-[#cfbba1] grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2 sm:gap-2.5 bg-[#eadcc8]">
               <button
                 type="button"
                 onClick={() => setShowBorrowModal(false)}
-                className="px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold border border-[#8a7966] bg-[#f6ecdd] text-[#4e4033] hover:bg-[#ece0ce] transition-colors cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold border border-[#8a7966] bg-[#f6ecdd] text-[#4e4033] hover:bg-[#ece0ce] transition-colors cursor-pointer text-center"
               >
                 {language === "bn" ? "বাতিল" : "Cancel"}
               </button>
@@ -559,7 +556,7 @@ export default function UserOperations({
                 type="button"
                 disabled={!selectedCopyId || isPending}
                 onClick={handleConfirmBorrow}
-                className="px-4 py-2 rounded-lg text-xs sm:text-sm font-bold bg-[#3f3328] text-[#f4e8d4] hover:bg-[#282019] transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-bold bg-[#3f3328] text-[#f4e8d4] hover:bg-[#282019] transition-all shadow-xs disabled:opacity-50 cursor-pointer text-center"
               >
                 {isPending
                   ? language === "bn"
@@ -579,12 +576,12 @@ export default function UserOperations({
       ══════════════════════════════════════════════════════════════════════ */}
       {showMarkReadModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-[#f6ecdd] border border-[#8a7966] rounded-xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl ink-text">
+          <div className="bg-[#f6ecdd] border border-[#8a7966] rounded-xl max-w-lg w-full max-h-[85vh] sm:max-h-[80vh] flex flex-col shadow-2xl ink-text">
             {/* Modal Header */}
-            <div className="p-4 border-b border-[#cfbba1] flex items-center justify-between bg-[#eadcc8]">
+            <div className="p-3.5 sm:p-4 border-b border-[#cfbba1] flex items-center justify-between bg-[#eadcc8]">
               <div className="flex items-center gap-2">
-                <FaBookOpen className="w-4 h-4 text-[#2d521f]" />
-                <h3 className="font-bold text-base text-[#221910] ink-title">
+                <FaBookOpen className="w-4 h-4 text-[#2d521f] shrink-0" />
+                <h3 className="font-bold text-sm sm:text-base text-[#221910] ink-title truncate">
                   {language === "bn"
                     ? `${userName}-এর পড়া বই সম্পন্ন করুন`
                     : `Mark Book Read for ${userName}`}
@@ -603,7 +600,7 @@ export default function UserOperations({
             </div>
 
             {/* Modal Body */}
-            <div className="p-4 overflow-y-auto space-y-4 flex-1">
+            <div className="p-3.5 sm:p-4 overflow-y-auto space-y-4 flex-1">
               {/* Step 1: Search and Select Book */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] block">
@@ -715,11 +712,11 @@ export default function UserOperations({
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t border-[#cfbba1] flex items-center justify-end gap-2.5 bg-[#eadcc8]">
+            <div className="p-3 sm:p-4 border-t border-[#cfbba1] grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2 sm:gap-2.5 bg-[#eadcc8]">
               <button
                 type="button"
                 onClick={() => setShowMarkReadModal(false)}
-                className="px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold border border-[#8a7966] bg-[#f6ecdd] text-[#4e4033] hover:bg-[#ece0ce] transition-colors cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold border border-[#8a7966] bg-[#f6ecdd] text-[#4e4033] hover:bg-[#ece0ce] transition-colors cursor-pointer text-center"
               >
                 {language === "bn" ? "বাতিল" : "Cancel"}
               </button>
@@ -727,7 +724,7 @@ export default function UserOperations({
                 type="button"
                 disabled={!selectedReadBookId || isPending}
                 onClick={handleConfirmMarkRead}
-                className="px-4 py-2 rounded-lg text-xs sm:text-sm font-bold bg-[#2d521f] text-[#f4e8d4] hover:bg-[#203a16] transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-bold bg-[#2d521f] text-[#f4e8d4] hover:bg-[#203a16] transition-all shadow-xs disabled:opacity-50 cursor-pointer text-center"
               >
                 {isPending
                   ? language === "bn"
@@ -747,11 +744,11 @@ export default function UserOperations({
       ══════════════════════════════════════════════════════════════════════ */}
       {showEditProfileModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-[#f6ecdd] border border-[#8a7966] rounded-xl max-w-md w-full shadow-2xl ink-text flex flex-col">
-            <div className="p-4 border-b border-[#cfbba1] flex items-center justify-between bg-[#eadcc8]">
+          <div className="bg-[#f6ecdd] border border-[#8a7966] rounded-xl max-w-md w-full max-h-[85vh] sm:max-h-[80vh] shadow-2xl ink-text flex flex-col">
+            <div className="p-3.5 sm:p-4 border-b border-[#cfbba1] flex items-center justify-between bg-[#eadcc8]">
               <div className="flex items-center gap-2">
-                <FaEdit className="w-4 h-4 text-[#5c4a3b]" />
-                <h3 className="font-bold text-base text-[#221910] ink-title">
+                <FaEdit className="w-4 h-4 text-[#5c4a3b] shrink-0" />
+                <h3 className="font-bold text-sm sm:text-base text-[#221910] ink-title truncate">
                   {language === "bn"
                     ? `${userName}-এর তথ্য সম্পাদনা`
                     : `Edit Member: ${userName}`}
@@ -766,7 +763,7 @@ export default function UserOperations({
               </button>
             </div>
 
-            <div className="p-4 space-y-3.5 flex-1">
+            <div className="p-3.5 sm:p-4 space-y-3.5 flex-1 overflow-y-auto">
               <div className="space-y-1">
                 <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] block">
                   {language === "bn" ? "পুরো নাম" : "Full Name"}
@@ -821,11 +818,11 @@ export default function UserOperations({
               )}
             </div>
 
-            <div className="p-4 border-t border-[#cfbba1] flex items-center justify-end gap-2.5 bg-[#eadcc8]">
+            <div className="p-3 sm:p-4 border-t border-[#cfbba1] grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2 sm:gap-2.5 bg-[#eadcc8]">
               <button
                 type="button"
                 onClick={() => setShowEditProfileModal(false)}
-                className="px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold border border-[#8a7966] bg-[#f6ecdd] text-[#4e4033] hover:bg-[#ece0ce] transition-colors cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold border border-[#8a7966] bg-[#f6ecdd] text-[#4e4033] hover:bg-[#ece0ce] transition-colors cursor-pointer text-center"
               >
                 {language === "bn" ? "বাতিল" : "Cancel"}
               </button>
@@ -833,7 +830,7 @@ export default function UserOperations({
                 type="button"
                 disabled={!editFullName.trim() || isPending}
                 onClick={handleConfirmEditProfile}
-                className="px-4 py-2 rounded-lg text-xs sm:text-sm font-bold bg-[#3f3328] text-[#f4e8d4] hover:bg-[#282019] transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-bold bg-[#3f3328] text-[#f4e8d4] hover:bg-[#282019] transition-all shadow-xs disabled:opacity-50 cursor-pointer text-center"
               >
                 {isPending
                   ? language === "bn"

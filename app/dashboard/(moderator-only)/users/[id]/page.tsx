@@ -96,39 +96,43 @@ export default async function UserProfilePage({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 max-w-full overflow-hidden">
       {/* ── Top Navigation Bar ────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
         <Link
           href="/dashboard/users"
-          className="inline-flex items-center gap-2 px-3.5 py-2 border border-[#8a7966] text-[#3b2e23] bg-[#f6ecdd] hover:bg-[#eadcc8] transition-colors text-sm font-semibold rounded-sm ink-text shadow-xs w-fit"
+          className="inline-flex items-center justify-center gap-2 px-3.5 py-2 border border-[#8a7966] text-[#3b2e23] bg-[#f6ecdd] hover:bg-[#eadcc8] transition-colors text-xs sm:text-sm font-semibold rounded-sm ink-text shadow-xs w-full sm:w-fit"
         >
-          <FaArrowLeft className="w-3.5 h-3.5" />
-          {t.users.details.backToUsers}
+          <FaArrowLeft className="w-3.5 h-3.5 shrink-0" />
+          <span>{t.users.details.backToUsers}</span>
         </Link>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
           <Link
             href={`/dashboard/report?user=${profile.id}`}
-            className="inline-flex items-center gap-2 px-3.5 py-2 border border-[#8a7966] text-[#3b2e23] bg-[#f6ecdd] hover:bg-[#eadcc8] transition-colors text-sm font-semibold rounded-sm ink-text shadow-xs"
+            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2 border border-[#8a7966] text-[#3b2e23] bg-[#f6ecdd] hover:bg-[#eadcc8] transition-colors text-xs sm:text-sm font-semibold rounded-sm ink-text shadow-xs text-center truncate"
           >
-            <FaFileAlt className="w-3.5 h-3.5 text-[#6e5d4a]" />
-            {t.profile.header.report || "View Report"}
+            <FaFileAlt className="w-3.5 h-3.5 text-[#6e5d4a] shrink-0" />
+            <span className="truncate">
+              {t.profile.header.report || "View Report"}
+            </span>
           </Link>
           <Link
             href={`/dashboard/profile/${profile.username}`}
-            className="inline-flex items-center gap-2 px-3.5 py-2 border border-[#4e4033] text-[#f4e8d4] bg-[#3f3328] hover:bg-[#4a3d31] transition-colors text-sm font-semibold rounded-sm ink-text shadow-xs"
+            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2 border border-[#4e4033] text-[#f4e8d4] bg-[#3f3328] hover:bg-[#4a3d31] transition-colors text-xs sm:text-sm font-semibold rounded-sm ink-text shadow-xs text-center truncate"
           >
-            {t.users.details.viewPublicProfile}{" "}
-            <FaExternalLinkAlt className="w-3 h-3" />
+            <span className="truncate">
+              {t.users.details.viewPublicProfile}
+            </span>
+            <FaExternalLinkAlt className="w-3 h-3 shrink-0" />
           </Link>
         </div>
       </div>
 
       {/* ── Unified Top Name Card (Profile Details + Admin Actions) ──────── */}
-      <div className="dashboard-surface tron-border rounded-sm p-6 sm:p-7 shadow-xs space-y-6">
+      <div className="dashboard-surface tron-border rounded-sm p-3.5 sm:p-5 md:p-6 lg:p-7 shadow-xs space-y-4 sm:space-y-6">
         {/* User Identity Banner */}
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
           <Avatar
             src={profile.avatar_url}
             alt={profile.full_name}
@@ -137,31 +141,31 @@ export default async function UserProfilePage({
             className="border-2 border-[#8a7966] shadow-sm select-none shrink-0"
           />
 
-          <div className="flex-1 text-center sm:text-left min-w-0 space-y-2.5">
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#221910] ink-title tracking-tight break-words">
+          <div className="flex-1 text-center sm:text-left min-w-0 space-y-2 sm:space-y-2.5 w-full">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3">
+              <h1 className="text-xl sm:text-3xl lg:text-4xl font-bold text-[#221910] ink-title tracking-tight break-words">
                 {profile.full_name}
               </h1>
               {profile.is_verified ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-sm border border-[#82a76f] bg-[#eef5e9] text-[#2d521f] ink-text shadow-2xs">
-                  <FaCheckCircle className="w-3.5 h-3.5 text-[#2d521f]" />
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-1 text-[11px] sm:text-xs font-bold rounded-sm border border-[#82a76f] bg-[#eef5e9] text-[#2d521f] ink-text shadow-2xs shrink-0">
+                  <FaCheckCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#2d521f]" />
                   {t.users.badges.verified}
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-sm border border-[#c9b48a] bg-[#fdf5e4] text-[#7a5e2a] ink-text shadow-2xs">
-                  <FaClock className="w-3.5 h-3.5 text-[#7a5e2a]" />
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-1 text-[11px] sm:text-xs font-bold rounded-sm border border-[#c9b48a] bg-[#fdf5e4] text-[#7a5e2a] ink-text shadow-2xs shrink-0">
+                  <FaClock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#7a5e2a]" />
                   {t.users.badges.unverified}
                 </span>
               )}
             </div>
 
-            <p className="text-base font-mono text-[#5a4b3f]">
+            <p className="text-sm sm:text-base font-mono text-[#5a4b3f] break-all">
               @{profile.username}
             </p>
 
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 pt-1">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 sm:gap-2.5 pt-0.5 sm:pt-1">
               <span
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-sm text-xs font-bold border ink-text uppercase tracking-wider ${
+                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-sm text-[11px] sm:text-xs font-bold border ink-text uppercase tracking-wider ${
                   roleColors[profile.role] || roleColors.member
                 }`}
               >
@@ -173,9 +177,11 @@ export default async function UserProfilePage({
 
               <RankBadge name={profile.rank?.name} />
 
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#5c4a3b] ink-text px-2 py-1">
-                <FaCalendarAlt className="w-3.5 h-3.5 text-[#7b6957]" />
-                {t.profile.header.joinedOn}:{" "}
+              <span className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-semibold text-[#5c4a3b] ink-text px-2 py-0.5 sm:py-1">
+                <FaCalendarAlt className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#7b6957]" />
+                <span className="hidden xs:inline">
+                  {t.profile.header.joinedOn}:{" "}
+                </span>
                 <span className="text-[#221910] font-bold">{joinedDate}</span>
               </span>
             </div>
@@ -183,23 +189,23 @@ export default async function UserProfilePage({
         </div>
 
         {/* Profile Details Grid */}
-        <div className="border-t border-[#c9b89a] pt-5 space-y-3.5">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-[#5c4a3b] ink-title flex items-center gap-2">
-            <FaUserTag className="w-4 h-4 text-[#7b6957]" />
+        <div className="border-t border-[#c9b89a] pt-4 sm:pt-5 space-y-3">
+          <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#5c4a3b] ink-title flex items-center gap-2">
+            <FaUserTag className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#7b6957]" />
             {t.users.details.profileDetails}
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
             {/* Email */}
-            <div className="flex items-start gap-3 p-3.5 bg-[#f6ecdd] border border-[#b9a58b] rounded-sm">
-              <FaEnvelope className="w-4 h-4 text-[#7a6755] mt-0.5 shrink-0" />
+            <div className="flex items-start gap-2.5 sm:gap-3 p-3 sm:p-3.5 bg-[#f6ecdd] border border-[#b9a58b] rounded-sm min-w-0">
+              <FaEnvelope className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#7a6755] mt-0.5 shrink-0" />
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold uppercase tracking-wider text-[#635243] mb-0.5">
+                <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#635243] mb-0.5">
                   {t.profile.info.email}
                 </p>
                 <a
                   href={`mailto:${profile.email}`}
-                  className="text-sm sm:text-base font-semibold text-[#221910] hover:text-[#5a4331] underline decoration-dotted break-all ink-text"
+                  className="text-xs sm:text-sm font-semibold text-[#221910] hover:text-[#5a4331] underline decoration-dotted break-all ink-text"
                 >
                   {profile.email}
                 </a>
@@ -207,13 +213,13 @@ export default async function UserProfilePage({
             </div>
 
             {/* Phone */}
-            <div className="flex items-start gap-3 p-3.5 bg-[#f6ecdd] border border-[#b9a58b] rounded-sm">
-              <FaPhone className="w-4 h-4 text-[#7a6755] mt-0.5 shrink-0" />
+            <div className="flex items-start gap-2.5 sm:gap-3 p-3 sm:p-3.5 bg-[#f6ecdd] border border-[#b9a58b] rounded-sm min-w-0">
+              <FaPhone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#7a6755] mt-0.5 shrink-0" />
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold uppercase tracking-wider text-[#635243] mb-0.5">
+                <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#635243] mb-0.5">
                   {t.profile.info.phone}
                 </p>
-                <p className="text-sm sm:text-base font-semibold text-[#221910] ink-text">
+                <p className="text-xs sm:text-sm font-semibold text-[#221910] ink-text truncate">
                   {profile.phone ? (
                     <a
                       href={`tel:${profile.phone}`}
@@ -222,7 +228,7 @@ export default async function UserProfilePage({
                       {profile.phone}
                     </a>
                   ) : (
-                    <span className="text-[#8a7966] italic font-normal text-sm">
+                    <span className="text-[#8a7966] italic font-normal">
                       {t.users.details.notProvided}
                     </span>
                   )}
@@ -231,17 +237,17 @@ export default async function UserProfilePage({
             </div>
 
             {/* Thana / Location */}
-            <div className="flex items-start gap-3 p-3.5 bg-[#f6ecdd] border border-[#b9a58b] rounded-sm">
-              <FaMapMarkerAlt className="w-4 h-4 text-[#7a6755] mt-0.5 shrink-0" />
+            <div className="flex items-start gap-2.5 sm:gap-3 p-3 sm:p-3.5 bg-[#f6ecdd] border border-[#b9a58b] rounded-sm min-w-0">
+              <FaMapMarkerAlt className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#7a6755] mt-0.5 shrink-0" />
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold uppercase tracking-wider text-[#635243] mb-0.5">
+                <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#635243] mb-0.5">
                   {t.profile.info.location}
                 </p>
-                <p className="text-sm sm:text-base font-semibold text-[#221910] ink-text">
+                <p className="text-xs sm:text-sm font-semibold text-[#221910] ink-text truncate">
                   {profile.thana?.name ? (
                     profile.thana.name
                   ) : (
-                    <span className="text-[#8a7966] italic font-normal text-sm">
+                    <span className="text-[#8a7966] italic font-normal">
                       {t.users.details.notAssigned}
                     </span>
                   )}
@@ -250,13 +256,13 @@ export default async function UserProfilePage({
             </div>
 
             {/* Rank */}
-            <div className="flex items-start gap-3 p-3.5 bg-[#f6ecdd] border border-[#b9a58b] rounded-sm">
-              <FaUserTag className="w-4 h-4 text-[#7a6755] mt-0.5 shrink-0" />
+            <div className="flex items-start gap-2.5 sm:gap-3 p-3 sm:p-3.5 bg-[#f6ecdd] border border-[#b9a58b] rounded-sm min-w-0">
+              <FaUserTag className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#7a6755] mt-0.5 shrink-0" />
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold uppercase tracking-wider text-[#635243] mb-1">
+                <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#635243] mb-1">
                   {t.profile.editForm.rank}
                 </p>
-                <div>
+                <div className="truncate">
                   <RankBadge name={profile.rank?.name} />
                 </div>
               </div>
@@ -265,13 +271,13 @@ export default async function UserProfilePage({
         </div>
 
         {/* Admin Actions Bar */}
-        <div className="border-t border-[#c9b89a] pt-5 space-y-3.5">
+        <div className="border-t border-[#c9b89a] pt-4 sm:pt-5 space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-[#5c4a3b] ink-title flex items-center gap-2">
-              <FaShieldAlt className="w-4 h-4 text-[#7b6957]" />
+            <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#5c4a3b] ink-title flex items-center gap-2">
+              <FaShieldAlt className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#7b6957]" />
               Admin Actions
             </h2>
-            <p className="text-xs text-[#6e5d4a] ink-text">
+            <p className="text-[11px] sm:text-xs text-[#6e5d4a] ink-text">
               Manage verification, update member rank, or adjust administrative
               roles.
             </p>
@@ -310,62 +316,62 @@ export default async function UserProfilePage({
       </div>
 
       {/* ── Library Activity ────────────────────────────────────────────── */}
-      <div className="dashboard-surface tron-border rounded-sm p-5 sm:p-6 shadow-xs space-y-6">
+      <div className="dashboard-surface tron-border rounded-sm p-3.5 sm:p-5 lg:p-6 shadow-xs space-y-4 sm:space-y-6">
         <div className="border-b border-[#c9b89a] pb-3 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-[#221910] ink-title uppercase tracking-[0.05em] flex items-center gap-2">
-            <FaBookOpen className="w-4 h-4 text-[#6e5d4a]" />
-            {t.users.details.libraryActivity}
+          <h2 className="text-base sm:text-lg font-bold text-[#221910] ink-title uppercase tracking-[0.05em] flex items-center gap-2">
+            <FaBookOpen className="w-4 h-4 text-[#6e5d4a] shrink-0" />
+            <span>{t.users.details.libraryActivity}</span>
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
           {/* Left Column: Quick Counts + Currently Borrowed (5 cols on lg) */}
-          <div className="lg:col-span-5 space-y-5">
+          <div className="lg:col-span-5 space-y-4 sm:space-y-5">
             {/* Quick borrow counts */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3.5 text-center transition-all hover:bg-[#efe3d1]">
-                <p className="text-xs uppercase tracking-wider font-bold text-[#5c4f42] mb-1 ink-text truncate">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-2 sm:p-3 text-center transition-all hover:bg-[#efe3d1] min-w-0">
+                <p className="text-[10px] sm:text-xs uppercase tracking-wider font-bold text-[#5c4f42] mb-0.5 sm:mb-1 ink-text truncate">
                   {t.users.details.activeBorrows}
                 </p>
-                <p className="text-2xl sm:text-3xl font-extrabold text-[#221910] ink-title leading-none">
+                <p className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#221910] ink-title leading-none">
                   {stats.activeBorrows}
                 </p>
               </div>
 
               {stats.overdueBorrows > 0 ? (
-                <div className="border border-[#c4614a] bg-[#fdf0ec] rounded-sm p-3.5 text-center transition-all">
-                  <p className="text-xs uppercase tracking-wider font-bold text-[#8b2c1a] mb-1 ink-text truncate flex items-center justify-center gap-1">
-                    <FaExclamationTriangle className="w-3 h-3 shrink-0" />
-                    {t.users.details.overdue}
+                <div className="border border-[#c4614a] bg-[#fdf0ec] rounded-sm p-2 sm:p-3 text-center transition-all min-w-0">
+                  <p className="text-[10px] sm:text-xs uppercase tracking-wider font-bold text-[#8b2c1a] mb-0.5 sm:mb-1 ink-text truncate flex items-center justify-center gap-1">
+                    <FaExclamationTriangle className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
+                    <span className="truncate">{t.users.details.overdue}</span>
                   </p>
-                  <p className="text-2xl sm:text-3xl font-extrabold text-[#9b3a25] ink-title leading-none">
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#9b3a25] ink-title leading-none">
                     {stats.overdueBorrows}
                   </p>
                 </div>
               ) : (
-                <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3.5 text-center transition-all hover:bg-[#efe3d1]">
-                  <p className="text-xs uppercase tracking-wider font-bold text-[#5c4f42] mb-1 ink-text truncate">
+                <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-2 sm:p-3 text-center transition-all hover:bg-[#efe3d1] min-w-0">
+                  <p className="text-[10px] sm:text-xs uppercase tracking-wider font-bold text-[#5c4f42] mb-0.5 sm:mb-1 ink-text truncate">
                     {t.users.details.overdue}
                   </p>
-                  <p className="text-2xl sm:text-3xl font-extrabold text-[#221910] ink-title leading-none">
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#221910] ink-title leading-none">
                     0
                   </p>
                 </div>
               )}
 
-              <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3.5 text-center transition-all hover:bg-[#efe3d1]">
-                <p className="text-xs uppercase tracking-wider font-bold text-[#5c4f42] mb-1 ink-text truncate">
+              <div className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-2 sm:p-3 text-center transition-all hover:bg-[#efe3d1] min-w-0">
+                <p className="text-[10px] sm:text-xs uppercase tracking-wider font-bold text-[#5c4f42] mb-0.5 sm:mb-1 ink-text truncate">
                   {t.users.details.pendingRequests}
                 </p>
-                <p className="text-2xl sm:text-3xl font-extrabold text-[#221910] ink-title leading-none">
+                <p className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#221910] ink-title leading-none">
                   {stats.pendingRequests}
                 </p>
               </div>
             </div>
 
             {/* Currently Borrowed Books */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-bold text-[#3b3026] ink-title uppercase tracking-wider flex items-center justify-between">
+            <div className="space-y-2.5 sm:space-y-3">
+              <h3 className="text-xs sm:text-sm font-bold text-[#3b3026] ink-title uppercase tracking-wider flex items-center justify-between">
                 <span>{t.users.details.currentlyBorrowed}</span>
                 <span className="text-xs font-mono font-normal text-[#6f5e4e]">
                   ({stats.currentBorrows.length})
@@ -373,11 +379,11 @@ export default async function UserProfilePage({
               </h3>
 
               {stats.currentBorrows.length === 0 ? (
-                <div className="p-4 border border-dashed border-[#ccb79b] rounded-sm text-center text-sm text-[#7a6a5c] ink-text bg-[#fbf5eb]/60">
+                <div className="p-3.5 sm:p-4 border border-dashed border-[#ccb79b] rounded-sm text-center text-xs sm:text-sm text-[#7a6a5c] ink-text bg-[#fbf5eb]/60">
                   No books currently borrowed.
                 </div>
               ) : (
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   {stats.currentBorrows.map((tx) => {
                     const isOverdue =
                       tx.status === "overdue" ||
@@ -395,24 +401,24 @@ export default async function UserProfilePage({
                     return (
                       <div
                         key={tx.id}
-                        className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-sm gap-2 transition-colors ${
+                        className={`flex flex-col xs:flex-row xs:items-center justify-between p-2.5 sm:p-3 border rounded-sm gap-2 transition-colors ${
                           isOverdue
                             ? "border-[#c4614a] bg-[#fdf0ec]"
                             : "border-[#b9a58b] bg-[#f6ecdd] hover:bg-[#ede0cc]"
                         }`}
                       >
-                        <div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
+                        <div className="flex items-start sm:items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
                           {isOverdue ? (
-                            <FaExclamationTriangle className="w-4 h-4 text-[#c4614a] shrink-0 mt-0.5 sm:mt-0" />
+                            <FaExclamationTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#c4614a] shrink-0 mt-0.5 sm:mt-0" />
                           ) : (
-                            <FaBookOpen className="w-4 h-4 text-[#6e5d4a] shrink-0 mt-0.5 sm:mt-0" />
+                            <FaBookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#6e5d4a] shrink-0 mt-0.5 sm:mt-0" />
                           )}
-                          <div className="min-w-0">
-                            <p className="font-bold text-sm text-[#2b2119] truncate ink-text">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-xs sm:text-sm text-[#2b2119] truncate ink-text">
                               {tx.book?.title ??
                                 t.dashboard.recentBorrows.unknownBook}
                             </p>
-                            <p className="text-xs text-[#5a4b3f] ink-text mt-0.5">
+                            <p className="text-[11px] sm:text-xs text-[#5a4b3f] ink-text mt-0.5">
                               {t.bookList.table.copyNum.replace("#", "")} #
                               {tx.copy?.copy_number ?? "?"}
                               {tx.due_date && (
@@ -437,7 +443,7 @@ export default async function UserProfilePage({
                         </div>
 
                         {isOverdue && daysOver > 0 && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-xs text-xs font-bold bg-[#f6d7d0] text-[#9b3a25] border border-[#e5a89b] shrink-0 self-start sm:self-auto">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-xs text-[10px] sm:text-xs font-bold bg-[#f6d7d0] text-[#9b3a25] border border-[#e5a89b] shrink-0 self-start xs:self-auto">
                             {t.users.details.overdueBy.replace(
                               "{days}",
                               daysOver.toString(),
@@ -453,17 +459,17 @@ export default async function UserProfilePage({
           </div>
 
           {/* Right Column: Category / Syllabus Progress Bars (7 cols on lg) */}
-          <div className="lg:col-span-7 space-y-3.5">
-            <h3 className="text-sm font-bold text-[#3b3026] ink-title uppercase tracking-wider">
+          <div className="lg:col-span-7 space-y-3 sm:space-y-3.5">
+            <h3 className="text-xs sm:text-sm font-bold text-[#3b3026] ink-title uppercase tracking-wider">
               {t.profile.sections.readingProgress}
             </h3>
 
             {stats.categoryProgress.length === 0 ? (
-              <div className="p-4 border border-dashed border-[#ccb79b] rounded-sm text-center text-sm text-[#7a6a5c] ink-text bg-[#fbf5eb]/60">
+              <div className="p-3.5 sm:p-4 border border-dashed border-[#ccb79b] rounded-sm text-center text-xs sm:text-sm text-[#7a6a5c] ink-text bg-[#fbf5eb]/60">
                 No syllabus reading progress recorded.
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2.5 sm:space-y-3">
                 {stats.categoryProgress.map((cp) => {
                   const percent =
                     cp.total > 0
@@ -472,15 +478,17 @@ export default async function UserProfilePage({
                   return (
                     <div
                       key={cp.categoryId}
-                      className="space-y-1.5 p-3 rounded-sm bg-[#f6ecdd] border border-[#b9a58b]"
+                      className="space-y-1.5 p-2.5 sm:p-3 rounded-sm bg-[#f6ecdd] border border-[#b9a58b]"
                     >
-                      <div className="flex items-center justify-between text-sm text-[#4a3a2c] ink-text">
-                        <span className="font-bold">{cp.categoryName}</span>
-                        <span className="font-mono text-xs font-semibold">
+                      <div className="flex flex-col xs:flex-row xs:items-center justify-between text-xs sm:text-sm text-[#4a3a2c] ink-text gap-0.5 xs:gap-2">
+                        <span className="font-bold truncate">
+                          {cp.categoryName}
+                        </span>
+                        <span className="font-mono text-[11px] sm:text-xs font-semibold shrink-0 text-[#5c4a3b]">
                           {cp.completed} / {cp.total} books ({percent}%)
                         </span>
                       </div>
-                      <div className="w-full h-3 rounded-full bg-[#e4d4bf] border border-[#ccb79b] overflow-hidden">
+                      <div className="w-full h-2.5 sm:h-3 rounded-full bg-[#e4d4bf] border border-[#ccb79b] overflow-hidden">
                         <div
                           className="h-full bg-[#5a4d40] transition-all rounded-full"
                           style={{ width: `${percent}%` }}

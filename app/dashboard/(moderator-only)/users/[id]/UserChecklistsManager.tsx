@@ -60,29 +60,29 @@ export default function UserChecklistsManager({
   };
 
   return (
-    <div className="dashboard-surface tron-border rounded-sm p-5 sm:p-6 shadow-xs space-y-5">
-      <div className="border-b border-[#c9b89a] pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div>
-          <h2 className="text-lg font-bold text-[#221910] ink-title uppercase tracking-[0.05em] flex items-center gap-2">
-            <FaTasks className="w-4 h-4 text-[#6e5d4a]" />
-            <span>
+    <div className="dashboard-surface tron-border rounded-sm p-3.5 sm:p-5 lg:p-6 shadow-xs space-y-4 sm:space-y-5">
+      <div className="border-b border-[#c9b89a] pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-base sm:text-lg font-bold text-[#221910] ink-title uppercase tracking-[0.05em] flex items-center gap-2">
+            <FaTasks className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#6e5d4a] shrink-0" />
+            <span className="truncate">
               {language === "bn"
                 ? "চেকলিস্ট অগ্রগতি ও অ্যাকশন"
                 : "Checklist Progress & Management"}
             </span>
           </h2>
-          <p className="text-xs text-[#6e5d4a] mt-0.5 ink-text">
+          <p className="text-[11px] sm:text-xs text-[#6e5d4a] mt-0.5 ink-text">
             {language === "bn"
               ? "সরাসরি যেকোনো টাস্কে ক্লিক করে সম্পন্ন বা অসম্পন্ন হিসেবে চিহ্নিত করুন।"
               : "Click any item checkbox to toggle completion directly for this member."}
           </p>
         </div>
-        <span className="text-xs font-mono font-semibold text-[#6e5d4a] bg-[#eadcc8] border border-[#d2bfa5] px-2.5 py-1 rounded-md shrink-0 w-fit">
+        <span className="text-[11px] sm:text-xs font-mono font-semibold text-[#6e5d4a] bg-[#eadcc8] border border-[#d2bfa5] px-2.5 py-1 rounded-md shrink-0 w-fit self-start sm:self-auto">
           {checklists.length} {language === "bn" ? "টি চেকলিস্ট" : "Checklists"}
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-5 items-start">
         {checklists.map((checklist) => {
           const totalItems = checklist.items.length;
           const completedCount = checklist.items.filter((item) =>
@@ -96,19 +96,19 @@ export default function UserChecklistsManager({
           return (
             <div
               key={checklist.id}
-              className="p-4 bg-[#f6ecdd] border border-[#b9a58b] rounded-sm space-y-3.5 shadow-2xs"
+              className="p-3 sm:p-4 bg-[#f6ecdd] border border-[#b9a58b] rounded-sm space-y-3 shadow-2xs min-w-0"
             >
               {/* Checklist Header */}
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-sm text-[#4a3a2c] ink-text">
-                  <span className="font-bold text-base text-[#221910] truncate">
+                <div className="flex items-center justify-between text-xs sm:text-sm text-[#4a3a2c] ink-text gap-2">
+                  <span className="font-bold text-sm sm:text-base text-[#221910] truncate">
                     {checklist.name}
                   </span>
-                  <span className="font-bold text-sm text-[#2d521f] shrink-0 ml-2">
+                  <span className="font-bold text-xs sm:text-sm text-[#2d521f] shrink-0 ml-1">
                     {percent}% ({completedCount}/{totalItems})
                   </span>
                 </div>
-                <div className="w-full h-2.5 rounded-full bg-[#e4d4bf] border border-[#ccb79b] overflow-hidden">
+                <div className="w-full h-2 sm:h-2.5 rounded-full bg-[#e4d4bf] border border-[#ccb79b] overflow-hidden">
                   <div
                     className="h-full bg-[#4a7c59] transition-all rounded-full"
                     style={{ width: `${percent}%` }}
@@ -128,7 +128,7 @@ export default function UserChecklistsManager({
                       type="button"
                       disabled={isItemLoading}
                       onClick={() => handleToggle(item.id, isCompleted)}
-                      className={`w-full text-left flex items-start gap-2.5 p-2 rounded-lg text-xs sm:text-sm transition-colors cursor-pointer ${
+                      className={`w-full text-left flex items-start gap-2.5 p-2 sm:p-2.5 rounded-lg text-xs sm:text-sm transition-colors cursor-pointer min-h-[42px] ${
                         isCompleted
                           ? "bg-[#eef5e9]/70 hover:bg-[#e3edd9] border border-[#c4dab9]"
                           : "bg-[#fffaf2] hover:bg-[#f2e7d7] border border-[#e2d5c3]"
@@ -144,7 +144,7 @@ export default function UserChecklistsManager({
                         )}
                       </div>
                       <span
-                        className={`ink-text flex-1 min-w-0 break-words ${
+                        className={`ink-text flex-1 min-w-0 break-words leading-snug ${
                           isCompleted
                             ? "text-[#2b2119] font-medium"
                             : "text-[#6e5d4a]"
