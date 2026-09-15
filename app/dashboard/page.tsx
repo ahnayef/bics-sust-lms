@@ -15,6 +15,7 @@ import {
   FaHistory,
   FaHourglassHalf,
   FaQrcode,
+  FaTruck,
   FaUndoAlt,
 } from "react-icons/fa";
 
@@ -66,10 +67,17 @@ export default async function DashboardHomePage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Link
+              href="/dashboard/home-delivery"
+              className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg bg-[#2d521f] text-[#f4e8d4] text-xs font-bold hover:bg-[#203a16] active:scale-95 transition-all shadow-sm shrink-0"
+            >
+              <FaTruck className="w-3.5 h-3.5" />
+              <span>{t.dashboard.sidebar.homeDelivery}</span>
+            </Link>
             <Link
               href="/dashboard/borrow"
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[#3f3328] text-[#f4e8d4] text-xs font-bold hover:bg-[#4a3d31] active:scale-95 transition-all shadow-sm shrink-0"
+              className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg bg-[#3f3328] text-[#f4e8d4] text-xs font-bold hover:bg-[#4a3d31] active:scale-95 transition-all shadow-sm shrink-0"
             >
               <FaQrcode className="w-3.5 h-3.5" />
               <span>{t.dashboard.sidebar.borrow}</span>

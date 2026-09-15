@@ -22,6 +22,7 @@ import {
   FaQrcode,
   FaShieldAlt,
   FaTimes,
+  FaTruck,
   FaUser,
   FaUsers,
 } from "react-icons/fa";
@@ -89,6 +90,11 @@ export default function DashboardShell({
       label: t.dashboard.sidebar.bookList,
       href: "/dashboard/book-list",
       icon: FaBookOpen,
+    },
+    {
+      label: t.dashboard.sidebar.homeDelivery,
+      href: "/dashboard/home-delivery",
+      icon: FaTruck,
     },
     {
       label: t.dashboard.sidebar.checklists,

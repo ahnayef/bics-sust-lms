@@ -3,6 +3,7 @@ export const dashboard = {
     dashboard: "ড্যাশবোর্ড",
     myProfile: "আমার প্রোফাইল",
     bookList: "বইয়ের তালিকা",
+    homeDelivery: "হোম ডেলিভারি",
     checklists: "চেকলিস্ট",
     checklistsManage: "চেকলিস্ট পরিচালনা",
     overview: "ওভারভিউ",

@@ -5,6 +5,7 @@ import { checklists } from "./checklists";
 import { common } from "./common";
 import { copies } from "./copies";
 import { dashboard } from "./dashboard";
+import { delivery } from "./delivery";
 import { footer } from "./footer";
 import { history } from "./history";
 import { home } from "./home";
@@ -42,4 +43,5 @@ export const bn = {
   transactions,
   notifications,
   checklists,
+  delivery,
 } as const;

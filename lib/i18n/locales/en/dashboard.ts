@@ -3,6 +3,7 @@ export const dashboard = {
     dashboard: "Dashboard",
     myProfile: "My Profile",
     bookList: "Book List",
+    homeDelivery: "Home Delivery",
     checklists: "Checklists",
     checklistsManage: "Manage Checklists",
     overview: "Overview",
