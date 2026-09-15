@@ -28,7 +28,21 @@ function getInitials(name: string): string {
   );
 }
 
+import { Suspense } from "react";
+
 export default async function DashboardUserProfilePage({
+  params,
+}: {
+  params: Promise<{ username: string }>;
+}) {
+  return (
+    <Suspense fallback={<div className="p-4 sm:p-8 flex justify-center"><div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>}>
+      <DashboardUserProfileContent params={params} />
+    </Suspense>
+  );
+}
+
+async function DashboardUserProfileContent({
   params,
 }: {
   params: Promise<{ username: string }>;
