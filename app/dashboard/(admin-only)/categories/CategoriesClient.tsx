@@ -1,12 +1,18 @@
 "use client";
 
-import ConfirmModal from "@/components/ui/confirm-modal";
 import StatusBadge from "@/app/components/StatusBadge";
-import { addCategory, editCategory, getCategoryRefCount, removeCategory } from "@/server/library-actions";
+import { InventoryNav } from "@/app/dashboard/components/StaffHubNav";
+import ConfirmModal from "@/components/ui/confirm-modal";
+import {
+  addCategory,
+  editCategory,
+  getCategoryRefCount,
+  removeCategory,
+} from "@/server/library-actions";
 import type { Category } from "@/types/library";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { FaEdit, FaPlus, FaTrash, FaCheck, FaTimes } from "react-icons/fa";
+import { FaEdit, FaPlus, FaTrash } from "react-icons/fa";
 
 interface Props {
   initialCategories: Category[];
@@ -17,10 +23,19 @@ export default function CategoriesClient({ initialCategories }: Props) {
   const [isPending, startTransition] = useTransition();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [formData, setFormData] = useState({ name: "", count_in_progress: false });
-  const [flash, setFlash] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    count_in_progress: false,
+  });
+  const [flash, setFlash] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [refCount, setRefCount] = useState<{ books: number; profiles: number } | null>(null);
+  const [refCount, setRefCount] = useState<{
+    books: number;
+    profiles: number;
+  } | null>(null);
 
   const showFlash = (type: "success" | "error", text: string) => {
     setFlash({ type, text });
@@ -46,14 +61,22 @@ export default function CategoriesClient({ initialCategories }: Props) {
       const fd = new FormData();
       if (editingCategory) fd.set("id", editingCategory.id);
       fd.set("name", formData.name.trim());
-      fd.set("count_in_progress", formData.count_in_progress ? "true" : "false");
+      fd.set(
+        "count_in_progress",
+        formData.count_in_progress ? "true" : "false",
+      );
 
-      const result = editingCategory ? await editCategory(fd) : await addCategory(fd);
-      
+      const result = editingCategory
+        ? await editCategory(fd)
+        : await addCategory(fd);
+
       if (result.error) {
         showFlash("error", result.error);
       } else {
-        showFlash("success", editingCategory ? "Category updated" : "Category added");
+        showFlash(
+          "success",
+          editingCategory ? "Category updated" : "Category added",
+        );
         setShowAddModal(false);
         router.refresh();
       }
@@ -85,18 +108,29 @@ export default function CategoriesClient({ initialCategories }: Props) {
 
   const deleteDescription = refCount ? (
     <span>
-      This category is referenced by <b className="font-bold">{refCount.books}</b> books and <b className="font-bold">{refCount.profiles}</b> profiles. 
-      Deleting it will move these books and profiles to the <b>Additional</b> category. 
-      This cannot be undone.
+      This category is referenced by{" "}
+      <b className="font-bold">{refCount.books}</b> books and{" "}
+      <b className="font-bold">{refCount.profiles}</b> profiles. Deleting it
+      will move these books and profiles to the <b>Additional</b> category. This
+      cannot be undone.
     </span>
-  ) : "Checking references...";
+  ) : (
+    "Checking references..."
+  );
 
   return (
     <div className="space-y-6">
+      {/* Inventory Hub Sub-Navigation */}
+      <InventoryNav />
+
       {flash && (
-        <div className={`fixed top-20 right-4 z-50 p-4 rounded-sm shadow-xl border ${
-          flash.type === "success" ? "bg-[#eef5e9] border-[#a3b994] text-[#3d5c2e]" : "bg-[#fdf0ec] border-[#d0604a] text-[#8b2c1a]"
-        }`}>
+        <div
+          className={`fixed top-20 right-4 z-50 p-4 rounded-sm shadow-xl border ${
+            flash.type === "success"
+              ? "bg-[#eef5e9] border-[#a3b994] text-[#3d5c2e]"
+              : "bg-[#fdf0ec] border-[#d0604a] text-[#8b2c1a]"
+          }`}
+        >
           <p className="text-sm font-bold">{flash.text}</p>
         </div>
       )}
@@ -115,15 +149,23 @@ export default function CategoriesClient({ initialCategories }: Props) {
         <table className="w-full text-sm text-left ink-text">
           <thead>
             <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
-              <th className="px-6 py-3 font-bold uppercase tracking-wider text-[#5c4f42]">Name</th>
-              <th className="px-6 py-3 font-bold uppercase tracking-wider text-[#5c4f42]">Count Progress</th>
-              <th className="px-6 py-3 font-bold uppercase tracking-wider text-[#5c4f42] text-right">Actions</th>
+              <th className="px-6 py-3 font-bold uppercase tracking-wider text-[#5c4f42]">
+                Name
+              </th>
+              <th className="px-6 py-3 font-bold uppercase tracking-wider text-[#5c4f42]">
+                Count Progress
+              </th>
+              <th className="px-6 py-3 font-bold uppercase tracking-wider text-[#5c4f42] text-right">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#d2bfa5]">
             {initialCategories.map((cat) => (
               <tr key={cat.id} className="hover:bg-[#f4ebdc] transition-colors">
-                <td className="px-6 py-4 font-medium text-[#2b2119]">{cat.name}</td>
+                <td className="px-6 py-4 font-medium text-[#2b2119]">
+                  {cat.name}
+                </td>
                 <td className="px-6 py-4">
                   {cat.count_in_progress ? (
                     <StatusBadge tone="success">Enabled</StatusBadge>
@@ -161,11 +203,15 @@ export default function CategoriesClient({ initialCategories }: Props) {
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[#4f4134] mb-1">Name</label>
+                <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                  Name
+                </label>
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   className="w-full px-4 py-2 border border-[#8a7966] bg-[#f6ecdd] rounded-sm outline-none"
                   placeholder="e.g. Quran, Hadith"
                 />
@@ -175,10 +221,18 @@ export default function CategoriesClient({ initialCategories }: Props) {
                   type="checkbox"
                   id="count_in_progress"
                   checked={formData.count_in_progress}
-                  onChange={(e) => setFormData({ ...formData, count_in_progress: e.target.checked })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      count_in_progress: e.target.checked,
+                    })
+                  }
                   className="w-4 h-4 accent-[#3f3328]"
                 />
-                <label htmlFor="count_in_progress" className="text-sm font-medium text-[#4f4134]">
+                <label
+                  htmlFor="count_in_progress"
+                  className="text-sm font-medium text-[#4f4134]"
+                >
                   Count in reading progress
                 </label>
               </div>

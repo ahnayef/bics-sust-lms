@@ -20,6 +20,12 @@ export const dashboard = {
     borrow: "ধার নেওয়া",
     return: "ফেরত দেওয়া",
     history: "ইতিহাস",
+    staffDesk: "স্টাফ ডেস্ক",
+    myLibrary: "আমার লাইব্রেরি",
+    circulation: "সার্কুলেশন",
+    inventory: "ইনভেন্টরি",
+    community: "সদস্য ও ব্যবস্থাপনা",
+    system: "সিস্টেম",
   },
   header: {
     welcome: "স্বাগতম,",
@@ -30,7 +36,8 @@ export const dashboard = {
   },
   home: {
     title: "আপনার লাইব্রেরি হোম",
-    description: "নিচের সাধারণ কাজগুলোতে যান। আপনার প্রোফাইল কার্ড, পড়ার অগ্রগতি এবং যোগাযোগের তথ্য রয়েছে",
+    description:
+      "নিচের সাধারণ কাজগুলোতে যান। আপনার প্রোফাইল কার্ড, পড়ার অগ্রগতি এবং যোগাযোগের তথ্য রয়েছে",
     myProfile: "আমার প্রোফাইলে",
     quickActions: "দ্রুত কাজ",
     actions: {
@@ -55,6 +62,10 @@ export const dashboard = {
     empty: "আপনার বর্তমানে কোনো ধার নেওয়া বই নেই।",
     browseLink: "বইয়ের তালিকা দেখুন",
     toBorrow: "ধার নেওয়ার জন্য।",
+    returnCopy: "কপি ফেরত দিন",
+    readPdf: "পিডিএফ পড়ুন",
+    readingProgress: "সিলেবাস পড়ার অগ্রগতি",
+    viewChecklists: "চেকলিস্ট দেখুন",
     unknownBook: "অজানা বই",
     copy: "কপি",
     due: "ফেরত",
@@ -67,4 +78,4 @@ export const dashboard = {
       pending: "অপেক্ষমান",
     },
   },
-} as const;
+};

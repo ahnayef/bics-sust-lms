@@ -1,4 +1,5 @@
 "use client";
+import { InventoryNav } from "@/app/dashboard/components/StaffHubNav";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranslation } from "@/lib/i18n/context";
 import "@/styles/components.css";
@@ -53,36 +54,43 @@ export default function PrintQrClient({ books, copies }: Props) {
   const [authorFilter, setAuthorFilter] = useState<string>("all");
 
   const uniqueAuthors = useMemo(() => {
-    const authors = new Set(books.map(b => b.author));
+    const authors = new Set(books.map((b) => b.author));
     return Array.from(authors).sort();
   }, [books]);
 
   const filteredBooks = useMemo(() => {
     const query = searchTerm.toLowerCase().trim();
-    return books.map(book => {
-      const matchesType = typeFilter === "all" || (typeFilter === "syllabus" ? book.is_syllabus : !book.is_syllabus);
-      const matchesAuthor = authorFilter === "all" || book.author === authorFilter;
-      const bookCopies = copies.filter(c => c.book_id === book.id);
+    return books
+      .map((book) => {
+        const matchesType =
+          typeFilter === "all" ||
+          (typeFilter === "syllabus" ? book.is_syllabus : !book.is_syllabus);
+        const matchesAuthor =
+          authorFilter === "all" || book.author === authorFilter;
+        const bookCopies = copies.filter((c) => c.book_id === book.id);
 
-      const matchesQuery = !query ||
-        book.title.toLowerCase().includes(query) ||
-        book.author.toLowerCase().includes(query) ||
-        book.id.toLowerCase().includes(query) ||
-        bookCopies.some(c => c.id.toLowerCase().includes(query));
+        const matchesQuery =
+          !query ||
+          book.title.toLowerCase().includes(query) ||
+          book.author.toLowerCase().includes(query) ||
+          book.id.toLowerCase().includes(query) ||
+          bookCopies.some((c) => c.id.toLowerCase().includes(query));
 
-      return {
-        ...book,
-        copies: bookCopies,
-        visible: matchesType && matchesAuthor && matchesQuery
-      };
-    }).filter(b => b.visible);
+        return {
+          ...book,
+          copies: bookCopies,
+          visible: matchesType && matchesAuthor && matchesQuery,
+        };
+      })
+      .filter((b) => b.visible);
   }, [books, copies, searchTerm, typeFilter, authorFilter]);
 
   const visibleCopyIds = useMemo(() => {
-    return filteredBooks.flatMap(b => b.copies.map(c => c.id));
+    return filteredBooks.flatMap((b) => b.copies.map((c) => c.id));
   }, [filteredBooks]);
 
-  const hasActiveFilters = searchTerm !== "" || typeFilter !== "all" || authorFilter !== "all";
+  const hasActiveFilters =
+    searchTerm !== "" || typeFilter !== "all" || authorFilter !== "all";
 
   const clearFilters = () => {
     setSearchTerm("");
@@ -91,15 +99,17 @@ export default function PrintQrClient({ books, copies }: Props) {
     setExpandedBookId(null);
   };
 
-  const isAllSelected = visibleCopyIds.length > 0 && visibleCopyIds.every(id => selectedCopies.has(id));
-  const isSomeSelected = visibleCopyIds.some(id => selectedCopies.has(id));
+  const isAllSelected =
+    visibleCopyIds.length > 0 &&
+    visibleCopyIds.every((id) => selectedCopies.has(id));
+  const isSomeSelected = visibleCopyIds.some((id) => selectedCopies.has(id));
 
   const toggleSelectAll = () => {
     const next = new Set(selectedCopies);
     if (isAllSelected) {
-      visibleCopyIds.forEach(id => next.delete(id));
+      visibleCopyIds.forEach((id) => next.delete(id));
     } else {
-      visibleCopyIds.forEach(id => next.add(id));
+      visibleCopyIds.forEach((id) => next.add(id));
     }
     setSelectedCopies(next);
   };
@@ -107,11 +117,11 @@ export default function PrintQrClient({ books, copies }: Props) {
   const toggleBookSelect = (e: React.MouseEvent, copyIds: string[]) => {
     e.stopPropagation();
     const next = new Set(selectedCopies);
-    const allSelected = copyIds.every(id => next.has(id));
+    const allSelected = copyIds.every((id) => next.has(id));
     if (allSelected) {
-      copyIds.forEach(id => next.delete(id));
+      copyIds.forEach((id) => next.delete(id));
     } else {
-      copyIds.forEach(id => next.add(id));
+      copyIds.forEach((id) => next.add(id));
     }
     setSelectedCopies(next);
   };
@@ -138,17 +148,24 @@ export default function PrintQrClient({ books, copies }: Props) {
       if (active) setQrImages(images);
     };
     generateQRs();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [selectedCopies]);
 
   const printCopies = useMemo(() => {
-    const baseCopies = copies.filter(c => selectedCopies.has(c.id)).sort((a, b) => {
-      // Sort by book title, then copy number
-      const bookA = books.find(book => book.id === a.book_id);
-      const bookB = books.find(book => book.id === b.book_id);
-      if (!bookA || !bookB) return 0;
-      return bookA.title.localeCompare(bookB.title) || a.copy_number - b.copy_number;
-    });
+    const baseCopies = copies
+      .filter((c) => selectedCopies.has(c.id))
+      .sort((a, b) => {
+        // Sort by book title, then copy number
+        const bookA = books.find((book) => book.id === a.book_id);
+        const bookB = books.find((book) => book.id === b.book_id);
+        if (!bookA || !bookB) return 0;
+        return (
+          bookA.title.localeCompare(bookB.title) ||
+          a.copy_number - b.copy_number
+        );
+      });
 
     if (baseCopies.length === 0) return [];
 
@@ -178,7 +195,10 @@ export default function PrintQrClient({ books, copies }: Props) {
 
   return (
     <div className="space-y-4 sm:space-y-6 print:space-y-0 print:m-0 px-2 sm:px-6 lg:px-8 py-4 sm:py-8">
-
+      {/* Inventory Hub Sub-Navigation */}
+      <div className="print:hidden">
+        <InventoryNav />
+      </div>
 
       {/* Header */}
       <section className="book-list-surface tron-border rounded-md sm:rounded-lg p-3 sm:p-5 print:hidden">
@@ -217,7 +237,10 @@ export default function PrintQrClient({ books, copies }: Props) {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="select" className="p-3 sm:p-5 mt-0 space-y-3 sm:space-y-4 print:hidden">
+          <TabsContent
+            value="select"
+            className="p-3 sm:p-5 mt-0 space-y-3 sm:space-y-4 print:hidden"
+          >
             {/* Filters */}
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-6 gap-2.5">
               <div className="relative xl:col-span-2">
@@ -236,17 +259,25 @@ export default function PrintQrClient({ books, copies }: Props) {
                 className="xl:col-span-2 px-3 py-2 border border-[#8a7966] bg-[#f8f1e6] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
               >
                 <option value="all">{t.bookList.filters.type.all}</option>
-                <option value="syllabus">{t.bookList.filters.type.syllabus}</option>
-                <option value="additional">{t.bookList.filters.type.additional}</option>
+                <option value="syllabus">
+                  {t.bookList.filters.type.syllabus}
+                </option>
+                <option value="additional">
+                  {t.bookList.filters.type.additional}
+                </option>
               </select>
               <select
                 value={authorFilter}
                 onChange={(e) => setAuthorFilter(e.target.value)}
                 className="xl:col-span-2 px-3 py-2 border border-[#8a7966] bg-[#f8f1e6] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
               >
-                <option value="all">{t.bookList.qrPrint.filters.allAuthors}</option>
-                {uniqueAuthors.map(a => (
-                  <option key={a} value={a}>{a}</option>
+                <option value="all">
+                  {t.bookList.qrPrint.filters.allAuthors}
+                </option>
+                {uniqueAuthors.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
                 ))}
               </select>
             </div>
@@ -255,7 +286,10 @@ export default function PrintQrClient({ books, copies }: Props) {
               <div className="flex gap-2">
                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-[#c2b09a] bg-[#f8f1e6] text-[11px]">
                   <FaFilter className="w-3 h-3" />
-                  {t.bookList.qrPrint.filters.booksShown.replace("{count}", filteredBooks.length.toString())}
+                  {t.bookList.qrPrint.filters.booksShown.replace(
+                    "{count}",
+                    filteredBooks.length.toString(),
+                  )}
                 </span>
                 <button
                   type="button"
@@ -277,7 +311,11 @@ export default function PrintQrClient({ books, copies }: Props) {
                   onClick={toggleSelectAll}
                   className="text-[#4e4033] hover:text-[#221910] transition-colors"
                 >
-                  {isAllSelected ? <FaCheckSquare className="w-4 h-4" /> : <FaRegSquare className="w-4 h-4" />}
+                  {isAllSelected ? (
+                    <FaCheckSquare className="w-4 h-4" />
+                  ) : (
+                    <FaRegSquare className="w-4 h-4" />
+                  )}
                 </button>
                 <span className="text-xs font-semibold text-[#3b3026] uppercase tracking-[0.08em] ink-text">
                   {t.bookList.qrPrint.table.selectUnselectAll}
@@ -286,40 +324,62 @@ export default function PrintQrClient({ books, copies }: Props) {
 
               {filteredBooks.length === 0 ? (
                 <div className="p-10 text-center">
-                  <p className="text-[#5c4f42] ink-text">{t.bookList.empty.noBooks}</p>
+                  <p className="text-[#5c4f42] ink-text">
+                    {t.bookList.empty.noBooks}
+                  </p>
                 </div>
               ) : (
                 <div className="w-full overflow-x-auto">
                   <table className="w-full min-w-[600px] text-sm ink-text">
                     <thead>
                       <tr className="bg-[#f2e7d7] border-b border-[#d2bfa5]">
-                        <th className="w-10 px-3 py-2 text-center text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]">{t.bookList.qrPrint.table.sel}</th>
-                        <th className="px-3 py-2 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]">{t.bookList.table.book}</th>
-                        <th className="px-3 py-2 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]">{t.bookList.table.author}</th>
-                        <th className="px-3 py-2 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]">{t.bookList.table.type}</th>
-                        <th className="px-3 py-2 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]">{t.bookList.table.copies}</th>
+                        <th className="w-10 px-3 py-2 text-center text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]">
+                          {t.bookList.qrPrint.table.sel}
+                        </th>
+                        <th className="px-3 py-2 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]">
+                          {t.bookList.table.book}
+                        </th>
+                        <th className="px-3 py-2 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]">
+                          {t.bookList.table.author}
+                        </th>
+                        <th className="px-3 py-2 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]">
+                          {t.bookList.table.type}
+                        </th>
+                        <th className="px-3 py-2 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]">
+                          {t.bookList.table.copies}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredBooks.map((book) => {
                         const isExpanded = expandedBookId === book.id;
-                        const copyIds = book.copies.map(c => c.id);
-                        const allSelected = copyIds.every(id => selectedCopies.has(id));
-                        const someSelected = copyIds.some(id => selectedCopies.has(id));
+                        const copyIds = book.copies.map((c) => c.id);
+                        const allSelected = copyIds.every((id) =>
+                          selectedCopies.has(id),
+                        );
+                        const someSelected = copyIds.some((id) =>
+                          selectedCopies.has(id),
+                        );
 
                         return (
                           <Fragment key={book.id}>
                             <tr
                               className="border-b border-[#d2bfa5] hover:bg-[#efe4d1] transition-colors align-top cursor-pointer"
-                              onClick={() => setExpandedBookId(isExpanded ? null : book.id)}
+                              onClick={() =>
+                                setExpandedBookId(isExpanded ? null : book.id)
+                              }
                             >
                               <td className="px-3 py-3 text-center align-middle">
                                 <button
                                   type="button"
                                   onClick={(e) => toggleBookSelect(e, copyIds)}
-                                  className={`transition-colors ${allSelected ? 'text-[#4a7c59]' : someSelected ? 'text-[#8faa8f]' : 'text-[#8a7966] hover:text-[#4e4033]'}`}
+                                  className={`transition-colors ${allSelected ? "text-[#4a7c59]" : someSelected ? "text-[#8faa8f]" : "text-[#8a7966] hover:text-[#4e4033]"}`}
                                 >
-                                  {allSelected ? <FaCheckSquare className="w-4 h-4" /> : <FaRegSquare className="w-4 h-4" />}
+                                  {allSelected ? (
+                                    <FaCheckSquare className="w-4 h-4" />
+                                  ) : (
+                                    <FaRegSquare className="w-4 h-4" />
+                                  )}
                                 </button>
                               </td>
                               <td className="px-3 py-3">
@@ -328,19 +388,29 @@ export default function PrintQrClient({ books, copies }: Props) {
                                     {isExpanded ? "−" : "+"}
                                   </span>
                                   <div className="min-w-0">
-                                    <p className="font-semibold text-[#221910] leading-snug text-sm">{book.title}</p>
-                                    <p className="text-[10px] text-[#6a5a4c] mt-0.5 font-mono">ID: {book.id}</p>
+                                    <p className="font-semibold text-[#221910] leading-snug text-sm">
+                                      {book.title}
+                                    </p>
+                                    <p className="text-[10px] text-[#6a5a4c] mt-0.5 font-mono">
+                                      ID: {book.id}
+                                    </p>
                                   </div>
                                 </div>
                               </td>
-                              <td className="px-3 py-3 text-[#5a4b3f] text-sm">{book.author}</td>
+                              <td className="px-3 py-3 text-[#5a4b3f] text-sm">
+                                {book.author}
+                              </td>
                               <td className="px-3 py-3">
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm border border-[#8f7f6c] bg-[#f8f1e6] text-[#3f3328] text-[11px] font-semibold">
                                   <FaBookOpen className="w-3 h-3 text-[#4e4033]" />
-                                  {book.is_syllabus ? t.bookList.filters.type.syllabus : t.bookList.filters.type.additional}
+                                  {book.is_syllabus
+                                    ? t.bookList.filters.type.syllabus
+                                    : t.bookList.filters.type.additional}
                                 </span>
                               </td>
-                              <td className="px-3 py-3 text-[#5a4b3f] text-sm">{book.copies.length}</td>
+                              <td className="px-3 py-3 text-[#5a4b3f] text-sm">
+                                {book.copies.length}
+                              </td>
                             </tr>
 
                             {isExpanded && (
@@ -352,22 +422,36 @@ export default function PrintQrClient({ books, copies }: Props) {
                                       Copies of {book.title}
                                     </h4>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                                      {book.copies.map(copy => {
-                                        const isSelected = selectedCopies.has(copy.id);
+                                      {book.copies.map((copy) => {
+                                        const isSelected = selectedCopies.has(
+                                          copy.id,
+                                        );
                                         return (
                                           <button
                                             key={copy.id}
                                             type="button"
-                                            onClick={(e) => toggleCopySelect(e, copy.id)}
+                                            onClick={(e) =>
+                                              toggleCopySelect(e, copy.id)
+                                            }
                                             className={`flex items-center gap-2 p-2 rounded-sm border transition-colors text-left
-                                              ${isSelected
-                                                ? 'bg-[#eef5e9] border-[#8aa06f] text-[#3d5c2e]'
-                                                : 'bg-[#fcf8f3] border-[#e4d4bf] text-[#5b4a3c] hover:bg-[#f8f1e6]'}`}
+                                              ${
+                                                isSelected
+                                                  ? "bg-[#eef5e9] border-[#8aa06f] text-[#3d5c2e]"
+                                                  : "bg-[#fcf8f3] border-[#e4d4bf] text-[#5b4a3c] hover:bg-[#f8f1e6]"
+                                              }`}
                                           >
-                                            {isSelected ? <FaCheckSquare className="w-3.5 h-3.5 shrink-0" /> : <FaRegSquare className="w-3.5 h-3.5 shrink-0" />}
+                                            {isSelected ? (
+                                              <FaCheckSquare className="w-3.5 h-3.5 shrink-0" />
+                                            ) : (
+                                              <FaRegSquare className="w-3.5 h-3.5 shrink-0" />
+                                            )}
                                             <div className="min-w-0">
-                                              <p className="text-xs font-semibold">Copy #{copy.copy_number}</p>
-                                              <p className="text-[10px] font-mono opacity-80">{copy.id}</p>
+                                              <p className="text-xs font-semibold">
+                                                Copy #{copy.copy_number}
+                                              </p>
+                                              <p className="text-[10px] font-mono opacity-80">
+                                                {copy.id}
+                                              </p>
                                             </div>
                                           </button>
                                         );
@@ -387,21 +471,31 @@ export default function PrintQrClient({ books, copies }: Props) {
             </div>
           </TabsContent>
 
-          <TabsContent value="preview" className="p-3 sm:p-5 mt-0 bg-white print:p-0">
+          <TabsContent
+            value="preview"
+            className="p-3 sm:p-5 mt-0 bg-white print:p-0"
+          >
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4 pb-4 border-b border-[#e4d4bf] print:hidden">
               <div className="flex flex-col gap-3">
                 <p className="text-sm text-[#5a4b3f] ink-text font-semibold">
-                  {selectedCopies.size} {t.bookList.qrPrint.preview.duplicates.toLowerCase()}
+                  {selectedCopies.size}{" "}
+                  {t.bookList.qrPrint.preview.duplicates.toLowerCase()}
                 </p>
                 <div className="flex flex-wrap items-center gap-4 text-sm ink-text">
                   <label className="flex items-center gap-2 text-[#3b3026]">
-                    <span className="font-semibold">{t.bookList.qrPrint.preview.duplicates}:</span>
+                    <span className="font-semibold">
+                      {t.bookList.qrPrint.preview.duplicates}:
+                    </span>
                     <input
                       type="number"
                       min="1"
                       max="100"
                       value={duplicateCount}
-                      onChange={(e) => setDuplicateCount(Math.max(1, parseInt(e.target.value) || 1))}
+                      onChange={(e) =>
+                        setDuplicateCount(
+                          Math.max(1, parseInt(e.target.value) || 1),
+                        )
+                      }
                       className="w-16 px-2 py-1 border border-[#8a7966] bg-[#f8f1e6] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none"
                     />
                   </label>
@@ -412,12 +506,16 @@ export default function PrintQrClient({ books, copies }: Props) {
                       onChange={(e) => setFillPage(e.target.checked)}
                       className="w-4 h-4 accent-[#4a7c59]"
                     />
-                    <span className="font-semibold">{t.bookList.qrPrint.preview.fillPage}</span>
+                    <span className="font-semibold">
+                      {t.bookList.qrPrint.preview.fillPage}
+                    </span>
                   </label>
                 </div>
               </div>
               <div className="flex items-center gap-4 shrink-0">
-                <p className="text-sm font-semibold text-[#4a7c59] ink-text">{t.overview.stats.copies}: {printCopies.length}</p>
+                <p className="text-sm font-semibold text-[#4a7c59] ink-text">
+                  {t.overview.stats.copies}: {printCopies.length}
+                </p>
                 <button
                   onClick={() => window.print()}
                   disabled={printCopies.length === 0}
@@ -431,25 +529,48 @@ export default function PrintQrClient({ books, copies }: Props) {
 
             {selectedCopies.size === 0 ? (
               <div className="text-center py-10">
-                <p className="text-[#5c4f42] ink-text">{t.bookList.empty.noBooks}</p>
+                <p className="text-[#5c4f42] ink-text">
+                  {t.bookList.empty.noBooks}
+                </p>
               </div>
             ) : (
-              <div id="print-area" className="min-h-[297mm] print:min-h-0 w-full max-w-[210mm] print:max-w-none print:w-full mx-auto print:mx-0 print:border-none print:shadow-none bg-white print:bg-transparent">
+              <div
+                id="print-area"
+                className="min-h-[297mm] print:min-h-0 w-full max-w-[210mm] print:max-w-none print:w-full mx-auto print:mx-0 print:border-none print:shadow-none bg-white print:bg-transparent"
+              >
                 <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3 sm:gap-4 print:grid-cols-5">
                   {printCopies.map((copy, idx) => {
-                    const book = books.find(b => b.id === copy.book_id);
+                    const book = books.find((b) => b.id === copy.book_id);
                     return (
-                      <div key={`${copy.id}-${idx}`} className="flex flex-col items-center border border-dashed border-gray-400 p-2 break-inside-avoid">
+                      <div
+                        key={`${copy.id}-${idx}`}
+                        className="flex flex-col items-center border border-dashed border-gray-400 p-2 break-inside-avoid"
+                      >
                         {qrImages[copy.id] ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={qrImages[copy.id]} alt={copy.id} className="w-full max-w-[120px] aspect-square object-contain" />
+                          <img
+                            src={qrImages[copy.id]}
+                            alt={copy.id}
+                            className="w-full max-w-[120px] aspect-square object-contain"
+                          />
                         ) : (
-                          <div className="w-full max-w-[120px] aspect-square bg-gray-100 flex items-center justify-center text-xs text-gray-400">Loading...</div>
+                          <div className="w-full max-w-[120px] aspect-square bg-gray-100 flex items-center justify-center text-xs text-gray-400">
+                            Loading...
+                          </div>
                         )}
                         <div className="text-center mt-1 w-full text-[10px] leading-tight font-sans text-black">
-                          <p className="font-bold truncate text-[11px]" title={book?.title}>{book?.title}</p>
-                          <p className="text-[9px] text-gray-700 mt-0.5">Copy #{copy.copy_number}</p>
-                          <p className="font-mono text-[10px] mt-0.5">{copy.id}</p>
+                          <p
+                            className="font-bold truncate text-[11px]"
+                            title={book?.title}
+                          >
+                            {book?.title}
+                          </p>
+                          <p className="text-[9px] text-gray-700 mt-0.5">
+                            Copy #{copy.copy_number}
+                          </p>
+                          <p className="font-mono text-[10px] mt-0.5">
+                            {copy.id}
+                          </p>
                         </div>
                       </div>
                     );

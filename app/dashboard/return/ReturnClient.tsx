@@ -4,7 +4,7 @@ import { lookupCopy, returnBook } from "@/server/transaction-actions";
 import type { Transaction } from "@/types/library";
 import { Scanner, useDevices } from "@yudiel/react-qr-scanner";
 import { useRouter } from "next/navigation";
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import {
   FaExclamationTriangle,
   FaKeyboard,
@@ -19,6 +19,7 @@ interface ReturnClientProps {
   userId: string;
   pendingReturnCopyIds: Set<string>;
   isVerified: boolean;
+  initialCopyId?: string;
 }
 
 export default function ReturnClient({
@@ -27,6 +28,7 @@ export default function ReturnClient({
   userId: _userId,
   pendingReturnCopyIds,
   isVerified,
+  initialCopyId,
 }: ReturnClientProps) {
   const router = useRouter();
   const { t, language } = useTranslation();
@@ -38,9 +40,10 @@ export default function ReturnClient({
   const [success, setSuccess] = useState("");
 
   // QR / manual input section
-  const [copyId, setCopyId] = useState("");
+  const [copyId, setCopyId] = useState(initialCopyId || "");
   const [scannedCopyId, setScannedCopyId] = useState<string | null>(null);
   const [inputMode, setInputMode] = useState<"qr" | "manual">(() => {
+    if (initialCopyId) return "manual";
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("return-input-mode");
       if (saved === "qr" || saved === "manual") return saved;
@@ -57,9 +60,19 @@ export default function ReturnClient({
 
   const devices = useDevices();
 
+  useEffect(() => {
+    if (initialCopyId) {
+      processCopyId(initialCopyId);
+    }
+  }, [initialCopyId]);
+
   // ── Shared return logic ─────────────────────────────────────────────────────
 
-  function handleReturn(targetCopyId: string, bookTitle: string, transactionId?: string) {
+  function handleReturn(
+    targetCopyId: string,
+    bookTitle: string,
+    transactionId?: string,
+  ) {
     if (!isVerified) return;
     setError("");
     setSuccess("");
@@ -72,9 +85,7 @@ export default function ReturnClient({
       if (result.error) {
         setError(result.error);
       } else {
-        setSuccess(
-          t.return.success.message.replace("{title}", bookTitle),
-        );
+        setSuccess(t.return.success.message.replace("{title}", bookTitle));
         // Clear QR scanner state after a successful scanner-triggered return
         setScannedCopyId(null);
         setCopyId("");
@@ -158,8 +169,6 @@ export default function ReturnClient({
     setScannedBorrow(null);
     return false;
   }
-
-
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function handleScan(detectedCodes: any[]) {
@@ -246,9 +255,7 @@ export default function ReturnClient({
         {currentBorrows.length === 0 ? (
           <div className="dashboard-surface tron-border rounded-lg p-8 text-center">
             <FaUndoAlt className="mx-auto w-8 h-8 text-[#9c8d7e] mb-3" />
-            <p className="text-[#5c4f42] ink-text">
-              {t.history.empty}
-            </p>
+            <p className="text-[#5c4f42] ink-text">{t.history.empty}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -272,11 +279,14 @@ export default function ReturnClient({
                 year: "numeric",
               });
               const dueDateStr = dueDate
-                ? dueDate.toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                })
+                ? dueDate.toLocaleDateString(
+                    language === "bn" ? "bn-BD" : "en-GB",
+                    {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    },
+                  )
                 : "—";
 
               return (
@@ -322,20 +332,31 @@ export default function ReturnClient({
                       {isOverdue && overdueDays > 0 && (
                         <div className="flex items-center gap-1.5 mt-2 text-xs text-[#7a4c37] bg-[#f7e6df] border border-[#b0665c] rounded px-2 py-1 w-fit ink-text">
                           <FaExclamationTriangle className="w-3 h-3 shrink-0" />
-                          {language === "bn" ? `সময় অতিক্রান্ত: ${overdueDays} দিন` : `Overdue by ${overdueDays} day${overdueDays !== 1 ? "s" : ""}`}
+                          {language === "bn"
+                            ? `সময় অতিক্রান্ত: ${overdueDays} দিন`
+                            : `Overdue by ${overdueDays} day${overdueDays !== 1 ? "s" : ""}`}
                         </div>
                       )}
                     </div>
 
                     {/* Return button */}
                     <button
-                      onClick={() => handleReturn(txn.copy_id, bookTitle, txn.id)}
-                      disabled={isPending || (processingId !== null && processingId !== txn.id) || pendingReturnCopyIds.has(txn.copy_id.toUpperCase()) || !isVerified}
+                      onClick={() =>
+                        handleReturn(txn.copy_id, bookTitle, txn.id)
+                      }
+                      disabled={
+                        isPending ||
+                        (processingId !== null && processingId !== txn.id) ||
+                        pendingReturnCopyIds.has(txn.copy_id.toUpperCase()) ||
+                        !isVerified
+                      }
                       className="shrink-0 px-4 py-2 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text text-sm"
                     >
                       {pendingReturnCopyIds.has(txn.copy_id.toUpperCase())
                         ? "Pending"
-                        : processingId === txn.id && isPending ? "…" : t.return.form.submit.replace("Request to ", "")}
+                        : processingId === txn.id && isPending
+                          ? "…"
+                          : t.return.form.submit.replace("Request to ", "")}
                     </button>
                   </div>
                 </div>
@@ -358,10 +379,11 @@ export default function ReturnClient({
               setInputMode("qr");
               localStorage.setItem("return-input-mode", "qr");
             }}
-            className={`flex-1 px-3 sm:px-4 py-2 rounded font-medium transition-colors text-sm sm:text-base ink-text ${inputMode === "qr"
-              ? "bg-[#5a4d40] text-[#f6ede1]"
-              : "text-[#4e4033] hover:bg-[#eadcca]"
-              }`}
+            className={`flex-1 px-3 sm:px-4 py-2 rounded font-medium transition-colors text-sm sm:text-base ink-text ${
+              inputMode === "qr"
+                ? "bg-[#5a4d40] text-[#f6ede1]"
+                : "text-[#4e4033] hover:bg-[#eadcca]"
+            }`}
           >
             <FaQrcode className="inline w-4 h-4 mr-2" />
             {t.return.qrMode}
@@ -371,10 +393,11 @@ export default function ReturnClient({
               setInputMode("manual");
               localStorage.setItem("return-input-mode", "manual");
             }}
-            className={`flex-1 px-3 sm:px-4 py-2 rounded font-medium transition-colors text-sm sm:text-base ink-text ${inputMode === "manual"
-              ? "bg-[#5a4d40] text-[#f6ede1]"
-              : "text-[#4e4033] hover:bg-[#eadcca]"
-              }`}
+            className={`flex-1 px-3 sm:px-4 py-2 rounded font-medium transition-colors text-sm sm:text-base ink-text ${
+              inputMode === "manual"
+                ? "bg-[#5a4d40] text-[#f6ede1]"
+                : "text-[#4e4033] hover:bg-[#eadcca]"
+            }`}
           >
             <FaKeyboard className="inline w-4 h-4 mr-2" />
             {t.return.manualMode}
@@ -572,10 +595,16 @@ export default function ReturnClient({
                 <button
                   type="button"
                   onClick={() => handleReturn(scannedCopyId!, scannedBookTitle)}
-                  disabled={isPending || (processingId !== null && processingId !== scannedCopyId) || !isVerified}
+                  disabled={
+                    isPending ||
+                    (processingId !== null && processingId !== scannedCopyId) ||
+                    !isVerified
+                  }
                   className="flex-1 px-3 py-2 bg-[#5a4d40] text-[#f6ede1] rounded-lg font-medium hover:bg-[#4c4035] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ink-text text-sm"
                 >
-                  {processingId === scannedCopyId && isPending ? t.return.form.submitting : t.return.form.submit}
+                  {processingId === scannedCopyId && isPending
+                    ? t.return.form.submitting
+                    : t.return.form.submit}
                 </button>
               </div>
             </div>
@@ -585,7 +614,10 @@ export default function ReturnClient({
           {cameraPermissionDenied && (
             <div className="p-4 bg-[#f4ecd8] border border-[#b49d6f] rounded-lg">
               <p className="text-sm text-[#6b5428] ink-text">
-                <strong>{t.borrow.errors.cameraPermission.split(".")[0]}.</strong> {t.borrow.errors.cameraPermission.split(".")[1]}
+                <strong>
+                  {t.borrow.errors.cameraPermission.split(".")[0]}.
+                </strong>{" "}
+                {t.borrow.errors.cameraPermission.split(".")[1]}
               </p>
             </div>
           )}

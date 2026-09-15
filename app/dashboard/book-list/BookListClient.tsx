@@ -2,10 +2,11 @@
 
 import StatusBadge from "@/app/components/StatusBadge";
 import { useTranslation } from "@/lib/i18n/context";
+import { cn } from "@/lib/utils";
 import { submitPdfReport } from "@/server/transaction-actions";
 import "@/styles/components.css";
 import "@/styles/typography.css";
-import type { Book, PdfSubmission } from "@/types/library";
+import type { Book, Category, PdfSubmission } from "@/types/library";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Fragment, useMemo, useState, useTransition } from "react";
@@ -16,14 +17,20 @@ import {
   FaDownload,
   FaExclamationTriangle,
   FaFileAlt,
+  FaQrcode,
   FaSearch,
   FaSortAmountDown,
-  FaTimes
+  FaTimes,
+  FaUndoAlt,
 } from "react-icons/fa";
 
-import type { Category } from "@/types/library";
-
-type SortKey = "title-asc" | "title-desc" | "pages-asc" | "pages-desc" | "copies-asc" | "copies-desc";
+type SortKey =
+  | "title-asc"
+  | "title-desc"
+  | "pages-asc"
+  | "pages-desc"
+  | "copies-asc"
+  | "copies-desc";
 type TypeFilter = "all" | string; // category id
 type AvailabilityFilter = "all" | "available" | "borrowed" | "damaged";
 
@@ -75,7 +82,8 @@ export default function BookListClient({
   // Filter / sort state
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
-  const [availabilityFilter, setAvailabilityFilter] = useState<AvailabilityFilter>("all");
+  const [availabilityFilter, setAvailabilityFilter] =
+    useState<AvailabilityFilter>("all");
   const [sortBy, setSortBy] = useState<SortKey>("title-asc");
   const [expandedBookId, setExpandedBookId] = useState<string | null>(null);
 
@@ -136,8 +144,9 @@ export default function BookListClient({
 
       const result = await submitPdfReport(fd);
       if (result.error) {
-        // Map common server errors to translated strings
-        if (result.error.includes("already have a pending or approved report")) {
+        if (
+          result.error.includes("already have a pending or approved report")
+        ) {
           setPdfError(t.bookList.pdfModal.errors.alreadySubmitted);
         } else {
           setPdfError(result.error || t.bookList.pdfModal.errors.generic);
@@ -197,18 +206,22 @@ export default function BookListClient({
       if (sortBy === "title-desc") return b.title.localeCompare(a.title, "bn");
       if (sortBy === "pages-asc")
         return (
-          (a.pages ?? 0) - (b.pages ?? 0) || a.title.localeCompare(b.title, "bn")
+          (a.pages ?? 0) - (b.pages ?? 0) ||
+          a.title.localeCompare(b.title, "bn")
         );
       if (sortBy === "pages-desc")
         return (
-          (b.pages ?? 0) - (a.pages ?? 0) || a.title.localeCompare(b.title, "bn")
+          (b.pages ?? 0) - (a.pages ?? 0) ||
+          a.title.localeCompare(b.title, "bn")
         );
       if (sortBy === "copies-asc")
         return (
-          a.copies.length - b.copies.length || a.title.localeCompare(b.title, "bn")
+          a.copies.length - b.copies.length ||
+          a.title.localeCompare(b.title, "bn")
         );
       return (
-        b.copies.length - a.copies.length || a.title.localeCompare(b.title, "bn")
+        b.copies.length - a.copies.length ||
+        a.title.localeCompare(b.title, "bn")
       );
     });
 
@@ -232,88 +245,289 @@ export default function BookListClient({
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <>
+    <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-300 max-w-6xl mx-auto">
+      {/* ── Search & Filter Controls ────────────────────────────────────────── */}
+      <div className="dashboard-surface tron-border rounded-xl p-3.5 sm:p-5 shadow-xs space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-[#221910] ink-title">
+              {t.bookList.header.title}
+            </h1>
+            <p className="text-xs text-[#5c4f42] mt-0.5 ink-text">
+              {filteredBooks.length} {t.bookList.table.book.toLowerCase()} •{" "}
+              {stats.available} available
+            </p>
+          </div>
 
-      <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
-        {/* ── Header + Filters ──────────────────────────────────────────────── */}
-        <div className="dashboard-surface border border-[#7d6d5a] rounded-sm p-4 sm:p-6 shadow-sm">
-          <div className="flex flex-col gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
-                {t.bookList.header.title}
-              </h1>
-              <p className="text-sm text-[#5c4f42] mt-1 ink-text italic">
-                {t.bookList.header.subtitle}
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <div className="relative flex-1 sm:w-64">
-                <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d6d5a] w-3.5 h-3.5" />
-                <input
-                  type="text"
-                  placeholder={t.bookList.header.searchPlaceholder}
-                  className="w-full pl-9 pr-4 py-2 bg-[#f8f1e6] border border-[#b9a58b] rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text placeholder:text-[#a6917c]"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <select
-                className="bg-[#f8f1e6] border border-[#b9a58b] rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text"
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
-              >
-                <option value="all">{t.bookList.filters.type.all}</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
-              <select
-                className="bg-[#f8f1e6] border border-[#b9a58b] rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text"
-                value={availabilityFilter}
-                onChange={(e) =>
-                  setAvailabilityFilter(e.target.value as AvailabilityFilter)
-                }
-              >
-                <option value="all">{t.bookList.filters.availability.all}</option>
-                <option value="available">{t.bookList.filters.availability.available}</option>
-                <option value="borrowed">{t.bookList.copyStatus.borrowed}</option>
-                <option value="damaged">{t.bookList.copyStatus.damaged}</option>
-              </select>
+          {/* Quick Search Input */}
+          <div className="relative w-full sm:w-72">
+            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d6d5a] w-3.5 h-3.5" />
+            <input
+              type="text"
+              placeholder={t.bookList.header.searchPlaceholder}
+              className="w-full pl-9 pr-8 py-2 bg-[#fbf5ed] border border-[#b9a58b] rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#7d6d5a] ink-text placeholder:text-[#a6917c]"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
               <button
-                className="flex items-center gap-2 px-3 py-2 bg-[#eadcc8] border border-[#7d6d5a] rounded-sm text-sm font-bold text-[#221910] hover:bg-[#d9cbb7] transition-colors"
-                onClick={() => {
-                  setSortBy(sortBy === "title-asc" ? "title-desc" : "title-asc");
-                }}
+                onClick={() => setSearchTerm("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8a7966] hover:text-[#221910] p-1"
               >
-                {t.bookList.sorting.title}
-                {sortBy === "title-asc" ? <FaSortAmountDown className="w-3 h-3" /> : <FaSortAmountDown className="w-3 h-3 rotate-180" />}
+                <FaTimes className="w-3 h-3" />
               </button>
-              <div className="flex items-center gap-2">
-                <button
-                  className="flex items-center gap-2 px-3 py-2 bg-[#eadcc8] border border-[#7d6d5a] rounded-sm text-xs font-bold text-[#221910] hover:bg-[#d9cbb7] transition-colors uppercase tracking-wider"
-                  onClick={clearFilters}
-                >
-                  <FaTimes className="w-3 h-3" /> {t.bookList.empty.clearFilters}
-                </button>
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
-        {/* Book table */}
-        <section
-          className="book-list-surface tron-border rounded-lg overflow-hidden border border-[#5f4f40]"
-        >
-          {filteredBooks.length === 0 ? (
-            <div className="p-10 text-center">
-              <p className="text-[#5c4f42] ink-text">
-                {t.bookList.empty.noBooks}
-              </p>
-            </div>
-          ) : (
+        {/* Horizontal Category Filter Chips (Native App Pattern) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 no-scrollbar">
+          <button
+            onClick={() => setTypeFilter("all")}
+            className={cn(
+              "px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shrink-0 cursor-pointer shadow-xs",
+              typeFilter === "all"
+                ? "bg-[#3f3328] text-[#f4e8d4]"
+                : "bg-[#eadcc8] text-[#4e4033] hover:bg-[#dfcfb9]",
+            )}
+          >
+            {t.bookList.filters.type.all}
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setTypeFilter(cat.id)}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shrink-0 cursor-pointer shadow-xs",
+                typeFilter === cat.id
+                  ? "bg-[#3f3328] text-[#f4e8d4]"
+                  : "bg-[#eadcc8] text-[#4e4033] hover:bg-[#dfcfb9]",
+              )}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Secondary Filter Row (Availability, Sort, Clear) */}
+        <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-[#e4d4bf]">
+          <select
+            className="bg-[#fbf5ed] border border-[#b9a58b] rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text cursor-pointer"
+            value={availabilityFilter}
+            onChange={(e) =>
+              setAvailabilityFilter(e.target.value as AvailabilityFilter)
+            }
+          >
+            <option value="all">{t.bookList.filters.availability.all}</option>
+            <option value="available">
+              {t.bookList.filters.availability.available}
+            </option>
+            <option value="borrowed">{t.bookList.copyStatus.borrowed}</option>
+            <option value="damaged">{t.bookList.copyStatus.damaged}</option>
+          </select>
+
+          <button
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-[#fbf5ed] border border-[#b9a58b] rounded-lg text-xs font-bold text-[#221910] hover:bg-[#ece0ce] transition-colors cursor-pointer"
+            onClick={() => {
+              setSortBy(sortBy === "title-asc" ? "title-desc" : "title-asc");
+            }}
+          >
+            <span>{t.bookList.sorting.title}</span>
+            <FaSortAmountDown
+              className={cn(
+                "w-3 h-3 transition-transform",
+                sortBy === "title-desc" && "rotate-180",
+              )}
+            />
+          </button>
+
+          {hasActiveFilters && (
+            <button
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#fdf0ec] border border-[#d0604a]/40 text-[#8b2c1a] rounded-lg text-xs font-bold hover:bg-[#f9e6e1] transition-colors cursor-pointer"
+              onClick={clearFilters}
+            >
+              <FaTimes className="w-2.5 h-2.5" />
+              <span>{t.bookList.empty.clearFilters}</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ── Empty State ────────────────────────────────────────────────────── */}
+      {filteredBooks.length === 0 ? (
+        <div className="dashboard-surface tron-border rounded-xl p-8 text-center space-y-3 shadow-xs">
+          <FaBookOpen className="w-10 h-10 text-[#7d6d5a] mx-auto" />
+          <p className="text-sm font-semibold text-[#221910] ink-title">
+            {t.bookList.empty.noBooks}
+          </p>
+          <button
+            onClick={clearFilters}
+            className="px-4 py-2 rounded-lg bg-[#3f3328] text-[#f4e8d4] text-xs font-bold hover:bg-[#4a3d31] transition-colors"
+          >
+            {t.bookList.empty.clearFilters}
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* ── MOBILE VIEW: Native Book Cards (< lg screens) ────────────────── */}
+          <div className="block lg:hidden space-y-3">
+            {filteredBooks.map((book) => {
+              const availableCopies = book.copies.filter(
+                (c) => c.status === "available",
+              );
+              const availableCount = availableCopies.length;
+              const firstAvailableCopy = availableCopies[0];
+              const isExpanded = expandedBookId === book.id;
+              const pdfStatus = getPdfStatus(book.id);
+
+              return (
+                <div
+                  key={book.id}
+                  className="dashboard-surface tron-border rounded-xl p-4 shadow-xs space-y-3 bg-[#fbf5ed]"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-[#efe4d1] border border-[#8f7f6c] text-[10px] font-semibold text-[#3f3328]">
+                          <FaBookOpen className="w-2.5 h-2.5" />
+                          {book.category?.name ??
+                            (book.is_syllabus
+                              ? t.bookList.bookCard.syllabus
+                              : t.bookList.bookCard.additional)}
+                        </span>
+                        {book.pages && (
+                          <span className="text-[10px] text-[#7a6a5c]">
+                            {book.pages} {t.bookList.table.pages}
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="text-base font-bold text-[#221910] ink-title leading-snug">
+                        {book.title}
+                      </h3>
+                      <p className="text-xs text-[#6a5a4c] ink-text mt-0.5">
+                        {book.author}
+                      </p>
+                    </div>
+
+                    {/* Availability Badge */}
+                    <span
+                      className={cn(
+                        "px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0",
+                        availableCount > 0
+                          ? "bg-teal-50 text-teal-800 border-teal-300"
+                          : "bg-red-50 text-red-700 border-red-300",
+                      )}
+                    >
+                      {availableCount > 0
+                        ? `${availableCount} Available`
+                        : "All Borrowed"}
+                    </span>
+                  </div>
+
+                  {/* 1-Tap Mobile Action Bar */}
+                  <div className="flex items-center gap-2 pt-2 border-t border-[#e4d4bf] flex-wrap">
+                    {firstAvailableCopy ? (
+                      <Link
+                        href={`/dashboard/borrow?copyId=${encodeURIComponent(firstAvailableCopy.id)}`}
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[#3f3328] text-[#f4e8d4] text-xs font-bold hover:bg-[#4a3d31] active:scale-95 transition-all shadow-xs"
+                      >
+                        <FaQrcode className="w-3 h-3" />
+                        <span>Borrow Copy</span>
+                      </Link>
+                    ) : (
+                      <button
+                        disabled
+                        className="flex-1 inline-flex items-center justify-center px-3 py-2 rounded-lg bg-[#e4d4bf] text-[#8a7966] text-xs font-bold cursor-not-allowed"
+                      >
+                        All Borrowed
+                      </button>
+                    )}
+
+                    {book.pdf_link && (
+                      <a
+                        href={book.pdf_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] text-[#3f3328] text-xs font-bold hover:bg-[#ece0ce] transition-colors shadow-xs"
+                      >
+                        <FaDownload className="w-3 h-3" />
+                        <span>PDF</span>
+                      </a>
+                    )}
+
+                    {/* Submit PDF Report */}
+                    {book.pdf_link && (
+                      <button
+                        onClick={() => openPdfModal(book)}
+                        className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg border border-[#4a7c59] bg-[#d3decb] text-[#2d4a35] text-xs font-bold hover:bg-[#c4d3bc] transition-colors shadow-xs cursor-pointer"
+                      >
+                        <FaFileAlt className="w-3 h-3" />
+                        <span>
+                          {pdfStatus === "approved"
+                            ? "Read ✓"
+                            : pdfStatus === "pending"
+                              ? "Pending"
+                              : "Report"}
+                        </span>
+                      </button>
+                    )}
+
+                    {/* Toggle Copies Accordion */}
+                    <button
+                      onClick={() =>
+                        setExpandedBookId(isExpanded ? null : book.id)
+                      }
+                      className="px-2.5 py-2 rounded-lg border border-[#8a7966]/40 bg-[#f8f1e6] text-[#4a3e33] text-xs font-semibold hover:bg-[#ecdcc8] transition-colors cursor-pointer"
+                    >
+                      {isExpanded ? "Hide" : `${book.copies.length} Copies`}
+                    </button>
+                  </div>
+
+                  {/* Collapsible Copies List */}
+                  {isExpanded && (
+                    <div className="pt-2 border-t border-[#e4d4bf] space-y-1.5 animate-in fade-in duration-200">
+                      <p className="text-[11px] font-bold text-[#6a5a4c] uppercase tracking-wider">
+                        Copies ({book.copies.length})
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                        {book.copies.map((copy) => (
+                          <div
+                            key={copy.id}
+                            className="flex items-center justify-between p-2 rounded-md bg-[#f4ebdc] border border-[#d2bfa5] text-xs"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-bold text-[#221910]">
+                                #{copy.id}
+                              </span>
+                              <span className="text-[10px] text-[#7a6a5c]">
+                                Copy {copy.copy_number}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <CopyStatusBadge status={copy.status} />
+                              {copy.status === "available" && (
+                                <Link
+                                  href={`/dashboard/borrow?copyId=${encodeURIComponent(copy.id)}`}
+                                  className="px-2 py-0.5 rounded-sm bg-[#3f3328] text-[#f4e8d4] text-[10px] font-bold hover:bg-[#4a3d31]"
+                                >
+                                  Borrow
+                                </Link>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ── DESKTOP VIEW: Data Table (lg screens and above) ─────────────── */}
+          <section className="hidden lg:block book-list-surface tron-border rounded-xl overflow-hidden border border-[#5f4f40] shadow-xs">
             <div className="w-full overflow-x-auto">
-              <table className="w-full min-w-180 text-sm ink-text">
+              <table className="w-full text-sm ink-text">
                 <thead>
                   <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
                     {[
@@ -327,7 +541,7 @@ export default function BookListClient({
                     ].map((h) => (
                       <th
                         key={h}
-                        className="px-3 sm:px-4 py-2 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]"
+                        className="px-4 py-2.5 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-[10px]"
                       >
                         {h}
                       </th>
@@ -361,7 +575,7 @@ export default function BookListClient({
                           }}
                           aria-expanded={isExpanded}
                         >
-                          <td className="px-3 sm:px-4 py-2">
+                          <td className="px-4 py-2.5">
                             <div className="flex items-start gap-2">
                               <span className="mt-0.5 h-6 w-6 shrink-0 rounded-sm border border-[#b59f84] bg-[#f6ecdd] text-[#4e4033] text-xs font-bold inline-flex items-center justify-center">
                                 {isExpanded ? "−" : "+"}
@@ -371,57 +585,72 @@ export default function BookListClient({
                                   {book.title}
                                 </p>
                                 <p className="text-[10px] text-[#6a5a4c] mt-0.5">
-                                  {book.copies.length} {t.bookList.bookCard.copies}
+                                  {book.copies.length}{" "}
+                                  {t.bookList.bookCard.copies}
                                 </p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-3 sm:px-4 py-2 text-[#5a4b3f] text-sm">
+                          <td className="px-4 py-2.5 text-[#5a4b3f] text-sm">
                             {book.author}
                           </td>
-                          <td className="px-3 sm:px-4 py-2">
+                          <td className="px-4 py-2.5">
                             <span className="inline-flex items-center px-2 py-0.5 rounded-sm border border-[#8f7f6c] bg-[#efe4d1] text-[#3f3328] text-[11px] font-semibold">
                               {book.pages ?? "—"}
                             </span>
                           </td>
-                          <td className="px-3 sm:px-4 py-2">
+                          <td className="px-4 py-2.5">
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm border border-[#8f7f6c] bg-[#efe4d1] text-[#3f3328] text-[11px] font-semibold">
                               <FaBookOpen className="w-3 h-3 text-[#4e4033]" />
-                              {book.category?.name ?? (book.is_syllabus ? t.bookList.bookCard.syllabus : t.bookList.bookCard.additional)}
+                              {book.category?.name ??
+                                (book.is_syllabus
+                                  ? t.bookList.bookCard.syllabus
+                                  : t.bookList.bookCard.additional)}
                             </span>
                           </td>
-                          <td className="px-3 sm:px-4 py-2 text-sm">
+                          <td className="px-4 py-2.5 text-sm font-semibold">
                             {book.copies.length}
                           </td>
-                          <td className="px-3 sm:px-4 py-2 text-sm">
-                            {availableCount}
+                          <td className="px-4 py-2.5 text-sm">
+                            <span
+                              className={cn(
+                                "font-bold",
+                                availableCount > 0
+                                  ? "text-[#2d4a35]"
+                                  : "text-[#9b3a25]",
+                              )}
+                            >
+                              {availableCount}
+                            </span>
                           </td>
-                          <td className="px-3 sm:px-4 py-2 text-sm">
-                            {book.pdf_link ? (
-                              <a
-                                href={book.pdf_link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="inline-flex items-center gap-1 px-2 py-1 rounded-sm border border-[#4f4134] bg-[#3f3328] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors text-[10px] font-semibold whitespace-nowrap"
-                              >
-                                <FaDownload className="w-3 h-3" />
-                                {t.bookList.table.pdf}
-                              </a>
-                            ) : (
-                              <span className="text-[#7b6d5f] text-[10px]">
-                                —
-                              </span>
-                            )}
+                          <td className="px-4 py-2.5 text-sm">
+                            <div className="flex items-center gap-1.5">
+                              {book.pdf_link ? (
+                                <a
+                                  href={book.pdf_link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-sm border border-[#4f4134] bg-[#3f3328] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors text-[10px] font-semibold whitespace-nowrap"
+                                >
+                                  <FaDownload className="w-3 h-3" />
+                                  {t.bookList.table.pdf}
+                                </a>
+                              ) : (
+                                <span className="text-[#7b6d5f] text-[10px]">
+                                  —
+                                </span>
+                              )}
+                            </div>
                           </td>
                         </tr>
 
                         {/* Expanded copies */}
                         {isExpanded && (
                           <tr className="bg-[#f8f1e5] border-b border-[#d2bfa5]">
-                            <td colSpan={7} className="px-3 sm:px-4 py-2">
-                              <div className="w-full overflow-x-auto">
-                                <table className="w-full min-w-150 text-[11px] sm:text-xs">
+                            <td colSpan={7} className="px-4 py-3">
+                              <div className="w-full">
+                                <table className="w-full text-xs">
                                   <thead>
                                     <tr className="text-[#6a5a4c] uppercase tracking-[0.08em] border-b border-[#d9c6ab]">
                                       <th className="py-1.5 pr-2 text-left font-semibold">
@@ -447,49 +676,59 @@ export default function BookListClient({
                                           key={copy.id}
                                           className="border-b border-[#e4d4bf] last:border-b-0"
                                         >
-                                          <td className="py-1.5 pr-2 font-mono text-[#3f3328]">
-                                            {copy.id}
+                                          <td className="py-2 pr-2 font-mono font-bold text-[#3f3328]">
+                                            #{copy.id}
                                           </td>
-                                          <td className="py-1.5 pr-2 text-[#5b4a3c]">
-                                            #{copy.copy_number}
+                                          <td className="py-2 pr-2 text-[#5b4a3c]">
+                                            Copy {copy.copy_number}
                                           </td>
-                                          <td className="py-1.5 pr-2">
+                                          <td className="py-2 pr-2">
                                             <CopyStatusBadge
                                               status={copy.status}
                                             />
                                           </td>
-                                          <td className="py-1.5 pr-2">
-                                            <div className="flex gap-1 flex-wrap">
+                                          <td className="py-2 pr-2">
+                                            <div className="flex gap-1.5 flex-wrap">
                                               {copy.status === "available" ? (
                                                 <Link
                                                   href={`/dashboard/borrow?copyId=${encodeURIComponent(copy.id)}`}
-                                                  className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-sm border border-[#4f4134] bg-[#3f3328] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors font-medium text-[10px] whitespace-nowrap"
+                                                  className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-sm border border-[#4f4134] bg-[#3f3328] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors font-bold text-[11px] whitespace-nowrap"
                                                 >
+                                                  <FaQrcode className="w-3 h-3" />
                                                   {t.dashboard.sidebar.borrow}
                                                 </Link>
                                               ) : isMyBorrow ? (
                                                 <Link
-                                                  href="/dashboard/return"
-                                                  className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-sm border border-[#4f4134] bg-[#5a4d40] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors font-medium text-[10px] whitespace-nowrap"
+                                                  href={`/dashboard/return?copyId=${encodeURIComponent(copy.id)}`}
+                                                  className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-sm border border-[#4f4134] bg-[#5a4d40] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors font-bold text-[11px] whitespace-nowrap"
                                                 >
+                                                  <FaUndoAlt className="w-3 h-3" />
                                                   {t.dashboard.sidebar.return}
                                                 </Link>
                                               ) : (
                                                 <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-sm border border-[#9b8a75] bg-[#e3d2bf] text-[#6f6256] font-medium text-[10px] whitespace-nowrap">
                                                   {copy.status === "damaged"
-                                                    ? t.bookList.copyStatus.damaged
-                                                    : t.bookList.copyStatus.borrowed}
+                                                    ? t.bookList.copyStatus
+                                                        .damaged
+                                                    : t.bookList.copyStatus
+                                                        .borrowed}
                                                 </span>
                                               )}
 
                                               {/* PDF report button */}
                                               {pdfStatus === "pending" ? (
                                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm border border-[#b49d6f] bg-[#f4ecd8] text-[#6b5428] font-medium text-[10px] whitespace-nowrap">
-                                                  {t.bookList.bookCard.pdfStatus.pending}
+                                                  {
+                                                    t.bookList.bookCard
+                                                      .pdfStatus.pending
+                                                  }
                                                 </span>
                                               ) : pdfStatus === "approved" ? (
                                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm border border-[#8aa06f] bg-[#eef5e9] text-[#3d5c2e] font-medium text-[10px] whitespace-nowrap">
-                                                  {t.bookList.bookCard.pdfStatus.approved}
+                                                  {
+                                                    t.bookList.bookCard
+                                                      .pdfStatus.approved
+                                                  }
                                                 </span>
                                               ) : (
                                                 <button
@@ -501,7 +740,10 @@ export default function BookListClient({
                                                   className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-sm border border-[#6b5d4f] bg-[#5a4d40] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors font-medium text-[10px] whitespace-nowrap"
                                                 >
                                                   <FaFileAlt className="w-3 h-3" />
-                                                  {t.bookList.bookCard.pdfReport}
+                                                  {
+                                                    t.bookList.bookCard
+                                                      .pdfReport
+                                                  }
                                                 </button>
                                               )}
                                             </div>
@@ -521,16 +763,14 @@ export default function BookListClient({
                 </tbody>
               </table>
             </div>
-          )}
-        </section>
-      </div>
+          </section>
+        </>
+      )}
 
       {/* PDF Submission Modal */}
       {showPdfModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div
-            className="book-list-surface tron-border rounded-lg w-full max-w-md bg-[#f1e7d8] border border-[#5f4d42] p-6 shadow-xl"
-          >
+          <div className="book-list-surface tron-border rounded-xl w-full max-w-md bg-[#f1e7d8] border border-[#5f4d42] p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-[#221910] ink-title">
                 {t.bookList.pdfModal.title}
@@ -581,7 +821,7 @@ export default function BookListClient({
                     max={new Date().toISOString().split("T")[0]}
                     value={pdfReadDate}
                     onChange={(e) => setPdfReadDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#f8f1e6] border border-[#b9a58b] rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text"
+                    className="w-full px-3 py-2 bg-[#f8f1e6] border border-[#b9a58b] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text"
                   />
                 </div>
 
@@ -594,7 +834,7 @@ export default function BookListClient({
                     placeholder={t.bookList.pdfModal.notePlaceholder}
                     value={pdfNote}
                     onChange={(e) => setPdfNote(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#f8f1e6] border border-[#b9a58b] rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text resize-none"
+                    className="w-full px-3 py-2 bg-[#f8f1e6] border border-[#b9a58b] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text resize-none"
                   />
                 </div>
 
@@ -607,17 +847,17 @@ export default function BookListClient({
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="w-full py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm text-sm font-bold hover:bg-[#4a3d31] transition-colors disabled:opacity-50 uppercase tracking-wider"
+                  className="w-full py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-lg text-sm font-bold hover:bg-[#4a3d31] transition-colors disabled:opacity-50 uppercase tracking-wider"
                 >
-                  {isPending ? t.bookList.pdfModal.submitting : t.bookList.pdfModal.submit}
+                  {isPending
+                    ? t.bookList.pdfModal.submitting
+                    : t.bookList.pdfModal.submit}
                 </button>
               </form>
             )}
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
-
-// ── Styles ─────────────────────────────────────────────────────────────────

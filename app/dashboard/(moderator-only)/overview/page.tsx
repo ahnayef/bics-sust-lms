@@ -1,3 +1,4 @@
+import { CirculationNav } from "@/app/dashboard/components/StaffHubNav";
 import { TRANSACTION_STATUS_COLORS, USER_ROLES } from "@/lib/constants";
 import { getTranslation } from "@/lib/i18n/server";
 import { getMyProfile } from "@/server/auth-utils";
@@ -13,10 +14,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   FaArrowRight,
+  FaBook,
   FaExchangeAlt,
   FaExclamationTriangle,
   FaFileAlt,
-  FaHourglassHalf
+  FaHourglassHalf,
+  FaUsers,
 } from "react-icons/fa";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -31,7 +34,10 @@ function daysOverdue(dueDate: string | null): number {
   );
 }
 
-function fmtDate(d: string | null | undefined, language: string = "en"): string {
+function fmtDate(
+  d: string | null | undefined,
+  language: string = "en",
+): string {
   if (!d) return "—";
   return new Date(d).toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", {
     day: "numeric",
@@ -137,8 +143,9 @@ function Avatar({ url, name }: { url: string | null; name: string }) {
 
 function StatusPill({ status, label }: { status: string; label: string }) {
   const colors =
-    TRANSACTION_STATUS_COLORS[status as keyof typeof TRANSACTION_STATUS_COLORS] ||
-    "bg-gray-100 text-gray-600 border-gray-200";
+    TRANSACTION_STATUS_COLORS[
+      status as keyof typeof TRANSACTION_STATUS_COLORS
+    ] || "bg-gray-100 text-gray-600 border-gray-200";
   return (
     <span
       className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-tighter ${colors}`}
@@ -194,7 +201,10 @@ export default async function Overview() {
   const profile = await getMyProfile();
   if (!profile) redirect("/login");
 
-  if (profile.role !== USER_ROLES.ADMIN && profile.role !== USER_ROLES.MODERATOR) {
+  if (
+    profile.role !== USER_ROLES.ADMIN &&
+    profile.role !== USER_ROLES.MODERATOR
+  ) {
     redirect("/dashboard");
   }
 
@@ -218,17 +228,135 @@ export default async function Overview() {
     stats.pendingPdfSubmissions;
 
   const getStatusLabel = (tx: Transaction) => {
-    if (tx.status === "pending") return tx.type === "borrow" ? t.history.status.pending_borrow : t.history.status.pending_return;
+    if (tx.status === "pending")
+      return tx.type === "borrow"
+        ? t.history.status.pending_borrow
+        : t.history.status.pending_return;
     if (tx.status === "active") return t.history.status.borrowed;
     if (tx.status === "overdue") return t.history.status.overdue;
     if (tx.status === "completed") return t.history.status.returned;
-    return tx.type === "borrow" ? t.history.status.rejected_borrow : t.history.status.rejected_return;
+    return tx.type === "borrow"
+      ? t.history.status.rejected_borrow
+      : t.history.status.rejected_return;
   };
 
   return (
     <div className="space-y-5 sm:space-y-6">
+      {/* ── Sub-Navigation for Circulation Hub ─────────────────────────── */}
+      <CirculationNav />
+
+      {/* ── Action Center: Needs Your Attention (Zero Training!) ──────── */}
+      {urgentCount > 0 && (
+        <section className="bg-[#fce8e4] border-2 border-[#d0604a] rounded-xl p-4 sm:p-5 shadow-xs">
+          <div className="flex items-center gap-2 mb-3">
+            <FaExclamationTriangle className="w-5 h-5 text-[#8b2c1a]" />
+            <h2 className="text-sm sm:text-base font-bold text-[#8b2c1a] ink-title uppercase tracking-wider">
+              Needs Your Immediate Attention ({urgentCount})
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            {stats.pendingBorrowRequests > 0 && (
+              <Link
+                href="/dashboard/transactions?tab=pending"
+                className="p-3 bg-white/80 hover:bg-white rounded-lg border border-[#d0604a]/40 text-center transition-all shadow-xs group"
+              >
+                <span className="text-2xl font-bold text-[#8b2c1a] block leading-none">
+                  {stats.pendingBorrowRequests}
+                </span>
+                <span className="text-xs font-semibold text-[#221910] mt-1 block">
+                  Borrow Requests
+                </span>
+                <span className="text-[10px] text-[#8b2c1a] font-bold group-hover:underline">
+                  Approve now →
+                </span>
+              </Link>
+            )}
+            {stats.pendingReturnRequests > 0 && (
+              <Link
+                href="/dashboard/transactions?tab=pending"
+                className="p-3 bg-white/80 hover:bg-white rounded-lg border border-[#d0604a]/40 text-center transition-all shadow-xs group"
+              >
+                <span className="text-2xl font-bold text-[#9a3412] block leading-none">
+                  {stats.pendingReturnRequests}
+                </span>
+                <span className="text-xs font-semibold text-[#221910] mt-1 block">
+                  Return Requests
+                </span>
+                <span className="text-[10px] text-[#9a3412] font-bold group-hover:underline">
+                  Verify now →
+                </span>
+              </Link>
+            )}
+            {stats.overdueCount > 0 && (
+              <Link
+                href="/dashboard/transactions?tab=active"
+                className="p-3 bg-white/80 hover:bg-white rounded-lg border border-[#d0604a]/40 text-center transition-all shadow-xs group"
+              >
+                <span className="text-2xl font-bold text-[#8b2c1a] block leading-none">
+                  {stats.overdueCount}
+                </span>
+                <span className="text-xs font-semibold text-[#221910] mt-1 block">
+                  Overdue Books
+                </span>
+                <span className="text-[10px] text-[#8b2c1a] font-bold group-hover:underline">
+                  Inspect →
+                </span>
+              </Link>
+            )}
+            {stats.pendingPdfSubmissions > 0 && (
+              <Link
+                href="/dashboard/transactions?tab=pdf"
+                className="p-3 bg-white/80 hover:bg-white rounded-lg border border-[#d0604a]/40 text-center transition-all shadow-xs group"
+              >
+                <span className="text-2xl font-bold text-[#234b7d] block leading-none">
+                  {stats.pendingPdfSubmissions}
+                </span>
+                <span className="text-xs font-semibold text-[#221910] mt-1 block">
+                  PDF Reviews
+                </span>
+                <span className="text-[10px] text-[#234b7d] font-bold group-hover:underline">
+                  Review now →
+                </span>
+              </Link>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ── Staff Quick Ops Bar ────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <Link
+          href="/dashboard/transactions?tab=pending"
+          className="p-3 rounded-xl bg-[#3f3328] text-[#f4e8d4] text-xs font-bold hover:bg-[#4a3d31] transition-all flex items-center justify-center gap-2 shadow-xs"
+        >
+          <FaHourglassHalf className="w-3.5 h-3.5" />
+          <span>Approve Requests</span>
+        </Link>
+        <Link
+          href="/dashboard/transactions?tab=active"
+          className="p-3 rounded-xl bg-[#eadcc8] text-[#221910] text-xs font-bold hover:bg-[#ded0bc] transition-all flex items-center justify-center gap-2 shadow-xs border border-[#8a7966]/40"
+        >
+          <FaExchangeAlt className="w-3.5 h-3.5" />
+          <span>Return Desk</span>
+        </Link>
+        <Link
+          href="/dashboard/books"
+          className="p-3 rounded-xl bg-[#eadcc8] text-[#221910] text-xs font-bold hover:bg-[#ded0bc] transition-all flex items-center justify-center gap-2 shadow-xs border border-[#8a7966]/40"
+        >
+          <FaBook className="w-3.5 h-3.5" />
+          <span>Add / Edit Books</span>
+        </Link>
+        <Link
+          href="/dashboard/users"
+          className="p-3 rounded-xl bg-[#eadcc8] text-[#221910] text-xs font-bold hover:bg-[#ded0bc] transition-all flex items-center justify-center gap-2 shadow-xs border border-[#8a7966]/40"
+        >
+          <FaUsers className="w-3.5 h-3.5" />
+          <span>Verify Members</span>
+        </Link>
+      </div>
+
       {/* ── Header + Key Stats ─────────────────────────────────────────── */}
-      <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
+      <section className="dashboard-surface tron-border rounded-xl p-5 sm:p-6 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
@@ -240,18 +368,9 @@ export default async function Overview() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {urgentCount > 0 && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#d0604a] bg-[#fce8e4] text-[#8b2c1a] text-xs font-semibold rounded-sm ink-text">
-                <FaExclamationTriangle className="w-3 h-3" />
-                {urgentCount}{" "}
-                {urgentCount === 1
-                  ? t.overview.header.actionNeeded
-                  : t.overview.header.actionsNeeded}
-              </span>
-            )}
             <Link
               href="/dashboard/transactions"
-              className="inline-flex items-center gap-2 px-3 py-1.5 border border-[#4e4033] bg-[#3f3328] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors text-xs font-medium rounded-sm ink-text"
+              className="inline-flex items-center gap-2 px-3 py-1.5 border border-[#4e4033] bg-[#3f3328] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors text-xs font-medium rounded-lg ink-text"
             >
               {t.overview.header.viewTransactions}{" "}
               <FaArrowRight className="w-3 h-3" />
@@ -341,23 +460,26 @@ export default async function Overview() {
               <Link
                 key={label}
                 href={`/dashboard/transactions?tab=${tab}`}
-                className={`flex items-center justify-between p-3 border rounded-sm transition-colors ${urgent && count > 0
-                  ? "border-[#c4614a] bg-[#fdf0ec] hover:bg-[#f9e6e1]"
-                  : "border-[#c4b08a] bg-[#f8f1e6] hover:bg-[#ede3d4]"
-                  }`}
+                className={`flex items-center justify-between p-3 border rounded-sm transition-colors ${
+                  urgent && count > 0
+                    ? "border-[#c4614a] bg-[#fdf0ec] hover:bg-[#f9e6e1]"
+                    : "border-[#c4b08a] bg-[#f8f1e6] hover:bg-[#ede3d4]"
+                }`}
               >
                 <div className="flex items-center gap-2.5">
                   <Icon
-                    className={`w-3.5 h-3.5 shrink-0 ${urgent && count > 0 ? "text-[#c4614a]" : "text-[#7a6a5a]"
-                      }`}
+                    className={`w-3.5 h-3.5 shrink-0 ${
+                      urgent && count > 0 ? "text-[#c4614a]" : "text-[#7a6a5a]"
+                    }`}
                   />
                   <span className="text-sm ink-text text-[#3f3328]">
                     {label}
                   </span>
                 </div>
                 <span
-                  className={`text-xl font-bold ink-title ${urgent && count > 0 ? "text-[#9b3a25]" : "text-[#221910]"
-                    }`}
+                  className={`text-xl font-bold ink-title ${
+                    urgent && count > 0 ? "text-[#9b3a25]" : "text-[#221910]"
+                  }`}
                 >
                   {count}
                 </span>
@@ -716,7 +838,9 @@ export default async function Overview() {
                       </div>
                     </td>
                     <td className="px-4 sm:px-5 py-3 capitalize text-[#5a4b3f]">
-                      {tx.type === "borrow" ? t.history.table.borrowed : t.history.table.returned}
+                      {tx.type === "borrow"
+                        ? t.history.table.borrowed
+                        : t.history.table.returned}
                     </td>
                     <td className="px-4 sm:px-5 py-3 text-[#3f3328] max-w-48">
                       <p className="truncate">{tx.book?.title}</p>
@@ -728,7 +852,10 @@ export default async function Overview() {
                       {fmtDate(tx.request_date, language)}
                     </td>
                     <td className="px-4 sm:px-5 py-3">
-                      <StatusPill status={tx.status} label={getStatusLabel(tx)} />
+                      <StatusPill
+                        status={tx.status}
+                        label={getStatusLabel(tx)}
+                      />
                     </td>
                   </tr>
                 ))}

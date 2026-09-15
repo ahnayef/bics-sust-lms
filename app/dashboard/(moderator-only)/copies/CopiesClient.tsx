@@ -1,23 +1,30 @@
 "use client";
 
 import StatusBadge from "@/app/components/StatusBadge";
+import { InventoryNav } from "@/app/dashboard/components/StaffHubNav";
 import ConfirmModal from "@/components/ui/confirm-modal";
 import { useTranslation } from "@/lib/i18n/context";
 import {
   addCopyOfBook,
   getCopyBorrowerName,
-  getBookRefCount,
+  getCopyRefCount,
   removeCopy,
   renameCopyId,
   updateCopyMetadata,
-  getCopyRefCount,
 } from "@/server/library-actions";
 import type { Book, Copy, CopyStatus } from "@/types/library";
 import NextImage from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
-import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import {
+  Fragment,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { createPortal } from "react-dom";
 import {
   FaCheck,
@@ -29,7 +36,7 @@ import {
   FaSearch,
   FaSortAmountDown,
   FaTimes,
-  FaTrash
+  FaTrash,
 } from "react-icons/fa";
 
 import type { Category } from "@/types/library";
@@ -81,7 +88,11 @@ const wrapCanvasText = (
   return visibleLines;
 };
 
-const buildQrCardImage = async (copyId: string, bookTitle: string, copyIdLabel: string) => {
+const buildQrCardImage = async (
+  copyId: string,
+  bookTitle: string,
+  copyIdLabel: string,
+) => {
   const qrDataUrl = await QRCode.toDataURL(copyId, {
     errorCorrectionLevel: "M",
     margin: 2,
@@ -150,8 +161,7 @@ interface CopyForm {
 
 const EMPTY_FORM: CopyForm = { book_id: "", copy_id: "" };
 
-type PendingAction =
-  | { type: "delete"; copyId: string; bookTitle: string };
+type PendingAction = { type: "delete"; copyId: string; bookTitle: string };
 
 interface EditCopyIdState {
   copyId: string;
@@ -165,7 +175,11 @@ interface Props {
   categories: Category[];
 }
 
-export default function CopiesClient({ initialCopies, books, categories }: Props) {
+export default function CopiesClient({
+  initialCopies,
+  books,
+  categories,
+}: Props) {
   const router = useRouter();
   const { t } = useTranslation();
   const [isPending, startTransition] = useTransition();
@@ -213,7 +227,9 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
   );
   const [refCount, setRefCount] = useState<number | null>(null);
   // Map of copyId -> borrower name (fetched lazily when copy is borrowed)
-  const [borrowerNames, setBorrowerNames] = useState<Record<string, string | null>>({});
+  const [borrowerNames, setBorrowerNames] = useState<
+    Record<string, string | null>
+  >({});
 
   // Fetch borrower name for a borrowed copy on demand
   const fetchBorrowerName = async (copyId: string) => {
@@ -269,43 +285,49 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
   const filteredGroups = useMemo(() => {
     const query = searchTerm.toLowerCase().trim();
 
-    const result = groupedCopies.filter((group) => {
-      const matchesType =
-        typeFilter === "all" || group.book.category_id === typeFilter;
+    const result = groupedCopies
+      .filter((group) => {
+        const matchesType =
+          typeFilter === "all" || group.book.category_id === typeFilter;
 
-      const matchesSearch = !query ||
-        group.book.title.toLowerCase().includes(query) ||
-        group.book.author.toLowerCase().includes(query) ||
-        group.copies.some((copy) =>
-          copy.id.toLowerCase().includes(query)
+        const matchesSearch =
+          !query ||
+          group.book.title.toLowerCase().includes(query) ||
+          group.book.author.toLowerCase().includes(query) ||
+          group.copies.some((copy) => copy.id.toLowerCase().includes(query));
+
+        // When filtering by status, only show the book if it has matching copies
+        // OR if statusFilter is "all" (show all books, including empty ones)
+        const filteredCopies = group.copies.filter(
+          (copy) => statusFilter === "all" || copy.status === statusFilter,
         );
 
-      // When filtering by status, only show the book if it has matching copies
-      // OR if statusFilter is "all" (show all books, including empty ones)
-      const filteredCopies = group.copies.filter((copy) =>
-        statusFilter === "all" || copy.status === statusFilter
-      );
+        const hasMatchingCopiesOrNoFilter =
+          statusFilter === "all" || filteredCopies.length > 0;
 
-      const hasMatchingCopiesOrNoFilter = statusFilter === "all" || filteredCopies.length > 0;
-
-      return matchesType && matchesSearch && hasMatchingCopiesOrNoFilter;
-    }).map((group) => ({
-      ...group,
-      copies: group.copies.filter((copy) =>
-        statusFilter === "all" || copy.status === statusFilter
-      ),
-    }));
+        return matchesType && matchesSearch && hasMatchingCopiesOrNoFilter;
+      })
+      .map((group) => ({
+        ...group,
+        copies: group.copies.filter(
+          (copy) => statusFilter === "all" || copy.status === statusFilter,
+        ),
+      }));
 
     // Sort the results exactly like BookListClient
     result.sort((a, b) => {
-      if (sortBy === "title-asc") return a.book.title.localeCompare(b.book.title, "bn");
-      if (sortBy === "title-desc") return b.book.title.localeCompare(a.book.title, "bn");
+      if (sortBy === "title-asc")
+        return a.book.title.localeCompare(b.book.title, "bn");
+      if (sortBy === "title-desc")
+        return b.book.title.localeCompare(a.book.title, "bn");
       if (sortBy === "copies-asc")
         return (
-          a.copies.length - b.copies.length || a.book.title.localeCompare(b.book.title, "bn")
+          a.copies.length - b.copies.length ||
+          a.book.title.localeCompare(b.book.title, "bn")
         );
       return (
-        b.copies.length - a.copies.length || a.book.title.localeCompare(b.book.title, "bn")
+        b.copies.length - a.copies.length ||
+        a.book.title.localeCompare(b.book.title, "bn")
       );
     });
 
@@ -466,9 +488,13 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
       fd.set("new_id", trimmed);
       const result = await renameCopyId(fd);
       if (result.error) {
-        const isCollision = result.error.toLowerCase().includes("already exists");
+        const isCollision = result.error
+          .toLowerCase()
+          .includes("already exists");
         if (isCollision) {
-          setEditCopyId((prev) => prev ? { ...prev, error: result.error! } : null);
+          setEditCopyId((prev) =>
+            prev ? { ...prev, error: result.error! } : null,
+          );
         } else {
           setEditCopyId(null);
           showFlash("error", result.error);
@@ -505,7 +531,11 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
     }
 
     try {
-      const imageUrl = await buildQrCardImage(copy.id, copy.book.title, t.copies.qrModal.copyId);
+      const imageUrl = await buildQrCardImage(
+        copy.id,
+        copy.book.title,
+        t.copies.qrModal.copyId,
+      );
       if (qrRequestIdRef.current === requestId) setQrImageUrl(imageUrl);
     } catch {
       if (qrRequestIdRef.current === requestId) setQrImageUrl("");
@@ -533,13 +563,17 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
 
   return (
     <div className="space-y-6">
+      {/* Inventory Hub Sub-Navigation */}
+      <InventoryNav />
+
       {/* Flash Messages */}
       {flash && (
         <div
-          className={`fixed top-20 right-4 z-100 p-4 rounded-sm shadow-xl border animate-in fade-in slide-in-from-right-4 duration-300 ${flash.type === "success"
-            ? "bg-[#eef5e9] border-[#a3b994] text-[#3d5c2e]"
-            : "bg-[#fdf0ec] border-[#d0604a] text-[#8b2c1a]"
-            }`}
+          className={`fixed top-20 right-4 z-100 p-4 rounded-sm shadow-xl border animate-in fade-in slide-in-from-right-4 duration-300 ${
+            flash.type === "success"
+              ? "bg-[#eef5e9] border-[#a3b994] text-[#3d5c2e]"
+              : "bg-[#fdf0ec] border-[#d0604a] text-[#8b2c1a]"
+          }`}
         >
           <div className="flex items-center gap-2">
             {flash.type === "success" ? "✓" : "✕"}
@@ -549,17 +583,13 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
       )}
 
       {/* Header + stats */}
-      <section
-        className="dashboard-surface tron-border rounded-sm p-5 sm:p-6"
-      >
+      <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
               {t.copies.title}
             </h1>
-            <p className="text-[#5a4b3f] mt-1 ink-text">
-              {t.copies.subtitle}
-            </p>
+            <p className="text-[#5a4b3f] mt-1 ink-text">{t.copies.subtitle}</p>
           </div>
 
           <button
@@ -626,7 +656,9 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
           >
             <option value="all">{t.bookList.filters.type.all}</option>
             {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
             ))}
           </select>
           <select
@@ -635,7 +667,9 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
           >
             <option value="all">{t.bookList.filters.availability.all}</option>
-            <option value="available">{t.bookList.filters.availability.available}</option>
+            <option value="available">
+              {t.bookList.filters.availability.available}
+            </option>
             <option value="borrowed">{t.bookList.copyStatus.borrowed}</option>
             <option value="damaged">{t.bookList.copyStatus.damaged}</option>
           </select>
@@ -646,7 +680,11 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
             }}
           >
             {t.bookList.sorting.title}
-            {sortBy === "title-asc" ? <FaSortAmountDown className="w-3 h-3" /> : <FaSortAmountDown className="w-3 h-3 rotate-180" />}
+            {sortBy === "title-asc" ? (
+              <FaSortAmountDown className="w-3 h-3" />
+            ) : (
+              <FaSortAmountDown className="w-3 h-3 rotate-180" />
+            )}
           </button>
           <div className="flex items-center gap-2">
             <button
@@ -660,14 +698,10 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
       </section>
 
       {/* Books table */}
-      <section
-        className="book-list-surface tron-border rounded-lg overflow-hidden border border-[#5f4f40]"
-      >
+      <section className="book-list-surface tron-border rounded-lg overflow-hidden border border-[#5f4f40]">
         {filteredGroups.length === 0 ? (
           <div className="p-10 text-center">
-            <p className="text-[#5c4f42] ink-text">
-              {t.copies.empty}
-            </p>
+            <p className="text-[#5c4f42] ink-text">{t.copies.empty}</p>
           </div>
         ) : (
           <div className="w-full overflow-x-auto">
@@ -707,7 +741,9 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
-                            setExpandedBookId(isExpanded ? null : group.book.id);
+                            setExpandedBookId(
+                              isExpanded ? null : group.book.id,
+                            );
                           }
                         }}
                         aria-expanded={isExpanded}
@@ -722,7 +758,8 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
                                 {group.book.title}
                               </p>
                               <p className="text-[10px] text-[#6a5a4c] mt-0.5">
-                                {group.copies.length} {t.bookList.bookCard.copies}
+                                {group.copies.length}{" "}
+                                {t.bookList.bookCard.copies}
                               </p>
                             </div>
                           </div>
@@ -786,28 +823,37 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
                                         </td>
                                         <td className="py-1.5 pr-2">
                                           <div className="space-y-1">
-                                            <StatusBadge tone={getStatusBadgeTone(copy.status)}>
+                                            <StatusBadge
+                                              tone={getStatusBadgeTone(
+                                                copy.status,
+                                              )}
+                                            >
                                               {t.copies.filters[copy.status]}
                                             </StatusBadge>
-                                            {copy.status === "borrowed" && copy.borrower && (
-                                              <p className="text-[10px] text-[#5a4b3f] ink-text">
-                                                by{" "}
-                                                <Link
-                                                  href={`/dashboard/users/${copy.borrower.id}`}
-                                                  className="font-semibold underline hover:text-[#2b2119]"
-                                                >
-                                                  {copy.borrower.full_name}
-                                                </Link>
-                                              </p>
-                                            )}
+                                            {copy.status === "borrowed" &&
+                                              copy.borrower && (
+                                                <p className="text-[10px] text-[#5a4b3f] ink-text">
+                                                  by{" "}
+                                                  <Link
+                                                    href={`/dashboard/users/${copy.borrower.id}`}
+                                                    className="font-semibold underline hover:text-[#2b2119]"
+                                                  >
+                                                    {copy.borrower.full_name}
+                                                  </Link>
+                                                </p>
+                                              )}
                                           </div>
                                         </td>
                                         <td className="py-1.5 pr-2">
                                           <span
                                             className="text-[#5a4b3f]"
-                                            title={new Date(copy.created_at).toLocaleString()}
+                                            title={new Date(
+                                              copy.created_at,
+                                            ).toLocaleString()}
                                           >
-                                            {new Date(copy.created_at).toLocaleDateString(undefined, {
+                                            {new Date(
+                                              copy.created_at,
+                                            ).toLocaleDateString(undefined, {
                                               year: "numeric",
                                               month: "short",
                                               day: "numeric",
@@ -817,30 +863,55 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
                                         <td className="py-1.5 pr-2">
                                           <div className="flex items-center gap-2">
                                             <button
-                                              onClick={() => openQrModal(copy.id)}
+                                              onClick={() =>
+                                                openQrModal(copy.id)
+                                              }
                                               disabled={isPending}
                                               className="p-2 text-[#5b4c3f] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors disabled:opacity-55"
                                               aria-label={`${t.copies.actions.downloadQr} ${copy.id}`}
-                                              title={t.copies.actions.downloadQr}
+                                              title={
+                                                t.copies.actions.downloadQr
+                                              }
                                             >
                                               <FaQrcode className="w-4 h-4" />
                                             </button>
                                             <button
-                                              onClick={() => openEditCopyIdModal(copy.id)}
+                                              onClick={() =>
+                                                openEditCopyIdModal(copy.id)
+                                              }
                                               disabled={isPending}
                                               className="p-2 text-[#5b4c3f] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors disabled:opacity-55"
                                               aria-label={`${t.copies.actions.editCopyId} ${copy.id}`}
-                                              title={t.copies.actions.editCopyId}
+                                              title={
+                                                t.copies.actions.editCopyId
+                                              }
                                             >
                                               <FaPencilAlt className="w-3.5 h-3.5" />
                                             </button>
                                             {copy.status !== "borrowed" && (
                                               <button
-                                                onClick={() => handleMarkAsDamaged(copy.id, copy.status)}
+                                                onClick={() =>
+                                                  handleMarkAsDamaged(
+                                                    copy.id,
+                                                    copy.status,
+                                                  )
+                                                }
                                                 disabled={isPending}
                                                 className="p-2 text-[#5b4c3f] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors disabled:opacity-55"
-                                                aria-label={copy.status === "damaged" ? t.copies.actions.markAsAvailable : t.copies.actions.markAsDamaged}
-                                                title={copy.status === "damaged" ? t.copies.actions.markAsAvailable : t.copies.actions.markAsDamaged}
+                                                aria-label={
+                                                  copy.status === "damaged"
+                                                    ? t.copies.actions
+                                                        .markAsAvailable
+                                                    : t.copies.actions
+                                                        .markAsDamaged
+                                                }
+                                                title={
+                                                  copy.status === "damaged"
+                                                    ? t.copies.actions
+                                                        .markAsAvailable
+                                                    : t.copies.actions
+                                                        .markAsDamaged
+                                                }
                                               >
                                                 {copy.status === "damaged" ? (
                                                   <FaCheck className="w-4 h-4" />
@@ -851,18 +922,28 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
                                             )}
                                             <button
                                               onClick={() => {
-                                                if (copy.status === "borrowed") return;
+                                                if (copy.status === "borrowed")
+                                                  return;
                                                 handleDelete(copy.id);
                                               }}
                                               onMouseEnter={() => {
-                                                if (copy.status === "borrowed") fetchBorrowerName(copy.id);
+                                                if (copy.status === "borrowed")
+                                                  fetchBorrowerName(copy.id);
                                               }}
-                                              disabled={isPending || copy.status === "borrowed"}
+                                              disabled={
+                                                isPending ||
+                                                copy.status === "borrowed"
+                                              }
                                               className="p-2 text-[#6a4e3d] hover:bg-[#eadcc8] border border-transparent hover:border-[#c4ad91] rounded-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                              aria-label={copy.status === "borrowed" ? `Borrowed by ${borrowerNames[copy.id] ?? "someone"}` : `${t.copies.actions.delete} ${copy.id}`}
-                                              title={copy.status === "borrowed"
-                                                ? `Borrowed by ${borrowerNames[copy.id] ?? "…"}`
-                                                : t.copies.actions.delete
+                                              aria-label={
+                                                copy.status === "borrowed"
+                                                  ? `Borrowed by ${borrowerNames[copy.id] ?? "someone"}`
+                                                  : `${t.copies.actions.delete} ${copy.id}`
+                                              }
+                                              title={
+                                                copy.status === "borrowed"
+                                                  ? `Borrowed by ${borrowerNames[copy.id] ?? "…"}`
+                                                  : t.copies.actions.delete
                                               }
                                             >
                                               <FaTrash className="w-4 h-4" />
@@ -929,12 +1010,16 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
                   value={formData.copy_id}
                   onChange={(e) => {
                     if (copyIdError) setCopyIdError(null);
-                    setFormData({ ...formData, copy_id: e.target.value.toUpperCase() });
+                    setFormData({
+                      ...formData,
+                      copy_id: e.target.value.toUpperCase(),
+                    });
                   }}
-                  className={`w-full px-4 py-2.5 border rounded-sm focus:ring-2 focus:border-transparent outline-none transition-colors ${copyIdError
-                    ? "border-red-500 focus:ring-red-500 bg-[#fdf2f2] text-red-900"
-                    : "border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] focus:ring-[#6e5d4a]"
-                    }`}
+                  className={`w-full px-4 py-2.5 border rounded-sm focus:ring-2 focus:border-transparent outline-none transition-colors ${
+                    copyIdError
+                      ? "border-red-500 focus:ring-red-500 bg-[#fdf2f2] text-red-900"
+                      : "border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] focus:ring-[#6e5d4a]"
+                  }`}
                 />
                 {copyIdError && (
                   <p className="text-xs text-red-600 mt-1 font-medium">
@@ -948,7 +1033,7 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
                 <label className="block text-sm font-medium text-[#4f4134] mb-1">
                   {t.copies.modal.labels.selectBook} *
                 </label>
-                
+
                 {/* Native select for small screens */}
                 <select
                   value={formData.book_id}
@@ -976,7 +1061,8 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
                     type="text"
                     value={bookSearchTerm}
                     onFocus={() => {
-                      const rect = bookInputRef.current?.getBoundingClientRect();
+                      const rect =
+                        bookInputRef.current?.getBoundingClientRect();
                       if (rect) setDropdownRect(rect);
                       setShowBookDropdown(true);
                     }}
@@ -984,45 +1070,57 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
                       setTimeout(() => setShowBookDropdown(false), 120);
                     }}
                     onChange={(e) => {
-                      const rect = bookInputRef.current?.getBoundingClientRect();
+                      const rect =
+                        bookInputRef.current?.getBoundingClientRect();
                       if (rect) setDropdownRect(rect);
                       handleBookSearchChange(e.target.value);
                     }}
-                    placeholder={formData.book_id ? books.find(b => b.id === formData.book_id)?.title ?? t.copies.modal.placeholders.searchBook : t.copies.modal.placeholders.searchBook}
+                    placeholder={
+                      formData.book_id
+                        ? (books.find((b) => b.id === formData.book_id)
+                            ?.title ?? t.copies.modal.placeholders.searchBook)
+                        : t.copies.modal.placeholders.searchBook
+                    }
                     className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
                   />
 
-                  {showBookDropdown && dropdownRect && typeof document !== "undefined" && createPortal(
-                    <div
-                      style={{
-                        position: "fixed",
-                        top: dropdownRect.bottom + 4,
-                        left: dropdownRect.left,
-                        width: dropdownRect.width,
-                        zIndex: 9999,
-                      }}
-                      className="max-h-56 overflow-y-auto rounded-sm border border-[#8a7966] bg-[#f6ecdd] shadow-xl"
-                    >
-                      {filteredBookOptions.length > 0 ? (
-                        filteredBookOptions.map((book) => (
-                          <button
-                            key={book.id}
-                            type="button"
-                            onMouseDown={() => handleSelectBook(book)}
-                            className="w-full px-3 py-2 text-left text-sm text-[#2f251d] hover:bg-[#eadcc8] transition-colors"
-                          >
-                            <span className="font-medium">{book.title}</span>
-                            <span className="text-[#5a4b3f]"> — {book.author}</span>
-                          </button>
-                        ))
-                      ) : (
-                        <div className="px-3 py-2 text-sm text-[#6a5a4c]">
-                          No matching book found
-                        </div>
-                      )}
-                    </div>,
-                    document.body
-                  )}
+                  {showBookDropdown &&
+                    dropdownRect &&
+                    typeof document !== "undefined" &&
+                    createPortal(
+                      <div
+                        style={{
+                          position: "fixed",
+                          top: dropdownRect.bottom + 4,
+                          left: dropdownRect.left,
+                          width: dropdownRect.width,
+                          zIndex: 9999,
+                        }}
+                        className="max-h-56 overflow-y-auto rounded-sm border border-[#8a7966] bg-[#f6ecdd] shadow-xl"
+                      >
+                        {filteredBookOptions.length > 0 ? (
+                          filteredBookOptions.map((book) => (
+                            <button
+                              key={book.id}
+                              type="button"
+                              onMouseDown={() => handleSelectBook(book)}
+                              className="w-full px-3 py-2 text-left text-sm text-[#2f251d] hover:bg-[#eadcc8] transition-colors"
+                            >
+                              <span className="font-medium">{book.title}</span>
+                              <span className="text-[#5a4b3f]">
+                                {" "}
+                                — {book.author}
+                              </span>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="px-3 py-2 text-sm text-[#6a5a4c]">
+                            No matching book found
+                          </div>
+                        )}
+                      </div>,
+                      document.body,
+                    )}
                 </div>
               </div>
 
@@ -1038,9 +1136,7 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
                 <button
                   type="submit"
                   disabled={
-                    isPending ||
-                    !formData.book_id ||
-                    !formData.copy_id.trim()
+                    isPending || !formData.book_id || !formData.copy_id.trim()
                   }
                   className="flex-1 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 disabled:cursor-not-allowed transition-colors font-medium ink-text"
                 >
@@ -1078,7 +1174,9 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
 
             <p className="text-xs text-[#6a5a4c] ink-text mb-4">
               {t.copies.table.copyId}:{" "}
-              <span className="font-mono font-semibold text-[#3f3328]">{editCopyId.copyId}</span>
+              <span className="font-mono font-semibold text-[#3f3328]">
+                {editCopyId.copyId}
+              </span>
             </p>
 
             <form
@@ -1100,7 +1198,9 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
                   autoFocus
                   onChange={(e) => {
                     const val = e.target.value.toUpperCase();
-                    setEditCopyId((prev) => prev ? { ...prev, newId: val, error: null } : null);
+                    setEditCopyId((prev) =>
+                      prev ? { ...prev, newId: val, error: null } : null,
+                    );
                   }}
                   className={`w-full px-4 py-2.5 border rounded-sm focus:ring-2 focus:border-transparent outline-none transition-colors font-mono ${
                     editCopyId.error
@@ -1153,7 +1253,11 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
               "..."
             ) : refCount > 0 ? (
               <span>
-                <b className="text-[#221910] font-bold">{refCount}</b> {t.copies.confirmDelete.warning.replace("{count}", refCount.toString())}
+                <b className="text-[#221910] font-bold">{refCount}</b>{" "}
+                {t.copies.confirmDelete.warning.replace(
+                  "{count}",
+                  refCount.toString(),
+                )}
               </span>
             ) : (
               t.copies.confirmDelete.message
@@ -1162,7 +1266,9 @@ export default function CopiesClient({ initialCopies, books, categories }: Props
           preview={
             <div className="space-y-1 text-sm">
               <p>
-                <span className="font-semibold">{t.copies.table.bookTitle}:</span>{" "}
+                <span className="font-semibold">
+                  {t.copies.table.bookTitle}:
+                </span>{" "}
                 {pendingAction.bookTitle}
               </p>
               <p>

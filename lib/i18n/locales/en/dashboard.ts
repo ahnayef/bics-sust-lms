@@ -20,6 +20,12 @@ export const dashboard = {
     borrow: "Borrow",
     return: "Return",
     history: "History",
+    staffDesk: "Staff Desk",
+    myLibrary: "My Library",
+    circulation: "Circulation",
+    inventory: "Inventory",
+    community: "Members & Access",
+    system: "System",
   },
   header: {
     welcome: "Welcome back,",
@@ -30,7 +36,8 @@ export const dashboard = {
   },
   home: {
     title: "Your library home",
-    description: "Jump to common tasks below. Your profile card, reading progress, and contact details are on",
+    description:
+      "Jump to common tasks below. Your profile card, reading progress, and contact details are on",
     myProfile: "My Profile",
     quickActions: "Quick Actions",
     actions: {
@@ -55,6 +62,10 @@ export const dashboard = {
     empty: "You don't have any active borrows.",
     browseLink: "Browse the book list",
     toBorrow: "to borrow something.",
+    returnCopy: "Return Copy",
+    readPdf: "Read PDF",
+    readingProgress: "Syllabus Reading Progress",
+    viewChecklists: "View Checklist",
     unknownBook: "Unknown book",
     copy: "Copy",
     due: "Due",
@@ -67,4 +78,4 @@ export const dashboard = {
       pending: "Pending",
     },
   },
-} as const;
+};

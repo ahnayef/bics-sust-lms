@@ -1,5 +1,6 @@
 "use client";
 
+import { CommunityNav } from "@/app/dashboard/components/StaffHubNav";
 import Avatar from "@/components/Avatar";
 import { RankBadge } from "@/components/ui/rank-badge";
 import { useTranslation } from "@/lib/i18n/context";
@@ -13,7 +14,7 @@ import {
   FaSortAmountDown,
   FaSortAmountUp,
   FaTimes,
-  FaTimesCircle
+  FaTimesCircle,
 } from "react-icons/fa";
 
 type Tab = "all" | "verified" | "unverified" | "overdue";
@@ -58,7 +59,7 @@ export default function UsersClient({ users, categories }: Props) {
   const [sortField, setSortField] = useState<SortField>("joinDate");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
-    categories[0]?.id ?? ""
+    categories[0]?.id ?? "",
   );
 
   const uniqueRanks = useMemo(() => {
@@ -129,10 +130,14 @@ export default function UsersClient({ users, categories }: Props) {
         cmp =
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       } else if (sortField === "progress") {
-        const catA = a.categoryProgress.find(c => c.categoryId === selectedCategoryId);
-        const catB = b.categoryProgress.find(c => c.categoryId === selectedCategoryId);
-        let pa = catA && catA.total > 0 ? catA.completed / catA.total : 0;
-        let pb = catB && catB.total > 0 ? catB.completed / catB.total : 0;
+        const catA = a.categoryProgress.find(
+          (c) => c.categoryId === selectedCategoryId,
+        );
+        const catB = b.categoryProgress.find(
+          (c) => c.categoryId === selectedCategoryId,
+        );
+        const pa = catA && catA.total > 0 ? catA.completed / catA.total : 0;
+        const pb = catB && catB.total > 0 ? catB.completed / catB.total : 0;
         cmp = pa - pb;
       } else if (sortField === "rank") {
         const ra = a.rank?.name ?? t.users.filters.noRank;
@@ -140,11 +145,23 @@ export default function UsersClient({ users, categories }: Props) {
         cmp = ra.localeCompare(rb);
       }
       if (cmp === 0) {
-        return a.full_name.localeCompare(b.full_name, language === "bn" ? "bn" : "en");
+        return a.full_name.localeCompare(
+          b.full_name,
+          language === "bn" ? "bn" : "en",
+        );
       }
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [baseUsers, searchTerm, rankFilter, thanaFilter, sortField, sortDir, t.users.filters.noRank, selectedCategoryId]);
+  }, [
+    baseUsers,
+    searchTerm,
+    rankFilter,
+    thanaFilter,
+    sortField,
+    sortDir,
+    t.users.filters.noRank,
+    selectedCategoryId,
+  ]);
 
   const tabCounts = {
     all: users.length,
@@ -156,7 +173,13 @@ export default function UsersClient({ users, categories }: Props) {
   const selectClass =
     "px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm cursor-pointer hover:bg-[#ece0ce] transition-colors appearance-none pr-8 relative";
 
-  const SelectWrapper = ({ children, icon: Icon }: { children: React.ReactNode, icon?: any }) => (
+  const SelectWrapper = ({
+    children,
+    icon: Icon,
+  }: {
+    children: React.ReactNode;
+    icon?: any;
+  }) => (
     <div className="relative group">
       {children}
       <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#8a7966] group-hover:text-[#5a4b3f] transition-colors">
@@ -182,6 +205,9 @@ export default function UsersClient({ users, categories }: Props) {
 
   return (
     <div className="space-y-5">
+      {/* Community Hub Sub-Navigation */}
+      <CommunityNav />
+
       <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
           {t.users.title}
@@ -211,23 +237,31 @@ export default function UsersClient({ users, categories }: Props) {
       </section>
 
       <div className="flex border-b border-[#b9a58b] gap-0 overflow-x-auto overflow-y-hidden">
-        {(["all", "verified", "unverified", "overdue"] as const).map((tabId) => (
-          <button
-            key={tabId}
-            type="button"
-            onClick={() => setTab(tabId)}
-            className={`flex-1 shrink-0 whitespace-nowrap px-3 sm:px-6 py-2.5 text-xs sm:text-sm font-medium ink-text transition-colors flex items-center justify-center gap-1.5 border-b-[3px] -mb-px cursor-pointer ${tab === tabId
-              ? "border-[#3f3328] text-[#221910] font-bold bg-[#f6ecdd]"
-              : "border-transparent text-[#6a5a4c] hover:text-[#3f3328] hover:bg-[#eadcc8]/30"
+        {(["all", "verified", "unverified", "overdue"] as const).map(
+          (tabId) => (
+            <button
+              key={tabId}
+              type="button"
+              onClick={() => setTab(tabId)}
+              className={`flex-1 shrink-0 whitespace-nowrap px-3 sm:px-6 py-2.5 text-xs sm:text-sm font-medium ink-text transition-colors flex items-center justify-center gap-1.5 border-b-[3px] -mb-px cursor-pointer ${
+                tab === tabId
+                  ? "border-[#3f3328] text-[#221910] font-bold bg-[#f6ecdd]"
+                  : "border-transparent text-[#6a5a4c] hover:text-[#3f3328] hover:bg-[#eadcc8]/30"
               }`}
-          >
-            {t.users.tabs[tabId]}
-            <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${tab === tabId ? "bg-[#3f3328] text-[#f4e8d4]" : "bg-[#d2bfa5] text-[#4a3825]"
-              }`}>
-              {tabCounts[tabId]}
-            </span>
-          </button>
-        ))}
+            >
+              {t.users.tabs[tabId]}
+              <span
+                className={`px-1.5 py-0.5 rounded-full text-[10px] ${
+                  tab === tabId
+                    ? "bg-[#3f3328] text-[#f4e8d4]"
+                    : "bg-[#d2bfa5] text-[#4a3825]"
+                }`}
+              >
+                {tabCounts[tabId]}
+              </span>
+            </button>
+          ),
+        )}
       </div>
 
       <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
@@ -301,8 +335,12 @@ export default function UsersClient({ users, categories }: Props) {
                     onChange={(e) => setSortField(e.target.value as SortField)}
                     className={selectClass}
                   >
-                    <option value="joinDate">{t.users.filters.sortBy.joinDate}</option>
-                    <option value="progress">{t.users.filters.sortBy.progress}</option>
+                    <option value="joinDate">
+                      {t.users.filters.sortBy.joinDate}
+                    </option>
+                    <option value="progress">
+                      {t.users.filters.sortBy.progress}
+                    </option>
                     <option value="rank">{t.users.filters.sortBy.rank}</option>
                   </select>
                 </SelectWrapper>
@@ -310,7 +348,11 @@ export default function UsersClient({ users, categories }: Props) {
                 <button
                   onClick={() => setSortDir(sortDir === "asc" ? "desc" : "asc")}
                   className="p-2.5 bg-[#f6ecdd] border border-[#8a7966] text-[#4e4033] rounded-sm hover:bg-[#ece0ce] transition-colors flex items-center justify-center min-w-[42px]"
-                  title={sortDir === "asc" ? t.common.sort.ascending : t.common.sort.descending}
+                  title={
+                    sortDir === "asc"
+                      ? t.common.sort.ascending
+                      : t.common.sort.descending
+                  }
                 >
                   {sortDir === "asc" ? (
                     <FaSortAmountUp className="w-4 h-4" />
@@ -343,7 +385,8 @@ export default function UsersClient({ users, categories }: Props) {
                   {t.users.table.rank}
                 </th>
                 <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
-                  {categories.find(c => c.id === selectedCategoryId)?.name ?? t.users.table.progress}
+                  {categories.find((c) => c.id === selectedCategoryId)?.name ??
+                    t.users.table.progress}
                 </th>
                 <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
                   {t.users.table.overdue}
@@ -355,10 +398,13 @@ export default function UsersClient({ users, categories }: Props) {
             </thead>
             <tbody>
               {filteredUsers.map((user) => {
-                const cat = user.categoryProgress.find(c => c.categoryId === selectedCategoryId);
+                const cat = user.categoryProgress.find(
+                  (c) => c.categoryId === selectedCategoryId,
+                );
                 const completed = cat?.completed ?? 0;
                 const total = cat?.total ?? 0;
-                let pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+                const pct =
+                  total > 0 ? Math.round((completed / total) * 100) : 0;
 
                 return (
                   <tr
@@ -421,11 +467,14 @@ export default function UsersClient({ users, categories }: Props) {
                       )}
                     </td>
                     <td className="px-4 sm:px-6 py-3 text-xs text-[#5a4b3f] whitespace-nowrap">
-                      {new Date(user.created_at).toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
+                      {new Date(user.created_at).toLocaleDateString(
+                        language === "bn" ? "bn-BD" : "en-GB",
+                        {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        },
+                      )}
                     </td>
                   </tr>
                 );
@@ -440,10 +489,9 @@ export default function UsersClient({ users, categories }: Props) {
         )}
         {filteredUsers.length > 0 && (
           <div className="px-4 sm:px-6 py-3 border-t border-[#d2bfa5] text-xs text-[#6a5a4c] ink-text">
-            {t.common.pagination.showing} {filteredUsers.length} {t.common.pagination.of} {baseUsers.length}{" "}
-            {tab === "all"
-              ? t.users.tabs.all
-              : t.users.tabs[tab]}
+            {t.common.pagination.showing} {filteredUsers.length}{" "}
+            {t.common.pagination.of} {baseUsers.length}{" "}
+            {tab === "all" ? t.users.tabs.all : t.users.tabs[tab]}
           </div>
         )}
       </section>

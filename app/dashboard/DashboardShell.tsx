@@ -8,7 +8,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useState } from "react";
 import {
-  FaBars,
   FaBook,
   FaBookOpen,
   FaChartLine,
@@ -19,6 +18,7 @@ import {
   FaHome,
   FaMapMarkerAlt,
   FaPrint,
+  FaQrcode,
   FaShieldAlt,
   FaTimes,
   FaUser,
@@ -50,150 +50,13 @@ export default function DashboardShell({
   children,
 }: DashboardShellProps) {
   const pathname = usePathname();
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isStaffDrawerOpen, setIsStaffDrawerOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { t } = useTranslation();
 
-  const navigationGroups = [
-    {
-      items: [
-        {
-          label: t.dashboard.sidebar.dashboard,
-          href: "/dashboard",
-          icon: FaHome,
-          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR, USER_ROLES.MEMBER],
-        },
-        {
-          label: t.dashboard.sidebar.myProfile,
-          href: "/dashboard/profile",
-          icon: FaUser,
-          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR, USER_ROLES.MEMBER],
-        },
-        {
-          label: t.dashboard.sidebar.bookList,
-          href: "/dashboard/book-list",
-          icon: FaBookOpen,
-          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR, USER_ROLES.MEMBER],
-        },
-        {
-          label: t.dashboard.sidebar.checklists,
-          href: "/dashboard/checklists",
-          icon: FaCheckSquare,
-          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR, USER_ROLES.MEMBER],
-        },
-      ],
-    },
-    {
-      items: [
-        {
-          label: t.dashboard.sidebar.overview,
-          href: "/dashboard/overview",
-          icon: FaChartLine,
-          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-        },
-        {
-          label: t.dashboard.sidebar.transactions,
-          href: "/dashboard/transactions",
-          icon: FaExchangeAlt,
-          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-        },
-        {
-          label: t.dashboard.sidebar.books,
-          href: "/dashboard/books",
-          icon: FaBook,
-          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-        },
-        {
-          label: t.dashboard.sidebar.copies,
-          href: "/dashboard/copies",
-          icon: FaGraduationCap,
-          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-        },
-        {
-          label: t.dashboard.sidebar.checklistsManage,
-          href: "/dashboard/checklists-manage",
-          icon: FaCheckSquare,
-          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-        },
-        {
-          label: t.dashboard.sidebar.categories,
-          href: "/dashboard/categories",
-          icon: FaClipboardList,
-          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-        },
-        {
-          label: t.dashboard.sidebar.users,
-          href: "/dashboard/users",
-          icon: FaUsers,
-          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-        },
-        {
-          label: t.dashboard.sidebar.moderators,
-          href: "/dashboard/moderators",
-          icon: FaShieldAlt,
-          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-        },
-        {
-          label: t.dashboard.sidebar.ranks,
-          href: "/dashboard/ranks",
-          icon: FaShieldAlt,
-          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-        },
-        {
-          label: t.dashboard.sidebar.thanas,
-          href: "/dashboard/thanas",
-          icon: FaMapMarkerAlt,
-          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-        },
-        {
-          label: t.dashboard.sidebar.printQr,
-          href: "/dashboard/print-qr",
-          icon: FaPrint,
-          requiresRole: [USER_ROLES.ADMIN, USER_ROLES.MODERATOR],
-        },
-        {
-          label: t.dashboard.sidebar.logs,
-          href: "/dashboard/logs",
-          icon: FaClipboardList,
-          requiresRole: [USER_ROLES.ADMIN],
-        },
-      ],
-    },
-  ];
-
-  const ADMIN_COLOR = {
-    active: "bg-[#dbe6f1] text-[#234b7d] border-y-[#5c8ab0] shadow-[inset_4px_0_0_0_#5c8ab0]",
-    inactive: "bg-[#e6ebf1]/70 text-[#3f4b5a] hover:bg-[#d5dee9] hover:border-y-[#9eb0d6]",
-    iconActive: "text-[#234b7d]",
-    iconInactive: "text-[#4d719d]",
-  };
-
-  const MODERATOR_COLOR = {
-    active: "bg-[#d3decb] text-[#2d4a35] border-y-[#4a7c59] shadow-[inset_4px_0_0_0_#4a7c59]",
-    inactive: "bg-[#ecf1e9]/40 text-[#5a4b3f] hover:bg-[#e1eadc] hover:border-y-[#c8d6c7]",
-    iconActive: "text-[#2d4a35]",
-    iconInactive: "text-[#4a7c59]",
-  };
-
-  const GENERAL_COLOR = {
-    active: "bg-[#eadcc8] text-[#221910] border-y-[#7d6d5a] shadow-[inset_4px_0_0_0_#4e4033]",
-    inactive: "text-[#4d4034] hover:bg-[#ece0ce] hover:border-y-[#b59f86]",
-    iconActive: "text-[#221910]",
-    iconInactive: "text-[#554738]",
-  };
-
-  // Preprocess visible nav groups with items filtered by role
-  const visibleNavGroups = navigationGroups
-    .map((group) => ({
-      ...group,
-      items: group.items.filter((item) =>
-        (item.requiresRole as string[]).includes(userRole),
-      ),
-    }))
-    .filter((group) => group.items.length > 0);
-
-  // For top bar title, keep a flat list of items
-  const allVisibleNavItems = visibleNavGroups.flatMap((group) => group.items);
+  const isStaff =
+    userRole === USER_ROLES.ADMIN || userRole === USER_ROLES.MODERATOR;
+  const isAdmin = userRole === USER_ROLES.ADMIN;
 
   const isActive = (href: string) => {
     if (href === "/dashboard") {
@@ -202,226 +65,727 @@ export default function DashboardShell({
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
+  // Nav item styles
+  const navLinkClass = (active: boolean) =>
+    cn(
+      "flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-semibold transition-all ink-text",
+      active
+        ? "bg-[#eadcc8] text-[#221910] shadow-xs border border-[#8a7966]/40 font-bold"
+        : "text-[#5a4b3f] hover:bg-[#ece0ce] hover:text-[#221910]",
+    );
+
+  const staffLinkClass = (active: boolean) =>
+    cn(
+      "flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors",
+      active
+        ? "bg-[#d3decb] text-[#2d4a35] font-bold border border-[#4a7c59]/40"
+        : "text-[#4a3e33] hover:bg-[#e6eee0] hover:text-[#2d4a35]",
+    );
+
+  const memberNavItems = [
+    { label: t.dashboard.sidebar.dashboard, href: "/dashboard", icon: FaHome },
+    {
+      label: t.dashboard.sidebar.bookList,
+      href: "/dashboard/book-list",
+      icon: FaBookOpen,
+    },
+    {
+      label: t.dashboard.sidebar.checklists,
+      href: "/dashboard/checklists",
+      icon: FaCheckSquare,
+    },
+    {
+      label: t.dashboard.sidebar.myProfile,
+      href: "/dashboard/profile",
+      icon: FaUser,
+    },
+  ];
+
+  const circulationItems = [
+    {
+      label: t.dashboard.sidebar.overview,
+      href: "/dashboard/overview",
+      icon: FaChartLine,
+    },
+    {
+      label: t.dashboard.sidebar.transactions,
+      href: "/dashboard/transactions",
+      icon: FaExchangeAlt,
+    },
+  ];
+
+  const inventoryItems = [
+    {
+      label: t.dashboard.sidebar.books,
+      href: "/dashboard/books",
+      icon: FaBook,
+    },
+    {
+      label: t.dashboard.sidebar.copies,
+      href: "/dashboard/copies",
+      icon: FaGraduationCap,
+    },
+    {
+      label: t.dashboard.sidebar.categories,
+      href: "/dashboard/categories",
+      icon: FaClipboardList,
+    },
+    {
+      label: t.dashboard.sidebar.printQr,
+      href: "/dashboard/print-qr",
+      icon: FaPrint,
+    },
+  ];
+
+  const communityItems = [
+    {
+      label: t.dashboard.sidebar.users,
+      href: "/dashboard/users",
+      icon: FaUsers,
+    },
+    {
+      label: t.dashboard.sidebar.moderators,
+      href: "/dashboard/moderators",
+      icon: FaShieldAlt,
+    },
+    {
+      label: t.dashboard.sidebar.ranks,
+      href: "/dashboard/ranks",
+      icon: FaShieldAlt,
+    },
+    {
+      label: t.dashboard.sidebar.thanas,
+      href: "/dashboard/thanas",
+      icon: FaMapMarkerAlt,
+    },
+  ];
+
   return (
-    <div className="relative h-screen flex overflow-hidden dashboard-shell print:h-auto print:overflow-visible print:block">
-      {/* Mobile Backdrop */}
-      {isMobileOpen && (
-        <div
-          className="fixed inset-0 bg-black/20 z-30 lg:hidden"
-          onClick={() => setIsMobileOpen(false)}
-        />
-      )}
-
-      {/* Sidebar Wrapper — natively holds space in the flex layout to prevent shifting */}
-      <div className="shrink-0 transition-all duration-300 print:hidden relative z-50 w-14 lg:w-64">
-        {/* The actual sidebar — absolute to the wrapper so it can float when expanded */}
-        {/* NOTE FROM DEV: DO NOT CHANGE THE RANDOM py-5 AND md:py-4 CLASSES, THEY ARE MUST FOR THINGS TO BE PROPERLY ALIGNED! */}
-        <aside
-          className={`absolute top-0 left-0 flex flex-col shrink-0 h-screen overflow-y-auto dashboard-surface tron-border border-r border-[#5e4e3e] transition-all duration-300 ${isMobileOpen ? "w-64 shadow-2xl" : "w-14"} lg:w-64`}
-        >
-          <div className={`flex items-center border-b border-[#6d5c4a] overflow-hidden hover:bg-[#ece0ce] transition-colors w-full shrink-0 ${isMobileOpen ? "px-4" : "justify-center lg:justify-start lg:px-4"}`}>
-            <button
-              onClick={() => setIsMobileOpen(!isMobileOpen)}
-              className={cn("shrink-0 flex items-center justify-center text-[#554738] lg:hidden", isMobileOpen ? "py-[18px]" : "py-5")}
-            >
-              {isMobileOpen ? <FaTimes className="w-5 h-5" /> : <FaBars className="w-4 h-4" />}
-            </button>
-
-            <Link
-              href="/dashboard"
-              onClick={() => setIsMobileOpen(false)}
-              className={`flex items-center md:py-4 ink-title text-[#221910] font-bold text-lg gap-3 ${isMobileOpen ? "block" : "hidden lg:flex"}`}
-            >
-              <FaBook className="w-5 h-5 lg:w-6 lg:h-6 shrink-0 hidden lg:block text-[#554738]" />
-              <span className="ml-3 whitespace-nowrap transition-opacity">
-                SUST LMS
+    <div className="relative h-screen flex overflow-hidden dashboard-shell print:h-auto print:overflow-visible print:block bg-[#f4ebd9]">
+      {/* ───────────────────────────────────────────────────────────────────── */}
+      {/* Desktop Sidebar (hidden on mobile)                                     */}
+      {/* ───────────────────────────────────────────────────────────────────── */}
+      <aside className="hidden lg:flex flex-col shrink-0 w-64 h-screen overflow-y-auto dashboard-surface tron-border border-r border-[#5e4e3e] z-30 select-none">
+        {/* Brand Header */}
+        <div className="flex items-center px-5 py-4 border-b border-[#6d5c4a] shrink-0">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-3 ink-title text-[#221910] font-bold text-lg"
+          >
+            <div className="w-8 h-8 rounded-lg bg-[#3f3328] text-[#f4e8d4] flex items-center justify-center shadow-xs">
+              <FaBook className="w-4 h-4" />
+            </div>
+            <div className="flex flex-col">
+              <span className="leading-none text-base">SUST LMS</span>
+              <span className="text-[10px] text-[#7a6a5c] font-normal mt-0.5 tracking-wider uppercase">
+                {isStaff ? (isAdmin ? "Admin Desk" : "Staff Desk") : "Library"}
               </span>
-            </Link>
+            </div>
+          </Link>
+        </div>
+
+        {/* Sidebar Nav Items */}
+        <nav className="p-3 space-y-6 flex-1 overflow-y-auto">
+          {/* Member Section */}
+          <div className="space-y-1">
+            <p className="px-3 text-[10px] uppercase font-bold tracking-wider text-[#7a6a5c] mb-1.5">
+              {t.dashboard.sidebar.myLibrary}
+            </p>
+            {memberNavItems.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={navLinkClass(active)}
+                >
+                  <Icon
+                    className={cn(
+                      "w-4 h-4 shrink-0",
+                      active ? "text-[#221910]" : "text-[#7a6a5c]",
+                    )}
+                  />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
           </div>
 
-          <nav className="py-4 pb-8 flex-1 overflow-y-auto">
-            {visibleNavGroups.map((group, groupIndex) => (
-              <div key={groupIndex}>
-                {groupIndex > 0 && (
-                  <div className="mx-4 my-3 border-t border-[#6d5c4a] opacity-30" />
-                )}
-                {group.items.map((item) => {
+          {/* Staff Desk (Moderator & Admin) */}
+          {isStaff && (
+            <div className="space-y-4 pt-3 border-t border-[#6d5c4a]/30">
+              <div className="px-3 flex items-center justify-between">
+                <p className="text-[10px] uppercase font-bold tracking-wider text-[#4a7c59]">
+                  {t.dashboard.sidebar.staffDesk}
+                </p>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-xs bg-[#d3decb] text-[#2d4a35] border border-[#4a7c59]/30 uppercase">
+                  {userRole}
+                </span>
+              </div>
+
+              {/* Circulation */}
+              <div className="space-y-1">
+                <p className="px-3 text-[10px] font-semibold text-[#6d5c4a]">
+                  {t.dashboard.sidebar.circulation}
+                </p>
+                {circulationItems.map((item) => {
                   const Icon = item.icon;
                   const active = isActive(item.href);
-
-                  // Determine "flavor" based on role requirements
-                  const roles = item.requiresRole as string[];
-                  const isAdminOnly = roles.length === 1 && roles[0] === USER_ROLES.ADMIN;
-                  const isModeratorStaff = roles.includes(USER_ROLES.MODERATOR) && !roles.includes(USER_ROLES.MEMBER);
-
-                  let itemClasses = "";
-                  let iconClasses = "";
-
-                  if (isAdminOnly) {
-                    // Admin Only: Subtle bluish tint
-                    itemClasses = active ? ADMIN_COLOR.active : ADMIN_COLOR.inactive;
-                    iconClasses = active ? ADMIN_COLOR.iconActive : ADMIN_COLOR.iconInactive;
-                  } else if (isModeratorStaff) {
-                    // Moderator/Staff: Subtle green tint
-                    itemClasses = active ? MODERATOR_COLOR.active : MODERATOR_COLOR.inactive;
-                    iconClasses = active ? MODERATOR_COLOR.iconActive : MODERATOR_COLOR.iconInactive;
-                  } else {
-                    // General: Default parchment/tan
-                    itemClasses = active ? GENERAL_COLOR.active : GENERAL_COLOR.inactive;
-                    iconClasses = active ? GENERAL_COLOR.iconActive : GENERAL_COLOR.iconInactive;
-                  }
-
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
-                      onClick={() => setIsMobileOpen(false)}
-                      className={`flex items-center py-3 transition-colors ink-text border-y border-transparent overflow-hidden ${isMobileOpen ? "px-4 gap-3" : "justify-center lg:justify-start lg:px-4 lg:gap-3"} ${itemClasses}`}
-                      title={item.label}
+                      className={staffLinkClass(active)}
                     >
-                      <div className={`w-5 h-5 lg:w-6 lg:h-6 shrink-0 flex items-center justify-center ${iconClasses}`}>
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <span className={`font-medium whitespace-nowrap transition-opacity ${isMobileOpen ? "block text-sm" : "hidden lg:block"}`}>
-                        {item.label}
-                      </span>
+                      <Icon
+                        className={cn(
+                          "w-3.5 h-3.5 shrink-0",
+                          active ? "text-[#2d4a35]" : "text-[#4a7c59]",
+                        )}
+                      />
+                      <span className="truncate">{item.label}</span>
                     </Link>
                   );
                 })}
               </div>
-            ))}
-          </nav>
-        </aside>
-      </div>
 
-      {/* Main Content */}
-      <main className="flex-1 min-w-0 overflow-y-auto flex flex-col print:overflow-visible">
-        {/* Top Bar — always visible */}
-        <div className="sticky top-0 z-20 dashboard-surface border-b border-[#6f5f4f] px-4 lg:px-8 py-3 print:hidden">
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg lg:text-xl font-semibold text-[#221910] ink-title">
-              {pathname === "/dashboard"
-                ? t.dashboard.sidebar.dashboard
-                : pathname.startsWith("/dashboard/profile")
-                  ? t.dashboard.sidebar.myProfile
-                  : allVisibleNavItems.find((item) => isActive(item.href))?.label ||
-                  t.dashboard.sidebar.dashboard}
-            </h1>
-            <div className="flex items-center gap-2 lg:gap-5">
-              <div className="hidden sm:flex items-center gap-2 lg:gap-5">
-                <LanguageSwitcher />
-                <NotificationBell userId={userId} notifications={initialNotifications} />
-
-                <div className="relative">
-                  <button
-                    onClick={() => setIsProfileOpen(!isProfileOpen)}
-                    className="flex items-center gap-2 text-sm text-[#5a4b3f] ink-text hover:text-[#221910] transition-colors focus:outline-none cursor-pointer"
-                  >
-                    {userAvatar ? (
-                      <Image
-                        src={userAvatar}
-                        alt={userName}
-                        width={28}
-                        height={28}
-                        priority
-                        referrerPolicy="no-referrer"
-                        className="w-7 h-7 rounded-full object-cover border border-[#8a7966]"
+              {/* Inventory */}
+              <div className="space-y-1">
+                <p className="px-3 text-[10px] font-semibold text-[#6d5c4a]">
+                  {t.dashboard.sidebar.inventory}
+                </p>
+                {inventoryItems.map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={staffLinkClass(active)}
+                    >
+                      <Icon
+                        className={cn(
+                          "w-3.5 h-3.5 shrink-0",
+                          active ? "text-[#2d4a35]" : "text-[#4a7c59]",
+                        )}
                       />
-                    ) : (
-                      <div className="w-7 h-7 rounded-full bg-[#d9cbb7] border border-[#8a7966] flex items-center justify-center text-xs font-bold text-[#4a3e33]">
-                        {userName.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                  </button>
-
-                  {isProfileOpen && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-30"
-                        onClick={() => setIsProfileOpen(false)}
-                      />
-                      <div className="absolute right-0 mt-2 w-48 bg-[#f6ecdd] border border-[#8a7966] rounded-sm shadow-xl z-40 py-2">
-                        <div className="px-4 py-2 border-b border-[#eadcc8] mb-1">
-                          <p className="text-xs text-[#5c4f42] uppercase tracking-wider">{t.dashboard.header.welcome}</p>
-                          <p className="text-sm font-bold text-[#221910] truncate">{userName}</p>
-                        </div>
-                        <form action={signOut}>
-                          <button
-                            type="submit"
-                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-700 hover:bg-[#fdf0ec] transition-colors font-medium"
-                          >
-                            <FaBars className="w-3.5 h-3.5 rotate-90" />
-                            {t.dashboard.header.logout}
-                          </button>
-                        </form>
-                      </div>
-                    </>
-                  )}
-                </div>
+                      <span className="truncate">{item.label}</span>
+                    </Link>
+                  );
+                })}
               </div>
 
-              {/* Mobile Profile Dropdown */}
-              <div className="sm:hidden flex items-center gap-3">
-                <NotificationBell userId={userId} notifications={initialNotifications} />
-                <div className="relative">
-                  <button
-                    onClick={() => setIsProfileOpen(!isProfileOpen)}
-                    className="flex items-center focus:outline-none cursor-pointer"
-                  >
-                    {userAvatar ? (
-                      <Image
-                        src={userAvatar}
-                        alt={userName}
-                        width={32}
-                        height={32}
-                        priority
-                        referrerPolicy="no-referrer"
-                        className="w-8 h-8 rounded-full object-cover border border-[#8a7966]"
+              {/* Members */}
+              <div className="space-y-1">
+                <p className="px-3 text-[10px] font-semibold text-[#6d5c4a]">
+                  {t.dashboard.sidebar.community}
+                </p>
+                {communityItems.map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={staffLinkClass(active)}
+                    >
+                      <Icon
+                        className={cn(
+                          "w-3.5 h-3.5 shrink-0",
+                          active ? "text-[#2d4a35]" : "text-[#4a7c59]",
+                        )}
                       />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-[#d9cbb7] border border-[#8a7966] flex items-center justify-center text-sm font-bold text-[#4a3e33]">
-                        {userName.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                  </button>
+                      <span className="truncate">{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
 
-                  {isProfileOpen && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-30"
-                        onClick={() => setIsProfileOpen(false)}
-                      />
-                      <div className="absolute right-0 mt-2 w-48 bg-[#f6ecdd] border border-[#8a7966] rounded-sm shadow-xl z-40 py-2">
-                        <div className="px-4 py-2 border-b border-[#eadcc8] mb-1">
-                          <p className="text-xs text-[#5c4f42] uppercase tracking-wider">{t.dashboard.header.welcome}</p>
-                          <p className="text-sm font-bold text-[#221910] truncate">{userName}</p>
-                        </div>
-                        <div className="px-4 py-2 border-b border-[#eadcc8] my-1">
-                          <LanguageSwitcher />
-                        </div>
-                        <form action={signOut} className="mt-1">
-                          <button
-                            type="submit"
-                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-700 hover:bg-[#fdf0ec] transition-colors font-medium"
-                          >
-                            <FaBars className="w-3.5 h-3.5 rotate-90" />
-                            {t.dashboard.header.logout}
-                          </button>
-                        </form>
-                      </div>
-                    </>
+              {/* Syllabus & Logs */}
+              <div className="space-y-1">
+                <p className="px-3 text-[10px] font-semibold text-[#6d5c4a]">
+                  {t.dashboard.sidebar.system}
+                </p>
+                <Link
+                  href="/dashboard/checklists-manage"
+                  className={staffLinkClass(
+                    isActive("/dashboard/checklists-manage"),
                   )}
+                >
+                  <FaCheckSquare className="w-3.5 h-3.5 text-[#4a7c59] shrink-0" />
+                  <span className="truncate">
+                    {t.dashboard.sidebar.checklistsManage}
+                  </span>
+                </Link>
+                {isAdmin && (
+                  <Link
+                    href="/dashboard/logs"
+                    className={cn(
+                      "flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors",
+                      isActive("/dashboard/logs")
+                        ? "bg-[#dbe6f1] text-[#234b7d] font-bold border border-[#5c8ab0]/40"
+                        : "text-[#3f4b5a] hover:bg-[#d5dee9] hover:text-[#234b7d]",
+                    )}
+                  >
+                    <FaClipboardList className="w-3.5 h-3.5 text-[#4d719d] shrink-0" />
+                    <span className="truncate">{t.dashboard.sidebar.logs}</span>
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
+        </nav>
+      </aside>
+
+      {/* ───────────────────────────────────────────────────────────────────── */}
+      {/* Main Content Area                                                     */}
+      {/* ───────────────────────────────────────────────────────────────────── */}
+      <main className="flex-1 min-w-0 overflow-y-auto flex flex-col print:overflow-visible">
+        {/* Top App Bar */}
+        <header className="sticky top-0 z-20 dashboard-surface border-b border-[#6f5f4f] px-3.5 sm:px-6 py-2.5 print:hidden">
+          <div className="flex items-center justify-between gap-2">
+            {/* Left: Mobile Brand or Page Title */}
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Link
+                href="/dashboard"
+                className="lg:hidden flex items-center gap-2 text-[#221910] ink-title font-bold text-base shrink-0"
+              >
+                <div className="w-7 h-7 rounded-md bg-[#3f3328] text-[#f4e8d4] flex items-center justify-center shadow-xs">
+                  <FaBook className="w-3.5 h-3.5" />
                 </div>
+                <span>SUST LMS</span>
+              </Link>
+              <h1 className="hidden lg:block text-lg font-bold text-[#221910] ink-title truncate">
+                {pathname === "/dashboard"
+                  ? t.dashboard.sidebar.dashboard
+                  : pathname.startsWith("/dashboard/profile")
+                    ? t.dashboard.sidebar.myProfile
+                    : memberNavItems.find((m) => isActive(m.href))?.label ||
+                      circulationItems.find((m) => isActive(m.href))?.label ||
+                      inventoryItems.find((m) => isActive(m.href))?.label ||
+                      communityItems.find((m) => isActive(m.href))?.label ||
+                      t.dashboard.sidebar.dashboard}
+              </h1>
+            </div>
+
+            {/* Right: Controls & Profile */}
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              {/* Staff Desk Pill (Mobile only for staff) */}
+              {isStaff && (
+                <button
+                  onClick={() => setIsStaffDrawerOpen(true)}
+                  className="lg:hidden inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border border-[#4a7c59] bg-[#d3decb] text-[#2d4a35] hover:bg-[#c4d3bc] active:scale-95 transition-all shadow-xs cursor-pointer"
+                  title="Staff Management Desk"
+                >
+                  <FaShieldAlt className="w-3 h-3 text-[#2d4a35]" />
+                  <span>{t.dashboard.sidebar.staffDesk}</span>
+                </button>
+              )}
+
+              <LanguageSwitcher />
+              <NotificationBell
+                userId={userId}
+                notifications={initialNotifications}
+              />
+
+              {/* Profile Avatar & Menu */}
+              <div className="relative">
+                <button
+                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  className="flex items-center focus:outline-none cursor-pointer rounded-full p-0.5 hover:ring-2 hover:ring-[#8a7966] transition-all"
+                  aria-label="User profile menu"
+                >
+                  {userAvatar ? (
+                    <Image
+                      src={userAvatar}
+                      alt={userName}
+                      width={30}
+                      height={30}
+                      priority
+                      referrerPolicy="no-referrer"
+                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border border-[#8a7966]"
+                    />
+                  ) : (
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#d9cbb7] border border-[#8a7966] flex items-center justify-center text-xs font-bold text-[#4a3e33]">
+                      {userName.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </button>
+
+                {isProfileOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-30"
+                      onClick={() => setIsProfileOpen(false)}
+                    />
+                    <div className="absolute right-0 mt-2 w-52 bg-[#f6ecdd] border border-[#8a7966] rounded-lg shadow-2xl z-40 py-2 animate-in fade-in zoom-in-95 duration-150">
+                      <div className="px-4 py-2 border-b border-[#eadcc8] mb-1">
+                        <p className="text-[10px] text-[#5c4f42] uppercase tracking-wider font-semibold">
+                          {t.dashboard.header.welcome}
+                        </p>
+                        <p className="text-sm font-bold text-[#221910] truncate">
+                          {userName}
+                        </p>
+                        <span className="inline-block mt-1 px-1.5 py-0.5 rounded-xs text-[9px] font-bold uppercase bg-[#e6dbca] text-[#4a3e33] border border-[#c9b89a]">
+                          {userRole}
+                        </span>
+                      </div>
+                      <Link
+                        href="/dashboard/profile"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs text-[#3f3328] hover:bg-[#ece0ce] font-semibold transition-colors"
+                      >
+                        <FaUser className="w-3.5 h-3.5 text-[#6d5c4a]" />
+                        {t.dashboard.sidebar.myProfile}
+                      </Link>
+                      <form
+                        action={signOut}
+                        className="mt-1 border-t border-[#eadcc8] pt-1"
+                      >
+                        <button
+                          type="submit"
+                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-red-700 hover:bg-[#fdf0ec] transition-colors font-semibold cursor-pointer"
+                        >
+                          <FaTimes className="w-3.5 h-3.5" />
+                          {t.dashboard.header.logout}
+                        </button>
+                      </form>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Page Content Container — with safe bottom padding for bottom nav */}
+        <div className="flex-1 px-2.5 py-3 sm:p-5 lg:p-8 pb-28 lg:pb-12 print:p-0 print:m-0 max-w-7xl mx-auto w-full">
+          {children}
+        </div>
+      </main>
+
+      {/* ───────────────────────────────────────────────────────────────────── */}
+      {/* Mobile Bottom Navigation Bar (Screens < lg)                           */}
+      {/* ───────────────────────────────────────────────────────────────────── */}
+      <nav className="fixed bottom-0 inset-x-0 z-40 bg-[#f6ecdd]/95 backdrop-blur-md border-t border-[#8a7966] lg:hidden print:hidden px-2 pb-safe shadow-lg">
+        <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
+          {/* Home */}
+          <Link
+            href="/dashboard"
+            className={cn(
+              "flex-1 flex flex-col items-center justify-center py-1 transition-colors min-h-[48px]",
+              pathname === "/dashboard"
+                ? "text-[#221910] font-bold"
+                : "text-[#7a6a5c] hover:text-[#221910]",
+            )}
+          >
+            <div
+              className={cn(
+                "p-1 rounded-full",
+                pathname === "/dashboard" && "bg-[#ebdcc8]",
+              )}
+            >
+              <FaHome className="w-5 h-5" />
+            </div>
+            <span className="text-[10px] mt-0.5 ink-title truncate">
+              {t.dashboard.sidebar.dashboard}
+            </span>
+          </Link>
+
+          {/* Books */}
+          <Link
+            href="/dashboard/book-list"
+            className={cn(
+              "flex-1 flex flex-col items-center justify-center py-1 transition-colors min-h-[48px]",
+              isActive("/dashboard/book-list")
+                ? "text-[#221910] font-bold"
+                : "text-[#7a6a5c] hover:text-[#221910]",
+            )}
+          >
+            <div
+              className={cn(
+                "p-1 rounded-full",
+                isActive("/dashboard/book-list") && "bg-[#ebdcc8]",
+              )}
+            >
+              <FaBookOpen className="w-5 h-5" />
+            </div>
+            <span className="text-[10px] mt-0.5 ink-title truncate">
+              {t.dashboard.sidebar.bookList}
+            </span>
+          </Link>
+
+          {/* Center Elevated Action: Scan & Borrow */}
+          <Link
+            href="/dashboard/borrow"
+            className="flex-1 flex flex-col items-center justify-center -mt-5 min-h-[48px] group"
+          >
+            <div className="w-12 h-12 rounded-full bg-[#3f3328] text-[#f4e8d4] shadow-md border-2 border-[#f6ecdd] flex items-center justify-center group-hover:scale-105 active:scale-95 transition-transform">
+              <FaQrcode className="w-5 h-5" />
+            </div>
+            <span className="text-[10px] mt-0.5 font-bold text-[#3f3328] ink-title truncate">
+              {t.dashboard.sidebar.borrow}
+            </span>
+          </Link>
+
+          {/* Tasks / Checklists */}
+          <Link
+            href="/dashboard/checklists"
+            className={cn(
+              "flex-1 flex flex-col items-center justify-center py-1 transition-colors min-h-[48px]",
+              isActive("/dashboard/checklists")
+                ? "text-[#221910] font-bold"
+                : "text-[#7a6a5c] hover:text-[#221910]",
+            )}
+          >
+            <div
+              className={cn(
+                "p-1 rounded-full",
+                isActive("/dashboard/checklists") && "bg-[#ebdcc8]",
+              )}
+            >
+              <FaCheckSquare className="w-5 h-5" />
+            </div>
+            <span className="text-[10px] mt-0.5 ink-title truncate">
+              {t.dashboard.sidebar.checklists}
+            </span>
+          </Link>
+
+          {/* Profile */}
+          <Link
+            href="/dashboard/profile"
+            className={cn(
+              "flex-1 flex flex-col items-center justify-center py-1 transition-colors min-h-[48px]",
+              isActive("/dashboard/profile")
+                ? "text-[#221910] font-bold"
+                : "text-[#7a6a5c] hover:text-[#221910]",
+            )}
+          >
+            <div
+              className={cn(
+                "p-1 rounded-full",
+                isActive("/dashboard/profile") && "bg-[#ebdcc8]",
+              )}
+            >
+              <FaUser className="w-5 h-5" />
+            </div>
+            <span className="text-[10px] mt-0.5 ink-title truncate">
+              {t.dashboard.sidebar.myProfile}
+            </span>
+          </Link>
+        </div>
+      </nav>
+
+      {/* ───────────────────────────────────────────────────────────────────── */}
+      {/* Mobile Staff Desk Drawer (Moderators & Admins on Mobile)             */}
+      {/* ───────────────────────────────────────────────────────────────────── */}
+      {isStaff && isStaffDrawerOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex flex-col justify-end">
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
+            onClick={() => setIsStaffDrawerOpen(false)}
+          />
+          <div className="relative z-10 w-full max-h-[85vh] overflow-y-auto bg-[#f6ecdd] border-t-2 border-[#5e4e3e] rounded-t-2xl shadow-2xl p-5 space-y-5 animate-in slide-in-from-bottom duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-[#c9b89a]">
+              <div className="flex items-center gap-2">
+                <FaShieldAlt className="w-5 h-5 text-[#2d4a35]" />
+                <h2 className="text-base font-bold text-[#221910] ink-title">
+                  {t.dashboard.sidebar.staffDesk}
+                </h2>
+              </div>
+              <button
+                onClick={() => setIsStaffDrawerOpen(false)}
+                className="p-1.5 rounded-full hover:bg-[#ebdcc8] text-[#554738] transition-colors cursor-pointer"
+              >
+                <FaTimes className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Circulation Hub */}
+            <div>
+              <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#6d5c4a] mb-2 ink-title">
+                {t.dashboard.sidebar.circulation}
+              </h3>
+              <div className="grid grid-cols-2 gap-2.5">
+                <Link
+                  href="/dashboard/overview"
+                  onClick={() => setIsStaffDrawerOpen(false)}
+                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
+                >
+                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
+                    <FaChartLine className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-[#221910] truncate">
+                    {t.dashboard.sidebar.overview}
+                  </span>
+                </Link>
+                <Link
+                  href="/dashboard/transactions"
+                  onClick={() => setIsStaffDrawerOpen(false)}
+                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
+                >
+                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
+                    <FaExchangeAlt className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-[#221910] truncate">
+                    {t.dashboard.sidebar.transactions}
+                  </span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Inventory Hub */}
+            <div>
+              <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#6d5c4a] mb-2 ink-title">
+                {t.dashboard.sidebar.inventory}
+              </h3>
+              <div className="grid grid-cols-2 gap-2.5">
+                <Link
+                  href="/dashboard/books"
+                  onClick={() => setIsStaffDrawerOpen(false)}
+                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
+                >
+                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
+                    <FaBook className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-[#221910] truncate">
+                    {t.dashboard.sidebar.books}
+                  </span>
+                </Link>
+                <Link
+                  href="/dashboard/copies"
+                  onClick={() => setIsStaffDrawerOpen(false)}
+                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
+                >
+                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
+                    <FaGraduationCap className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-[#221910] truncate">
+                    {t.dashboard.sidebar.copies}
+                  </span>
+                </Link>
+                <Link
+                  href="/dashboard/categories"
+                  onClick={() => setIsStaffDrawerOpen(false)}
+                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
+                >
+                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
+                    <FaClipboardList className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-[#221910] truncate">
+                    {t.dashboard.sidebar.categories}
+                  </span>
+                </Link>
+                <Link
+                  href="/dashboard/print-qr"
+                  onClick={() => setIsStaffDrawerOpen(false)}
+                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
+                >
+                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
+                    <FaPrint className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-[#221910] truncate">
+                    {t.dashboard.sidebar.printQr}
+                  </span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Community Hub */}
+            <div>
+              <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#6d5c4a] mb-2 ink-title">
+                {t.dashboard.sidebar.community}
+              </h3>
+              <div className="grid grid-cols-2 gap-2.5">
+                <Link
+                  href="/dashboard/users"
+                  onClick={() => setIsStaffDrawerOpen(false)}
+                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
+                >
+                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
+                    <FaUsers className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-[#221910] truncate">
+                    {t.dashboard.sidebar.users}
+                  </span>
+                </Link>
+                <Link
+                  href="/dashboard/moderators"
+                  onClick={() => setIsStaffDrawerOpen(false)}
+                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
+                >
+                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
+                    <FaShieldAlt className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-[#221910] truncate">
+                    {t.dashboard.sidebar.moderators}
+                  </span>
+                </Link>
+                <Link
+                  href="/dashboard/ranks"
+                  onClick={() => setIsStaffDrawerOpen(false)}
+                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
+                >
+                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
+                    <FaShieldAlt className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-[#221910] truncate">
+                    {t.dashboard.sidebar.ranks}
+                  </span>
+                </Link>
+                <Link
+                  href="/dashboard/thanas"
+                  onClick={() => setIsStaffDrawerOpen(false)}
+                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
+                >
+                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
+                    <FaMapMarkerAlt className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-[#221910] truncate">
+                    {t.dashboard.sidebar.thanas}
+                  </span>
+                </Link>
+              </div>
+            </div>
+
+            {/* System / Syllabus */}
+            <div>
+              <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#6d5c4a] mb-2 ink-title">
+                {t.dashboard.sidebar.system}
+              </h3>
+              <div className="grid grid-cols-2 gap-2.5 pb-6">
+                <Link
+                  href="/dashboard/checklists-manage"
+                  onClick={() => setIsStaffDrawerOpen(false)}
+                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
+                >
+                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
+                    <FaCheckSquare className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-[#221910] truncate">
+                    {t.dashboard.sidebar.checklistsManage}
+                  </span>
+                </Link>
+                {isAdmin && (
+                  <Link
+                    href="/dashboard/logs"
+                    onClick={() => setIsStaffDrawerOpen(false)}
+                    className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-[#dbe6f1] text-[#234b7d] flex items-center justify-center shrink-0">
+                      <FaClipboardList className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-semibold text-[#221910] truncate">
+                      {t.dashboard.sidebar.logs}
+                    </span>
+                  </Link>
+                )}
               </div>
             </div>
           </div>
         </div>
-
-        {/* Page Content */}
-        <div className="flex-1 px-1 py-4 sm:p-4 lg:p-8 pb-20 print:p-0 print:m-0">
-          {children}
-        </div>
-      </main>
+      )}
     </div>
   );
 }

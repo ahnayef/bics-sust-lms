@@ -1,5 +1,6 @@
 "use client";
 
+import { CommunityNav } from "@/app/dashboard/components/StaffHubNav";
 import ConfirmModal from "@/components/ui/confirm-modal";
 import { useTranslation } from "@/lib/i18n/context";
 import { demoteModerator, promoteToModerator } from "@/server/profiles";
@@ -85,7 +86,9 @@ export default function ModeratorsClient({ initialModerators }: Props) {
       setShowConfirmPromote(false);
       if (result.error) {
         showFlash("error", result.error);
-        setShowModal(true); /* reopen email modal so they can correct and retry */
+        setShowModal(
+          true,
+        ); /* reopen email modal so they can correct and retry */
       } else {
         showFlash("success", result.success!);
         setEmail("");
@@ -129,6 +132,9 @@ export default function ModeratorsClient({ initialModerators }: Props) {
   return (
     <>
       <div className="space-y-6">
+        {/* Community Hub Sub-Navigation */}
+        <CommunityNav />
+
         {/* Header */}
         <section className="dashboard-surface tron-border rounded-sm p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -152,10 +158,11 @@ export default function ModeratorsClient({ initialModerators }: Props) {
         {/* Flash message */}
         {flash && (
           <div
-            className={`p-4 rounded-sm flex items-center gap-3 ink-text text-sm border ${flash.type === "success"
-              ? "bg-[#efe4d1] border-[#8d7a66] text-[#3f3328]"
-              : "bg-red-50 border-red-400 text-red-800"
-              }`}
+            className={`p-4 rounded-sm flex items-center gap-3 ink-text text-sm border ${
+              flash.type === "success"
+                ? "bg-[#efe4d1] border-[#8d7a66] text-[#3f3328]"
+                : "bg-red-50 border-red-400 text-red-800"
+            }`}
           >
             {flash.type === "success" ? (
               <FaCheck className="w-4 h-4 shrink-0 text-[#5b4a3b]" />
@@ -219,13 +226,16 @@ export default function ModeratorsClient({ initialModerators }: Props) {
                         {person.full_name}
                       </Link>
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-xs font-semibold border ink-text ${person.role === "admin"
-                          ? "bg-amber-100 text-amber-800 border-amber-400"
-                          : "bg-teal-100 text-teal-800 border-teal-400"
-                          }`}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-xs font-semibold border ink-text ${
+                          person.role === "admin"
+                            ? "bg-amber-100 text-amber-800 border-amber-400"
+                            : "bg-teal-100 text-teal-800 border-teal-400"
+                        }`}
                       >
                         <FaShieldAlt className="w-2.5 h-2.5" />
-                        {person.role === "admin" ? t.moderators.roles.admin : t.moderators.roles.moderator}
+                        {person.role === "admin"
+                          ? t.moderators.roles.admin
+                          : t.moderators.roles.moderator}
                       </span>
                       {person.is_verified ? (
                         <FaCheckCircle
@@ -259,7 +269,8 @@ export default function ModeratorsClient({ initialModerators }: Props) {
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-700 border border-red-300 rounded-sm hover:bg-red-50 transition-colors ink-text disabled:opacity-50"
                         title={t.moderators.actions.remove}
                       >
-                        <FaUserSlash className="w-3 h-3" /> {t.moderators.actions.remove}
+                        <FaUserSlash className="w-3 h-3" />{" "}
+                        {t.moderators.actions.remove}
                       </button>
                     )}
                   </div>
@@ -302,7 +313,8 @@ export default function ModeratorsClient({ initialModerators }: Props) {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-[#4f4134] mb-1 ink-text">
-                  {t.moderators.modal.label} <span className="text-[#7a4c37]">*</span>
+                  {t.moderators.modal.label}{" "}
+                  <span className="text-[#7a4c37]">*</span>
                 </label>
                 <input
                   type="email"
@@ -362,7 +374,9 @@ export default function ModeratorsClient({ initialModerators }: Props) {
         onClose={() => setDemoteTarget(null)}
         onConfirm={executeDemote}
         title={t.moderators.confirmDemote.title}
-        description={t.moderators.confirmDemote.message.replace("{name}", demoteTarget?.name || "").replace("{email}", demoteTarget?.email || "")}
+        description={t.moderators.confirmDemote.message
+          .replace("{name}", demoteTarget?.name || "")
+          .replace("{email}", demoteTarget?.email || "")}
         preview={
           demoteTarget && (
             <div>

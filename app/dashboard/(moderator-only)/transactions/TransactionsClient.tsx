@@ -16,8 +16,16 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { FaCheck, FaClock, FaExclamationTriangle, FaFileAlt, FaSearch, FaTimes } from "react-icons/fa";
+import {
+  FaCheck,
+  FaClock,
+  FaExclamationTriangle,
+  FaFileAlt,
+  FaSearch,
+  FaTimes,
+} from "react-icons/fa";
 
+import { CirculationNav } from "@/app/dashboard/components/StaffHubNav";
 import { useTranslation } from "@/lib/i18n/context";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -42,13 +50,19 @@ interface Props {
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function formatDate(date: string | null | undefined, language: string = "en"): string {
+function formatDate(
+  date: string | null | undefined,
+  language: string = "en",
+): string {
   if (!date) return "—";
-  return new Date(date).toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  return new Date(date).toLocaleDateString(
+    language === "bn" ? "bn-BD" : "en-GB",
+    {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    },
+  );
 }
 
 function isOverdueDate(dueDate: string | null | undefined): boolean {
@@ -71,8 +85,9 @@ function CountBadge({ n, urgent = false }: { n: number; urgent?: boolean }) {
   if (n === 0) return null;
   return (
     <span
-      className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold leading-none ml-1 shrink-0 ${urgent ? "bg-[#8b2c1a] text-[#fdf0ec]" : "bg-[#5a4d40] text-[#f4e8d4]"
-        }`}
+      className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold leading-none ml-1 shrink-0 ${
+        urgent ? "bg-[#8b2c1a] text-[#fdf0ec]" : "bg-[#5a4d40] text-[#f4e8d4]"
+      }`}
     >
       {n}
     </span>
@@ -184,7 +199,7 @@ export default function TransactionsClient({
       sortBy === "member"
         ? (a.user?.full_name ?? "").localeCompare(b.user?.full_name ?? "")
         : new Date(b.request_date).getTime() -
-        new Date(a.request_date).getTime(),
+          new Date(a.request_date).getTime(),
     );
   }
 
@@ -202,11 +217,14 @@ export default function TransactionsClient({
           (tx.book?.title ?? "").toLowerCase().includes(q) ||
           (tx.copy?.id ?? tx.copy_id).toLowerCase().includes(q);
 
-        const isActuallyOverdue = tx.status === "overdue" || isOverdueDate(tx.due_date);
+        const isActuallyOverdue =
+          tx.status === "overdue" || isOverdueDate(tx.due_date);
         const matchStatus =
           statusFilter === "all" ||
           (statusFilter === "overdue" && isActuallyOverdue) ||
-          (statusFilter === "active" && !isActuallyOverdue && tx.status === "active");
+          (statusFilter === "active" &&
+            !isActuallyOverdue &&
+            tx.status === "active");
 
         return matchSearch && matchStatus;
       }),
@@ -216,7 +234,9 @@ export default function TransactionsClient({
 
   const historyTransactions = useMemo(() => {
     const base = transactions.filter(
-      (tx) => (tx.status === "completed" || tx.status === "rejected") && !(tx.type === "return" && tx.status === "completed"),
+      (tx) =>
+        (tx.status === "completed" || tx.status === "rejected") &&
+        !(tx.type === "return" && tx.status === "completed"),
     );
 
     // Map approved/rejected PDFs to look like transactions for the history table
@@ -235,7 +255,10 @@ export default function TransactionsClient({
             request_date: pdf.submitted_at,
             _isPdf: true, // Custom marker for PDF submissions
             _pdfStatus: pdf.status,
-          }) as unknown as Transaction & { _isPdf?: boolean; _pdfStatus?: string },
+          }) as unknown as Transaction & {
+            _isPdf?: boolean;
+            _pdfStatus?: string;
+          },
       );
 
     const combined = [...base, ...pdfToTx];
@@ -250,13 +273,25 @@ export default function TransactionsClient({
       ),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transactions, pdfSubmissions, searchTerm, sortBy, t.transactions.tabs.pdf]);
+  }, [
+    transactions,
+    pdfSubmissions,
+    searchTerm,
+    sortBy,
+    t.transactions.tabs.pdf,
+  ]);
 
   const summary = useMemo(
     () => ({
       pending: transactions.filter((tx) => tx.status === "pending").length,
-      active: transactions.filter((tx) => tx.status === "active" && !isOverdueDate(tx.due_date)).length,
-      overdue: transactions.filter((tx) => tx.status === "overdue" || (tx.status === "active" && isOverdueDate(tx.due_date))).length,
+      active: transactions.filter(
+        (tx) => tx.status === "active" && !isOverdueDate(tx.due_date),
+      ).length,
+      overdue: transactions.filter(
+        (tx) =>
+          tx.status === "overdue" ||
+          (tx.status === "active" && isOverdueDate(tx.due_date)),
+      ).length,
       completed: transactions.filter((tx) => tx.status === "completed").length,
     }),
     [transactions],
@@ -361,12 +396,13 @@ export default function TransactionsClient({
     return (
       <article
         key={tx.id}
-        className={`border rounded-sm p-4 ink-text ${isUnavailable
-          ? "border-[#b0665c] bg-[#f8e7e3] opacity-90 shadow-[inset_4px_0_0_0_#b0665c]"
-          : hasConflict
-            ? "border-[#c49b6b] bg-[#f8f1e6] shadow-[inset_4px_0_0_0_#c49b6b]"
-            : "border-[#b9a58b] bg-[#f6ecdd]"
-          }`}
+        className={`border rounded-sm p-4 ink-text ${
+          isUnavailable
+            ? "border-[#b0665c] bg-[#f8e7e3] opacity-90 shadow-[inset_4px_0_0_0_#b0665c]"
+            : hasConflict
+              ? "border-[#c49b6b] bg-[#f8f1e6] shadow-[inset_4px_0_0_0_#c49b6b]"
+              : "border-[#b9a58b] bg-[#f6ecdd]"
+        }`}
       >
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -415,11 +451,17 @@ export default function TransactionsClient({
               </div>
               <p className="text-xs text-[#5a4b3f] mt-0.5 truncate">
                 {tx.book?.title ?? t.common.unknown}{" "}
-                <span className="font-mono text-[10px] opacity-70">({tx.copy?.id ?? tx.copy_id})</span>
+                <span className="font-mono text-[10px] opacity-70">
+                  ({tx.copy?.id ?? tx.copy_id})
+                </span>
               </p>
             </div>
           </div>
-          <StatusBadge tone={isUnavailable ? "danger" : "info"} size="xs" className="shrink-0">
+          <StatusBadge
+            tone={isUnavailable ? "danger" : "info"}
+            size="xs"
+            className="shrink-0"
+          >
             {t.history.table.borrowed}
           </StatusBadge>
         </div>
@@ -458,7 +500,10 @@ export default function TransactionsClient({
         )}
 
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#5a4b3f]">
-          <p>{t.transactions.table.requested}: {formatDate(tx.request_date, language)}</p>
+          <p>
+            {t.transactions.table.requested}:{" "}
+            {formatDate(tx.request_date, language)}
+          </p>
           <div className="flex items-center gap-1.5">
             <label htmlFor={`due-${tx.id}`} className="shrink-0">
               {t.transactions.table.due}:
@@ -483,12 +528,20 @@ export default function TransactionsClient({
             className="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-[#f6ecdd] bg-[#4a7c59] hover:bg-[#3d6447] rounded-sm transition-colors border border-[#3d6447] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FaCheck className="w-3.5 h-3.5" />
-            {working ? t.transactions.actions.approving : isUnavailable ? t.transactions.actions.unavailable : t.transactions.actions.approve}
+            {working
+              ? t.transactions.actions.approving
+              : isUnavailable
+                ? t.transactions.actions.unavailable
+                : t.transactions.actions.approve}
           </button>
           <button
             disabled={working}
             onClick={() =>
-              openRejectModal("borrow", tx.id, tx.book?.title ?? t.common.unknown)
+              openRejectModal(
+                "borrow",
+                tx.id,
+                tx.book?.title ?? t.common.unknown,
+              )
             }
             className="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-[#f6ecdd] bg-[#8b5c4a] hover:bg-[#6b4437] rounded-sm transition-colors border border-[#6b4437] disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -555,8 +608,14 @@ export default function TransactionsClient({
         </div>
 
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#5a4b3f] sm:pl-[52px]">
-          <p>{t.transactions.table.requested}: {formatDate(tx.request_date, language)}</p>
-          <p>{t.return.form.borrowedOn}: {formatDate(originalBorrow?.approved_date, language)}</p>
+          <p>
+            {t.transactions.table.requested}:{" "}
+            {formatDate(tx.request_date, language)}
+          </p>
+          <p>
+            {t.return.form.borrowedOn}:{" "}
+            {formatDate(originalBorrow?.approved_date, language)}
+          </p>
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-2 pt-3 border-t border-[#cfbba1]">
@@ -566,12 +625,18 @@ export default function TransactionsClient({
             className="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-[#f6ecdd] bg-[#4a7c59] hover:bg-[#3d6447] rounded-sm transition-colors border border-[#3d6447] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FaCheck className="w-3.5 h-3.5" />
-            {working ? t.transactions.actions.approving : t.transactions.actions.approve}
+            {working
+              ? t.transactions.actions.approving
+              : t.transactions.actions.approve}
           </button>
           <button
             disabled={working}
             onClick={() =>
-              openRejectModal("return", tx.id, tx.book?.title ?? t.common.unknown)
+              openRejectModal(
+                "return",
+                tx.id,
+                tx.book?.title ?? t.common.unknown,
+              )
             }
             className="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-[#f6ecdd] bg-[#8b5c4a] hover:bg-[#6b4437] rounded-sm transition-colors border border-[#6b4437] disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -589,10 +654,11 @@ export default function TransactionsClient({
 
   return (
     <div className="space-y-6">
+      {/* Circulation Hub Sub-Nav */}
+      <CirculationNav />
+
       {/* Stats */}
-      <section
-        className="dashboard-surface tron-border rounded-sm p-5 sm:p-6"
-      >
+      <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
           {t.transactions.header.title}
         </h1>
@@ -609,27 +675,45 @@ export default function TransactionsClient({
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {(
             [
-              { label: t.transactions.summary.pending, value: summary.pending, type: "pending" },
-              { label: t.transactions.summary.active, value: summary.active, type: "active" },
-              { label: t.transactions.summary.overdue, value: summary.overdue, type: "overdue" },
-              { label: t.transactions.summary.completed, value: summary.completed, type: "completed" },
+              {
+                label: t.transactions.summary.pending,
+                value: summary.pending,
+                type: "pending",
+              },
+              {
+                label: t.transactions.summary.active,
+                value: summary.active,
+                type: "active",
+              },
+              {
+                label: t.transactions.summary.overdue,
+                value: summary.overdue,
+                type: "overdue",
+              },
+              {
+                label: t.transactions.summary.completed,
+                value: summary.completed,
+                type: "completed",
+              },
             ] as const
           ).map(({ label, value, type }) => {
             const isUrgentOverdue = type === "overdue" && value > 0;
             return (
               <div
                 key={label}
-                className={`border rounded-sm p-3 transition-colors ${isUrgentOverdue
-                  ? "border-[#c4614a] bg-[#fdf0ec]"
-                  : "border-[#b9a58b] bg-[#f6ecdd]"
-                  }`}
+                className={`border rounded-sm p-3 transition-colors ${
+                  isUrgentOverdue
+                    ? "border-[#c4614a] bg-[#fdf0ec]"
+                    : "border-[#b9a58b] bg-[#f6ecdd]"
+                }`}
               >
                 <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text">
                   {label}
                 </p>
                 <p
-                  className={`text-2xl font-bold ink-title ${isUrgentOverdue ? "text-[#9b3a25]" : "text-[#221910]"
-                    }`}
+                  className={`text-2xl font-bold ink-title ${
+                    isUrgentOverdue ? "text-[#9b3a25]" : "text-[#221910]"
+                  }`}
                 >
                   {value}
                 </p>
@@ -640,10 +724,12 @@ export default function TransactionsClient({
       </section>
 
       {/* Tabs */}
-      <section
-        className="dashboard-surface tron-border rounded-sm border border-[#5f4f40] overflow-hidden"
-      >
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+      <section className="dashboard-surface tron-border rounded-sm border border-[#5f4f40] overflow-hidden">
+        <Tabs
+          value={activeTab}
+          onValueChange={handleTabChange}
+          className="w-full"
+        >
           {/* Tab bar */}
           <TabsList className="w-full h-auto rounded-none bg-[#eadcc8] border-b border-[#7d6d5a] p-0 flex overflow-x-auto overflow-y-hidden justify-start">
             <TabsTrigger
@@ -658,7 +744,10 @@ export default function TransactionsClient({
               className="shrink-0 whitespace-nowrap rounded-none py-3 px-4 sm:px-5 text-xs sm:text-sm font-medium ink-text text-[#6a5a4c] border-b-[3px] border-transparent data-[state=active]:border-[#3f3328] data-[state=active]:bg-[#f6ecdd] data-[state=active]:text-[#221910] data-[state=active]:font-bold data-[state=active]:shadow-none hover:bg-[#ece0ce] transition-colors"
             >
               {t.transactions.tabs.active}
-              <CountBadge n={summary.active + summary.overdue} urgent={summary.overdue > 0} />
+              <CountBadge
+                n={summary.active + summary.overdue}
+                urgent={summary.overdue > 0}
+              />
             </TabsTrigger>
             <TabsTrigger
               value="history"
@@ -671,7 +760,9 @@ export default function TransactionsClient({
               className="shrink-0 whitespace-nowrap rounded-none py-3 px-4 sm:px-5 text-xs sm:text-sm font-medium ink-text text-[#6a5a4c] border-b-[3px] border-transparent data-[state=active]:border-[#3f3328] data-[state=active]:bg-[#f6ecdd] data-[state=active]:text-[#221910] data-[state=active]:font-bold data-[state=active]:shadow-none hover:bg-[#ece0ce] transition-colors"
             >
               <FaFileAlt className="w-3 h-3 shrink-0" />
-              <span className="hidden sm:inline">{t.transactions.tabs.pdf}</span>
+              <span className="hidden sm:inline">
+                {t.transactions.tabs.pdf}
+              </span>
               <span className="sm:hidden">PDF</span>
               <CountBadge n={pendingPdfs.length} />
             </TabsTrigger>
@@ -686,7 +777,8 @@ export default function TransactionsClient({
                     {t.overview.sections.borrowRequests}
                   </h2>
                   <span className="text-xs text-[#6a5a4c] ink-text">
-                    {pendingBorrows.length} {language === "bn" ? "অপেক্ষমান" : "waiting"}
+                    {pendingBorrows.length}{" "}
+                    {language === "bn" ? "অপেক্ষমান" : "waiting"}
                   </span>
                 </header>
                 {pendingBorrows.length === 0 ? (
@@ -704,7 +796,8 @@ export default function TransactionsClient({
                     {t.overview.sections.returnRequests}
                   </h2>
                   <span className="text-xs text-[#6a5a4c] ink-text">
-                    {pendingReturns.length} {language === "bn" ? "অপেক্ষমান" : "waiting"}
+                    {pendingReturns.length}{" "}
+                    {language === "bn" ? "অপেক্ষমান" : "waiting"}
                   </span>
                 </header>
                 {pendingReturns.length === 0 ? (
@@ -740,17 +833,27 @@ export default function TransactionsClient({
                   }
                   className="w-full px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
                 >
-                  <option value="all">{t.transactions.filters.status.all}</option>
-                  <option value="active">{t.transactions.filters.status.active}</option>
-                  <option value="overdue">{t.transactions.filters.status.overdue}</option>
+                  <option value="all">
+                    {t.transactions.filters.status.all}
+                  </option>
+                  <option value="active">
+                    {t.transactions.filters.status.active}
+                  </option>
+                  <option value="overdue">
+                    {t.transactions.filters.status.overdue}
+                  </option>
                 </select>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as SortKey)}
                   className="w-full px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
                 >
-                  <option value="date">{t.transactions.filters.sort.date}</option>
-                  <option value="member">{t.transactions.filters.sort.member}</option>
+                  <option value="date">
+                    {t.transactions.filters.sort.date}
+                  </option>
+                  <option value="member">
+                    {t.transactions.filters.sort.member}
+                  </option>
                 </select>
               </div>
             </div>
@@ -762,14 +865,16 @@ export default function TransactionsClient({
                 </div>
               ) : (
                 activeTransactions.map((tx) => {
-                  const isActuallyOverdue = tx.status === "overdue" || isOverdueDate(tx.due_date);
+                  const isActuallyOverdue =
+                    tx.status === "overdue" || isOverdueDate(tx.due_date);
                   return (
                     <article
                       key={tx.id}
-                      className={`border rounded-sm p-3 sm:p-4 ink-text transition-colors ${isActuallyOverdue
-                        ? "border-[#c4614a] bg-[#fdf0ec]"
-                        : "border-[#b9a58b] bg-[#f6ecdd]"
-                        }`}
+                      className={`border rounded-sm p-3 sm:p-4 ink-text transition-colors ${
+                        isActuallyOverdue
+                          ? "border-[#c4614a] bg-[#fdf0ec]"
+                          : "border-[#b9a58b] bg-[#f6ecdd]"
+                      }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
@@ -787,7 +892,9 @@ export default function TransactionsClient({
                                   />
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center text-[#8b5c4a] font-bold text-sm">
-                                    {(tx.user?.full_name || "?").charAt(0).toUpperCase()}
+                                    {(tx.user?.full_name || "?")
+                                      .charAt(0)
+                                      .toUpperCase()}
                                   </div>
                                 )}
                               </div>
@@ -817,17 +924,23 @@ export default function TransactionsClient({
                           icon={FaClock}
                           className="shrink-0"
                         >
-                          {isActuallyOverdue ? t.history.status.overdue : t.history.status.borrowed}
+                          {isActuallyOverdue
+                            ? t.history.status.overdue
+                            : t.history.status.borrowed}
                         </StatusBadge>
                       </div>
                       <div className="mt-2 text-xs text-[#5a4b3f] flex flex-wrap gap-x-4 gap-y-1 sm:pl-[52px]">
-                        <p>{t.transactions.table.requested}: {formatDate(tx.request_date, language)}</p>
+                        <p>
+                          {t.transactions.table.requested}:{" "}
+                          {formatDate(tx.request_date, language)}
+                        </p>
                         <p
                           className={
                             isActuallyOverdue ? "text-red-700 font-bold" : ""
                           }
                         >
-                          {t.transactions.table.due}: {formatDate(tx.due_date, language)}
+                          {t.transactions.table.due}:{" "}
+                          {formatDate(tx.due_date, language)}
                         </p>
                       </div>
                     </article>
@@ -856,7 +969,9 @@ export default function TransactionsClient({
                 className="px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
               >
                 <option value="date">{t.transactions.filters.sort.date}</option>
-                <option value="member">{t.transactions.filters.sort.member}</option>
+                <option value="member">
+                  {t.transactions.filters.sort.member}
+                </option>
               </select>
             </div>
 
@@ -864,16 +979,21 @@ export default function TransactionsClient({
               <table className="w-full text-sm ink-text min-w-[640px]">
                 <thead>
                   <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
-                    {[t.transactions.table.member, t.transactions.table.book, t.transactions.table.copy, t.transactions.table.type, t.transactions.table.status, t.transactions.table.date].map(
-                      (h) => (
-                        <th
-                          key={h}
-                          className="px-4 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs"
-                        >
-                          {h}
-                        </th>
-                      ),
-                    )}
+                    {[
+                      t.transactions.table.member,
+                      t.transactions.table.book,
+                      t.transactions.table.copy,
+                      t.transactions.table.type,
+                      t.transactions.table.status,
+                      t.transactions.table.date,
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        className="px-4 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs"
+                      >
+                        {h}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -908,7 +1028,9 @@ export default function TransactionsClient({
                                     />
                                   ) : (
                                     <div className="w-full h-full flex items-center justify-center text-[#8b5c4a] font-bold text-[10px]">
-                                      {(tx.user?.full_name || "?").charAt(0).toUpperCase()}
+                                      {(tx.user?.full_name || "?")
+                                        .charAt(0)
+                                        .toUpperCase()}
                                     </div>
                                   )}
                                 </div>
@@ -946,7 +1068,11 @@ export default function TransactionsClient({
                               }
                               size="xs"
                             >
-                              {tx.type === "borrow" ? t.history.table.borrowed : tx.type === "return" ? t.history.table.returned : tx.type}
+                              {tx.type === "borrow"
+                                ? t.history.table.borrowed
+                                : tx.type === "return"
+                                  ? t.history.table.returned
+                                  : tx.type}
                             </StatusBadge>
                           )}
                         </td>
@@ -971,21 +1097,26 @@ export default function TransactionsClient({
                               }
                               size="xs"
                             >
-                              {tx.status === "completed" ? t.history.status.returned : t.history.status.rejected_borrow}
+                              {tx.status === "completed"
+                                ? t.history.status.returned
+                                : t.history.status.rejected_borrow}
                             </StatusBadge>
                           )}
                         </td>
                         <td className="px-4 py-3 text-[#5a4b3f] whitespace-nowrap">
                           <span
                             className="text-xs border-b border-dashed border-[#bfa687] cursor-help"
-                            title={new Date(tx.request_date).toLocaleString(language === "bn" ? "bn-BD" : "en-GB", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                              hour: "numeric",
-                              minute: "2-digit",
-                              hour12: true
-                            })}
+                            title={new Date(tx.request_date).toLocaleString(
+                              language === "bn" ? "bn-BD" : "en-GB",
+                              {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                                hour: "numeric",
+                                minute: "2-digit",
+                                hour12: true,
+                              },
+                            )}
                           >
                             {getRelativeTime(tx.request_date)}
                           </span>
@@ -1030,7 +1161,9 @@ export default function TransactionsClient({
                                   />
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center text-[#8b5c4a] font-bold text-sm">
-                                    {(pdf.user?.full_name || "?").charAt(0).toUpperCase()}
+                                    {(pdf.user?.full_name || "?")
+                                      .charAt(0)
+                                      .toUpperCase()}
                                   </div>
                                 )}
                               </div>
@@ -1051,13 +1184,20 @@ export default function TransactionsClient({
                             </p>
                           </div>
                         </div>
-                        <StatusBadge tone="warning" size="xs" className="shrink-0">
+                        <StatusBadge
+                          tone="warning"
+                          size="xs"
+                          className="shrink-0"
+                        >
                           {t.bookList.bookCard.pdfReport}
                         </StatusBadge>
                       </div>
 
                       <div className="mb-4 text-xs text-[#5a4b3f] space-y-1 sm:pl-[52px]">
-                        <p>{t.transactions.pdf.submitted}: {formatDate(pdf.submitted_at, language)}</p>
+                        <p>
+                          {t.transactions.pdf.submitted}:{" "}
+                          {formatDate(pdf.submitted_at, language)}
+                        </p>
                         {pdf.note && (
                           <div className="bg-[#f0e4d1] border border-[#c9b89a] p-2 rounded-sm mt-2 italic text-[#3f3328]">
                             &quot;{pdf.note}&quot;
@@ -1083,11 +1223,19 @@ export default function TransactionsClient({
                           className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-[#f6ecdd] bg-[#4a7c59] hover:bg-[#3d6447] rounded-sm transition-colors shadow-sm"
                         >
                           <FaCheck className="w-3 h-3" />
-                          {working ? t.transactions.actions.approving : t.transactions.actions.approve}
+                          {working
+                            ? t.transactions.actions.approving
+                            : t.transactions.actions.approve}
                         </button>
                         <button
                           disabled={working}
-                          onClick={() => openRejectModal("pdf", pdf.id, pdf.book?.title ?? t.common.unknown)}
+                          onClick={() =>
+                            openRejectModal(
+                              "pdf",
+                              pdf.id,
+                              pdf.book?.title ?? t.common.unknown,
+                            )
+                          }
                           className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-[#f6ecdd] bg-[#8b5c4a] hover:bg-[#6b4437] rounded-sm transition-colors shadow-sm"
                         >
                           <FaTimes className="w-3 h-3" />

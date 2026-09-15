@@ -1,12 +1,25 @@
 "use client";
 import StatusBadge from "@/app/components/StatusBadge";
+import { InventoryNav } from "@/app/dashboard/components/StaffHubNav";
 import ConfirmModal from "@/components/ui/confirm-modal";
 import { useTranslation } from "@/lib/i18n/context";
-import { addBook, editBook, getActiveBorrowersForBook, removeBook } from "@/server/library-actions";
+import {
+  addBook,
+  editBook,
+  getActiveBorrowersForBook,
+  removeBook,
+} from "@/server/library-actions";
 import type { Book, Category } from "@/types/library";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { FaDownload, FaEdit, FaPlus, FaSearch, FaTimes, FaTrash } from "react-icons/fa";
+import {
+  FaDownload,
+  FaEdit,
+  FaPlus,
+  FaSearch,
+  FaTimes,
+  FaTrash,
+} from "react-icons/fa";
 
 type BookTypeFilter = "all" | string;
 
@@ -86,10 +99,13 @@ export default function BooksClient({ initialBooks, categories }: Props) {
 
   const counts = useMemo(() => {
     const categoryCounts = new Map<string, number>();
-    categories.forEach(c => categoryCounts.set(c.id, 0));
-    books.forEach(b => {
+    categories.forEach((c) => categoryCounts.set(c.id, 0));
+    books.forEach((b) => {
       if (b.category_id && categoryCounts.has(b.category_id)) {
-        categoryCounts.set(b.category_id, (categoryCounts.get(b.category_id) ?? 0) + 1);
+        categoryCounts.set(
+          b.category_id,
+          (categoryCounts.get(b.category_id) ?? 0) + 1,
+        );
       }
     });
     return {
@@ -135,8 +151,10 @@ export default function BooksClient({ initialBooks, categories }: Props) {
       fd.set("category_id", formData.category_id);
       fd.set("is_syllabus", formData.is_syllabus ? "true" : "false");
       if (formData.pages) fd.set("pages", formData.pages);
-      if (formData.pdf_link.trim()) fd.set("pdf_link", formData.pdf_link.trim());
-      if (formData.first_copy_id.trim()) fd.set("first_copy_id", formData.first_copy_id.trim());
+      if (formData.pdf_link.trim())
+        fd.set("pdf_link", formData.pdf_link.trim());
+      if (formData.first_copy_id.trim())
+        fd.set("first_copy_id", formData.first_copy_id.trim());
 
       const result = await addBook(fd);
       if (result.error) {
@@ -183,7 +201,8 @@ export default function BooksClient({ initialBooks, categories }: Props) {
       fd.set("category_id", formData.category_id);
       fd.set("is_syllabus", formData.is_syllabus ? "true" : "false");
       if (formData.pages) fd.set("pages", formData.pages);
-      if (formData.pdf_link.trim()) fd.set("pdf_link", formData.pdf_link.trim());
+      if (formData.pdf_link.trim())
+        fd.set("pdf_link", formData.pdf_link.trim());
 
       const result = await editBook(fd);
       if (result.error) {
@@ -239,13 +258,17 @@ export default function BooksClient({ initialBooks, categories }: Props) {
 
   return (
     <div className="space-y-6">
+      {/* Inventory Hub Sub-Navigation */}
+      <InventoryNav />
+
       {/* Flash Messages */}
       {flash && (
         <div
-          className={`fixed top-20 right-4 z-100 p-4 rounded-sm shadow-xl border animate-in fade-in slide-in-from-right-4 duration-300 ${flash.type === "success"
-            ? "bg-[#eef5e9] border-[#a3b994] text-[#3d5c2e]"
-            : "bg-[#fdf0ec] border-[#d0604a] text-[#8b2c1a]"
-            }`}
+          className={`fixed top-20 right-4 z-100 p-4 rounded-sm shadow-xl border animate-in fade-in slide-in-from-right-4 duration-300 ${
+            flash.type === "success"
+              ? "bg-[#eef5e9] border-[#a3b994] text-[#3d5c2e]"
+              : "bg-[#fdf0ec] border-[#d0604a] text-[#8b2c1a]"
+          }`}
         >
           <div className="flex items-center gap-2">
             {flash.type === "success" ? "✓" : "✕"}
@@ -285,7 +308,10 @@ export default function BooksClient({ initialBooks, categories }: Props) {
             </p>
           </div>
           {categories.slice(0, 2).map((cat) => (
-            <div key={cat.id} className="bg-[#f6ecdd] border border-[#b9a58b] p-3 rounded-sm">
+            <div
+              key={cat.id}
+              className="bg-[#f6ecdd] border border-[#b9a58b] p-3 rounded-sm"
+            >
               <p className="text-[10px] uppercase tracking-wider text-[#5c4f42] ink-text">
                 {cat.name}
               </p>
@@ -386,7 +412,10 @@ export default function BooksClient({ initialBooks, categories }: Props) {
                   </td>
                   <td className="px-4 sm:px-6 py-3">
                     <StatusBadge tone="neutral">
-                      {book.category?.name ?? (book.is_syllabus ? t.books.filters.syllabus : t.books.filters.additional)}
+                      {book.category?.name ??
+                        (book.is_syllabus
+                          ? t.books.filters.syllabus
+                          : t.books.filters.additional)}
                     </StatusBadge>
                   </td>
                   <td className="px-4 sm:px-6 py-3">
@@ -540,7 +569,10 @@ export default function BooksClient({ initialBooks, categories }: Props) {
                     placeholder={t.books.modal.placeholders.pages}
                     value={formData.pages}
                     onChange={(e) =>
-                      setFormData({ ...formData, pages: Math.max(Number(e.target.value), 0).toString() })
+                      setFormData({
+                        ...formData,
+                        pages: Math.max(Number(e.target.value), 0).toString(),
+                      })
                     }
                     className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
                   />
@@ -557,14 +589,16 @@ export default function BooksClient({ initialBooks, categories }: Props) {
                   onChange={(e) =>
                     setFormData({ ...formData, pdf_link: e.target.value })
                   }
-                  className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border rounded-sm focus:ring-2 focus:border-transparent outline-none transition-colors ${formData.pdf_link.trim() && !isValidUrl(formData.pdf_link)
-                    ? "border-red-500 focus:ring-red-500 bg-[#fdf2f2] text-red-900"
-                    : "border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] focus:ring-[#6e5d4a]"
-                    }`}
+                  className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border rounded-sm focus:ring-2 focus:border-transparent outline-none transition-colors ${
+                    formData.pdf_link.trim() && !isValidUrl(formData.pdf_link)
+                      ? "border-red-500 focus:ring-red-500 bg-[#fdf2f2] text-red-900"
+                      : "border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] focus:ring-[#6e5d4a]"
+                  }`}
                 />
                 {formData.pdf_link.trim() && !isValidUrl(formData.pdf_link) && (
                   <p className="text-[10px] sm:text-xs text-red-600 mt-1 font-medium">
-                    Please enter a valid URL (e.g., https://example.com/file.pdf)
+                    Please enter a valid URL (e.g.,
+                    https://example.com/file.pdf)
                   </p>
                 )}
               </div>
@@ -585,10 +619,11 @@ export default function BooksClient({ initialBooks, categories }: Props) {
                         first_copy_id: e.target.value.toUpperCase(),
                       });
                     }}
-                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border rounded-sm focus:ring-2 focus:border-transparent outline-none transition-colors ${copyIdError
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border rounded-sm focus:ring-2 focus:border-transparent outline-none transition-colors ${
+                      copyIdError
                         ? "border-red-500 focus:ring-red-500 bg-[#fdf2f2] text-red-900"
                         : "border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] focus:ring-[#6e5d4a]"
-                      }`}
+                    }`}
                   />
                   {copyIdError ? (
                     <p className="text-[10px] sm:text-xs text-red-600 mt-1 font-medium">
@@ -635,7 +670,9 @@ export default function BooksClient({ initialBooks, categories }: Props) {
           setPendingAction(null);
           setRefCount(null);
         }}
-        onConfirm={refCount === null || refCount > 0 ? undefined : confirmDelete}
+        onConfirm={
+          refCount === null || refCount > 0 ? undefined : confirmDelete
+        }
         title={t.books.confirmDelete.title}
         confirmLabel={t.books.actions.delete}
         danger
@@ -653,10 +690,16 @@ export default function BooksClient({ initialBooks, categories }: Props) {
               </p>
             </div>
             {refCount === null ? (
-              <p className="text-[#7a6a5c] text-xs">Checking borrow status...</p>
+              <p className="text-[#7a6a5c] text-xs">
+                Checking borrow status...
+              </p>
             ) : refCount > 0 ? (
               <p className="text-red-700 text-sm font-semibold bg-red-50 p-2.5 border border-red-200 rounded-sm">
-                🚫 {t.books.confirmDelete.blocked.replace("{count}", refCount.toString())}
+                🚫{" "}
+                {t.books.confirmDelete.blocked.replace(
+                  "{count}",
+                  refCount.toString(),
+                )}
               </p>
             ) : (
               <p className="text-red-700 font-medium">
