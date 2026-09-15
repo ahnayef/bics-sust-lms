@@ -518,3 +518,147 @@ export async function rejectPdfReport(
   revalidatePath("/dashboard/transactions");
   return {};
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Moderator / Admin — Delegation actions for any user
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function directBorrowByStaff(
+  formData: FormData,
+): Promise<{ error?: string; success?: boolean }> {
+  const auth = await requireModOrAdmin();
+  if ("error" in auth) return auth;
+
+  const { sub } = auth;
+  const user_id = (formData.get("user_id") as string)?.trim();
+  const copy_id = (formData.get("copy_id") as string)?.trim().toUpperCase();
+  const rawDueDate = (formData.get("due_date") as string)?.trim();
+
+  if (!user_id) return { error: "User ID is required" };
+  if (!copy_id) return { error: "Copy ID is required" };
+
+  const targetProfile = await getProfileById(user_id);
+  if (!targetProfile) return { error: "Target user not found" };
+
+  const copy = await getCopyById(copy_id);
+  if (!copy) return { error: "Copy not found" };
+  if (copy.status !== COPY_STATUS.AVAILABLE) {
+    return {
+      error: `This copy is not available (current status: ${copy.status})`,
+    };
+  }
+
+  const dup = await getDuplicateTransaction(user_id, copy_id, "borrow", [
+    TRANSACTION_STATUS.PENDING,
+    TRANSACTION_STATUS.ACTIVE,
+    TRANSACTION_STATUS.OVERDUE,
+  ]);
+  if (dup) {
+    return {
+      error: "User already has an active or pending request for this copy",
+    };
+  }
+
+  let dueDateStr = rawDueDate;
+  if (!dueDateStr) {
+    const d = new Date();
+    d.setDate(d.getDate() + 14);
+    dueDateStr = d.toISOString().split("T")[0];
+  }
+
+  const now = new Date();
+
+  try {
+    await createTransaction({
+      user_id: user_id,
+      copy_id: copy_id,
+      book_id: copy.book_id,
+      type: "borrow",
+      status: TRANSACTION_STATUS.ACTIVE,
+      request_date: now,
+      approved_date: now,
+      due_date: dueDateStr,
+      reviewed_by: sub,
+    });
+
+    await updateCopy(copy_id, { status: COPY_STATUS.BORROWED });
+  } catch (error: any) {
+    logActionError("directBorrowByStaff", error.message, sub, {
+      user_id,
+      copy_id,
+      book_id: copy.book_id,
+    });
+    return { error: error.message };
+  }
+
+  invalidateAfterTransactionMutation();
+  revalidatePath("/dashboard/transactions");
+  revalidatePath("/dashboard/copies");
+  revalidatePath("/dashboard/books");
+  revalidatePath(`/dashboard/users/${user_id}`);
+  return { success: true };
+}
+
+export async function directMarkBookReadByStaff(
+  formData: FormData,
+): Promise<{ error?: string; success?: boolean }> {
+  const auth = await requireModOrAdmin();
+  if ("error" in auth) return auth;
+
+  const { sub } = auth;
+  const user_id = (formData.get("user_id") as string)?.trim();
+  const book_id = (formData.get("book_id") as string)?.trim().toUpperCase();
+  const note =
+    (formData.get("note") as string)?.trim() || "Marked as read by staff";
+  const read_date =
+    (formData.get("read_date") as string) ||
+    new Date().toISOString().split("T")[0];
+
+  if (!user_id) return { error: "User ID is required" };
+  if (!book_id) return { error: "Book ID is required" };
+
+  const targetProfile = await getProfileById(user_id);
+  if (!targetProfile) return { error: "Target user not found" };
+
+  const existing = await getDuplicatePdfSubmission(user_id, book_id);
+  const now = new Date();
+
+  try {
+    if (existing) {
+      if (existing.status === "approved") {
+        return {
+          error: "This book is already recorded as completed for this user.",
+        };
+      }
+      await updatePdfSubmission(existing.id, {
+        status: "approved",
+        reviewed_at: now,
+        reviewed_by: sub,
+        read_date: read_date,
+        note: note,
+      });
+    } else {
+      await createPdfSubmission({
+        user_id,
+        book_id,
+        read_date,
+        note,
+        status: "approved",
+        reviewed_at: now,
+        reviewed_by: sub,
+      });
+    }
+  } catch (error: any) {
+    logActionError("directMarkBookReadByStaff", error.message, sub, {
+      user_id,
+      book_id,
+    });
+    return { error: error.message };
+  }
+
+  invalidateAfterPdfMutation();
+  revalidatePath("/dashboard/transactions");
+  revalidatePath("/dashboard/history");
+  revalidatePath(`/dashboard/users/${user_id}`);
+  return { success: true };
+}

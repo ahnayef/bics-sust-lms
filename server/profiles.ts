@@ -5,9 +5,7 @@
  */
 
 import { USER_ROLES } from "@/lib/constants";
-import {
-  insertActionLog as insertActionLogQuery,
-} from "@/lib/db/queries/actionLogs";
+import { insertActionLog as insertActionLogQuery } from "@/lib/db/queries/actionLogs";
 import {
   getProfileByEmail,
   getProfileById,
@@ -36,7 +34,7 @@ async function insertActionLog(
   actionType: ActionLogType,
   targetId: string,
   actorId: string | null = null,
-  details: string | null = null
+  details: string | null = null,
 ) {
   await insertActionLogQuery({
     action_type: actionType,
@@ -102,7 +100,8 @@ export async function setupProfile(
     const user = await requireAuth();
 
     // Read avatar from OAuth provider metadata (e.g. Google)
-    const rawAvatarUrl: string | null = (user as any).user_metadata?.avatar_url ?? null;
+    const rawAvatarUrl: string | null =
+      (user as any).user_metadata?.avatar_url ?? null;
 
     const localAvatarUrl = await cacheAvatarLocally(user.id, rawAvatarUrl);
 
@@ -120,7 +119,10 @@ export async function setupProfile(
     if (RESERVED_USERNAMES.has(validated.username.toLowerCase())) {
       return { error: "This username is reserved and cannot be used" };
     }
-    const existing = await getProfileByUsernameExcludingId(validated.username, user.id);
+    const existing = await getProfileByUsernameExcludingId(
+      validated.username,
+      user.id,
+    );
     if (existing) {
       return { error: "Username is already taken" };
     }
@@ -194,7 +196,8 @@ export async function updateProfileInfo(
 
     const current = await getProfileById(user.id);
     const rankChanged = current?.rank_id !== validated.rank_id;
-    const rankRequiresReverification = rankChanged && validated.rank_id !== null;
+    const rankRequiresReverification =
+      rankChanged && validated.rank_id !== null;
 
     await updateProfile(user.id, {
       full_name: validated.full_name,
@@ -222,7 +225,10 @@ export async function verifyUser(
   try {
     const user = await requireAuth();
     const callerProfile = await getProfileById(user.id);
-    if (callerProfile?.role !== USER_ROLES.ADMIN && callerProfile?.role !== USER_ROLES.MODERATOR)
+    if (
+      callerProfile?.role !== USER_ROLES.ADMIN &&
+      callerProfile?.role !== USER_ROLES.MODERATOR
+    )
       return { error: "Only admins and moderators can verify users" };
 
     await updateProfile(userId, { is_verified: true });
@@ -244,7 +250,10 @@ export async function unverifyUser(
   try {
     const user = await requireAuth();
     const callerProfile = await getProfileById(user.id);
-    if (callerProfile?.role !== USER_ROLES.ADMIN && callerProfile?.role !== USER_ROLES.MODERATOR)
+    if (
+      callerProfile?.role !== USER_ROLES.ADMIN &&
+      callerProfile?.role !== USER_ROLES.MODERATOR
+    )
       return { error: "Only admins and moderators can unverify users" };
 
     await updateProfile(userId, { is_verified: false });
@@ -257,6 +266,44 @@ export async function unverifyUser(
   } catch (error: any) {
     console.error("unverifyUser error:", error);
     return { error: error.message || "Failed to unverify user" };
+  }
+}
+
+export async function updateUserProfileByStaff(
+  formData: FormData,
+): Promise<{ error?: string; success?: boolean }> {
+  try {
+    const user = await requireAuth();
+    const callerProfile = await getProfileById(user.id);
+    if (
+      callerProfile?.role !== USER_ROLES.ADMIN &&
+      callerProfile?.role !== USER_ROLES.MODERATOR
+    ) {
+      return { error: "Only admins and moderators can update member profiles" };
+    }
+
+    const userId = (formData.get("user_id") as string)?.trim();
+    if (!userId) return { error: "User ID is required" };
+
+    const fullName = (formData.get("full_name") as string)?.trim();
+    if (!fullName) return { error: "Full name is required" };
+
+    const phone = ((formData.get("phone") as string | null) ?? "").trim();
+    const thanaId = (formData.get("thana_id") as string | null)?.trim();
+
+    await updateProfile(userId, {
+      full_name: fullName,
+      phone: phone || null,
+      thana_id: thanaId && thanaId !== "none" ? thanaId : null,
+    });
+
+    invalidateUsersAndOverview();
+    revalidatePath(`/dashboard/users/${userId}`);
+    revalidatePath("/dashboard/users");
+    return { success: true };
+  } catch (error: any) {
+    console.error("updateUserProfileByStaff error:", error);
+    return { error: error.message || "Failed to update member profile" };
   }
 }
 
@@ -308,7 +355,10 @@ export async function promoteToModerator(
   try {
     const user = await requireAuth();
     const callerProfile = await getProfileById(user.id);
-    if (callerProfile?.role !== USER_ROLES.ADMIN && callerProfile?.role !== USER_ROLES.MODERATOR)
+    if (
+      callerProfile?.role !== USER_ROLES.ADMIN &&
+      callerProfile?.role !== USER_ROLES.MODERATOR
+    )
       return { error: "Only admins and moderators can promote moderators" }; // TODO: To revoke, change back to only ADMIN
 
     const email = (formData.get("email") as string)?.trim().toLowerCase();
@@ -323,7 +373,12 @@ export async function promoteToModerator(
       return { error: "User is already a moderator" };
 
     await updateProfile(targetProfile.id, { role: USER_ROLES.MODERATOR });
-    await insertActionLog("role_changed", targetProfile.id, user.id, "Promoted to moderator");
+    await insertActionLog(
+      "role_changed",
+      targetProfile.id,
+      user.id,
+      "Promoted to moderator",
+    );
 
     invalidateUsersAndOverview();
     return { success: `${targetProfile.full_name} is now a moderator` };
@@ -338,7 +393,10 @@ export async function makeModerator(
   try {
     const user = await requireAuth();
     const callerProfile = await getProfileById(user.id);
-    if (callerProfile?.role !== USER_ROLES.ADMIN && callerProfile?.role !== USER_ROLES.MODERATOR)
+    if (
+      callerProfile?.role !== USER_ROLES.ADMIN &&
+      callerProfile?.role !== USER_ROLES.MODERATOR
+    )
       return { error: "Only admins and moderators can promote moderators" }; // TODO: To revoke, change back to only ADMIN
 
     const userId = formData.get("userId") as string;
@@ -352,7 +410,12 @@ export async function makeModerator(
       return { error: "User is already a moderator" };
 
     await updateProfile(userId, { role: USER_ROLES.MODERATOR });
-    await insertActionLog("role_changed", userId, user.id, "Promoted to moderator");
+    await insertActionLog(
+      "role_changed",
+      userId,
+      user.id,
+      "Promoted to moderator",
+    );
 
     invalidateUsersAndOverview();
     return { success: `${targetProfile.full_name} is now a moderator` };
@@ -415,7 +478,10 @@ export async function demoteModerator(
   try {
     const user = await requireAuth();
     const callerProfile = await getProfileById(user.id);
-    if (callerProfile?.role !== USER_ROLES.ADMIN && callerProfile?.role !== USER_ROLES.MODERATOR)
+    if (
+      callerProfile?.role !== USER_ROLES.ADMIN &&
+      callerProfile?.role !== USER_ROLES.MODERATOR
+    )
       return { error: "Only admins and moderators can demote moderators" }; // TODO: To revoke, change back to only ADMIN
 
     const userId = formData.get("userId") as string;
@@ -424,13 +490,16 @@ export async function demoteModerator(
     const targetProfile = await getProfileById(userId);
 
     if (!targetProfile) return { error: "User not found" };
-    if (targetProfile.role !== USER_ROLES.MODERATOR) return { error: "User is not a moderator" };
+    if (targetProfile.role !== USER_ROLES.MODERATOR)
+      return { error: "User is not a moderator" };
 
     await updateProfile(userId, { role: USER_ROLES.MEMBER });
     await insertActionLog("role_changed", userId, user.id, "Demoted to member");
 
     invalidateUsersAndOverview();
-    return { success: `${targetProfile.full_name} has been removed as moderator` };
+    return {
+      success: `${targetProfile.full_name} has been removed as moderator`,
+    };
   } catch (error: any) {
     return { error: error.message };
   }
@@ -463,7 +532,9 @@ export async function demoteFromAdminAction(
   }
 }
 
-export async function checkUsernameAvailability(username: string): Promise<"available" | "unavailable" | "invalid"> {
+export async function checkUsernameAvailability(
+  username: string,
+): Promise<"available" | "unavailable" | "invalid"> {
   const parsed = profileSchema.shape.username.safeParse(username);
   if (!parsed.success) return "invalid";
 

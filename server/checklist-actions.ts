@@ -12,7 +12,10 @@ import {
   updateChecklist as updateChecklistQuery,
 } from "@/lib/db/queries/checklists";
 import { getMyProfile, requireAuth } from "@/server/auth-utils";
-import { invalidateAfterChecklistCompletionMutation, invalidateAfterChecklistMutation } from "@/server/cache-invalidation";
+import {
+  invalidateAfterChecklistCompletionMutation,
+  invalidateAfterChecklistMutation,
+} from "@/server/cache-invalidation";
 import { revalidatePath } from "next/cache";
 
 async function requireAdmin() {
@@ -34,11 +37,17 @@ export async function createChecklist(name: string, visible: boolean) {
     revalidatePath("/dashboard");
     return { success: true };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Something went wrong" };
+    return {
+      error: error instanceof Error ? error.message : "Something went wrong",
+    };
   }
 }
 
-export async function updateChecklist(id: string, name: string, visible: boolean) {
+export async function updateChecklist(
+  id: string,
+  name: string,
+  visible: boolean,
+) {
   try {
     await requireAdmin();
 
@@ -48,7 +57,9 @@ export async function updateChecklist(id: string, name: string, visible: boolean
     revalidatePath("/dashboard");
     return { success: true };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Something went wrong" };
+    return {
+      error: error instanceof Error ? error.message : "Something went wrong",
+    };
   }
 }
 
@@ -62,7 +73,9 @@ export async function deleteChecklist(id: string) {
     revalidatePath("/dashboard");
     return { success: true };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Something went wrong" };
+    return {
+      error: error instanceof Error ? error.message : "Something went wrong",
+    };
   }
 }
 
@@ -76,7 +89,9 @@ export async function addChecklistItem(checklistId: string, name: string) {
     revalidatePath("/dashboard");
     return { success: true };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Something went wrong" };
+    return {
+      error: error instanceof Error ? error.message : "Something went wrong",
+    };
   }
 }
 
@@ -90,7 +105,9 @@ export async function updateChecklistItem(id: string, name: string) {
     revalidatePath("/dashboard");
     return { success: true };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Something went wrong" };
+    return {
+      error: error instanceof Error ? error.message : "Something went wrong",
+    };
   }
 }
 
@@ -104,7 +121,9 @@ export async function deleteChecklistItem(id: string) {
     revalidatePath("/dashboard");
     return { success: true };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Something went wrong" };
+    return {
+      error: error instanceof Error ? error.message : "Something went wrong",
+    };
   }
 }
 
@@ -114,7 +133,10 @@ export async function toggleChecklistItem(itemId: string, checked: boolean) {
     const userId = user.id;
 
     if (checked) {
-      await insertChecklistCompletion({ user_id: userId, checklist_item_id: itemId });
+      await insertChecklistCompletion({
+        user_id: userId,
+        checklist_item_id: itemId,
+      });
     } else {
       await deleteChecklistCompletion(userId, itemId);
     }
@@ -123,6 +145,45 @@ export async function toggleChecklistItem(itemId: string, checked: boolean) {
     revalidatePath("/dashboard");
     return { success: true };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Something went wrong" };
+    return {
+      error: error instanceof Error ? error.message : "Something went wrong",
+    };
+  }
+}
+
+export async function toggleChecklistItemForUser(
+  targetUserId: string,
+  itemId: string,
+  checked: boolean,
+) {
+  try {
+    const caller = await requireAuth();
+    const profile = await getMyProfile();
+    const isStaff =
+      profile &&
+      (profile.role === USER_ROLES.ADMIN ||
+        profile.role === USER_ROLES.MODERATOR);
+
+    if (caller.id !== targetUserId && !isStaff) {
+      return { error: "Unauthorized to update checklists for another user" };
+    }
+
+    if (checked) {
+      await insertChecklistCompletion({
+        user_id: targetUserId,
+        checklist_item_id: itemId,
+      });
+    } else {
+      await deleteChecklistCompletion(targetUserId, itemId);
+    }
+
+    invalidateAfterChecklistCompletionMutation();
+    revalidatePath("/dashboard");
+    revalidatePath(`/dashboard/users/${targetUserId}`);
+    return { success: true };
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Something went wrong",
+    };
   }
 }

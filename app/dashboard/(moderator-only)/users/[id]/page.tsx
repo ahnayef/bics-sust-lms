@@ -5,10 +5,10 @@ import { getTranslation } from "@/lib/i18n/server";
 import {
   getChecklists,
   getUserChecklistCompletions,
-  getUserChecklistProgress,
 } from "@/server/checklists";
-import { getProfile, getRanks } from "@/server/geo";
+import { getProfile, getRanks, getThanas } from "@/server/geo";
 import {
+  getBooks,
   getPdfSubmissions,
   getUserStats,
   getUserTransactions,
@@ -21,7 +21,6 @@ import {
   FaBookOpen,
   FaCalendarAlt,
   FaCheckCircle,
-  FaCheckSquare,
   FaClock,
   FaEnvelope,
   FaExclamationTriangle,
@@ -30,11 +29,11 @@ import {
   FaMapMarkerAlt,
   FaPhone,
   FaShieldAlt,
-  FaSquare,
-  FaTasks,
   FaUserTag,
 } from "react-icons/fa";
 import UserActions from "./UserActions";
+import UserChecklistsManager from "./UserChecklistsManager";
+import UserOperations from "./UserOperations";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -58,21 +57,23 @@ export default async function UserProfilePage({
     stats,
     perms,
     ranksResponse,
+    thanasResponse,
     transactions,
     pdfSubmissions,
-    checklistProgress,
     checklists,
     completedItemIds,
+    books,
   ] = await Promise.all([
     getProfile(id),
     getUserStats(id),
     moderatorPermissions(),
     getRanks(),
+    getThanas(),
     getUserTransactions(id),
     getPdfSubmissions({ userId: id }),
-    getUserChecklistProgress(id),
     getChecklists(true),
     getUserChecklistCompletions(id),
+    getBooks(),
   ]);
 
   if (!profile) {
@@ -93,8 +94,6 @@ export default async function UserProfilePage({
     moderator: "bg-teal-100 text-teal-900 border-teal-300",
     member: "bg-[#f1e7d8] text-[#4a3b2c] border-[#bda68c]",
   };
-
-  const hasChecklists = checklistProgress.length > 0;
 
   return (
     <div className="space-y-6">
@@ -288,6 +287,25 @@ export default async function UserProfilePage({
             currentRankId={profile.rank_id}
             availableRanks={ranksResponse.data}
           />
+
+          {/* Member Delegation Operations */}
+          <div className="pt-3 border-t border-[#dfcfb9]">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] mb-2.5 ink-text">
+              {language === "bn"
+                ? "সদস্যের কার্যক্রম পরিচালনা (Member Operations)"
+                : "Member Delegation Operations"}
+            </p>
+            <UserOperations
+              userId={id}
+              userName={profile.full_name}
+              userPhone={profile.phone}
+              userThanaId={profile.thana_id}
+              thanas={thanasResponse.data}
+              books={books}
+              currentBorrows={stats.currentBorrows}
+              language={language}
+            />
+          </div>
         </div>
       </div>
 
@@ -477,83 +495,15 @@ export default async function UserProfilePage({
         </div>
       </div>
 
-      {/* ── Checklist Progress Section (2 to 3 Columns) ───────────────────── */}
-      {hasChecklists && (
-        <div className="dashboard-surface tron-border rounded-sm p-5 sm:p-6 shadow-xs space-y-5">
-          <div className="border-b border-[#c9b89a] pb-3 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-[#221910] ink-title uppercase tracking-[0.05em] flex items-center gap-2">
-              <FaTasks className="w-4 h-4 text-[#6e5d4a]" />
-              {t.profile.sections.checklistProgress}
-            </h2>
-            <span className="text-xs font-mono font-semibold text-[#6e5d4a]">
-              {checklists.length} Checklists
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 items-start">
-            {checklists.map((checklist) => {
-              const progress = checklistProgress.find(
-                (p) => p.checklistId === checklist.id,
-              );
-              if (!progress) return null;
-              const percent =
-                progress.total > 0
-                  ? Math.round((progress.completed / progress.total) * 100)
-                  : 0;
-
-              return (
-                <div
-                  key={checklist.id}
-                  className="p-4 bg-[#f6ecdd] border border-[#b9a58b] rounded-sm space-y-3.5"
-                >
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-sm text-[#4a3a2c] ink-text">
-                      <span className="font-bold text-base text-[#221910] truncate">
-                        {checklist.name}
-                      </span>
-                      <span className="font-bold text-sm text-[#2d521f] shrink-0 ml-2">
-                        {percent}%
-                      </span>
-                    </div>
-                    <div className="w-full h-2.5 rounded-full bg-[#e4d4bf] border border-[#ccb79b] overflow-hidden">
-                      <div
-                        className="h-full bg-[#4a7c59] transition-all rounded-full"
-                        style={{ width: `${percent}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 pt-2 border-t border-[#e2d5c3] max-h-80 overflow-y-auto pr-1.5 print:max-h-none">
-                    {checklist.items.map((item) => {
-                      const isCompleted = completedItemIds.has(item.id);
-                      return (
-                        <div
-                          key={item.id}
-                          className="flex items-start gap-2.5 text-xs sm:text-sm"
-                        >
-                          {isCompleted ? (
-                            <FaCheckSquare className="w-4 h-4 text-[#4a7c59] shrink-0 mt-0.5" />
-                          ) : (
-                            <FaSquare className="w-4 h-4 text-[#ccb79b] shrink-0 mt-0.5" />
-                          )}
-                          <span
-                            className={`ink-text ${
-                              isCompleted
-                                ? "text-[#2b2119] font-medium"
-                                : "text-[#7a6a5c]"
-                            }`}
-                          >
-                            {item.name}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+      {/* ── Checklist Progress Section (Interactive Staff Management) ──── */}
+      {checklists.length > 0 && (
+        <UserChecklistsManager
+          userId={id}
+          userName={profile.full_name}
+          checklists={checklists}
+          initialCompletedItemIds={Array.from(completedItemIds)}
+          language={language}
+        />
       )}
 
       {/* ── Transaction & PDF Submission History (Full Width) ─────────────── */}
