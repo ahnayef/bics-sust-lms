@@ -45,7 +45,7 @@ export const bookList = {
     additional: "Additional",
     viewCopies: "View Copies",
     hideCopies: "Hide Copies",
-    pdfReport: "Mark as Read (PDF)",
+    pdfReport: "Mark as Read",
     readPdf: "Read PDF",
     pdfStatus: {
       pending: "PDF Pending",
@@ -60,7 +60,7 @@ export const bookList = {
     alreadyBorrowed: "You already have this book",
   },
   pdfModal: {
-    title: "Mark as Read (PDF)",
+    title: "Mark as Read",
     description: "Your PDF read submission is pending moderator approval.",
     submitted: "Submitted!",
     dateLabel: "Date Read *",
@@ -70,7 +70,8 @@ export const bookList = {
     submitting: "Submitting...",
     bookLabel: "Book",
     errors: {
-      alreadySubmitted: "You already have a pending or approved submission for this book.",
+      alreadySubmitted:
+        "You already have a pending or approved submission for this book.",
       generic: "Something went wrong. Please try again.",
     },
   },
@@ -99,7 +100,8 @@ export const bookList = {
       fillPage: "Fill page (experimental)",
       fillPageNote: "Repeats selected items to fill an A4 grid",
       print: "Print Now",
-      printNote: "Use 'Save as PDF' or 'Print' in the browser dialog. Best printed on A4 paper.",
+      printNote:
+        "Use 'Save as PDF' or 'Print' in the browser dialog. Best printed on A4 paper.",
     },
   },
 } as const;
