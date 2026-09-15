@@ -16,6 +16,7 @@ export const dashboard = {
     ranks: "র‌্যাঙ্ক",
     categories: "ক্যাটাগরি",
     printQr: "কিউআর প্রিন্ট",
+    exports: "ডাটা এক্সপোর্ট",
     notifications: "নোটিফিকেশন",
     borrow: "ধার নেওয়া",
     return: "ফেরত দেওয়া",

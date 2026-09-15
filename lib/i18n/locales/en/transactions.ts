@@ -37,6 +37,8 @@ export const transactions = {
     currentlyBorrowedBy: "Currently borrowed by ",
     alsoRequestedBy: "Also requested by: ",
     waiting: "waiting",
+    expectedReturn: "Expected Return: ",
+    overdue: "Overdue",
   },
   table: {
     member: "Member",

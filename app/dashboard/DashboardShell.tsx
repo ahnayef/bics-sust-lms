@@ -14,6 +14,7 @@ import {
   FaCheckSquare,
   FaClipboardList,
   FaExchangeAlt,
+  FaFileExport,
   FaGraduationCap,
   FaHome,
   FaMapMarkerAlt,
@@ -134,6 +135,11 @@ export default function DashboardShell({
       label: t.dashboard.sidebar.printQr,
       href: "/dashboard/print-qr",
       icon: FaPrint,
+    },
+    {
+      label: t.dashboard.sidebar.exports,
+      href: "/dashboard/exports",
+      icon: FaFileExport,
     },
   ];
 
@@ -742,6 +748,18 @@ export default function DashboardShell({
                   </div>
                   <span className="text-xs font-semibold text-[#221910] truncate">
                     {t.dashboard.sidebar.printQr}
+                  </span>
+                </Link>
+                <Link
+                  href="/dashboard/exports"
+                  onClick={() => setIsStaffDrawerOpen(false)}
+                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs col-span-2"
+                >
+                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
+                    <FaFileExport className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-[#221910] truncate">
+                    {t.dashboard.sidebar.exports}
                   </span>
                 </Link>
               </div>

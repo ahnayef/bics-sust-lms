@@ -1012,7 +1012,7 @@ export default function TransactionsClient({
                           className="shrink-0"
                         >
                           {isActuallyOverdue
-                            ? t.history.table.overdue
+                            ? t.history.status.overdue
                             : t.history.table.borrowed}
                         </StatusBadge>
                       </div>

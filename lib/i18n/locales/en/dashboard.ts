@@ -16,6 +16,7 @@ export const dashboard = {
     ranks: "Ranks",
     categories: "Categories",
     printQr: "Print QR",
+    exports: "Export Data",
     notifications: "Notifications",
     borrow: "Borrow",
     return: "Return",

@@ -29,7 +29,7 @@ export default async function DashboardHomePage() {
   ]);
 
   const userName = profile?.full_name || claims.name || "Member";
-  const isVerified = profile?.verified ?? false;
+  const isVerified = profile?.is_verified ?? false;
 
   return (
     <div className="space-y-5 sm:space-y-6 max-w-5xl mx-auto animate-in fade-in duration-300">

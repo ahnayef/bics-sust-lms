@@ -9,6 +9,7 @@ import {
   FaChartLine,
   FaClipboardList,
   FaExchangeAlt,
+  FaFileExport,
   FaGraduationCap,
   FaMapMarkerAlt,
   FaPrint,
@@ -83,6 +84,11 @@ export function InventoryNav() {
       label: t.dashboard.sidebar.printQr,
       href: "/dashboard/print-qr",
       icon: FaPrint,
+    },
+    {
+      label: t.dashboard.sidebar.exports,
+      href: "/dashboard/exports",
+      icon: FaFileExport,
     },
   ];
 

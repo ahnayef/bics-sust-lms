@@ -37,6 +37,8 @@ export const transactions = {
     currentlyBorrowedBy: "বর্তমানে ধার নিয়েছেন: ",
     alsoRequestedBy: "অনুরোধ করেছেন: ",
     waiting: "অপেক্ষমান",
+    expectedReturn: "সম্ভাব্য ফেরত: ",
+    overdue: "সময় অতিক্রান্ত",
   },
   table: {
     member: "সদস্য",

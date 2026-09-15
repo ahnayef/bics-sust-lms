@@ -1,7 +1,11 @@
 import { defineConfig } from "drizzle-kit";
-import { config } from "dotenv";
-
-config({ path: ".env.local" });
+if (typeof (process as any).loadEnvFile === "function") {
+  try {
+    (process as any).loadEnvFile(".env.local");
+  } catch {
+    // Ignore if not present
+  }
+}
 
 export default defineConfig({
   schema: "./lib/db/schema.ts",

@@ -89,7 +89,7 @@ export interface Transaction {
   // joined
   user?: Pick<
     Profile,
-    "id" | "full_name" | "username" | "email" | "avatar_url"
+    "id" | "full_name" | "username" | "email" | "avatar_url" | "phone"
   >;
   copy?: Pick<Copy, "id" | "copy_number" | "status" | "book_id">;
   book?: Pick<Book, "id" | "title" | "author" | "is_syllabus" | "pdf_link">;
@@ -129,17 +129,17 @@ export interface NotificationItem {
   id: string;
   date: string;
   type:
-  | "transaction_approved"
-  | "transaction_rejected"
-  | "transaction_completed"
-  | "transaction_overdue"
-  | "pdf_approved"
-  | "pdf_rejected"
-  | "user_verified"
-  | "user_unverified"
-  | "role_changed"
-  | "thana_deleted"
-  | "user_joined";
+    | "transaction_approved"
+    | "transaction_rejected"
+    | "transaction_completed"
+    | "transaction_overdue"
+    | "pdf_approved"
+    | "pdf_rejected"
+    | "user_verified"
+    | "user_unverified"
+    | "role_changed"
+    | "thana_deleted"
+    | "user_joined";
   title: string;
   message: string;
   link?: string;
