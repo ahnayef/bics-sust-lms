@@ -52,7 +52,7 @@ export default function DashboardShell({
   const pathname = usePathname();
   const [isStaffDrawerOpen, setIsStaffDrawerOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   const isStaff =
     userRole === USER_ROLES.ADMIN || userRole === USER_ROLES.MODERATOR;
@@ -343,18 +343,18 @@ export default function DashboardShell({
       {/* ───────────────────────────────────────────────────────────────────── */}
       <main className="flex-1 min-w-0 overflow-y-auto flex flex-col print:overflow-visible">
         {/* Top App Bar */}
-        <header className="sticky top-0 z-20 dashboard-surface border-b border-[#6f5f4f] px-3.5 sm:px-6 py-2.5 print:hidden">
-          <div className="flex items-center justify-between gap-2">
+        <header className="sticky top-0 z-20 dashboard-surface border-b border-[#6f5f4f] px-2.5 sm:px-6 py-2 sm:py-2.5 print:hidden">
+          <div className="flex items-center justify-between gap-1.5 sm:gap-2">
             {/* Left: Mobile Brand or Page Title */}
-            <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
               <Link
                 href="/dashboard"
-                className="lg:hidden flex items-center gap-2 text-[#221910] ink-title font-bold text-base shrink-0"
+                className="lg:hidden flex items-center gap-1.5 text-[#221910] ink-title font-bold text-sm sm:text-base shrink-0"
               >
-                <div className="w-7 h-7 rounded-md bg-[#3f3328] text-[#f4e8d4] flex items-center justify-center shadow-xs">
-                  <FaBook className="w-3.5 h-3.5" />
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md bg-[#3f3328] text-[#f4e8d4] flex items-center justify-center shadow-xs shrink-0">
+                  <FaBook className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 </div>
-                <span>SUST LMS</span>
+                <span className="tracking-tight">SUST LMS</span>
               </Link>
               <h1 className="hidden lg:block text-lg font-bold text-[#221910] ink-title truncate">
                 {pathname === "/dashboard"
@@ -370,19 +370,7 @@ export default function DashboardShell({
             </div>
 
             {/* Right: Controls & Profile */}
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              {/* Staff Desk Pill (Mobile only for staff) */}
-              {isStaff && (
-                <button
-                  onClick={() => setIsStaffDrawerOpen(true)}
-                  className="lg:hidden inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border border-[#4a7c59] bg-[#d3decb] text-[#2d4a35] hover:bg-[#c4d3bc] active:scale-95 transition-all shadow-xs cursor-pointer"
-                  title="Staff Management Desk"
-                >
-                  <FaShieldAlt className="w-3 h-3 text-[#2d4a35]" />
-                  <span>{t.dashboard.sidebar.staffDesk}</span>
-                </button>
-              )}
-
+            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
               <LanguageSwitcher />
               <NotificationBell
                 userId={userId}
@@ -493,64 +481,131 @@ export default function DashboardShell({
             </span>
           </Link>
 
-          {/* Books */}
-          <Link
-            href="/dashboard/book-list"
-            className={cn(
-              "flex-1 flex flex-col items-center justify-center py-1 transition-colors min-h-[48px]",
-              isActive("/dashboard/book-list")
-                ? "text-[#221910] font-bold"
-                : "text-[#7a6a5c] hover:text-[#221910]",
-            )}
-          >
-            <div
-              className={cn(
-                "p-1 rounded-full",
-                isActive("/dashboard/book-list") && "bg-[#ebdcc8]",
-              )}
-            >
-              <FaBookOpen className="w-5 h-5" />
-            </div>
-            <span className="text-[10px] mt-0.5 ink-title truncate">
-              {t.dashboard.sidebar.bookList}
-            </span>
-          </Link>
+          {isStaff ? (
+            <>
+              {/* Transactions (Staff) */}
+              <Link
+                href="/dashboard/transactions"
+                className={cn(
+                  "flex-1 flex flex-col items-center justify-center py-1 transition-colors min-h-[48px]",
+                  isActive("/dashboard/transactions")
+                    ? "text-[#221910] font-bold"
+                    : "text-[#7a6a5c] hover:text-[#221910]",
+                )}
+              >
+                <div
+                  className={cn(
+                    "p-1 rounded-full",
+                    isActive("/dashboard/transactions") && "bg-[#ebdcc8]",
+                  )}
+                >
+                  <FaExchangeAlt className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] mt-0.5 ink-title truncate">
+                  {t.dashboard.sidebar.transactions}
+                </span>
+              </Link>
 
-          {/* Center Elevated Action: Scan & Borrow */}
-          <Link
-            href="/dashboard/borrow"
-            className="flex-1 flex flex-col items-center justify-center -mt-5 min-h-[48px] group"
-          >
-            <div className="w-12 h-12 rounded-full bg-[#3f3328] text-[#f4e8d4] shadow-md border-2 border-[#f6ecdd] flex items-center justify-center group-hover:scale-105 active:scale-95 transition-transform">
-              <FaQrcode className="w-5 h-5" />
-            </div>
-            <span className="text-[10px] mt-0.5 font-bold text-[#3f3328] ink-title truncate">
-              {t.dashboard.sidebar.borrow}
-            </span>
-          </Link>
+              {/* Center Elevated Action: Staff Desk */}
+              <button
+                type="button"
+                onClick={() => setIsStaffDrawerOpen(true)}
+                className="flex-1 flex flex-col items-center justify-center -mt-5 min-h-[48px] group cursor-pointer"
+                aria-label={t.dashboard.sidebar.staffDesk}
+              >
+                <div className="w-12 h-12 rounded-full bg-[#2d4a35] text-[#f4e8d4] shadow-md border-2 border-[#f6ecdd] flex items-center justify-center group-hover:scale-105 active:scale-95 transition-transform">
+                  <FaShieldAlt className="w-5 h-5 text-[#f4e8d4]" />
+                </div>
+                <span className="text-[10px] mt-0.5 font-bold text-[#2d4a35] ink-title truncate">
+                  {t.dashboard.sidebar.staffDesk}
+                </span>
+              </button>
 
-          {/* Tasks / Checklists */}
-          <Link
-            href="/dashboard/checklists"
-            className={cn(
-              "flex-1 flex flex-col items-center justify-center py-1 transition-colors min-h-[48px]",
-              isActive("/dashboard/checklists")
-                ? "text-[#221910] font-bold"
-                : "text-[#7a6a5c] hover:text-[#221910]",
-            )}
-          >
-            <div
-              className={cn(
-                "p-1 rounded-full",
-                isActive("/dashboard/checklists") && "bg-[#ebdcc8]",
-              )}
-            >
-              <FaCheckSquare className="w-5 h-5" />
-            </div>
-            <span className="text-[10px] mt-0.5 ink-title truncate">
-              {t.dashboard.sidebar.checklists}
-            </span>
-          </Link>
+              {/* Users (Staff) */}
+              <Link
+                href="/dashboard/users"
+                className={cn(
+                  "flex-1 flex flex-col items-center justify-center py-1 transition-colors min-h-[48px]",
+                  isActive("/dashboard/users")
+                    ? "text-[#221910] font-bold"
+                    : "text-[#7a6a5c] hover:text-[#221910]",
+                )}
+              >
+                <div
+                  className={cn(
+                    "p-1 rounded-full",
+                    isActive("/dashboard/users") && "bg-[#ebdcc8]",
+                  )}
+                >
+                  <FaUsers className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] mt-0.5 ink-title truncate">
+                  {t.dashboard.sidebar.users}
+                </span>
+              </Link>
+            </>
+          ) : (
+            <>
+              {/* Books (Member) */}
+              <Link
+                href="/dashboard/book-list"
+                className={cn(
+                  "flex-1 flex flex-col items-center justify-center py-1 transition-colors min-h-[48px]",
+                  isActive("/dashboard/book-list")
+                    ? "text-[#221910] font-bold"
+                    : "text-[#7a6a5c] hover:text-[#221910]",
+                )}
+              >
+                <div
+                  className={cn(
+                    "p-1 rounded-full",
+                    isActive("/dashboard/book-list") && "bg-[#ebdcc8]",
+                  )}
+                >
+                  <FaBookOpen className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] mt-0.5 ink-title truncate">
+                  {t.dashboard.sidebar.bookList}
+                </span>
+              </Link>
+
+              {/* Center Elevated Action: Scan & Borrow (Member) */}
+              <Link
+                href="/dashboard/borrow"
+                className="flex-1 flex flex-col items-center justify-center -mt-5 min-h-[48px] group"
+              >
+                <div className="w-12 h-12 rounded-full bg-[#3f3328] text-[#f4e8d4] shadow-md border-2 border-[#f6ecdd] flex items-center justify-center group-hover:scale-105 active:scale-95 transition-transform">
+                  <FaQrcode className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] mt-0.5 font-bold text-[#3f3328] ink-title truncate">
+                  {t.dashboard.sidebar.borrow}
+                </span>
+              </Link>
+
+              {/* Tasks / Checklists (Member) */}
+              <Link
+                href="/dashboard/checklists"
+                className={cn(
+                  "flex-1 flex flex-col items-center justify-center py-1 transition-colors min-h-[48px]",
+                  isActive("/dashboard/checklists")
+                    ? "text-[#221910] font-bold"
+                    : "text-[#7a6a5c] hover:text-[#221910]",
+                )}
+              >
+                <div
+                  className={cn(
+                    "p-1 rounded-full",
+                    isActive("/dashboard/checklists") && "bg-[#ebdcc8]",
+                  )}
+                >
+                  <FaCheckSquare className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] mt-0.5 ink-title truncate">
+                  {t.dashboard.sidebar.checklists}
+                </span>
+              </Link>
+            </>
+          )}
 
           {/* Profile */}
           <Link

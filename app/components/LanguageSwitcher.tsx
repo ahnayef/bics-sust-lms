@@ -3,33 +3,19 @@
 import { useTranslation } from "@/lib/i18n/context";
 
 export function LanguageSwitcher() {
-  const { language, setLanguage, t } = useTranslation();
+  const { language, setLanguage } = useTranslation();
 
   return (
-    <div className="flex items-center gap-1.5 bg-[#f0e4d1] border border-[#8a7966] p-1 rounded-sm">
-      <button
-        onClick={() => setLanguage("en")}
-        className={`px-2 py-1 text-[10px] font-bold transition-all rounded-sm uppercase tracking-wider ${
-          language === "en"
-            ? "bg-[#3f3328] text-[#fcf9f4]"
-            : "text-[#5a4b3f] hover:bg-[#eadcc8]"
-        }`}
-        title={t.common.languages.en}
-      >
-        EN
-      </button>
-      <div className="w-px h-3 bg-[#8a7966]/40" />
-      <button
-        onClick={() => setLanguage("bn")}
-        className={`px-2 py-1 text-[11px] font-bold transition-all rounded-sm ${
-          language === "bn"
-            ? "bg-[#3f3328] text-[#fcf9f4]"
-            : "text-[#5a4b3f] hover:bg-[#eadcc8]"
-        }`}
-        title={t.common.languages.bn}
-      >
-        বাংলা
-      </button>
-    </div>
+    <button
+      onClick={() => setLanguage(language === "en" ? "bn" : "en")}
+      className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold bg-[#f0e4d1] border border-[#8a7966] text-[#3f3328] hover:bg-[#eadcc8] active:scale-95 transition-all cursor-pointer shrink-0 shadow-2xs"
+      title={language === "en" ? "Switch to বাংলা" : "Switch to English"}
+      aria-label="Toggle language"
+    >
+      <span className="text-[11px]">🌐</span>
+      <span className="text-[11px] uppercase tracking-wide">
+        {language === "en" ? "EN" : "বাং"}
+      </span>
+    </button>
   );
 }

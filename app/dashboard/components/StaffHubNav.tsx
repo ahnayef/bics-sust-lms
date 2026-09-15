@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "@/lib/i18n/context";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -17,22 +18,23 @@ import {
 
 export function CirculationNav() {
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   const tabs = [
     {
-      label: "Overview & Insights",
+      label: t.dashboard.sidebar.overview,
       href: "/dashboard/overview",
       icon: FaChartLine,
     },
     {
-      label: "Transactions & Approvals",
+      label: t.dashboard.sidebar.transactions,
       href: "/dashboard/transactions",
       icon: FaExchangeAlt,
     },
   ];
 
   return (
-    <div className="flex items-center gap-1.5 overflow-x-auto pb-2 no-scrollbar">
+    <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const active =
@@ -42,7 +44,7 @@ export function CirculationNav() {
             key={tab.href}
             href={tab.href}
             className={cn(
-              "inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all shrink-0",
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shrink-0",
               active
                 ? "bg-[#3f3328] text-[#f4e8d4] font-bold shadow-xs"
                 : "bg-[#eadcc8] text-[#4e4033] hover:bg-[#dfcfb9]",
@@ -59,24 +61,33 @@ export function CirculationNav() {
 
 export function InventoryNav() {
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   const tabs = [
-    { label: "Books Catalog", href: "/dashboard/books", icon: FaBook },
     {
-      label: "Physical Copies",
+      label: t.dashboard.sidebar.books,
+      href: "/dashboard/books",
+      icon: FaBook,
+    },
+    {
+      label: t.dashboard.sidebar.copies,
       href: "/dashboard/copies",
       icon: FaGraduationCap,
     },
     {
-      label: "Categories",
+      label: t.dashboard.sidebar.categories,
       href: "/dashboard/categories",
       icon: FaClipboardList,
     },
-    { label: "Print QR Barcodes", href: "/dashboard/print-qr", icon: FaPrint },
+    {
+      label: t.dashboard.sidebar.printQr,
+      href: "/dashboard/print-qr",
+      icon: FaPrint,
+    },
   ];
 
   return (
-    <div className="flex items-center gap-1.5 overflow-x-auto pb-2 no-scrollbar">
+    <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const active =
@@ -86,7 +97,7 @@ export function InventoryNav() {
             key={tab.href}
             href={tab.href}
             className={cn(
-              "inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all shrink-0",
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shrink-0",
               active
                 ? "bg-[#3f3328] text-[#f4e8d4] font-bold shadow-xs"
                 : "bg-[#eadcc8] text-[#4e4033] hover:bg-[#dfcfb9]",
@@ -103,20 +114,33 @@ export function InventoryNav() {
 
 export function CommunityNav() {
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   const tabs = [
-    { label: "Member Directory", href: "/dashboard/users", icon: FaUsers },
     {
-      label: "Staff & Moderators",
+      label: t.dashboard.sidebar.users,
+      href: "/dashboard/users",
+      icon: FaUsers,
+    },
+    {
+      label: t.dashboard.sidebar.moderators,
       href: "/dashboard/moderators",
       icon: FaShieldAlt,
     },
-    { label: "Ranks", href: "/dashboard/ranks", icon: FaShieldAlt },
-    { label: "Thanas", href: "/dashboard/thanas", icon: FaMapMarkerAlt },
+    {
+      label: t.dashboard.sidebar.ranks,
+      href: "/dashboard/ranks",
+      icon: FaShieldAlt,
+    },
+    {
+      label: t.dashboard.sidebar.thanas,
+      href: "/dashboard/thanas",
+      icon: FaMapMarkerAlt,
+    },
   ];
 
   return (
-    <div className="flex items-center gap-1.5 overflow-x-auto pb-2 no-scrollbar">
+    <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const active =
@@ -126,7 +150,7 @@ export function CommunityNav() {
             key={tab.href}
             href={tab.href}
             className={cn(
-              "inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all shrink-0",
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shrink-0",
               active
                 ? "bg-[#3f3328] text-[#f4e8d4] font-bold shadow-xs"
                 : "bg-[#eadcc8] text-[#4e4033] hover:bg-[#dfcfb9]",

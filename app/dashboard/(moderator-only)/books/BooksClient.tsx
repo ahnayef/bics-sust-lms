@@ -361,7 +361,84 @@ export default function BooksClient({ initialBooks, categories }: Props) {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Mobile Cards View */}
+        <div className="p-3 space-y-2.5 md:hidden">
+          {filteredBooks.length === 0 ? (
+            <div className="text-center py-10 text-[#6a5a4c] ink-text">
+              <p>{t.books.empty}</p>
+            </div>
+          ) : (
+            filteredBooks.map((book) => (
+              <article
+                key={book.id}
+                className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-3.5 ink-text shadow-xs"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-bold text-[#2b2119] text-sm leading-snug">
+                      {book.title}
+                    </h3>
+                    <p className="text-xs text-[#5a4b3f] mt-0.5">
+                      {book.author}
+                    </p>
+                  </div>
+                  <StatusBadge tone="neutral" size="xs" className="shrink-0">
+                    {book.category?.name ??
+                      (book.is_syllabus
+                        ? t.books.filters.syllabus
+                        : t.books.filters.additional)}
+                  </StatusBadge>
+                </div>
+
+                <div className="mt-2.5 pt-2 border-t border-[#dfceb9] flex items-center justify-between text-xs text-[#5c4f42]">
+                  <div className="flex items-center gap-2">
+                    <span className="bg-[#eadcc8] px-2 py-0.5 rounded-xs font-semibold">
+                      {book.copies?.length ?? 0} {t.books.table.copies}
+                    </span>
+                    {book.pages && (
+                      <span className="opacity-75">
+                        {book.pages} {t.books.table.pages}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    {book.pdf_link && (
+                      <a
+                        href={book.pdf_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1.5 text-[#4e4033] hover:bg-[#eadcc8] rounded-sm border border-[#c4ad91]"
+                        title={t.books.actions.downloadPdf}
+                      >
+                        <FaDownload className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                    <button
+                      onClick={() => handleEdit(book.id)}
+                      disabled={isPending}
+                      className="p-1.5 text-[#5b4c3f] hover:bg-[#eadcc8] rounded-sm border border-[#c4ad91] cursor-pointer"
+                      title={t.books.actions.edit}
+                    >
+                      <FaEdit className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(book.id)}
+                      disabled={isPending}
+                      className="p-1.5 text-[#8b2c1a] hover:bg-[#eadcc8] rounded-sm border border-[#c4ad91] cursor-pointer"
+                      title={t.books.actions.delete}
+                    >
+                      <FaTrash className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </article>
+            ))
+          )}
+        </div>
+
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm ink-text text-left min-w-[700px]">
             <thead>
               <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">

@@ -7,6 +7,7 @@ import {
   allowBorrowRequest,
   approvePdfReport,
   approveReturnRequest,
+  directReturnByStaff,
   rejectBorrowRequest,
   rejectPdfReport,
   rejectReturnRequest,
@@ -18,9 +19,9 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   FaCheck,
-  FaClock,
   FaExclamationTriangle,
   FaFileAlt,
+  FaPhone,
   FaSearch,
   FaTimes,
 } from "react-icons/fa";
@@ -345,6 +346,23 @@ export default function TransactionsClient({
     });
   }
 
+  function handleDirectReturn(tx: Transaction) {
+    const bookTitle = tx.book?.title || t.common.unknown;
+    const memberName = tx.user?.full_name || t.common.unknown;
+    const confirmMsg =
+      language === "bn"
+        ? `সদস্য "${memberName}" এর ধার করা "${bookTitle}" বইটি ফেরত হিসেবে গ্রহণ করতে চান?`
+        : `Mark "${bookTitle}" borrowed by ${memberName} as returned?`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    runAction(tx.id, async () => {
+      const fd = new FormData();
+      fd.set("transaction_id", tx.id);
+      return directReturnByStaff(fd);
+    });
+  }
+
   function openRejectModal(
     kind: RejectTarget["kind"],
     id: string,
@@ -396,7 +414,7 @@ export default function TransactionsClient({
     return (
       <article
         key={tx.id}
-        className={`border rounded-sm p-4 ink-text ${
+        className={`border rounded-xl p-3 sm:p-4 ink-text ${
           isUnavailable
             ? "border-[#b0665c] bg-[#f8e7e3] opacity-90 shadow-[inset_4px_0_0_0_#b0665c]"
             : hasConflict
@@ -405,11 +423,11 @@ export default function TransactionsClient({
         }`}
       >
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-start gap-3 flex-1 min-w-0">
+          <div className="flex items-start gap-2.5 sm:gap-3 flex-1 min-w-0">
             {/* Profile Photo */}
             <div className="shrink-0">
               <Link href={`/dashboard/users/${tx.user?.id}`}>
-                <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[#cfbba1] bg-[#ece0ce] hover:border-[#8b5c4a] transition-colors">
+                <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border border-[#cfbba1] bg-[#ece0ce] hover:border-[#8b5c4a] transition-colors">
                   {tx.user?.avatar_url ? (
                     <Image
                       src={tx.user.avatar_url}
@@ -467,7 +485,7 @@ export default function TransactionsClient({
         </div>
 
         {isUnavailable ? (
-          <div className="mt-2 p-2 bg-[#f2d8d3] border border-[#d6a59e] rounded-sm text-[10px] text-[#7d2d23] font-medium space-y-1">
+          <div className="mt-2 p-2 bg-[#f2d8d3] border border-[#d6a59e] rounded-lg text-[10px] text-[#7d2d23] font-medium space-y-1">
             <div className="flex items-center gap-1.5">
               <FaExclamationTriangle className="w-3 h-3 shrink-0" />
               <span>
@@ -480,32 +498,42 @@ export default function TransactionsClient({
                 </Link>
               </span>
             </div>
-            <p className="pl-4.5">
-              {t.history.table.due}:{" "}
-              <span className="font-bold">
-                {formatDate(currentBorrower.due_date, language)}
-              </span>
-            </p>
+            {currentBorrower.due_date && (
+              <div className="pl-4">
+                <span>
+                  {t.transactions.actions.expectedReturn}
+                  {formatDate(currentBorrower.due_date, language)}
+                  {isOverdueDate(currentBorrower.due_date) && (
+                    <span className="ml-1 font-bold text-[#b52a1a]">
+                      ({t.transactions.actions.overdue})
+                    </span>
+                  )}
+                </span>
+              </div>
+            )}
           </div>
         ) : (
           hasConflict && (
-            <div className="mt-2 text-[10px] text-[#8b5c4a] font-medium flex items-center gap-1">
-              <FaExclamationTriangle className="w-3 h-3" />
+            <div className="mt-2 p-2 bg-[#fdf3e7] border border-[#d9af7c] rounded-lg text-[10px] text-[#7d5218] flex items-center gap-1.5">
+              <FaExclamationTriangle className="w-3 h-3 shrink-0 text-[#a06820]" />
               <span>
                 {t.transactions.actions.alsoRequestedBy}
-                <span className="font-bold">{otherRequesters.join(", ")}</span>
+                {otherRequesters.join(", ")}
               </span>
             </div>
           )
         )}
 
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#5a4b3f]">
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#5a4b3f] sm:pl-[52px]">
           <p>
             {t.transactions.table.requested}:{" "}
             {formatDate(tx.request_date, language)}
           </p>
           <div className="flex items-center gap-1.5">
-            <label htmlFor={`due-${tx.id}`} className="shrink-0">
+            <label
+              htmlFor={`due-${tx.id}`}
+              className="text-xs text-[#5a4b3f] whitespace-nowrap"
+            >
               {t.transactions.table.due}:
             </label>
             <input
@@ -516,18 +544,18 @@ export default function TransactionsClient({
               onChange={(e) =>
                 setDueDates((prev) => ({ ...prev, [tx.id]: e.target.value }))
               }
-              className="flex-1 min-w-0 px-2 py-0.5 border border-[#8a7966] bg-[#f0e6d3] text-[#2f251d] rounded-sm focus:ring-1 focus:ring-[#6e5d4a] outline-none ink-text text-xs"
+              className="px-2 py-0.5 text-xs border border-[#8a7966] rounded-md bg-[#f6ecdd] text-[#2f251d] focus:ring-1 focus:ring-[#6e5d4a] outline-none"
             />
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-2 pt-3 border-t border-[#cfbba1]">
+        <div className="mt-3.5 grid grid-cols-2 gap-2 pt-2.5 border-t border-[#cfbba1]">
           <button
             disabled={working || isUnavailable}
             onClick={() => handleApproveBorrow(tx)}
-            className="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-[#f6ecdd] bg-[#4a7c59] hover:bg-[#3d6447] rounded-sm transition-colors border border-[#3d6447] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-[#f6ecdd] bg-[#2d5a3c] hover:bg-[#22442d] rounded-lg transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
-            <FaCheck className="w-3.5 h-3.5" />
+            <FaCheck className="w-3 h-3" />
             {working
               ? t.transactions.actions.approving
               : isUnavailable
@@ -543,9 +571,9 @@ export default function TransactionsClient({
                 tx.book?.title ?? t.common.unknown,
               )
             }
-            className="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-[#f6ecdd] bg-[#8b5c4a] hover:bg-[#6b4437] rounded-sm transition-colors border border-[#6b4437] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-[#f6ecdd] bg-[#8b5c4a] hover:bg-[#6b4437] rounded-lg transition-colors border border-[#6b4437] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
-            <FaTimes className="w-3.5 h-3.5" />
+            <FaTimes className="w-3 h-3" />
             {t.transactions.actions.reject}
           </button>
         </div>
@@ -560,14 +588,14 @@ export default function TransactionsClient({
     return (
       <article
         key={tx.id}
-        className="border border-[#b9a58b] rounded-sm bg-[#f6ecdd] p-4 ink-text"
+        className="border border-[#b9a58b] rounded-xl bg-[#f6ecdd] p-3 sm:p-4 ink-text"
       >
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-start gap-3 flex-1 min-w-0">
+          <div className="flex items-start gap-2.5 sm:gap-3 flex-1 min-w-0">
             {/* Profile Photo */}
             <div className="shrink-0">
               <Link href={`/dashboard/users/${tx.user?.id}`}>
-                <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[#cfbba1] bg-[#ece0ce] hover:border-[#8b5c4a] transition-colors">
+                <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border border-[#cfbba1] bg-[#ece0ce] hover:border-[#8b5c4a] transition-colors">
                   {tx.user?.avatar_url ? (
                     <Image
                       src={tx.user.avatar_url}
@@ -618,13 +646,13 @@ export default function TransactionsClient({
           </p>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-2 pt-3 border-t border-[#cfbba1]">
+        <div className="mt-3.5 grid grid-cols-2 gap-2 pt-2.5 border-t border-[#cfbba1]">
           <button
             disabled={working}
             onClick={() => handleApproveReturn(tx)}
-            className="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-[#f6ecdd] bg-[#4a7c59] hover:bg-[#3d6447] rounded-sm transition-colors border border-[#3d6447] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-[#f6ecdd] bg-[#2d5a3c] hover:bg-[#22442d] rounded-lg transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
-            <FaCheck className="w-3.5 h-3.5" />
+            <FaCheck className="w-3 h-3" />
             {working
               ? t.transactions.actions.approving
               : t.transactions.actions.approve}
@@ -638,9 +666,9 @@ export default function TransactionsClient({
                 tx.book?.title ?? t.common.unknown,
               )
             }
-            className="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-[#f6ecdd] bg-[#8b5c4a] hover:bg-[#6b4437] rounded-sm transition-colors border border-[#6b4437] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-[#f6ecdd] bg-[#8b5c4a] hover:bg-[#6b4437] rounded-lg transition-colors border border-[#6b4437] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
-            <FaTimes className="w-3.5 h-3.5" />
+            <FaTimes className="w-3 h-3" />
             {t.transactions.actions.reject}
           </button>
         </div>
@@ -653,97 +681,110 @@ export default function TransactionsClient({
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
-      {/* Circulation Hub Sub-Nav */}
-      <CirculationNav />
+    <div className="space-y-3 sm:space-y-5">
+      {/* Circulation Hub Sub-Nav (Desktop/Tablet) */}
+      <div className="hidden md:block">
+        <CirculationNav />
+      </div>
 
-      {/* Stats */}
-      <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
-          {t.transactions.header.title}
-        </h1>
-        <p className="text-sm text-[#5a4b3f] mt-1 mb-5 ink-text">
-          {t.transactions.header.subtitle}
-        </p>
+      {/* Header & Stats Strip */}
+      <section className="dashboard-surface tron-border rounded-xl p-3 sm:p-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-base sm:text-2xl font-bold text-[#221910] ink-title">
+              {t.transactions.header.title}
+            </h1>
+            <p className="text-[11px] sm:text-sm text-[#5a4b3f] mt-0.5 ink-text">
+              {t.transactions.header.subtitle}
+            </p>
+          </div>
+
+          {/* Quick interactive stat pill buttons (Desktop) */}
+          <div className="hidden md:flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => handleTabChange("pending")}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#f0e4d2] border border-[#c4b39b] hover:bg-[#e4d6c1] text-xs font-semibold text-[#3f3328] transition-colors shrink-0 cursor-pointer"
+            >
+              <span>⏳</span>
+              <span>{t.transactions.summary.pending}:</span>
+              <span className="font-bold text-[#221910]">
+                {summary.pending}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                handleTabChange("active");
+                setStatusFilter("all");
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#f0e4d2] border border-[#c4b39b] hover:bg-[#e4d6c1] text-xs font-semibold text-[#3f3328] transition-colors shrink-0 cursor-pointer"
+            >
+              <span>📖</span>
+              <span>{t.transactions.summary.active}:</span>
+              <span className="font-bold text-[#221910]">{summary.active}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                handleTabChange("active");
+                setStatusFilter("overdue");
+              }}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors shrink-0 cursor-pointer ${
+                summary.overdue > 0
+                  ? "bg-[#fbeae6] border border-[#d67b6a] text-[#8b2c1a] font-bold"
+                  : "bg-[#f0e4d2] border border-[#c4b39b] text-[#3f3328] hover:bg-[#e4d6c1]"
+              }`}
+            >
+              <span>⚠️</span>
+              <span>{t.transactions.summary.overdue}:</span>
+              <span className="font-bold">{summary.overdue}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange("history")}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#f0e4d2] border border-[#c4b39b] hover:bg-[#e4d6c1] text-xs font-semibold text-[#3f3328] transition-colors shrink-0 cursor-pointer"
+            >
+              <span>✓</span>
+              <span>{t.transactions.summary.completed}:</span>
+              <span className="font-bold text-[#221910]">
+                {summary.completed}
+              </span>
+            </button>
+          </div>
+        </div>
 
         {errorMsg && (
-          <div className="mb-4 p-3 bg-[#f3e2de] border border-[#b58a82] rounded-sm text-sm text-[#6f3d35] ink-text">
+          <div className="mt-2.5 p-2 bg-[#f3e2de] border border-[#b58a82] rounded-lg text-xs text-[#6f3d35] ink-text">
             {errorMsg}
           </div>
         )}
-
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {(
-            [
-              {
-                label: t.transactions.summary.pending,
-                value: summary.pending,
-                type: "pending",
-              },
-              {
-                label: t.transactions.summary.active,
-                value: summary.active,
-                type: "active",
-              },
-              {
-                label: t.transactions.summary.overdue,
-                value: summary.overdue,
-                type: "overdue",
-              },
-              {
-                label: t.transactions.summary.completed,
-                value: summary.completed,
-                type: "completed",
-              },
-            ] as const
-          ).map(({ label, value, type }) => {
-            const isUrgentOverdue = type === "overdue" && value > 0;
-            return (
-              <div
-                key={label}
-                className={`border rounded-sm p-3 transition-colors ${
-                  isUrgentOverdue
-                    ? "border-[#c4614a] bg-[#fdf0ec]"
-                    : "border-[#b9a58b] bg-[#f6ecdd]"
-                }`}
-              >
-                <p className="text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text">
-                  {label}
-                </p>
-                <p
-                  className={`text-2xl font-bold ink-title ${
-                    isUrgentOverdue ? "text-[#9b3a25]" : "text-[#221910]"
-                  }`}
-                >
-                  {value}
-                </p>
-              </div>
-            );
-          })}
-        </div>
       </section>
 
       {/* Tabs */}
-      <section className="dashboard-surface tron-border rounded-sm border border-[#5f4f40] overflow-hidden">
+      <section className="dashboard-surface tron-border rounded-xl border border-[#5f4f40] overflow-hidden">
         <Tabs
           value={activeTab}
           onValueChange={handleTabChange}
           className="w-full"
         >
-          {/* Tab bar */}
-          <TabsList className="w-full h-auto rounded-none bg-[#eadcc8] border-b border-[#7d6d5a] p-0 flex overflow-x-auto overflow-y-hidden justify-start">
+          {/* 100% Viewport-Fitting 2x2 Segmented Grid on Mobile, 4-Column on Desktop */}
+          <TabsList className="w-full h-auto bg-[#eadcc8] border-b border-[#7d6d5a] p-1 sm:p-1.5 grid grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-2 rounded-none">
             <TabsTrigger
               value="pending"
-              className="shrink-0 whitespace-nowrap rounded-none py-3 px-4 sm:px-5 text-xs sm:text-sm font-medium ink-text text-[#6a5a4c] border-b-[3px] border-transparent data-[state=active]:border-[#3f3328] data-[state=active]:bg-[#f6ecdd] data-[state=active]:text-[#221910] data-[state=active]:font-bold data-[state=active]:shadow-none hover:bg-[#ece0ce] transition-colors"
+              className="w-full py-2 sm:py-2.5 px-2 text-xs sm:text-sm font-semibold rounded-lg ink-text text-[#6a5a4c] data-[state=active]:bg-[#3f3328] data-[state=active]:text-[#f4e8d4] data-[state=active]:shadow-xs data-[state=active]:font-bold hover:bg-[#dfcfb9] transition-all flex items-center justify-center cursor-pointer"
             >
-              {t.transactions.tabs.pending}
-              <CountBadge n={pendingBorrows.length + pendingReturns.length} />
+              <span className="truncate">{t.transactions.tabs.pending}</span>
+              <CountBadge
+                n={pendingBorrows.length + pendingReturns.length}
+                urgent={pendingBorrows.length + pendingReturns.length > 0}
+              />
             </TabsTrigger>
             <TabsTrigger
               value="active"
-              className="shrink-0 whitespace-nowrap rounded-none py-3 px-4 sm:px-5 text-xs sm:text-sm font-medium ink-text text-[#6a5a4c] border-b-[3px] border-transparent data-[state=active]:border-[#3f3328] data-[state=active]:bg-[#f6ecdd] data-[state=active]:text-[#221910] data-[state=active]:font-bold data-[state=active]:shadow-none hover:bg-[#ece0ce] transition-colors"
+              className="w-full py-2 sm:py-2.5 px-2 text-xs sm:text-sm font-semibold rounded-lg ink-text text-[#6a5a4c] data-[state=active]:bg-[#3f3328] data-[state=active]:text-[#f4e8d4] data-[state=active]:shadow-xs data-[state=active]:font-bold hover:bg-[#dfcfb9] transition-all flex items-center justify-center cursor-pointer"
             >
-              {t.transactions.tabs.active}
+              <span className="truncate">{t.transactions.tabs.active}</span>
               <CountBadge
                 n={summary.active + summary.overdue}
                 urgent={summary.overdue > 0}
@@ -751,25 +792,26 @@ export default function TransactionsClient({
             </TabsTrigger>
             <TabsTrigger
               value="history"
-              className="shrink-0 whitespace-nowrap rounded-none py-3 px-4 sm:px-5 text-xs sm:text-sm font-medium ink-text text-[#6a5a4c] border-b-[3px] border-transparent data-[state=active]:border-[#3f3328] data-[state=active]:bg-[#f6ecdd] data-[state=active]:text-[#221910] data-[state=active]:font-bold data-[state=active]:shadow-none hover:bg-[#ece0ce] transition-colors"
+              className="w-full py-2 sm:py-2.5 px-2 text-xs sm:text-sm font-semibold rounded-lg ink-text text-[#6a5a4c] data-[state=active]:bg-[#3f3328] data-[state=active]:text-[#f4e8d4] data-[state=active]:shadow-xs data-[state=active]:font-bold hover:bg-[#dfcfb9] transition-all flex items-center justify-center cursor-pointer"
             >
-              {t.transactions.tabs.history}
+              <span className="truncate">{t.transactions.tabs.history}</span>
+              <CountBadge n={summary.completed} />
             </TabsTrigger>
             <TabsTrigger
               value="pdf"
-              className="shrink-0 whitespace-nowrap rounded-none py-3 px-4 sm:px-5 text-xs sm:text-sm font-medium ink-text text-[#6a5a4c] border-b-[3px] border-transparent data-[state=active]:border-[#3f3328] data-[state=active]:bg-[#f6ecdd] data-[state=active]:text-[#221910] data-[state=active]:font-bold data-[state=active]:shadow-none hover:bg-[#ece0ce] transition-colors"
+              className="w-full py-2 sm:py-2.5 px-2 text-xs sm:text-sm font-semibold rounded-lg ink-text text-[#6a5a4c] data-[state=active]:bg-[#3f3328] data-[state=active]:text-[#f4e8d4] data-[state=active]:shadow-xs data-[state=active]:font-bold hover:bg-[#dfcfb9] transition-all flex items-center justify-center cursor-pointer"
             >
-              <FaFileAlt className="w-3 h-3 shrink-0" />
-              <span className="hidden sm:inline">
-                {t.transactions.tabs.pdf}
-              </span>
-              <span className="sm:hidden">PDF</span>
-              <CountBadge n={pendingPdfs.length} />
+              <FaFileAlt className="w-3 h-3 shrink-0 mr-1" />
+              <span className="truncate">{t.transactions.tabs.pdf}</span>
+              <CountBadge
+                n={pendingPdfs.length}
+                urgent={pendingPdfs.length > 0}
+              />
             </TabsTrigger>
           </TabsList>
 
           {/* ── Pending ── */}
-          <TabsContent value="pending" className="p-3 sm:p-6 mt-0">
+          <TabsContent value="pending" className="p-2.5 sm:p-5 mt-0">
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
               <section className="space-y-3">
                 <header className="flex items-center justify-between">
@@ -812,41 +854,67 @@ export default function TransactionsClient({
           </TabsContent>
 
           {/* ── Active ── */}
-          <TabsContent value="active" className="p-3 sm:p-6 mt-0 space-y-4">
-            {/* Search + filters */}
-            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-2 sm:gap-3">
-              <div className="relative sm:col-span-2">
-                <FaSearch className="absolute left-3 top-2.5 text-[#7a6a5a]" />
-                <input
-                  type="text"
-                  placeholder={t.transactions.filters.search}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
-                />
-              </div>
-              <div className="flex gap-2">
-                <select
-                  value={statusFilter}
-                  onChange={(e) =>
-                    setStatusFilter(e.target.value as StatusFilter)
-                  }
-                  className="w-full px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
+          <TabsContent
+            value="active"
+            className="p-2.5 sm:p-5 mt-0 space-y-3 sm:space-y-4"
+          >
+            {/* Quick Status Pill Filters & Search */}
+            <div className="space-y-2 sm:space-y-2.5">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter("all")}
+                  className={`px-3 py-1 text-xs font-semibold rounded-full border transition-all cursor-pointer shrink-0 ${
+                    statusFilter === "all"
+                      ? "bg-[#3f3328] text-[#f4e8d4] border-[#3f3328] shadow-xs font-bold"
+                      : "bg-[#eadcc8] text-[#4a3e33] border-[#c9b89a] hover:bg-[#decbb6]"
+                  }`}
                 >
-                  <option value="all">
-                    {t.transactions.filters.status.all}
-                  </option>
-                  <option value="active">
-                    {t.transactions.filters.status.active}
-                  </option>
-                  <option value="overdue">
-                    {t.transactions.filters.status.overdue}
-                  </option>
-                </select>
+                  {t.transactions.filters.status.all} (
+                  {summary.active + summary.overdue})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter("overdue")}
+                  className={`px-3 py-1 text-xs font-semibold rounded-full border transition-all cursor-pointer shrink-0 flex items-center gap-1 ${
+                    statusFilter === "overdue"
+                      ? "bg-[#8b2c1a] text-[#fdf0ec] border-[#8b2c1a] shadow-xs font-bold"
+                      : "bg-[#faeae6] text-[#8b2c1a] border-[#d67b6a] hover:bg-[#f3d9d3]"
+                  }`}
+                >
+                  <span>⚠️</span>
+                  <span>
+                    {t.transactions.filters.status.overdue} ({summary.overdue})
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter("active")}
+                  className={`px-3 py-1 text-xs font-semibold rounded-full border transition-all cursor-pointer shrink-0 ${
+                    statusFilter === "active"
+                      ? "bg-[#3f3328] text-[#f4e8d4] border-[#3f3328] shadow-xs font-bold"
+                      : "bg-[#eadcc8] text-[#4a3e33] border-[#c9b89a] hover:bg-[#decbb6]"
+                  }`}
+                >
+                  {t.transactions.filters.status.active} ({summary.active})
+                </button>
+              </div>
+
+              <div className="flex flex-col sm:grid sm:grid-cols-3 gap-2 sm:gap-3">
+                <div className="relative sm:col-span-2">
+                  <FaSearch className="absolute left-3 top-2.5 text-[#7a6a5a]" />
+                  <input
+                    type="text"
+                    placeholder={t.transactions.filters.search}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-lg focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-xs sm:text-sm"
+                  />
+                </div>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as SortKey)}
-                  className="w-full px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
+                  className="w-full px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-lg focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-xs sm:text-sm"
                 >
                   <option value="date">
                     {t.transactions.filters.sort.date}
@@ -858,30 +926,43 @@ export default function TransactionsClient({
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 sm:space-y-2.5">
               {activeTransactions.length === 0 ? (
-                <div className="border border-[#cfbba1] rounded-sm p-8 text-center text-[#6a5a4c] ink-text">
+                <div className="border border-[#cfbba1] rounded-xl p-8 text-center text-[#6a5a4c] ink-text">
                   {t.transactions.empty.noActive}
                 </div>
               ) : (
                 activeTransactions.map((tx) => {
                   const isActuallyOverdue =
                     tx.status === "overdue" || isOverdueDate(tx.due_date);
+                  const working = processingId === tx.id && isPending;
+                  const overdueDays =
+                    isActuallyOverdue && tx.due_date
+                      ? Math.max(
+                          1,
+                          Math.ceil(
+                            (new Date().getTime() -
+                              new Date(tx.due_date).getTime()) /
+                              (1000 * 3600 * 24),
+                          ),
+                        )
+                      : 0;
+
                   return (
                     <article
                       key={tx.id}
-                      className={`border rounded-sm p-3 sm:p-4 ink-text transition-colors ${
+                      className={`border rounded-xl p-3 sm:p-4 ink-text transition-colors ${
                         isActuallyOverdue
                           ? "border-[#c4614a] bg-[#fdf0ec]"
                           : "border-[#b9a58b] bg-[#f6ecdd]"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+                        <div className="flex items-start gap-2.5 sm:gap-3 flex-1 min-w-0">
                           {/* Profile Photo */}
-                          <div className="shrink-0 hidden sm:block">
+                          <div className="shrink-0">
                             <Link href={`/dashboard/users/${tx.user?.id}`}>
-                              <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[#cfbba1] bg-[#ece0ce] hover:border-[#8b5c4a] transition-colors">
+                              <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border border-[#cfbba1] bg-[#ece0ce] hover:border-[#8b5c4a] transition-colors">
                                 {tx.user?.avatar_url ? (
                                   <Image
                                     src={tx.user.avatar_url}
@@ -902,7 +983,7 @@ export default function TransactionsClient({
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-[#2b2119] truncate text-sm">
+                            <p className="font-semibold text-[#2b2119] truncate">
                               <Link
                                 href={`/dashboard/users/${tx.user?.id}`}
                                 className="hover:underline hover:text-[#5a4b3f] transition-colors"
@@ -910,7 +991,7 @@ export default function TransactionsClient({
                                 {tx.user?.full_name ?? t.common.unknown}
                               </Link>
                             </p>
-                            <p className="text-xs text-[#5a4b3f] truncate">
+                            <p className="text-xs text-[#5a4b3f] mt-0.5 truncate">
                               {tx.book?.title ?? t.common.unknown}{" "}
                               <span className="font-mono text-[10px] opacity-70">
                                 ({tx.copy?.id ?? tx.copy_id})
@@ -921,15 +1002,15 @@ export default function TransactionsClient({
                         <StatusBadge
                           tone={isActuallyOverdue ? "danger" : "info"}
                           size="xs"
-                          icon={FaClock}
                           className="shrink-0"
                         >
                           {isActuallyOverdue
-                            ? t.history.status.overdue
-                            : t.history.status.borrowed}
+                            ? t.history.table.overdue
+                            : t.history.table.borrowed}
                         </StatusBadge>
                       </div>
-                      <div className="mt-2 text-xs text-[#5a4b3f] flex flex-wrap gap-x-4 gap-y-1 sm:pl-[52px]">
+
+                      <div className="mt-2 text-xs text-[#5a4b3f] flex flex-wrap gap-x-4 gap-y-1 pl-[44px] sm:pl-[52px]">
                         <p>
                           {t.transactions.table.requested}:{" "}
                           {formatDate(tx.request_date, language)}
@@ -941,7 +1022,56 @@ export default function TransactionsClient({
                         >
                           {t.transactions.table.due}:{" "}
                           {formatDate(tx.due_date, language)}
+                          {overdueDays > 0 && (
+                            <span className="ml-1 text-[11px] font-bold text-[#b52a1a]">
+                              ({overdueDays}{" "}
+                              {language === "bn"
+                                ? "দিন মেয়াদোত্তীর্ণ"
+                                : "days overdue"}
+                              )
+                            </span>
+                          )}
                         </p>
+                      </div>
+
+                      {/* Desk Return & Contact Action Bar */}
+                      <div className="mt-3 pt-2.5 border-t border-[#d8c7b2] flex items-center justify-between gap-2 flex-wrap pl-[44px] sm:pl-[52px]">
+                        <div className="flex items-center gap-2">
+                          {tx.user?.phone && (
+                            <a
+                              href={`tel:${tx.user.phone}`}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[#ece0ce] hover:bg-[#decbb5] text-[#3f3328] border border-[#c4b39c] transition-colors cursor-pointer"
+                              title={`Call ${tx.user.phone}`}
+                            >
+                              <FaPhone className="w-2.5 h-2.5 text-[#5a4b3f]" />
+                              <span>{tx.user.phone}</span>
+                            </a>
+                          )}
+                          <Link
+                            href={`/dashboard/users/${tx.user?.id}`}
+                            className="text-xs text-[#6a5a4c] hover:text-[#221910] hover:underline"
+                          >
+                            {language === "bn" ? "প্রোফাইল →" : "Profile →"}
+                          </Link>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDirectReturn(tx)}
+                          disabled={working}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#f6ecdd] bg-[#2d5a3c] hover:bg-[#22442d] rounded-lg transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                        >
+                          <FaCheck className="w-3 h-3" />
+                          <span>
+                            {working
+                              ? language === "bn"
+                                ? "প্রসেসিং..."
+                                : "Processing..."
+                              : language === "bn"
+                                ? "বই ফেরত নিন"
+                                : "Mark Returned"}
+                          </span>
+                        </button>
                       </div>
                     </article>
                   );
@@ -951,7 +1081,10 @@ export default function TransactionsClient({
           </TabsContent>
 
           {/* ── History ── */}
-          <TabsContent value="history" className="p-3 sm:p-6 mt-0 space-y-4">
+          <TabsContent
+            value="history"
+            className="p-2.5 sm:p-5 mt-0 space-y-3 sm:space-y-4"
+          >
             <div className="flex flex-col sm:grid sm:grid-cols-3 gap-2 sm:gap-3">
               <div className="relative sm:col-span-2">
                 <FaSearch className="absolute left-3 top-2.5 text-[#7a6a5a]" />
@@ -960,13 +1093,13 @@ export default function TransactionsClient({
                   placeholder={t.transactions.filters.search}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
+                  className="w-full pl-9 pr-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-lg focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-xs sm:text-sm"
                 />
               </div>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortKey)}
-                className="px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
+                className="px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-lg focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-xs sm:text-sm"
               >
                 <option value="date">{t.transactions.filters.sort.date}</option>
                 <option value="member">
@@ -975,33 +1108,108 @@ export default function TransactionsClient({
               </select>
             </div>
 
-            <div className="overflow-x-auto border border-[#b9a58b] rounded-sm">
+            {/* Mobile History Cards */}
+            <div className="space-y-2 lg:hidden">
+              {historyTransactions.length === 0 ? (
+                <div className="p-8 text-center text-[#6a5a4c] ink-text border border-[#cfbba1] rounded-xl">
+                  {t.transactions.empty.noHistory}
+                </div>
+              ) : (
+                historyTransactions.map((tx) => (
+                  <article
+                    key={tx.id}
+                    className="border border-[#b9a58b] bg-[#f6ecdd] rounded-xl p-3 sm:p-3.5 ink-text"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <Link
+                          href={`/dashboard/users/${tx.user?.id}`}
+                          className="text-sm font-bold text-[#221910] hover:underline truncate block"
+                        >
+                          {tx.user?.full_name ?? t.common.unknown}
+                        </Link>
+                        <p className="text-xs text-[#5a4b3f] truncate mt-0.5">
+                          {tx.book?.title ?? t.common.unknown}{" "}
+                          <span className="font-mono text-[10px] opacity-70">
+                            ({tx.copy?.id ?? tx.copy_id})
+                          </span>
+                        </p>
+                      </div>
+                      {(tx as any)._isPdf ? (
+                        <StatusBadge
+                          tone={
+                            (tx as any)._pdfStatus === "approved"
+                              ? "success"
+                              : "danger"
+                          }
+                          size="xs"
+                          className="shrink-0"
+                        >
+                          {(tx as any)._pdfStatus === "approved"
+                            ? t.bookList.bookCard.pdfStatus.approved
+                            : t.bookList.bookCard.pdfStatus.rejected}
+                        </StatusBadge>
+                      ) : (
+                        <StatusBadge
+                          tone={
+                            tx.status === "completed" ? "success" : "danger"
+                          }
+                          size="xs"
+                          className="shrink-0"
+                        >
+                          {tx.status === "completed"
+                            ? t.history.status.returned
+                            : t.history.status.rejected_borrow}
+                        </StatusBadge>
+                      )}
+                    </div>
+                    <div className="mt-2.5 pt-2 border-t border-[#dfceb9] flex items-center justify-between text-xs text-[#6a5a4c]">
+                      <span className="text-[11px] uppercase tracking-wider font-semibold">
+                        {(tx as any)._isPdf
+                          ? t.transactions.tabs.pdf
+                          : tx.type === "borrow"
+                            ? t.history.table.borrowed
+                            : tx.type === "return"
+                              ? t.history.table.returned
+                              : tx.type}
+                      </span>
+                      <span>
+                        {formatDate(tx.request_date, language)} (
+                        {getRelativeTime(tx.request_date)})
+                      </span>
+                    </div>
+                  </article>
+                ))
+              )}
+            </div>
+
+            {/* Desktop History Table */}
+            <div className="hidden lg:block overflow-x-auto border border-[#b9a58b] rounded-xl">
               <table className="w-full text-sm ink-text min-w-[640px]">
                 <thead>
                   <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
                     {[
                       t.transactions.table.member,
                       t.transactions.table.book,
-                      t.transactions.table.copy,
                       t.transactions.table.type,
                       t.transactions.table.status,
                       t.transactions.table.date,
                     ].map((h) => (
                       <th
                         key={h}
-                        className="px-4 py-3 text-left text-[#3b3026] font-semibold uppercase tracking-[0.08em] text-xs"
+                        className="px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-[#3a2e22] ink-title"
                       >
                         {h}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-[#c9b89a]/50">
                   {historyTransactions.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={6}
-                        className="px-4 py-8 text-center text-[#6a5a4c]"
+                        colSpan={5}
+                        className="px-4 py-8 text-center text-[#6a5a4c] ink-text text-sm"
                       >
                         {t.transactions.empty.noHistory}
                       </td>
@@ -1010,70 +1218,37 @@ export default function TransactionsClient({
                     historyTransactions.map((tx) => (
                       <tr
                         key={tx.id}
-                        className="border-b border-[#d2bfa5] hover:bg-[#f4ebdc] transition-colors"
+                        className="hover:bg-[#f0e4d2] transition-colors"
                       >
-                        <td className="px-4 py-3 font-medium text-[#2b2119]">
-                          <div className="flex items-center gap-2">
-                            {/* Profile Photo */}
-                            <div className="shrink-0">
-                              <Link href={`/dashboard/users/${tx.user?.id}`}>
-                                <div className="relative w-6 h-6 rounded-full overflow-hidden border border-[#cfbba1] bg-[#ece0ce] hover:border-[#8b5c4a] transition-colors">
-                                  {tx.user?.avatar_url ? (
-                                    <Image
-                                      src={tx.user.avatar_url}
-                                      alt={tx.user.full_name || ""}
-                                      fill
-                                      referrerPolicy="no-referrer"
-                                      className="object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-[#8b5c4a] font-bold text-[10px]">
-                                      {(tx.user?.full_name || "?")
-                                        .charAt(0)
-                                        .toUpperCase()}
-                                    </div>
-                                  )}
-                                </div>
-                              </Link>
-                            </div>
-                            <Link
-                              href={`/dashboard/users/${tx.user?.id}`}
-                              className="hover:underline hover:text-[#5a4b3f] transition-colors truncate"
-                            >
-                              {tx.user?.full_name ?? "—"}
-                            </Link>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-[#5a4b3f] max-w-48 truncate">
-                          {tx.book?.title ?? "—"}
+                        <td className="px-4 py-3">
+                          <Link
+                            href={`/dashboard/users/${tx.user?.id}`}
+                            className="font-medium hover:underline text-[#2b2119] block"
+                          >
+                            {tx.user?.full_name ?? t.common.unknown}
+                          </Link>
+                          {tx.user?.username && (
+                            <span className="text-xs text-[#7a6a5a]">
+                              @{tx.user.username}
+                            </span>
+                          )}
                         </td>
                         <td className="px-4 py-3">
-                          <span className="font-mono text-[10px] bg-[#efe4d1] text-[#3f3328] border border-[#8f7f6c] px-2 py-1 rounded-sm">
+                          <span className="text-[#2b2119] font-medium block">
+                            {tx.book?.title ?? t.common.unknown}
+                          </span>
+                          <span className="font-mono text-xs text-[#5a4b3f]">
                             {tx.copy?.id ?? tx.copy_id}
                           </span>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 text-[#5a4b3f] capitalize">
                           {(tx as any)._isPdf ? (
-                            <StatusBadge tone="info" size="xs">
+                            <span className="inline-flex items-center gap-1 font-semibold text-xs text-[#8b5c4a]">
+                              <FaFileAlt className="w-3 h-3" />
                               {t.transactions.tabs.pdf}
-                            </StatusBadge>
+                            </span>
                           ) : (
-                            <StatusBadge
-                              tone={
-                                tx.type === "borrow"
-                                  ? "info"
-                                  : tx.type === "return"
-                                    ? "accent"
-                                    : "success"
-                              }
-                              size="xs"
-                            >
-                              {tx.type === "borrow"
-                                ? t.history.table.borrowed
-                                : tx.type === "return"
-                                  ? t.history.table.returned
-                                  : tx.type}
-                            </StatusBadge>
+                            tx.type
                           )}
                         </td>
                         <td className="px-4 py-3">
@@ -1130,27 +1305,27 @@ export default function TransactionsClient({
           </TabsContent>
 
           {/* ── PDF Reports ── */}
-          <TabsContent value="pdf" className="p-3 sm:p-6 mt-0">
+          <TabsContent value="pdf" className="p-2.5 sm:p-5 mt-0">
             {pendingPdfs.length === 0 ? (
-              <div className="p-10 text-center border border-[#b9a58b] rounded-sm text-[#6a5a4c] ink-text">
-                <FaFileAlt className="w-10 h-10 mx-auto mb-3 opacity-40" />
+              <div className="p-8 sm:p-10 text-center border border-[#b9a58b] rounded-xl text-[#6a5a4c] ink-text">
+                <FaFileAlt className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-3 opacity-40" />
                 <p>{t.transactions.empty.noPdfs}</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2.5 sm:space-y-3">
                 {pendingPdfs.map((pdf) => {
                   const working = processingId === pdf.id && isPending;
                   return (
                     <article
                       key={pdf.id}
-                      className="border border-[#b9a58b] rounded-sm bg-[#f6ecdd] p-4 ink-text"
+                      className="border border-[#b9a58b] rounded-xl bg-[#f6ecdd] p-3 sm:p-4 ink-text"
                     >
-                      <div className="flex items-start justify-between gap-2 mb-3">
-                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2 mb-2.5">
+                        <div className="flex items-start gap-2.5 sm:gap-3 flex-1 min-w-0">
                           {/* Profile Photo */}
                           <div className="shrink-0">
                             <Link href={`/dashboard/users/${pdf.user?.id}`}>
-                              <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[#cfbba1] bg-[#ece0ce] hover:border-[#8b5c4a] transition-colors">
+                              <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border border-[#cfbba1] bg-[#ece0ce] hover:border-[#8b5c4a] transition-colors">
                                 {pdf.user?.avatar_url ? (
                                   <Image
                                     src={pdf.user.avatar_url}
@@ -1193,25 +1368,25 @@ export default function TransactionsClient({
                         </StatusBadge>
                       </div>
 
-                      <div className="mb-4 text-xs text-[#5a4b3f] space-y-1 sm:pl-[52px]">
+                      <div className="mb-3 text-xs text-[#5a4b3f] space-y-1 sm:pl-[52px]">
                         <p>
                           {t.transactions.pdf.submitted}:{" "}
                           {formatDate(pdf.submitted_at, language)}
                         </p>
                         {pdf.note && (
-                          <div className="bg-[#f0e4d1] border border-[#c9b89a] p-2 rounded-sm mt-2 italic text-[#3f3328]">
+                          <div className="bg-[#f0e4d1] border border-[#c9b89a] p-2 rounded-lg mt-2 italic text-[#3f3328]">
                             &quot;{pdf.note}&quot;
                           </div>
                         )}
                       </div>
 
-                      <div className="flex flex-wrap gap-2 pt-3 border-t border-[#cfbba1] sm:pl-[52px]">
+                      <div className="flex items-center justify-end gap-2 pt-2.5 border-t border-[#cfbba1] flex-wrap">
                         {pdf.book?.pdf_link && (
                           <a
                             href={pdf.book.pdf_link}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-[#f6ecdd] bg-[#5a4d40] hover:bg-[#4a3e33] rounded-sm transition-colors shadow-sm"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#f6ecdd] bg-[#5a4d40] hover:bg-[#4a3e33] rounded-lg transition-colors shadow-xs"
                           >
                             <FaFileAlt className="w-3 h-3" />
                             {t.bookList.bookCard.readPdf}
@@ -1220,7 +1395,7 @@ export default function TransactionsClient({
                         <button
                           disabled={working}
                           onClick={() => handleApprovePdf(pdf)}
-                          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-[#f6ecdd] bg-[#4a7c59] hover:bg-[#3d6447] rounded-sm transition-colors shadow-sm"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#f6ecdd] bg-[#2d5a3c] hover:bg-[#22442d] rounded-lg transition-colors shadow-xs cursor-pointer disabled:opacity-50"
                         >
                           <FaCheck className="w-3 h-3" />
                           {working
@@ -1236,7 +1411,7 @@ export default function TransactionsClient({
                               pdf.book?.title ?? t.common.unknown,
                             )
                           }
-                          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-[#f6ecdd] bg-[#8b5c4a] hover:bg-[#6b4437] rounded-sm transition-colors shadow-sm"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#f6ecdd] bg-[#8b5c4a] hover:bg-[#6b4437] rounded-lg transition-colors shadow-xs cursor-pointer disabled:opacity-50"
                         >
                           <FaTimes className="w-3 h-3" />
                           {t.transactions.actions.reject}

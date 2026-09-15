@@ -6,18 +6,13 @@
  */
 
 import { COPY_STATUS, TRANSACTION_STATUS, USER_ROLES } from "@/lib/constants";
-import {
-  getCopyById,
-  updateCopy,
-} from "@/lib/db/queries/copies";
+import { getCopyById, updateCopy } from "@/lib/db/queries/copies";
 import {
   createPdfSubmission,
   getDuplicatePdfSubmission,
   updatePdfSubmission,
 } from "@/lib/db/queries/pdfSubmissions";
-import {
-  getProfileById,
-} from "@/lib/db/queries/profiles";
+import { getProfileById } from "@/lib/db/queries/profiles";
 import {
   createTransaction,
   getDuplicateTransaction,
@@ -50,7 +45,7 @@ async function getCaller() {
     sub,
     role: (profile?.role ?? USER_ROLES.MEMBER) as string,
     isVerified: profile?.is_verified ?? false,
-    supabase
+    supabase,
   };
 }
 
@@ -87,7 +82,8 @@ export async function borrowBook(
 ): Promise<{ error?: string }> {
   const caller = await getCaller();
   if (!caller) return { error: "Not authenticated" };
-  if (!caller.isVerified) return { error: "You need to be verified to borrow books." };
+  if (!caller.isVerified)
+    return { error: "You need to be verified to borrow books." };
 
   const { sub } = caller;
   const copy_id = (formData.get("copy_id") as string)?.trim().toUpperCase();
@@ -120,7 +116,10 @@ export async function borrowBook(
       due_date: (formData.get("due_date") as string) || null,
     });
   } catch (error: any) {
-    logActionError("borrowBook", error.message, sub, { copy_id, book_id: copy.book_id });
+    logActionError("borrowBook", error.message, sub, {
+      copy_id,
+      book_id: copy.book_id,
+    });
     return { error: error.message };
   }
 
@@ -137,7 +136,8 @@ export async function returnBook(
 ): Promise<{ error?: string }> {
   const caller = await getCaller();
   if (!caller) return { error: "Not authenticated" };
-  if (!caller.isVerified) return { error: "You need to be verified to return books." };
+  if (!caller.isVerified)
+    return { error: "You need to be verified to return books." };
 
   const { sub } = caller;
   const copy_id = (formData.get("copy_id") as string)?.trim().toUpperCase();
@@ -167,7 +167,10 @@ export async function returnBook(
       status: TRANSACTION_STATUS.PENDING,
     });
   } catch (error: any) {
-    logActionError("returnBook", error.message, sub, { copy_id, book_id: borrow.book_id });
+    logActionError("returnBook", error.message, sub, {
+      copy_id,
+      book_id: borrow.book_id,
+    });
     return { error: error.message };
   }
 
@@ -199,7 +202,8 @@ export async function allowBorrowRequest(
 
   if (!txn) return { error: "Transaction not found" };
   if (txn.type !== "borrow") return { error: "Not a borrow request" };
-  if (txn.status !== TRANSACTION_STATUS.PENDING) return { error: "Transaction is not pending" };
+  if (txn.status !== TRANSACTION_STATUS.PENDING)
+    return { error: "Transaction is not pending" };
 
   const currentCopy = await getCopyById(txn.copy_id);
 
@@ -223,7 +227,10 @@ export async function allowBorrowRequest(
 
     await updateCopy(txn.copy_id, { status: COPY_STATUS.BORROWED });
   } catch (error: any) {
-    logActionError("allowBorrowRequest", error.message, sub, { transaction_id, due_date });
+    logActionError("allowBorrowRequest", error.message, sub, {
+      transaction_id,
+      due_date,
+    });
     return { error: error.message };
   }
 
@@ -249,7 +256,8 @@ export async function rejectBorrowRequest(
 
   if (!txn) return { error: "Transaction not found" };
   if (txn.type !== "borrow") return { error: "Not a borrow request" };
-  if (txn.status !== TRANSACTION_STATUS.PENDING) return { error: "Transaction is not pending" };
+  if (txn.status !== TRANSACTION_STATUS.PENDING)
+    return { error: "Transaction is not pending" };
 
   try {
     await updateTransaction(transaction_id, {
@@ -258,7 +266,9 @@ export async function rejectBorrowRequest(
       reviewed_by: sub,
     });
   } catch (error: any) {
-    logActionError("rejectBorrowRequest", error.message, sub, { transaction_id });
+    logActionError("rejectBorrowRequest", error.message, sub, {
+      transaction_id,
+    });
     return { error: error.message };
   }
 
@@ -285,7 +295,8 @@ export async function approveReturnRequest(
 
   if (!txn) return { error: "Transaction not found" };
   if (txn.type !== "return") return { error: "Not a return request" };
-  if (txn.status !== TRANSACTION_STATUS.PENDING) return { error: "Transaction is not pending" };
+  if (txn.status !== TRANSACTION_STATUS.PENDING)
+    return { error: "Transaction is not pending" };
 
   const now = new Date();
 
@@ -297,10 +308,17 @@ export async function approveReturnRequest(
       reviewed_by: sub,
     });
 
-    await updateBorrowStatus(txn.user_id, txn.copy_id, TRANSACTION_STATUS.COMPLETED, now);
+    await updateBorrowStatus(
+      txn.user_id,
+      txn.copy_id,
+      TRANSACTION_STATUS.COMPLETED,
+      now,
+    );
     await updateCopy(txn.copy_id, { status: COPY_STATUS.AVAILABLE });
   } catch (error: any) {
-    logActionError("approveReturnRequest", error.message, sub, { transaction_id });
+    logActionError("approveReturnRequest", error.message, sub, {
+      transaction_id,
+    });
     return { error: error.message };
   }
 
@@ -326,7 +344,8 @@ export async function rejectReturnRequest(
 
   if (!txn) return { error: "Transaction not found" };
   if (txn.type !== "return") return { error: "Not a return request" };
-  if (txn.status !== TRANSACTION_STATUS.PENDING) return { error: "Transaction is not pending" };
+  if (txn.status !== TRANSACTION_STATUS.PENDING)
+    return { error: "Transaction is not pending" };
 
   try {
     await updateTransaction(transaction_id, {
@@ -335,12 +354,67 @@ export async function rejectReturnRequest(
       reviewed_by: sub,
     });
   } catch (error: any) {
-    logActionError("rejectReturnRequest", error.message, sub, { transaction_id });
+    logActionError("rejectReturnRequest", error.message, sub, {
+      transaction_id,
+    });
     return { error: error.message };
   }
 
   invalidateAfterTransactionMutation();
   revalidatePath("/dashboard/transactions");
+  return {};
+}
+
+export async function directReturnByStaff(
+  formData: FormData,
+): Promise<{ error?: string }> {
+  const auth = await requireModOrAdmin();
+  if ("error" in auth) return auth;
+
+  const { sub } = auth;
+  const transaction_id = formData.get("transaction_id") as string;
+  if (!transaction_id) return { error: "Transaction ID is required" };
+
+  const txn = await getTransactionById(transaction_id);
+  if (!txn) return { error: "Transaction not found" };
+  if (txn.type !== "borrow") return { error: "Not a borrow transaction" };
+  if (
+    txn.status !== TRANSACTION_STATUS.ACTIVE &&
+    txn.status !== TRANSACTION_STATUS.OVERDUE
+  ) {
+    return { error: "Transaction is neither active nor overdue" };
+  }
+
+  const now = new Date();
+
+  try {
+    await updateTransaction(transaction_id, {
+      status: TRANSACTION_STATUS.COMPLETED,
+      return_date: now,
+      reviewed_by: sub,
+    });
+
+    await updateBorrowStatus(
+      txn.user_id,
+      txn.copy_id,
+      TRANSACTION_STATUS.COMPLETED,
+      now,
+    );
+
+    await updateCopy(txn.copy_id, { status: COPY_STATUS.AVAILABLE });
+  } catch (error: any) {
+    logActionError("directReturnByStaff", error.message, sub, {
+      transaction_id,
+    });
+    return { error: error.message };
+  }
+
+  invalidateAfterTransactionMutation();
+  revalidatePath("/dashboard/transactions");
+  revalidatePath("/dashboard/return");
+  revalidatePath("/dashboard/book-list");
+  revalidatePath("/dashboard/history");
+  revalidatePath(`/dashboard/users/${txn.user_id}`);
   return {};
 }
 
@@ -353,7 +427,8 @@ export async function submitPdfReport(
 ): Promise<{ error?: string }> {
   const caller = await getCaller();
   if (!caller) return { error: "Not authenticated" };
-  if (!caller.isVerified) return { error: "You need to be verified to mark PDFs as read." };
+  if (!caller.isVerified)
+    return { error: "You need to be verified to mark PDFs as read." };
 
   const { sub } = caller;
   const book_id = (formData.get("book_id") as string)?.trim().toUpperCase();

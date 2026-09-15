@@ -4,12 +4,16 @@ import { CommunityNav } from "@/app/dashboard/components/StaffHubNav";
 import Avatar from "@/components/Avatar";
 import { RankBadge } from "@/components/ui/rank-badge";
 import { useTranslation } from "@/lib/i18n/context";
+import { verifyUser } from "@/server/profiles";
 import type { Category, UserWithStats } from "@/types/library";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState, useTransition } from "react";
 import {
+  FaCheck,
   FaCheckCircle,
   FaChevronDown,
+  FaPhone,
   FaSearch,
   FaSortAmountDown,
   FaSortAmountUp,
@@ -51,6 +55,7 @@ function VerificationBadge({ verified }: { verified: boolean }) {
 }
 
 export default function UsersClient({ users, categories }: Props) {
+  const router = useRouter();
   const { t, language } = useTranslation();
   const [tab, setTab] = useState<Tab>("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -61,6 +66,34 @@ export default function UsersClient({ users, categories }: Props) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
     categories[0]?.id ?? "",
   );
+
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
+  const [verifiedIds, setVerifiedIds] = useState<Set<string>>(new Set());
+  const [isPending, startTransition] = useTransition();
+
+  function isUserVerified(u: UserWithStats) {
+    return u.is_verified || verifiedIds.has(u.id);
+  }
+
+  function handleInlineVerify(userId: string, userName: string) {
+    const confirmMsg =
+      language === "bn"
+        ? `সদস্য "${userName}" কে কি যাচাইকৃত (Verified) করতে চান?`
+        : `Verify member "${userName}"?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setVerifyingId(userId);
+    startTransition(async () => {
+      const res = await verifyUser(userId);
+      setVerifyingId(null);
+      if (!res.error) {
+        setVerifiedIds((prev) => new Set([...prev, userId]));
+        router.refresh();
+      } else {
+        alert(res.error);
+      }
+    });
+  }
 
   const uniqueRanks = useMemo(() => {
     const ranks = new Map<string, string>();
@@ -83,12 +116,12 @@ export default function UsersClient({ users, categories }: Props) {
   }, [users]);
 
   const verifiedUsers = useMemo(
-    () => users.filter((u) => u.is_verified),
-    [users],
+    () => users.filter((u) => isUserVerified(u)),
+    [users, verifiedIds],
   );
   const unverifiedUsers = useMemo(
-    () => users.filter((u) => !u.is_verified),
-    [users],
+    () => users.filter((u) => !isUserVerified(u)),
+    [users, verifiedIds],
   );
   const overdueUsers = useMemo(
     () => users.filter((u) => u.overdueBorrows > 0),
@@ -171,7 +204,7 @@ export default function UsersClient({ users, categories }: Props) {
   };
 
   const selectClass =
-    "px-3 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm cursor-pointer hover:bg-[#ece0ce] transition-colors appearance-none pr-8 relative";
+    "px-3 py-1.5 sm:py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-lg focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-xs sm:text-sm cursor-pointer hover:bg-[#ece0ce] transition-colors appearance-none pr-8 relative";
 
   const SelectWrapper = ({
     children,
@@ -204,177 +237,340 @@ export default function UsersClient({ users, categories }: Props) {
   };
 
   return (
-    <div className="space-y-5">
-      {/* Community Hub Sub-Navigation */}
-      <CommunityNav />
+    <div className="space-y-3 sm:space-y-5">
+      {/* Community Hub Sub-Navigation (Desktop/Tablet) */}
+      <div className="hidden md:block">
+        <CommunityNav />
+      </div>
 
-      <section className="dashboard-surface tron-border rounded-sm p-5 sm:p-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#221910] ink-title">
-          {t.users.title}
-        </h1>
-        <p className="text-[#5a4b3f] mt-1 ink-text text-sm">
-          {t.users.subtitle}
-        </p>
-        <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-4">
-          {[
-            { label: t.users.stats.total, value: users.length },
-            { label: t.users.stats.verified, value: verifiedUsers.length },
-            { label: t.users.stats.unverified, value: unverifiedUsers.length },
-          ].map(({ label, value }) => (
-            <div
-              key={label}
-              className="border border-[#b9a58b] bg-[#f6ecdd] rounded-sm p-2 sm:p-3"
-            >
-              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.08em] text-[#5c4f42] ink-text leading-tight">
-                {label}
-              </p>
-              <p className="text-xl sm:text-2xl font-bold text-[#221910] ink-title leading-none mt-1">
-                {value}
-              </p>
-            </div>
-          ))}
+      {/* Header & Quick Filter Tabs */}
+      <section className="dashboard-surface tron-border rounded-xl p-3 sm:p-5">
+        <div className="flex flex-col gap-3">
+          <div>
+            <h1 className="text-base sm:text-2xl font-bold text-[#221910] ink-title">
+              {t.users.title}
+            </h1>
+            <p className="text-[11px] sm:text-sm text-[#5a4b3f] mt-0.5 ink-text">
+              {t.users.subtitle}
+            </p>
+          </div>
+
+          {/* 100% Viewport-Fitting 2x2 Segmented Grid on Mobile, 4-Column on Desktop */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-2 p-1 bg-[#eadcc8] rounded-xl border border-[#8a7966]/40 w-full">
+            {(["all", "unverified", "verified", "overdue"] as const).map(
+              (tabId) => {
+                const count = tabCounts[tabId];
+                const isActive = tab === tabId;
+                const isUrgent =
+                  (tabId === "unverified" && count > 0) ||
+                  (tabId === "overdue" && count > 0);
+                return (
+                  <button
+                    key={tabId}
+                    type="button"
+                    onClick={() => setTab(tabId)}
+                    className={`flex items-center justify-center gap-1.5 py-2 sm:py-2.5 px-2 text-xs sm:text-sm font-semibold rounded-lg transition-all cursor-pointer ${
+                      isActive
+                        ? "bg-[#3f3328] text-[#f4e8d4] shadow-xs font-bold"
+                        : "text-[#5a4a3a] hover:bg-[#dfcfb9] hover:text-[#221910]"
+                    }`}
+                  >
+                    <span>
+                      {tabId === "unverified"
+                        ? "⏳"
+                        : tabId === "overdue"
+                          ? "⚠️"
+                          : tabId === "verified"
+                            ? "✓"
+                            : "👥"}
+                    </span>
+                    <span className="truncate">{t.users.tabs[tabId]}</span>
+                    <span
+                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold shrink-0 ${
+                        isActive
+                          ? "bg-[#5a4d40] text-[#fdf6ec]"
+                          : isUrgent && tabId === "overdue"
+                            ? "bg-[#8b2c1a] text-[#fdf0ec]"
+                            : isUrgent && tabId === "unverified"
+                              ? "bg-[#b07a2a] text-[#fff7e6]"
+                              : "bg-[#d2bfa5] text-[#3f2f20]"
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              },
+            )}
+          </div>
         </div>
       </section>
 
-      <div className="flex border-b border-[#b9a58b] gap-0 overflow-x-auto overflow-y-hidden">
-        {(["all", "verified", "unverified", "overdue"] as const).map(
-          (tabId) => (
-            <button
-              key={tabId}
-              type="button"
-              onClick={() => setTab(tabId)}
-              className={`flex-1 shrink-0 whitespace-nowrap px-3 sm:px-6 py-2.5 text-xs sm:text-sm font-medium ink-text transition-colors flex items-center justify-center gap-1.5 border-b-[3px] -mb-px cursor-pointer ${
-                tab === tabId
-                  ? "border-[#3f3328] text-[#221910] font-bold bg-[#f6ecdd]"
-                  : "border-transparent text-[#6a5a4c] hover:text-[#3f3328] hover:bg-[#eadcc8]/30"
-              }`}
-            >
-              {t.users.tabs[tabId]}
-              <span
-                className={`px-1.5 py-0.5 rounded-full text-[10px] ${
-                  tab === tabId
-                    ? "bg-[#3f3328] text-[#f4e8d4]"
-                    : "bg-[#d2bfa5] text-[#4a3825]"
-                }`}
+      <section className="dashboard-surface tron-border rounded-xl overflow-hidden">
+        <div className="p-2.5 sm:p-4 border-b border-[#7d6d5a] bg-[#eadcc8]/40 space-y-2.5 sm:space-y-3">
+          {/* Search bar */}
+          <div className="relative w-full">
+            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a7966] w-3.5 h-3.5" />
+            <input
+              type="text"
+              placeholder={t.users.filters.searchPlaceholder}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-8 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-lg focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-xs sm:text-sm"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8a7966] hover:text-[#221910] cursor-pointer"
               >
-                {tabCounts[tabId]}
-              </span>
-            </button>
-          ),
-        )}
-      </div>
+                <FaTimes className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
 
-      <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
-        <div className="p-4 sm:p-5 border-b border-[#7d6d5a] bg-[#eadcc8]/40 space-y-4">
-          <div className="flex flex-col gap-4">
-            <div className="relative w-full">
-              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a7966] w-4 h-4" />
-              <input
-                type="text"
-                placeholder={t.users.filters.searchPlaceholder}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none ink-text text-sm"
-              />
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
+          {/* Filter pills bar */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+            <SelectWrapper>
+              <select
+                value={rankFilter}
+                onChange={(e) => setRankFilter(e.target.value)}
+                className={selectClass}
+              >
+                <option value="all">{t.users.filters.allRanks}</option>
+                <option value="None">{t.users.filters.noRank}</option>
+                {uniqueRanks.map(([id, name]) => (
+                  <option key={id} value={id}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </SelectWrapper>
+
+            <SelectWrapper>
+              <select
+                value={thanaFilter}
+                onChange={(e) => setThanaFilter(e.target.value)}
+                className={selectClass}
+              >
+                <option value="all">{t.users.filters.allThanas}</option>
+                {uniqueThanas.map(([id, name]) => (
+                  <option key={id} value={id}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </SelectWrapper>
+
+            {categories.length > 0 && (
               <SelectWrapper>
                 <select
-                  value={rankFilter}
-                  onChange={(e) => setRankFilter(e.target.value)}
+                  value={selectedCategoryId}
+                  onChange={(e) => {
+                    setSelectedCategoryId(e.target.value);
+                    setSortField("progress");
+                  }}
                   className={selectClass}
                 >
-                  <option value="all">{t.users.filters.allRanks}</option>
-                  <option value="None">{t.users.filters.noRank}</option>
-                  {uniqueRanks.map(([id, name]) => (
-                    <option key={id} value={id}>
-                      {name}
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} {t.users.filters.sortBy.progress}
                     </option>
                   ))}
                 </select>
               </SelectWrapper>
+            )}
 
+            <div className="flex items-center gap-1.5 shrink-0">
               <SelectWrapper>
                 <select
-                  value={thanaFilter}
-                  onChange={(e) => setThanaFilter(e.target.value)}
+                  value={sortField}
+                  onChange={(e) => setSortField(e.target.value as SortField)}
                   className={selectClass}
                 >
-                  <option value="all">{t.users.filters.allThanas}</option>
-                  {uniqueThanas.map(([id, name]) => (
-                    <option key={id} value={id}>
-                      {name}
-                    </option>
-                  ))}
+                  <option value="joinDate">
+                    {t.users.filters.sortBy.joinDate}
+                  </option>
+                  <option value="progress">
+                    {t.users.filters.sortBy.progress}
+                  </option>
+                  <option value="rank">{t.users.filters.sortBy.rank}</option>
                 </select>
               </SelectWrapper>
 
-              {categories.length > 0 && (
-                <SelectWrapper>
-                  <select
-                    value={selectedCategoryId}
-                    onChange={(e) => {
-                      setSelectedCategoryId(e.target.value);
-                      setSortField("progress");
-                    }}
-                    className={selectClass}
-                  >
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} {t.users.filters.sortBy.progress}
-                      </option>
-                    ))}
-                  </select>
-                </SelectWrapper>
-              )}
-
-              <div className="flex items-center gap-2">
-                <SelectWrapper>
-                  <select
-                    value={sortField}
-                    onChange={(e) => setSortField(e.target.value as SortField)}
-                    className={selectClass}
-                  >
-                    <option value="joinDate">
-                      {t.users.filters.sortBy.joinDate}
-                    </option>
-                    <option value="progress">
-                      {t.users.filters.sortBy.progress}
-                    </option>
-                    <option value="rank">{t.users.filters.sortBy.rank}</option>
-                  </select>
-                </SelectWrapper>
-
-                <button
-                  onClick={() => setSortDir(sortDir === "asc" ? "desc" : "asc")}
-                  className="p-2.5 bg-[#f6ecdd] border border-[#8a7966] text-[#4e4033] rounded-sm hover:bg-[#ece0ce] transition-colors flex items-center justify-center min-w-[42px]"
-                  title={
-                    sortDir === "asc"
-                      ? t.common.sort.ascending
-                      : t.common.sort.descending
-                  }
-                >
-                  {sortDir === "asc" ? (
-                    <FaSortAmountUp className="w-4 h-4" />
-                  ) : (
-                    <FaSortAmountDown className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-
-              {hasActiveFilters && (
-                <button
-                  onClick={resetFilters}
-                  className="text-xs font-bold text-[#8b2c1a] hover:text-[#9b3a25] flex items-center gap-1.5 transition-colors uppercase tracking-wider h-10 px-2"
-                >
-                  <FaTimes className="w-3 h-3" /> {t.users.filters.reset}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => setSortDir(sortDir === "asc" ? "desc" : "asc")}
+                className="p-2 bg-[#f6ecdd] border border-[#8a7966] text-[#4e4033] rounded-sm hover:bg-[#ece0ce] transition-colors flex items-center justify-center min-w-[36px] cursor-pointer"
+                title={
+                  sortDir === "asc"
+                    ? t.common.sort.ascending
+                    : t.common.sort.descending
+                }
+              >
+                {sortDir === "asc" ? (
+                  <FaSortAmountUp className="w-3.5 h-3.5" />
+                ) : (
+                  <FaSortAmountDown className="w-3.5 h-3.5" />
+                )}
+              </button>
             </div>
+
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="text-xs font-bold text-[#8b2c1a] hover:text-[#9b3a25] flex items-center gap-1 transition-colors uppercase tracking-wider px-2 py-1 shrink-0 cursor-pointer"
+              >
+                <FaTimes className="w-3 h-3" /> {t.users.filters.reset}
+              </button>
+            )}
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Mobile Cards View */}
+        <div className="p-2.5 sm:p-3 space-y-2 md:hidden">
+          {filteredUsers.length === 0 ? (
+            <div className="text-center py-10 text-[#6a5a4c] ink-text">
+              <p>{t.users.empty}</p>
+            </div>
+          ) : (
+            filteredUsers.map((user) => {
+              const cat = user.categoryProgress.find(
+                (c) => c.categoryId === selectedCategoryId,
+              );
+              const completed = cat?.completed ?? 0;
+              const total = cat?.total ?? 0;
+              const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+              const isVerified = isUserVerified(user);
+              const working = verifyingId === user.id && isPending;
+
+              return (
+                <article
+                  key={user.id}
+                  className="border border-[#b9a58b] bg-[#f6ecdd] rounded-xl p-3 sm:p-3.5 ink-text shadow-xs"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="shrink-0 relative">
+                        <Avatar
+                          src={user.avatar_url}
+                          alt={user.full_name}
+                          initials={getInitials(user.full_name)}
+                          size="md"
+                        />
+                        <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-xs">
+                          <VerificationBadge verified={isVerified} />
+                        </div>
+                      </div>
+                      <div className="min-w-0">
+                        <Link
+                          href={`/dashboard/users/${user.id}`}
+                          className="font-bold text-[#2b2119] truncate block text-sm hover:underline hover:text-[#5a4b3f]"
+                        >
+                          {user.full_name}
+                        </Link>
+                        <p className="text-[11px] text-[#7a6a5a] truncate">
+                          @{user.username}
+                        </p>
+                      </div>
+                    </div>
+
+                    {user.overdueBorrows > 0 && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#fce8e4] text-[#8b2c1a] border border-[#d0604a] text-[10px] font-bold shrink-0">
+                        <FaTimesCircle className="w-2.5 h-2.5" />
+                        <span>
+                          {user.overdueBorrows} {t.users.table.overdue}
+                        </span>
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="mt-2.5 flex items-center gap-2 flex-wrap">
+                    <RankBadge name={user.rank?.name} />
+                    {user.thana && (
+                      <span className="text-[11px] font-medium text-[#5a4b3f] bg-[#e8decf] px-2 py-0.5 rounded-md border border-[#c5b49d]">
+                        {user.thana.name}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="mt-2.5 pt-2 border-t border-[#dfceb9]">
+                    <div className="flex items-center justify-between text-xs text-[#5c4f42] mb-1">
+                      <span className="font-semibold text-[11px]">
+                        {categories.find((c) => c.id === selectedCategoryId)
+                          ?.name ?? t.users.table.progress}
+                      </span>
+                      <span className="font-bold">
+                        {pct}% ({completed}/{total})
+                      </span>
+                    </div>
+                    <div className="h-1.5 bg-[#d2bfa5]/50 rounded-full overflow-hidden border border-[#c9b89a]/40">
+                      <div
+                        className="h-full bg-[#5a4d40] rounded-full transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-3 pt-2.5 border-t border-[#dfceb9] flex items-center justify-between gap-2 flex-wrap">
+                    {user.phone ? (
+                      <a
+                        href={`tel:${user.phone}`}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[#e8decf] hover:bg-[#d9ccba] text-[#4a3e33] border border-[#bfae99] transition-colors cursor-pointer"
+                        title={`Call ${user.phone}`}
+                      >
+                        <FaPhone className="w-2.5 h-2.5 text-[#5a4b3f]" />
+                        <span>{user.phone}</span>
+                      </a>
+                    ) : (
+                      <span className="text-[11px] text-[#8a7966] italic">
+                        {language === "bn" ? "ফোন নম্বর নেই" : "No phone"}
+                      </span>
+                    )}
+
+                    <div className="flex items-center gap-1.5 ml-auto">
+                      {!isVerified && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleInlineVerify(user.id, user.full_name)
+                          }
+                          disabled={working}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-[#f6ecdd] bg-[#2d5a3c] hover:bg-[#22442d] rounded-lg transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                        >
+                          <FaCheck className="w-2.5 h-2.5" />
+                          <span>
+                            {working
+                              ? language === "bn"
+                                ? "যাচাই হচ্ছে..."
+                                : "Verifying..."
+                              : language === "bn"
+                                ? "ভেরিফাই"
+                                : "Verify"}
+                          </span>
+                        </button>
+                      )}
+
+                      <Link
+                        href={`/dashboard/users/${user.id}`}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[#f0e4d2] hover:bg-[#e4d6c1] text-[#3f3328] border border-[#c4b39b] transition-colors"
+                      >
+                        <span>
+                          {language === "bn" ? "প্রোফাইল" : "Profile"}
+                        </span>
+                        <span>→</span>
+                      </Link>
+                    </div>
+                  </div>
+                </article>
+              );
+            })
+          )}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto rounded-b-xl">
           <table className="w-full text-sm ink-text text-left">
             <thead>
               <tr className="bg-[#eadcc8] border-b border-[#7d6d5a]">
@@ -394,6 +590,9 @@ export default function UsersClient({ users, categories }: Props) {
                 <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42]">
                   {t.users.table.joined}
                 </th>
+                <th className="px-4 sm:px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5c4f42] text-right">
+                  {t.users.table.actions}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -405,6 +604,8 @@ export default function UsersClient({ users, categories }: Props) {
                 const total = cat?.total ?? 0;
                 const pct =
                   total > 0 ? Math.round((completed / total) * 100) : 0;
+                const isVerified = isUserVerified(user);
+                const working = verifyingId === user.id && isPending;
 
                 return (
                   <tr
@@ -421,24 +622,43 @@ export default function UsersClient({ users, categories }: Props) {
                             size="sm"
                           />
                           <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5">
-                            <VerificationBadge verified={user.is_verified} />
+                            <VerificationBadge verified={isVerified} />
                           </div>
                         </div>
                         <div className="min-w-0">
                           <Link
                             href={`/dashboard/users/${user.id}`}
-                            className="font-bold text-[#2b2119] truncate leading-tight hover:underline hover:text-[#5a4b3f] transition-colors"
+                            className="font-bold text-[#2b2119] truncate leading-tight hover:underline hover:text-[#5a4b3f] transition-colors block"
                           >
                             {user.full_name}
                           </Link>
-                          <p className="text-[11px] text-[#7a6a5a]">
-                            @{user.username}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] text-[#7a6a5a]">
+                              @{user.username}
+                            </span>
+                            {user.phone && (
+                              <a
+                                href={`tel:${user.phone}`}
+                                className="text-[10px] text-[#6a5a4c] hover:underline flex items-center gap-0.5"
+                                title={`Call ${user.phone}`}
+                              >
+                                <FaPhone className="w-2 h-2" />
+                                <span>{user.phone}</span>
+                              </a>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 sm:px-6 py-3">
-                      <RankBadge name={user.rank?.name} />
+                      <div className="space-y-1">
+                        <RankBadge name={user.rank?.name} />
+                        {user.thana && (
+                          <p className="text-[10px] text-[#6a5a4c]">
+                            {user.thana.name}
+                          </p>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 sm:px-6 py-3">
                       <div className="space-y-1 w-24">
@@ -476,14 +696,47 @@ export default function UsersClient({ users, categories }: Props) {
                         },
                       )}
                     </td>
+                    <td className="px-4 sm:px-6 py-3 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {!isVerified && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleInlineVerify(user.id, user.full_name)
+                            }
+                            disabled={working}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-[#f6ecdd] bg-[#2d5a3c] hover:bg-[#22442d] rounded-sm transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                          >
+                            <FaCheck className="w-2.5 h-2.5" />
+                            <span>
+                              {working
+                                ? "..."
+                                : language === "bn"
+                                  ? "ভেরিফাই"
+                                  : "Verify"}
+                            </span>
+                          </button>
+                        )}
+                        <Link
+                          href={`/dashboard/users/${user.id}`}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-sm bg-[#f0e4d2] hover:bg-[#e4d6c1] text-[#3f3328] border border-[#c4b39b] transition-colors"
+                        >
+                          <span>
+                            {language === "bn" ? "প্রোফাইল" : "Profile"}
+                          </span>
+                          <span>→</span>
+                        </Link>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
+
         {filteredUsers.length === 0 && (
-          <div className="text-center py-12 text-[#6a5a4c] ink-text">
+          <div className="hidden md:block text-center py-12 text-[#6a5a4c] ink-text">
             <p>{t.users.empty}</p>
           </div>
         )}
