@@ -77,7 +77,7 @@ export default function BookListClient({
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   // Filter / sort state
   const [searchTerm, setSearchTerm] = useState("");
@@ -309,41 +309,85 @@ export default function BookListClient({
           ))}
         </div>
 
-        {/* Secondary Filter Row (Availability, Sort, Clear) */}
-        <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-[#e4d4bf]">
-          <select
-            className="bg-[#fbf5ed] border border-[#b9a58b] rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text cursor-pointer"
-            value={availabilityFilter}
-            onChange={(e) =>
-              setAvailabilityFilter(e.target.value as AvailabilityFilter)
-            }
-          >
-            <option value="all">{t.bookList.filters.availability.all}</option>
-            <option value="available">
-              {t.bookList.filters.availability.available}
-            </option>
-            <option value="borrowed">{t.bookList.copyStatus.borrowed}</option>
-            <option value="damaged">{t.bookList.copyStatus.damaged}</option>
-          </select>
+        {/* Secondary Filter Row (Availability, Sort, Live Count, Clear) */}
+        <div className="flex items-center justify-between gap-2 flex-wrap pt-1.5 border-t border-[#e4d4bf]">
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              className="bg-[#fbf5ed] border border-[#b9a58b] rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text cursor-pointer"
+              value={availabilityFilter}
+              onChange={(e) =>
+                setAvailabilityFilter(e.target.value as AvailabilityFilter)
+              }
+            >
+              <option value="all">{t.bookList.filters.availability.all}</option>
+              <option value="available">
+                {t.bookList.filters.availability.available}
+              </option>
+              <option value="borrowed">{t.bookList.copyStatus.borrowed}</option>
+              <option value="damaged">{t.bookList.copyStatus.damaged}</option>
+            </select>
 
-          <button
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-[#fbf5ed] border border-[#b9a58b] rounded-lg text-xs font-bold text-[#221910] hover:bg-[#ece0ce] transition-colors cursor-pointer"
-            onClick={() => {
-              setSortBy(sortBy === "title-asc" ? "title-desc" : "title-asc");
-            }}
-          >
-            <span>{t.bookList.sorting.title}</span>
-            <FaSortAmountDown
-              className={cn(
-                "w-3 h-3 transition-transform",
-                sortBy === "title-desc" && "rotate-180",
+            <button
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-[#fbf5ed] border border-[#b9a58b] rounded-lg text-xs font-bold text-[#221910] hover:bg-[#ece0ce] transition-colors cursor-pointer"
+              onClick={() => {
+                setSortBy(sortBy === "title-asc" ? "title-desc" : "title-asc");
+              }}
+            >
+              <span>{t.bookList.sorting.title}</span>
+              <FaSortAmountDown
+                className={cn(
+                  "w-3 h-3 transition-transform",
+                  sortBy === "title-desc" && "rotate-180",
+                )}
+              />
+            </button>
+
+            {/* Live Count Pill */}
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#e6d7c3] text-[#3f3328] font-bold text-xs border border-[#c4b39c] shadow-2xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#2d4a35] shrink-0" />
+              {hasActiveFilters ? (
+                language === "bn" ? (
+                  <span>
+                    <strong className="text-[#221910]">
+                      {filteredBooks.length}
+                    </strong>
+                    টি বই পাওয়া গেছে{" "}
+                    <span className="text-[#7a6a5a] font-normal">
+                      (মোট {books.length}টির মধ্যে)
+                    </span>
+                  </span>
+                ) : (
+                  <span>
+                    Showing{" "}
+                    <strong className="text-[#221910]">
+                      {filteredBooks.length}
+                    </strong>{" "}
+                    of {books.length} books
+                  </span>
+                )
+              ) : language === "bn" ? (
+                <span>
+                  মোট{" "}
+                  <strong className="text-[#221910]">
+                    {filteredBooks.length}
+                  </strong>
+                  টি বই
+                </span>
+              ) : (
+                <span>
+                  Showing{" "}
+                  <strong className="text-[#221910]">
+                    {filteredBooks.length}
+                  </strong>{" "}
+                  books
+                </span>
               )}
-            />
-          </button>
+            </span>
+          </div>
 
           {hasActiveFilters && (
             <button
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#fdf0ec] border border-[#d0604a]/40 text-[#8b2c1a] rounded-lg text-xs font-bold hover:bg-[#f9e6e1] transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#fdf0ec] border border-[#d0604a]/40 text-[#8b2c1a] rounded-lg text-xs font-bold hover:bg-[#f9e6e1] transition-colors cursor-pointer ml-auto"
               onClick={clearFilters}
             >
               <FaTimes className="w-2.5 h-2.5" />

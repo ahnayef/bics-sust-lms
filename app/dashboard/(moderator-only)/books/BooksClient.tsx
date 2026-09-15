@@ -58,13 +58,22 @@ type PendingAction =
   | { type: "update" }
   | { type: "delete"; id: string; title: string; author: string };
 
+type BookSortKey =
+  | "title-asc"
+  | "title-desc"
+  | "copies-desc"
+  | "copies-asc"
+  | "pages-desc"
+  | "pages-asc";
+
 export default function BooksClient({ initialBooks, categories }: Props) {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [isPending, startTransition] = useTransition();
   const [books, setBooks] = useState<Book[]>(initialBooks);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<BookTypeFilter>("all");
+  const [sortBy, setSortBy] = useState<BookSortKey>("title-asc");
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<BookForm>(EMPTY_FORM);
@@ -117,7 +126,7 @@ export default function BooksClient({ initialBooks, categories }: Props) {
 
   const filteredBooks = useMemo(() => {
     const query = searchTerm.toLowerCase().trim();
-    return books.filter((book) => {
+    const result = books.filter((book) => {
       const matchesSearch =
         book.id.toLowerCase().includes(query) ||
         book.title.toLowerCase().includes(query) ||
@@ -126,7 +135,34 @@ export default function BooksClient({ initialBooks, categories }: Props) {
         typeFilter === "all" || book.category_id === typeFilter;
       return matchesSearch && matchesType;
     });
-  }, [books, searchTerm, typeFilter]);
+
+    result.sort((a, b) => {
+      if (sortBy === "title-asc") return a.title.localeCompare(b.title, "bn");
+      if (sortBy === "title-desc") return b.title.localeCompare(a.title, "bn");
+      if (sortBy === "copies-desc")
+        return (b.copies?.length ?? 0) - (a.copies?.length ?? 0);
+      if (sortBy === "copies-asc")
+        return (a.copies?.length ?? 0) - (b.copies?.length ?? 0);
+      if (sortBy === "pages-desc") return (b.pages ?? 0) - (a.pages ?? 0);
+      if (sortBy === "pages-asc") return (a.pages ?? 0) - (b.pages ?? 0);
+      return 0;
+    });
+
+    return result;
+  }, [books, searchTerm, typeFilter, sortBy]);
+
+  const filteredCopiesCount = useMemo(() => {
+    return filteredBooks.reduce((sum, b) => sum + (b.copies?.length ?? 0), 0);
+  }, [filteredBooks]);
+
+  const hasActiveFilters =
+    searchTerm.trim() !== "" || typeFilter !== "all" || sortBy !== "title-asc";
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setTypeFilter("all");
+    setSortBy("title-asc");
+  };
 
   const openAddModal = () => {
     setEditingId(null);
@@ -334,22 +370,35 @@ export default function BooksClient({ initialBooks, categories }: Props) {
       {/* Main Table */}
       <section className="dashboard-surface tron-border rounded-sm overflow-hidden">
         {/* Filters */}
-        <div className="p-4 sm:p-5 border-b border-[#7d6d5a] bg-[#eadcc8]/40 flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a7966] w-4 h-4" />
-            <input
-              type="text"
-              placeholder={t.books.filters.searchPlaceholder}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none ink-text"
-            />
-          </div>
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
+        <div className="p-4 sm:p-5 border-b border-[#7d6d5a] bg-[#eadcc8]/40 space-y-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a7966] w-3.5 h-3.5" />
+              <input
+                type="text"
+                placeholder={t.books.filters.searchPlaceholder}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-8 py-2 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-lg focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none ink-text text-xs sm:text-sm"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7d6d5a] hover:text-[#221910] p-1 transition-colors cursor-pointer"
+                  aria-label="Clear search"
+                >
+                  <FaTimes className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Category Select */}
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="px-4 py-2 rounded-sm text-xs font-bold whitespace-nowrap border bg-[#f6ecdd] text-[#5c4f42] border-[#b9a58b] hover:bg-[#ece0ce] transition-all"
+              className="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium border bg-[#f6ecdd] text-[#5c4f42] border-[#b9a58b] hover:bg-[#ece0ce] transition-all cursor-pointer"
             >
               <option value="all">{t.books.filters.all}</option>
               {categories.map((c) => (
@@ -358,14 +407,146 @@ export default function BooksClient({ initialBooks, categories }: Props) {
                 </option>
               ))}
             </select>
+
+            {/* Sort Select */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as BookSortKey)}
+              className="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium border bg-[#f6ecdd] text-[#5c4f42] border-[#b9a58b] hover:bg-[#ece0ce] transition-all cursor-pointer"
+            >
+              <option value="title-asc">
+                {language === "bn" ? "শিরোনাম (A-Z)" : "Title (A-Z)"}
+              </option>
+              <option value="title-desc">
+                {language === "bn" ? "শিরোনাম (Z-A)" : "Title (Z-A)"}
+              </option>
+              <option value="copies-desc">
+                {language === "bn"
+                  ? "কপি সংখ্যা (বেশি থেকে কম)"
+                  : "Copies (High to Low)"}
+              </option>
+              <option value="copies-asc">
+                {language === "bn"
+                  ? "কপি সংখ্যা (কম থেকে বেশি)"
+                  : "Copies (Low to High)"}
+              </option>
+              <option value="pages-desc">
+                {language === "bn"
+                  ? "পৃষ্ঠা সংখ্যা (বেশি থেকে কম)"
+                  : "Pages (High to Low)"}
+              </option>
+              <option value="pages-asc">
+                {language === "bn"
+                  ? "পৃষ্ঠা সংখ্যা (কম থেকে বেশি)"
+                  : "Pages (Low to High)"}
+              </option>
+            </select>
+          </div>
+
+          {/* Results Counter & Active Filters Bar */}
+          <div className="flex items-center justify-between gap-2.5 pt-3 border-t border-[#d8c7b2] flex-wrap text-xs">
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Live Count Badge */}
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#e6d7c3] text-[#3f3328] font-bold text-xs border border-[#c4b39c] shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-[#2d4a35] shrink-0" />
+                {hasActiveFilters ? (
+                  language === "bn" ? (
+                    <span>
+                      <strong className="text-[#221910] font-bold text-sm">
+                        {filteredBooks.length}
+                      </strong>
+                      টি বই পাওয়া গেছে{" "}
+                      <span className="text-[#5a4b3f]">
+                        ({filteredCopiesCount}টি কপি)
+                      </span>
+                      <span className="text-[#7a6a5a] font-normal ml-1">
+                        (মোট {books.length}টি বইয়ের মধ্যে)
+                      </span>
+                    </span>
+                  ) : (
+                    <span>
+                      Showing{" "}
+                      <strong className="text-[#221910] font-bold text-sm">
+                        {filteredBooks.length}
+                      </strong>{" "}
+                      of {books.length} books{" "}
+                      <span className="text-[#5a4b3f]">
+                        ({filteredCopiesCount} copies)
+                      </span>
+                    </span>
+                  )
+                ) : language === "bn" ? (
+                  <span>
+                    মোট{" "}
+                    <strong className="text-[#221910] font-bold text-sm">
+                      {filteredBooks.length}
+                    </strong>
+                    টি বই (
+                    <strong className="text-[#221910] font-bold text-sm">
+                      {filteredCopiesCount}
+                    </strong>
+                    টি কপি) প্রদর্শিত হচ্ছে
+                  </span>
+                ) : (
+                  <span>
+                    Showing{" "}
+                    <strong className="text-[#221910] font-bold text-sm">
+                      {filteredBooks.length}
+                    </strong>{" "}
+                    books{" "}
+                    <span className="text-[#5a4b3f]">
+                      ({filteredCopiesCount} copies)
+                    </span>
+                  </span>
+                )}
+              </span>
+
+              {/* Active Sort Indicator */}
+              <span className="text-[11px] text-[#6a5a4c] bg-[#f0e4d2] px-2.5 py-1 rounded-md border border-[#dac8b1]">
+                {language === "bn" ? "সাজানো:" : "Sort:"}{" "}
+                <strong className="text-[#3f3328]">
+                  {sortBy === "title-asc" &&
+                    (language === "bn" ? "নাম (A-Z)" : "Title (A-Z)")}
+                  {sortBy === "title-desc" &&
+                    (language === "bn" ? "নাম (Z-A)" : "Title (Z-A)")}
+                  {sortBy === "copies-desc" &&
+                    (language === "bn" ? "কপি (বেশি)" : "Copies (High)")}
+                  {sortBy === "copies-asc" &&
+                    (language === "bn" ? "কপি (কম)" : "Copies (Low)")}
+                  {sortBy === "pages-desc" &&
+                    (language === "bn" ? "পৃষ্ঠা (বেশি)" : "Pages (High)")}
+                  {sortBy === "pages-asc" &&
+                    (language === "bn" ? "পৃষ্ঠা (কম)" : "Pages (Low)")}
+                </strong>
+              </span>
+            </div>
+
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#8b2c1a] bg-[#fdf0ec] hover:bg-[#fae2dc] border border-[#e8b5ab] rounded-lg transition-colors cursor-pointer ml-auto"
+              >
+                <FaTimes className="w-3 h-3" />
+                {language === "bn" ? "ফিল্টার রিসেট করুন" : "Reset Filters"}
+              </button>
+            )}
           </div>
         </div>
 
         {/* Mobile Cards View */}
         <div className="p-3 space-y-2.5 md:hidden">
           {filteredBooks.length === 0 ? (
-            <div className="text-center py-10 text-[#6a5a4c] ink-text">
+            <div className="text-center py-10 text-[#6a5a4c] ink-text space-y-3">
               <p>{t.books.empty}</p>
+              {hasActiveFilters && (
+                <button
+                  onClick={clearFilters}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#3f3328] text-[#f4e8d4] text-xs font-semibold rounded-lg hover:bg-[#4a3d31] transition-colors cursor-pointer"
+                >
+                  <FaTimes className="w-3 h-3" />
+                  {language === "bn" ? "ফিল্টার মুছে দিন" : "Clear Filters"}
+                </button>
+              )}
             </div>
           ) : (
             filteredBooks.map((book) => (
@@ -545,8 +726,17 @@ export default function BooksClient({ initialBooks, categories }: Props) {
           </table>
         </div>
         {filteredBooks.length === 0 && (
-          <div className="text-center py-12 text-[#6a5a4c] ink-text">
-            <p>{t.books.empty}</p>
+          <div className="text-center py-12 text-[#6a5a4c] ink-text space-y-3">
+            <p className="text-sm font-medium">{t.books.empty}</p>
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#3f3328] text-[#f4e8d4] text-xs font-semibold rounded-lg hover:bg-[#4a3d31] transition-colors cursor-pointer"
+              >
+                <FaTimes className="w-3 h-3" />
+                {language === "bn" ? "ফিল্টার মুছে দিন" : "Clear Filters"}
+              </button>
+            )}
           </div>
         )}
       </section>

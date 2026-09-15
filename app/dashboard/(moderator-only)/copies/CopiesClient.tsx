@@ -34,7 +34,6 @@ import {
   FaPlus,
   FaQrcode,
   FaSearch,
-  FaSortAmountDown,
   FaTimes,
   FaTrash,
 } from "react-icons/fa";
@@ -181,7 +180,7 @@ export default function CopiesClient({
   categories,
 }: Props) {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [isPending, startTransition] = useTransition();
 
   const [copies, setCopies] = useState<Copy[]>(initialCopies);
@@ -333,6 +332,10 @@ export default function CopiesClient({
 
     return result;
   }, [groupedCopies, searchTerm, typeFilter, statusFilter, sortBy]);
+
+  const totalFilteredCopies = useMemo(() => {
+    return filteredGroups.reduce((acc, g) => acc + g.copies.length, 0);
+  }, [filteredGroups]);
 
   const counts = {
     total: copies.length,
@@ -637,20 +640,33 @@ export default function CopiesClient({
           </div>
         </div>
 
-        {/* Filters and Sort (exact match to BookListClient) */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-4 sm:mt-5">
-          <div className="relative flex-1 sm:w-64">
+        {/* Filters and Sort */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 mt-4 sm:mt-5">
+          {/* Search Bar */}
+          <div className="relative flex-1">
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d6d5a] w-3.5 h-3.5" />
             <input
               type="text"
               placeholder={t.copies.filters.searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-[#f8f1e6] border border-[#b9a58b] rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text placeholder:text-[#a6917c]"
+              className="w-full pl-9 pr-8 py-2 bg-[#f8f1e6] border border-[#b9a58b] rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text placeholder:text-[#a6917c]"
             />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7d6d5a] hover:text-[#221910] p-1 transition-colors cursor-pointer"
+                aria-label="Clear search"
+              >
+                <FaTimes className="w-3 h-3" />
+              </button>
+            )}
           </div>
+
+          {/* Category Filter */}
           <select
-            className="bg-[#f8f1e6] border border-[#b9a58b] rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text"
+            className="bg-[#f8f1e6] border border-[#b9a58b] rounded-lg px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text cursor-pointer"
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
           >
@@ -661,8 +677,10 @@ export default function CopiesClient({
               </option>
             ))}
           </select>
+
+          {/* Status Filter */}
           <select
-            className="bg-[#f8f1e6] border border-[#b9a58b] rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text"
+            className="bg-[#f8f1e6] border border-[#b9a58b] rounded-lg px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text cursor-pointer"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
           >
@@ -673,35 +691,132 @@ export default function CopiesClient({
             <option value="borrowed">{t.bookList.copyStatus.borrowed}</option>
             <option value="damaged">{t.bookList.copyStatus.damaged}</option>
           </select>
-          <button
-            className="flex items-center gap-2 px-3 py-2 bg-[#eadcc8] border border-[#7d6d5a] rounded-sm text-sm font-bold text-[#221910] hover:bg-[#d9cbb7] transition-colors"
-            onClick={() => {
-              setSortBy(sortBy === "title-asc" ? "title-desc" : "title-asc");
-            }}
+
+          {/* Sort Select */}
+          <select
+            className="bg-[#f8f1e6] border border-[#b9a58b] rounded-lg px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text cursor-pointer font-medium"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortKey)}
           >
-            {t.bookList.sorting.title}
-            {sortBy === "title-asc" ? (
-              <FaSortAmountDown className="w-3 h-3" />
-            ) : (
-              <FaSortAmountDown className="w-3 h-3 rotate-180" />
-            )}
-          </button>
-          <div className="flex items-center gap-2">
-            <button
-              className="flex items-center gap-2 px-3 py-2 bg-[#eadcc8] border border-[#7d6d5a] rounded-sm text-xs font-bold text-[#221910] hover:bg-[#d9cbb7] transition-colors uppercase tracking-wider"
-              onClick={clearFilters}
-            >
-              <FaTimes className="w-3 h-3" /> {t.bookList.empty.clearFilters}
-            </button>
+            <option value="title-asc">
+              {t.copies.sort?.titleAsc || "Title (A-Z)"}
+            </option>
+            <option value="title-desc">
+              {t.copies.sort?.titleDesc || "Title (Z-A)"}
+            </option>
+            <option value="copies-desc">
+              {t.copies.sort?.copiesDesc || "Copies (High to Low)"}
+            </option>
+            <option value="copies-asc">
+              {t.copies.sort?.copiesAsc || "Copies (Low to High)"}
+            </option>
+          </select>
+        </div>
+
+        {/* Results Counter & Active Filters Summary */}
+        <div className="flex items-center justify-between gap-2.5 pt-3 mt-3.5 border-t border-[#d8c7b2] flex-wrap text-xs">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Live Count Pill */}
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#e6d7c3] text-[#3f3328] font-bold text-xs border border-[#c4b39c] shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-[#2d4a35] shrink-0" />
+              {hasActiveFilters ? (
+                language === "bn" ? (
+                  <span>
+                    <strong className="text-[#221910] font-bold text-sm">
+                      {filteredGroups.length}
+                    </strong>
+                    টি বইয়ের{" "}
+                    <strong className="text-[#221910] font-bold text-sm">
+                      {totalFilteredCopies}
+                    </strong>
+                    টি কপি পাওয়া গেছে
+                    <span className="text-[#7a6a5a] font-normal ml-1">
+                      (মোট {books.length}টি বই, {copies.length}টি কপির মধ্যে)
+                    </span>
+                  </span>
+                ) : (
+                  <span>
+                    Showing{" "}
+                    <strong className="text-[#221910] font-bold text-sm">
+                      {filteredGroups.length}
+                    </strong>{" "}
+                    of {books.length} books{" "}
+                    <span className="text-[#5a4b3f]">
+                      ({totalFilteredCopies} copies)
+                    </span>
+                  </span>
+                )
+              ) : language === "bn" ? (
+                <span>
+                  মোট{" "}
+                  <strong className="text-[#221910] font-bold text-sm">
+                    {filteredGroups.length}
+                  </strong>
+                  টি বইয়ের{" "}
+                  <strong className="text-[#221910] font-bold text-sm">
+                    {totalFilteredCopies}
+                  </strong>
+                  টি কপি প্রদর্শিত হচ্ছে
+                </span>
+              ) : (
+                <span>
+                  Showing{" "}
+                  <strong className="text-[#221910] font-bold text-sm">
+                    {filteredGroups.length}
+                  </strong>{" "}
+                  books{" "}
+                  <span className="text-[#5a4b3f]">
+                    ({totalFilteredCopies} copies)
+                  </span>
+                </span>
+              )}
+            </span>
+
+            {/* Active Sort Indicator */}
+            <span className="text-[11px] text-[#6a5a4c] bg-[#f0e4d2] px-2.5 py-1 rounded-md border border-[#dac8b1]">
+              {language === "bn" ? "সাজানো:" : "Sort:"}{" "}
+              <strong className="text-[#3f3328]">
+                {sortBy === "title-asc" &&
+                  (t.copies.sort?.titleAsc || "Title (A-Z)")}
+                {sortBy === "title-desc" &&
+                  (t.copies.sort?.titleDesc || "Title (Z-A)")}
+                {sortBy === "copies-desc" &&
+                  (t.copies.sort?.copiesDesc || "Copies (High to Low)")}
+                {sortBy === "copies-asc" &&
+                  (t.copies.sort?.copiesAsc || "Copies (Low to High)")}
+              </strong>
+            </span>
           </div>
+
+          {/* Clear Filters Action */}
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#8b2c1a] bg-[#fdf0ec] hover:bg-[#fae2dc] border border-[#e8b5ab] rounded-lg transition-colors cursor-pointer ml-auto"
+            >
+              <FaTimes className="w-3 h-3" />
+              {language === "bn" ? "ফিল্টার রিসেট করুন" : "Reset Filters"}
+            </button>
+          )}
         </div>
       </section>
 
       {/* Books table */}
       <section className="book-list-surface tron-border rounded-lg overflow-hidden border border-[#5f4f40]">
         {filteredGroups.length === 0 ? (
-          <div className="p-10 text-center">
-            <p className="text-[#5c4f42] ink-text">{t.copies.empty}</p>
+          <div className="p-10 text-center space-y-3">
+            <p className="text-[#5c4f42] ink-text text-sm font-medium">
+              {t.copies.empty}
+            </p>
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#3f3328] text-[#f4e8d4] text-xs font-semibold rounded-lg hover:bg-[#4a3d31] transition-colors cursor-pointer"
+              >
+                <FaTimes className="w-3 h-3" />
+                {language === "bn" ? "ফিল্টার মুছে দিন" : "Clear Filters"}
+              </button>
+            )}
           </div>
         ) : (
           <div className="w-full overflow-x-auto">
