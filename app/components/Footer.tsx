@@ -1,7 +1,12 @@
+"use client";
+
+import { useTranslation } from "@/lib/i18n/context";
 import Link from "next/link";
 
-export default function Footer() {
-  const currentYear = new Date().getFullYear();
+/** Pass `year` from a dynamic parent (after `cookies` / auth) so prerender avoids raw `Date()`. */
+export default function Footer({ year }: { year?: number }) {
+  const currentYear = year ?? 2026;
+  const { t } = useTranslation();
 
   return (
     <footer
@@ -16,18 +21,19 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* About */}
           <div>
-            <h3
-              className="font-bold text-2xl mb-4"
-              style={{ fontFamily: "Playfair Display, serif" }}
-            >
-              SUST LMS
-            </h3>
+            <Link href="/">
+              <h3
+                className="font-bold text-2xl mb-4 hover:text-[#2f2924] transition-colors"
+                style={{ fontFamily: "Playfair Display, serif" }}
+              >
+                SUST LMS
+              </h3>
+            </Link>
             <p
               className="text-sm leading-relaxed text-[#5a4d40]"
               style={{ fontFamily: "Courier Prime, monospace" }}
             >
-              A modern library management system for organizing and tracking
-              your book collection.
+              {t.footer.about}
             </p>
           </div>
 
@@ -37,7 +43,7 @@ export default function Footer() {
               className="font-semibold mb-4 tracking-wide"
               style={{ fontFamily: "Playfair Display, serif" }}
             >
-              Quick Links
+              {t.footer.links}
             </h4>
             <ul className="space-y-2 text-sm">
               <li>
@@ -46,16 +52,16 @@ export default function Footer() {
                   className="text-[#4e4237] hover:text-[#2f2924] transition-colors"
                   style={{ fontFamily: "Courier Prime, monospace" }}
                 >
-                  Features
+                  {t.nav.features}
                 </Link>
               </li>
               <li>
                 <Link
-                  href="#contact"
+                  href="/contact"
                   className="text-[#4e4237] hover:text-[#2f2924] transition-colors"
                   style={{ fontFamily: "Courier Prime, monospace" }}
                 >
-                  Contact
+                  {t.nav.contact}
                 </Link>
               </li>
               <li>
@@ -64,7 +70,7 @@ export default function Footer() {
                   className="text-[#4e4237] hover:text-[#2f2924] transition-colors"
                   style={{ fontFamily: "Courier Prime, monospace" }}
                 >
-                  Sign In
+                  {t.nav.signIn}
                 </Link>
               </li>
             </ul>
@@ -143,7 +149,7 @@ export default function Footer() {
           className="mt-8 flex flex-col md:flex-row justify-between items-center text-sm text-[#5a4d40] gap-3"
           style={{ fontFamily: "Courier Prime, monospace" }}
         >
-          <p>&copy; {currentYear} SUST LMS. All rights reserved.</p>
+          <p>&copy; {currentYear} SUST LMS. {t.footer.rights}</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <Link
               href="#"

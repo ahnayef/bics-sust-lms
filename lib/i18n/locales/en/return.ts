@@ -1,0 +1,31 @@
+export const returnPage = {
+  title: "Return a Book",
+  subtitle: "Scan the copy QR code or enter the Copy ID to return a borrowed book.",
+  qrMode: "Scan QR",
+  manualMode: "Enter ID",
+  scanPlaceholder: "Scanning for QR code...",
+  inputPlaceholder: "Enter Copy ID (e.g. B-001)",
+  lookup: "Lookup Copy",
+  lookingUp: "Looking up...",
+  success: {
+    title: "Return Submitted!",
+    message: "Your return request for {title} has been submitted for approval.",
+    viewHistory: "View History",
+    returnAnother: "Return Another",
+  },
+  errors: {
+    copyNotFound: "Invalid ID",
+    notBorrowed: "This book not borrowed by You",
+    cameraPermission: "Camera permission denied. Please enable camera access or use manual entry.",
+    generic: "Something went wrong. Please try again.",
+    notVerified: "You need to be verified to return books.",
+  },
+  form: {
+    bookTitle: "Book Title",
+    copyId: "Copy ID",
+    borrowedOn: "Borrowed On",
+    dueDate: "Due Date",
+    submit: "Request to Return",
+    submitting: "Submitting...",
+  },
+} as const;

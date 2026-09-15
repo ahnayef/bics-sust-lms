@@ -8,7 +8,7 @@ export const AOSInit = () => {
   useEffect(() => {
     AOS.init({
       easing: "ease-out-cubic",
-      duration: 800,
+      duration: 300,
       once: true,
       disable: false,
       startEvent: "DOMContentLoaded",

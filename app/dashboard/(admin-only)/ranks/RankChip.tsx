@@ -1,0 +1,185 @@
+"use client";
+
+import ConfirmModal from "@/components/ui/confirm-modal";
+import { RankBadge } from "@/components/ui/rank-badge";
+import { deleteRank, getRankRefCount, modifyRank } from "@/server/rank-actions";
+import { useRouter } from "next/navigation";
+import { startTransition, useRef, useState } from "react";
+import { FaCheck, FaPencilAlt, FaTimes, FaTrash } from "react-icons/fa";
+
+interface RankChipProps {
+  id: string;
+  name: string;
+  onFlash: (type: "success" | "error", text: string) => void;
+}
+
+export function RankChip({ id, name, onFlash }: RankChipProps) {
+  const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const [editing, setEditing] = useState(false);
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [refCount, setRefCount] = useState<number | null>(null);
+
+  async function handleDeleteClick() {
+    setRefCount(null);
+    setDeleteOpen(true);
+    const count = await getRankRefCount(id);
+    setRefCount(count);
+  }
+
+  function handleDeleteConfirm() {
+    setDeleteLoading(true);
+    const fd = new FormData();
+    fd.append("id", id);
+    startTransition(async () => {
+      const result = await deleteRank(fd);
+      setDeleteLoading(false);
+      setDeleteOpen(false);
+      if (result?.error) {
+        onFlash("error", result.error);
+        return;
+      }
+      onFlash("success", `Rank "${name}" deleted.`);
+      router.refresh();
+    });
+  }
+
+  const deleteDescription =
+    refCount === null ? (
+      "Checking references..."
+    ) : refCount > 0 ? (
+      <span>
+        <b className="text-[#221910] font-bold">{refCount}</b> profile(s)
+        currently reference this rank. Their rank will be set to <b>None</b>.
+        This cannot be undone.
+      </span>
+    ) : (
+      "No profile references this rank. This cannot be undone."
+    );
+
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [pendingName, setPendingName] = useState("");
+  const [renameLoading, setRenameLoading] = useState(false);
+
+  function handleRenameSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const newName = inputRef.current?.value.trim() ?? "";
+    if (!newName) return;
+    setPendingName(newName);
+    setRenameOpen(true);
+  }
+
+  function handleRenameConfirm() {
+    setRenameLoading(true);
+    const fd = new FormData();
+    fd.append("id", id);
+    fd.append("name", pendingName);
+    startTransition(async () => {
+      const result = await modifyRank(fd);
+      setRenameLoading(false);
+      setRenameOpen(false);
+      if (result?.error) {
+        onFlash("error", result.error);
+        return;
+      }
+      setEditing(false);
+      onFlash("success", `Rank renamed to "${pendingName}".`);
+      router.refresh();
+    });
+  }
+
+  if (editing) {
+    return (
+      <>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 text-xs border border-[#c4ae8e] bg-[#f6ecdd] rounded-sm text-[#3b3026] ink-text">
+          <form
+            onSubmit={handleRenameSubmit}
+            className="inline-flex items-center gap-1.5"
+          >
+            <input type="hidden" name="id" value={id} />
+            <input
+              ref={inputRef}
+              type="text"
+              name="name"
+              defaultValue={name}
+              required
+              // eslint-disable-next-line jsx-a11y/no-autofocus
+              autoFocus
+              className="px-1 py-0.5 border border-[#8a7966] bg-white text-[#2f251d] rounded-sm outline-none focus:ring-1 focus:ring-[#6e5d4a] text-xs w-28 ink-text"
+            />
+            <button
+              type="submit"
+              className="text-[#3a6a3a] hover:text-[#1a4a1a] transition-colors"
+              aria-label="Save rename"
+            >
+              <FaCheck className="w-2.5 h-2.5" />
+            </button>
+          </form>
+          <button
+            type="button"
+            onClick={() => setEditing(false)}
+            className="text-[#7a5a4a] hover:text-[#5a2a1a] transition-colors"
+            aria-label="Cancel rename"
+          >
+            <FaTimes className="w-2.5 h-2.5" />
+          </button>
+        </div>
+
+        <ConfirmModal
+          open={renameOpen}
+          onClose={() => {
+            if (!renameLoading) setRenameOpen(false);
+          }}
+          onConfirm={handleRenameConfirm}
+          title="Rename Rank"
+          preview={`Renaming from '${name}' to '${pendingName}'`}
+          confirmLabel="Rename"
+          loading={renameLoading}
+        />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div className="group relative flex items-center gap-2 pl-1 pr-3 py-1.5 border border-[#c4ae8e] bg-[#f6ecdd] rounded-sm text-[#3b3026] ink-text shadow-sm hover:border-[#b0906a] transition-all">
+        <RankBadge name={name} className="border-none bg-transparent p-0" />
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-1">
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="text-[#7a5a4a] hover:text-[#5a2a1a] transition-colors"
+            aria-label={`Rename ${name}`}
+          >
+            <FaPencilAlt className="w-2.5 h-2.5" />
+          </button>
+          <button
+            type="button"
+            onClick={handleDeleteClick}
+            className="text-[#7a5a4a] hover:text-[#5a2a1a] transition-colors"
+            aria-label={`Remove ${name}`}
+          >
+            <FaTrash className="w-2.5 h-2.5" />
+          </button>
+        </div>
+      </div>
+
+      <ConfirmModal
+        open={deleteOpen}
+        onClose={() => {
+          if (!deleteLoading) setDeleteOpen(false);
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Rank"
+        description={deleteDescription}
+        preview={name}
+        danger={true}
+        confirmLabel="Delete"
+        loading={deleteLoading}
+      />
+    </>
+  );
+}
