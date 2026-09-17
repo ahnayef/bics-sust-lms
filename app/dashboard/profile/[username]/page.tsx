@@ -1,5 +1,6 @@
 import HistoryClient from "@/app/dashboard/history/HistoryClient";
 import Avatar from "@/components/Avatar";
+import PageTransition from "@/components/PageTransition";
 import { RankBadge } from "@/components/ui/rank-badge";
 import { getTranslation } from "@/lib/i18n/server";
 import { getUserChecklistProgress } from "@/server/checklists";
@@ -108,7 +109,7 @@ async function DashboardUserProfileContent({
   const locationParts = [profile.thana?.name].filter(Boolean);
 
   return (
-    <div className="p-2 sm:p-0 space-y-5">
+    <PageTransition className="p-2 sm:p-0 space-y-5">
       {/* Back */}
       <Link
         href="/dashboard/profile"
@@ -318,6 +319,6 @@ async function DashboardUserProfileContent({
           />
         </section>
       )}
-    </div>
+    </PageTransition>
   );
 }

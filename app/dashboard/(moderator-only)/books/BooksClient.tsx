@@ -2,6 +2,7 @@
 import StatusBadge from "@/app/components/StatusBadge";
 import { InventoryNav } from "@/app/dashboard/components/StaffHubNav";
 import ConfirmModal from "@/components/ui/confirm-modal";
+import { ModalPortal } from "@/components/ui/modal-portal";
 import { useTranslation } from "@/lib/i18n/context";
 import {
   addBook,
@@ -743,191 +744,194 @@ export default function BooksClient({ initialBooks, categories }: Props) {
 
       {/* Add / Edit modal */}
       {showAddModal && (
-        <div
-          className="fixed inset-0 z-80 flex justify-center overflow-y-auto bg-[#1f170f]/42 p-4 backdrop-blur-[1px] sm:p-6"
-          onClick={(e) => e.target === e.currentTarget && closeModal()}
-        >
+        <ModalPortal>
           <div
-            className="dashboard-surface tron-border my-auto h-fit w-full max-w-md rounded-sm p-4 sm:p-6 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-80 flex justify-center overflow-y-auto bg-[#1f170f]/42 p-4 backdrop-blur-[1px] sm:p-6"
+            onClick={(e) => e.target === e.currentTarget && closeModal()}
           >
-            <div className="flex items-start justify-between gap-3 mb-3 sm:mb-4">
-              <h2 className="text-lg sm:text-xl font-bold text-[#221910] ink-title">
-                {editingId ? t.books.modal.editTitle : t.books.modal.addTitle}
-              </h2>
-              <button
-                onClick={closeModal}
-                disabled={isPending}
-                className="p-2 text-[#655648] hover:bg-[#e7d8c3] rounded-sm transition-colors"
-                aria-label="Close book modal"
-              >
-                <FaTimes className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (editingId) {
-                  handleUpdate();
-                } else {
-                  handleAdd();
-                }
-              }}
-              className="space-y-3 sm:space-y-4 ink-text"
+            <div
+              className="dashboard-surface tron-border my-auto h-fit w-full max-w-md rounded-sm p-4 sm:p-6 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
             >
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#4f4134] mb-1">
-                  {t.books.modal.labels.title} *
-                </label>
-                <input
-                  type="text"
-                  placeholder={t.books.modal.placeholders.title}
-                  value={formData.title}
-                  onChange={(e) =>
-                    setFormData({ ...formData, title: e.target.value })
-                  }
-                  className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
-                />
+              <div className="flex items-start justify-between gap-3 mb-3 sm:mb-4">
+                <h2 className="text-lg sm:text-xl font-bold text-[#221910] ink-title">
+                  {editingId ? t.books.modal.editTitle : t.books.modal.addTitle}
+                </h2>
+                <button
+                  onClick={closeModal}
+                  disabled={isPending}
+                  className="p-2 text-[#655648] hover:bg-[#e7d8c3] rounded-sm transition-colors"
+                  aria-label="Close book modal"
+                >
+                  <FaTimes className="w-4 h-4" />
+                </button>
               </div>
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#4f4134] mb-1">
-                  {t.books.modal.labels.author} *
-                </label>
-                <input
-                  type="text"
-                  placeholder={t.books.modal.placeholders.author}
-                  value={formData.author}
-                  onChange={(e) =>
-                    setFormData({ ...formData, author: e.target.value })
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (editingId) {
+                    handleUpdate();
+                  } else {
+                    handleAdd();
                   }
-                  className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
-                />
-              </div>
-              {/* select & page number */}
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-between">
-                <div className="flex-1">
+                }}
+                className="space-y-3 sm:space-y-4 ink-text"
+              >
+                <div>
                   <label className="block text-xs sm:text-sm font-medium text-[#4f4134] mb-1">
-                    {t.books.modal.labels.type} *
-                  </label>
-                  <select
-                    value={formData.category_id}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        category_id: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
-                  >
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="w-full sm:w-1/3">
-                  <label className="block text-xs sm:text-sm font-medium text-[#4f4134] mb-1">
-                    {t.books.modal.labels.pages}
+                    {t.books.modal.labels.title} *
                   </label>
                   <input
-                    type="number"
-                    placeholder={t.books.modal.placeholders.pages}
-                    value={formData.pages}
+                    type="text"
+                    placeholder={t.books.modal.placeholders.title}
+                    value={formData.title}
                     onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        pages: Math.max(Number(e.target.value), 0).toString(),
-                      })
+                      setFormData({ ...formData, title: e.target.value })
                     }
                     className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
                   />
                 </div>
-              </div>
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#4f4134] mb-1">
-                  {t.books.modal.labels.pdfLink}
-                </label>
-                <input
-                  type="url"
-                  placeholder={t.books.modal.placeholders.pdfLink}
-                  value={formData.pdf_link}
-                  onChange={(e) =>
-                    setFormData({ ...formData, pdf_link: e.target.value })
-                  }
-                  className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border rounded-sm focus:ring-2 focus:border-transparent outline-none transition-colors ${
-                    formData.pdf_link.trim() && !isValidUrl(formData.pdf_link)
-                      ? "border-red-500 focus:ring-red-500 bg-[#fdf2f2] text-red-900"
-                      : "border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] focus:ring-[#6e5d4a]"
-                  }`}
-                />
-                {formData.pdf_link.trim() && !isValidUrl(formData.pdf_link) && (
-                  <p className="text-[10px] sm:text-xs text-red-600 mt-1 font-medium">
-                    Please enter a valid URL (e.g.,
-                    https://example.com/file.pdf)
-                  </p>
-                )}
-              </div>
-
-              {!editingId && (
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-[#4f4134] mb-1">
-                    First Copy ID (Optional)
+                    {t.books.modal.labels.author} *
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. C001"
-                    value={formData.first_copy_id}
-                    onChange={(e) => {
-                      if (copyIdError) setCopyIdError(null);
-                      setFormData({
-                        ...formData,
-                        first_copy_id: e.target.value.toUpperCase(),
-                      });
-                    }}
+                    placeholder={t.books.modal.placeholders.author}
+                    value={formData.author}
+                    onChange={(e) =>
+                      setFormData({ ...formData, author: e.target.value })
+                    }
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
+                  />
+                </div>
+                {/* select & page number */}
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-between">
+                  <div className="flex-1">
+                    <label className="block text-xs sm:text-sm font-medium text-[#4f4134] mb-1">
+                      {t.books.modal.labels.type} *
+                    </label>
+                    <select
+                      value={formData.category_id}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          category_id: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
+                    >
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="w-full sm:w-1/3">
+                    <label className="block text-xs sm:text-sm font-medium text-[#4f4134] mb-1">
+                      {t.books.modal.labels.pages}
+                    </label>
+                    <input
+                      type="number"
+                      placeholder={t.books.modal.placeholders.pages}
+                      value={formData.pages}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          pages: Math.max(Number(e.target.value), 0).toString(),
+                        })
+                      }
+                      className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-[#4f4134] mb-1">
+                    {t.books.modal.labels.pdfLink}
+                  </label>
+                  <input
+                    type="url"
+                    placeholder={t.books.modal.placeholders.pdfLink}
+                    value={formData.pdf_link}
+                    onChange={(e) =>
+                      setFormData({ ...formData, pdf_link: e.target.value })
+                    }
                     className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border rounded-sm focus:ring-2 focus:border-transparent outline-none transition-colors ${
-                      copyIdError
+                      formData.pdf_link.trim() && !isValidUrl(formData.pdf_link)
                         ? "border-red-500 focus:ring-red-500 bg-[#fdf2f2] text-red-900"
                         : "border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] focus:ring-[#6e5d4a]"
                     }`}
                   />
-                  {copyIdError ? (
-                    <p className="text-[10px] sm:text-xs text-red-600 mt-1 font-medium">
-                      {copyIdError}
-                    </p>
-                  ) : (
-                    <p className="text-[10px] text-[#8a7966] mt-1">
-                      Leave blank if you don't want to add a copy right now.
-                    </p>
-                  )}
+                  {formData.pdf_link.trim() &&
+                    !isValidUrl(formData.pdf_link) && (
+                      <p className="text-[10px] sm:text-xs text-red-600 mt-1 font-medium">
+                        Please enter a valid URL (e.g.,
+                        https://example.com/file.pdf)
+                      </p>
+                    )}
                 </div>
-              )}
 
-              <div className="pt-2 sm:pt-4 flex gap-2 sm:gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  disabled={isPending}
-                  className="flex-1 py-2 sm:py-2.5 px-4 text-sm bg-[#f4e8d4] text-[#4a3825] border border-[#c9b99a] font-bold rounded-sm hover:bg-[#ece0ce] transition-colors disabled:opacity-55"
-                >
-                  {t.books.modal.cancel}
-                </button>
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="flex-1 py-2 sm:py-2.5 px-4 text-sm bg-[#3f3328] text-[#f4e8d4] font-bold rounded-sm hover:bg-[#221910] transition-colors disabled:opacity-55"
-                >
-                  {isPending
-                    ? "..."
-                    : editingId
-                      ? t.books.modal.save
-                      : t.books.modal.add}
-                </button>
-              </div>
-            </form>
+                {!editingId && (
+                  <div>
+                    <label className="block text-xs sm:text-sm font-medium text-[#4f4134] mb-1">
+                      First Copy ID (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. C001"
+                      value={formData.first_copy_id}
+                      onChange={(e) => {
+                        if (copyIdError) setCopyIdError(null);
+                        setFormData({
+                          ...formData,
+                          first_copy_id: e.target.value.toUpperCase(),
+                        });
+                      }}
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm border rounded-sm focus:ring-2 focus:border-transparent outline-none transition-colors ${
+                        copyIdError
+                          ? "border-red-500 focus:ring-red-500 bg-[#fdf2f2] text-red-900"
+                          : "border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] focus:ring-[#6e5d4a]"
+                      }`}
+                    />
+                    {copyIdError ? (
+                      <p className="text-[10px] sm:text-xs text-red-600 mt-1 font-medium">
+                        {copyIdError}
+                      </p>
+                    ) : (
+                      <p className="text-[10px] text-[#8a7966] mt-1">
+                        Leave blank if you don't want to add a copy right now.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <div className="pt-2 sm:pt-4 flex gap-2 sm:gap-3">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    disabled={isPending}
+                    className="flex-1 py-2 sm:py-2.5 px-4 text-sm bg-[#f4e8d4] text-[#4a3825] border border-[#c9b99a] font-bold rounded-sm hover:bg-[#ece0ce] transition-colors disabled:opacity-55"
+                  >
+                    {t.books.modal.cancel}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isPending}
+                    className="flex-1 py-2 sm:py-2.5 px-4 text-sm bg-[#3f3328] text-[#f4e8d4] font-bold rounded-sm hover:bg-[#221910] transition-colors disabled:opacity-55"
+                  >
+                    {isPending
+                      ? "..."
+                      : editingId
+                        ? t.books.modal.save
+                        : t.books.modal.add}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
 
       {/* Confirm modal only for delete */}

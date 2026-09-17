@@ -1,4 +1,5 @@
 import { CirculationNav } from "@/app/dashboard/components/StaffHubNav";
+import PageTransition from "@/components/PageTransition";
 import { TRANSACTION_STATUS_COLORS, USER_ROLES } from "@/lib/constants";
 import { getTranslation } from "@/lib/i18n/server";
 import { getMyProfile } from "@/server/auth-utils";
@@ -251,7 +252,7 @@ export default async function Overview() {
   };
 
   return (
-    <div className="space-y-3 sm:space-y-5">
+    <PageTransition className="space-y-3 sm:space-y-5">
       {/* ── Sub-Navigation for Circulation Hub (Desktop/Tablet) ─────────── */}
       <div className="hidden md:block">
         <CirculationNav />
@@ -1075,6 +1076,6 @@ export default async function Overview() {
           </div>
         </section>
       )}
-    </div>
+    </PageTransition>
   );
 }

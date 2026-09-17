@@ -1,3 +1,4 @@
+import PageTransition from "@/components/PageTransition";
 import { getProfile } from "@/server/geo";
 import { getBooks } from "@/server/library";
 import { getClaims } from "@/server/user";
@@ -19,19 +20,25 @@ export default async function PrintQrPage() {
   const books = await getBooks();
 
   // Extract copies array from books for PrintQrClient
-  const copies = books.flatMap(book => (book.copies ?? []).map(copy => ({
-    id: copy.id,
-    book_id: book.id,
-    copy_number: copy.copy_number
-  })));
+  const copies = books.flatMap((book) =>
+    (book.copies ?? []).map((copy) => ({
+      id: copy.id,
+      book_id: book.id,
+      copy_number: copy.copy_number,
+    })),
+  );
 
   // Pass books in same shape as expected
-  const simpleBooks = books.map(book => ({
+  const simpleBooks = books.map((book) => ({
     id: book.id,
     title: book.title,
     author: book.author,
-    is_syllabus: book.is_syllabus
+    is_syllabus: book.is_syllabus,
   }));
 
-  return <PrintQrClient books={simpleBooks} copies={copies} />;
+  return (
+    <PageTransition>
+      <PrintQrClient books={simpleBooks} copies={copies} />
+    </PageTransition>
+  );
 }

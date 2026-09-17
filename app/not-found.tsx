@@ -5,7 +5,7 @@ import { FaBookOpen, FaHome, FaSearch } from "react-icons/fa";
 
 export default function NotFound() {
   return (
-    <main className="min-h-screen relative overflow-hidden bg-[radial-gradient(circle_at_top,#f5ecdb_0%,#e8d8bf_38%,#d7c2a2_100%)] text-[#221910]">
+    <main className="page-transition min-h-screen relative overflow-hidden bg-[radial-gradient(circle_at_top,#f5ecdb_0%,#e8d8bf_38%,#d7c2a2_100%)] text-[#221910]">
       <div className="absolute inset-0 opacity-70 bg-[linear-gradient(rgba(72,52,34,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(72,52,34,0.08)_1px,transparent_1px)] bg-size-[36px_36px]" />
       <div className="absolute inset-x-0 top-0 h-24 bg-linear-to-b from-[#f8f0e2]/70 to-transparent" />
 

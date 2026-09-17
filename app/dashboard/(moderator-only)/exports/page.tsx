@@ -1,3 +1,4 @@
+import PageTransition from "@/components/PageTransition";
 import { USER_ROLES } from "@/lib/constants";
 import { getMyProfile } from "@/server/auth-utils";
 import {
@@ -32,17 +33,19 @@ export default async function ExportsPage() {
   ]);
 
   return (
-    <ExportsClient
-      currentStaff={{
-        name: profile?.full_name || "Staff Member",
-        email: profile?.email || "",
-        role: profile?.role || "moderator",
-      }}
-      books={books}
-      copies={copies}
-      users={users}
-      transactions={transactions}
-      categories={categories}
-    />
+    <PageTransition>
+      <ExportsClient
+        currentStaff={{
+          name: profile?.full_name || "Staff Member",
+          email: profile?.email || "",
+          role: profile?.role || "moderator",
+        }}
+        books={books}
+        copies={copies}
+        users={users}
+        transactions={transactions}
+        categories={categories}
+      />
+    </PageTransition>
   );
 }

@@ -1,3 +1,4 @@
+import PageTransition from "@/components/PageTransition";
 import { getTranslation } from "@/lib/i18n/server";
 import { getProfile } from "@/server/geo";
 import { getClaims } from "@/server/user";
@@ -50,7 +51,7 @@ async function HomeContent() {
       : t.home.hero.setup;
 
   return (
-    <>
+    <PageTransition className="min-h-screen flex flex-col">
       <Navbar isLoggedIn={isLoggedIn} />
 
       {/* Hero Section */}
@@ -359,7 +360,7 @@ async function HomeContent() {
       </section>
 
       <Footer year={year} />
-    </>
+    </PageTransition>
   );
 }
 

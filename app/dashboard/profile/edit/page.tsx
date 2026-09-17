@@ -1,5 +1,6 @@
+import PageTransition from "@/components/PageTransition";
+import { getProfile, getRanks, getThanas } from "@/server/geo";
 import { getClaims } from "@/server/user";
-import { getProfile, getThanas, getRanks } from "@/server/geo";
 import { redirect } from "next/navigation";
 import EditProfileForm from "./EditProfileForm";
 
@@ -15,11 +16,13 @@ export default async function EditProfilePage() {
   if (!profile) redirect("/login");
 
   return (
-    <EditProfileForm
-      profile={profile}
-      thanas={thanaResult.data}
-      ranks={rankResult.data}
-      geoSource={thanaResult.source}
-    />
+    <PageTransition>
+      <EditProfileForm
+        profile={profile}
+        thanas={thanaResult.data}
+        ranks={rankResult.data}
+        geoSource={thanaResult.source}
+      />
+    </PageTransition>
   );
 }

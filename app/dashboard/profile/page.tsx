@@ -1,9 +1,14 @@
 import Avatar from "@/components/Avatar";
+import PageTransition from "@/components/PageTransition";
 import { RankBadge } from "@/components/ui/rank-badge";
 import { getTranslation } from "@/lib/i18n/server";
 import { getUserChecklistProgress } from "@/server/checklists";
 import { getProfile } from "@/server/geo";
-import { getPdfSubmissions, getUserStats, getUserTransactions } from "@/server/library";
+import {
+  getPdfSubmissions,
+  getUserStats,
+  getUserTransactions,
+} from "@/server/library";
 import { getClaims } from "@/server/user";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -13,26 +18,30 @@ import {
   FaEnvelope,
   FaMapMarkerAlt,
   FaPhone,
-  FaShieldAlt
+  FaShieldAlt,
 } from "react-icons/fa";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
   if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? "?";
-  return (parts[0][0]?.toUpperCase() ?? "") + (parts[parts.length - 1][0]?.toUpperCase() ?? "");
+  return (
+    (parts[0][0]?.toUpperCase() ?? "") +
+    (parts[parts.length - 1][0]?.toUpperCase() ?? "")
+  );
 }
 
 export default async function DashboardProfilePage() {
   const claims = await getClaims();
   if (!claims) redirect("/login");
   const { t, language } = await getTranslation();
-  const [profile, stats, checklistProgress, transactions, pdfSubmissions] = await Promise.all([
-    getProfile(claims.sub),
-    getUserStats(claims.sub),
-    getUserChecklistProgress(claims.sub),
-    getUserTransactions(claims.sub),
-    getPdfSubmissions({ userId: claims.sub }),
-  ]);
+  const [profile, stats, checklistProgress, transactions, pdfSubmissions] =
+    await Promise.all([
+      getProfile(claims.sub),
+      getUserStats(claims.sub),
+      getUserChecklistProgress(claims.sub),
+      getUserTransactions(claims.sub),
+      getPdfSubmissions({ userId: claims.sub }),
+    ]);
   if (!profile) redirect("/login");
 
   const roleColors: Record<string, string> = {
@@ -41,14 +50,17 @@ export default async function DashboardProfilePage() {
     member: "bg-stone-100 text-stone-800 border-stone-400",
   };
 
-  const joinedDate = new Date(profile.created_at).toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const joinedDate = new Date(profile.created_at).toLocaleDateString(
+    language === "bn" ? "bn-BD" : "en-GB",
+    {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    },
+  );
   const locationParts = [profile.thana?.name].filter(Boolean);
   return (
-    <div className="p-2 sm:p-0 space-y-5">
+    <PageTransition className="p-2 sm:p-0 space-y-5">
       {/* ── Hero card ── */}
       <section className="dashboard-surface tron-border rounded-sm p-6 sm:p-8">
         <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
@@ -71,9 +83,7 @@ export default async function DashboardProfilePage() {
                 />
               )}
             </div>
-            <p className="text-[#6a5a4c] ink-text mb-3">
-              @{profile.username}
-            </p>
+            <p className="text-[#6a5a4c] ink-text mb-3">@{profile.username}</p>
             <div className="flex flex-wrap justify-center sm:justify-start gap-2">
               <span
                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-xs font-semibold border ink-text ${roleColors[profile.role]}`}
@@ -87,15 +97,24 @@ export default async function DashboardProfilePage() {
               {t.profile.header.joinedOn}: <b>{joinedDate}</b>
             </p>
             <div className="mt-4 flex flex-col sm:flex-row flex-wrap items-center justify-center sm:justify-start gap-3 sm:gap-6 text-sm text-[#4f4134]">
-              <div className="flex items-center gap-1.5" title={t.profile.info.email}>
+              <div
+                className="flex items-center gap-1.5"
+                title={t.profile.info.email}
+              >
                 <FaEnvelope className="w-3.5 h-3.5 text-[#8a7966]" />
                 <span className="break-all">{profile.email}</span>
               </div>
-              <div className="flex items-center gap-1.5" title={t.profile.info.phone}>
+              <div
+                className="flex items-center gap-1.5"
+                title={t.profile.info.phone}
+              >
                 <FaPhone className="w-3.5 h-3.5 text-[#8a7966]" />
                 <span>{profile.phone || t.profile.info.noPhone}</span>
               </div>
-              <div className="flex items-center gap-1.5" title={t.profile.info.location}>
+              <div
+                className="flex items-center gap-1.5"
+                title={t.profile.info.location}
+              >
                 <FaMapMarkerAlt className="w-3.5 h-3.5 text-[#8a7966]" />
                 <span className="truncate max-w-[200px]">
                   {locationParts.length > 0
@@ -196,35 +215,37 @@ export default async function DashboardProfilePage() {
               {t.profile.sections.checklistProgress}
             </h2>
             <div className="space-y-6 flex-1">
-            {checklistProgress.map((cp) => {
-              const percent =
-                cp.total > 0 ? Math.round((cp.completed / cp.total) * 100) : 0;
-              return (
-                <div key={cp.checklistId}>
-                  <div className="flex justify-between items-end mb-2">
-                    <p className="text-sm font-bold text-[#221910] ink-title">
-                      {cp.checklistName}
-                    </p>
-                    <p className="text-sm font-bold text-[#221910] ink-title">
-                      {percent}%
+              {checklistProgress.map((cp) => {
+                const percent =
+                  cp.total > 0
+                    ? Math.round((cp.completed / cp.total) * 100)
+                    : 0;
+                return (
+                  <div key={cp.checklistId}>
+                    <div className="flex justify-between items-end mb-2">
+                      <p className="text-sm font-bold text-[#221910] ink-title">
+                        {cp.checklistName}
+                      </p>
+                      <p className="text-sm font-bold text-[#221910] ink-title">
+                        {percent}%
+                      </p>
+                    </div>
+                    <div className="w-full h-3 bg-[#d9cbb7] rounded-full overflow-hidden border border-[#8a7966] shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]">
+                      <div
+                        className="h-full bg-[#4a7c59] transition-all duration-500"
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-[#6a5a4c] mt-2 ink-text text-right">
+                      {cp.completed} / {cp.total}
                     </p>
                   </div>
-                  <div className="w-full h-3 bg-[#d9cbb7] rounded-full overflow-hidden border border-[#8a7966] shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]">
-                    <div
-                      className="h-full bg-[#4a7c59] transition-all duration-500"
-                      style={{ width: `${percent}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-[#6a5a4c] mt-2 ink-text text-right">
-                    {cp.completed} / {cp.total}
-                  </p>
-                </div>
-              );
-            })}
+                );
+              })}
             </div>
           </section>
         )}
       </div>
-    </div>
+    </PageTransition>
   );
 }

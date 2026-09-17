@@ -1,3 +1,4 @@
+import PageTransition from "@/components/PageTransition";
 import { getUserTransactions } from "@/server/library";
 import { getClaims, getCurrentProfile } from "@/server/user";
 import { redirect } from "next/navigation";
@@ -29,12 +30,14 @@ export default async function ReturnPage({
       .map((tx) => tx.copy_id.toUpperCase()),
   );
   return (
-    <ReturnClient
-      currentBorrows={currentBorrows}
-      userId={claims.sub}
-      pendingReturnCopyIds={pendingReturnCopyIds}
-      isVerified={profile?.is_verified ?? false}
-      initialCopyId={copyId}
-    />
+    <PageTransition>
+      <ReturnClient
+        currentBorrows={currentBorrows}
+        userId={claims.sub}
+        pendingReturnCopyIds={pendingReturnCopyIds}
+        isVerified={profile?.is_verified ?? false}
+        initialCopyId={copyId}
+      />
+    </PageTransition>
   );
 }

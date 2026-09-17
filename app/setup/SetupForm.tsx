@@ -70,8 +70,6 @@ export default function SetupForm({
 
   return (
     <>
-
-
       <div
         className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 py-10 sm:py-16 bg-[#e5d9c4] relative overflow-hidden"
         style={{ fontFamily: "'Courier Prime', 'Courier New', monospace" }}
@@ -158,25 +156,36 @@ export default function SetupForm({
                     </span>
                   )}
                   {usernameStatus === "checking" && (
-                    <span className="text-xs text-[#7a6a5c] ink-text">Checking...</span>
+                    <span className="text-xs text-[#7a6a5c] ink-text">
+                      Checking...
+                    </span>
                   )}
                   {usernameStatus === "available" && (
-                    <span className="text-xs text-[#3d5c2e] font-semibold ink-text">Available</span>
+                    <span className="text-xs text-[#3d5c2e] font-semibold ink-text">
+                      Available
+                    </span>
                   )}
                   {usernameStatus === "unavailable" && (
-                    <span className="text-xs text-red-600 font-semibold ink-text">Unavailable</span>
+                    <span className="text-xs text-red-600 font-semibold ink-text">
+                      Unavailable
+                    </span>
                   )}
                   {usernameStatus === "invalid" && (
-                    <span className="text-xs text-red-600 font-semibold ink-text">Invalid</span>
+                    <span className="text-xs text-red-600 font-semibold ink-text">
+                      Invalid
+                    </span>
                   )}
                 </div>
-                <div className={`flex items-stretch border rounded-sm overflow-hidden transition-colors ${
-                  usernameStatus === "unavailable" || usernameStatus === "invalid"
-                    ? "border-red-400 focus-within:ring-2 focus-within:ring-red-500"
-                    : usernameStatus === "available"
-                      ? "border-[#a3b994] focus-within:ring-2 focus-within:ring-[#6b9e5e]"
-                      : "border-[#8a7966] focus-within:ring-2 focus-within:ring-[#6e5d4a]"
-                }`}>
+                <div
+                  className={`flex items-stretch border rounded-sm overflow-hidden transition-colors ${
+                    usernameStatus === "unavailable" ||
+                    usernameStatus === "invalid"
+                      ? "border-red-400 focus-within:ring-2 focus-within:ring-red-500"
+                      : usernameStatus === "available"
+                        ? "border-[#a3b994] focus-within:ring-2 focus-within:ring-[#6b9e5e]"
+                        : "border-[#8a7966] focus-within:ring-2 focus-within:ring-[#6e5d4a]"
+                  }`}
+                >
                   <span className="flex items-center px-3 bg-[#e8dcc8] text-[#5a4b3f] font-bold text-sm select-none border-r border-[#b9a58b]">
                     @
                   </span>
@@ -208,7 +217,7 @@ export default function SetupForm({
                 </div>
                 {atSymbolWarning && (
                   <p className="mt-1 text-xs text-amber-700 font-medium ink-text">
-                    No need to include the @  — just type your username.
+                    No need to include the @ — just type your username.
                   </p>
                 )}
                 <p className="mt-1 text-xs text-[#7a6a5c] ink-text">
@@ -221,7 +230,9 @@ export default function SetupForm({
                 <div className="flex items-center justify-between">
                   <label htmlFor="phone" className={labelClass}>
                     Phone Number{" "}
-                    <span className="text-[#7a6a5c] font-normal">(optional)</span>
+                    <span className="text-[#7a6a5c] font-normal">
+                      (optional)
+                    </span>
                     {phone.length > 0 && (
                       <span className="ml-2 text-[10px] text-[#7a6a5c] font-normal opacity-70">
                         ({phone.length}/19)
@@ -241,13 +252,16 @@ export default function SetupForm({
                   autoComplete="tel"
                   maxLength={19}
                   placeholder="01919191919"
-                  className={`${inputClass} ${phoneError ? "border-red-400 focus:ring-red-500" : ""
-                    }`}
+                  className={`${inputClass} ${
+                    phoneError ? "border-red-400 focus:ring-red-500" : ""
+                  }`}
                   value={phone}
                   onChange={handlePhoneChange}
                 />
                 {phoneError && (
-                  <p className="mt-1 text-xs text-red-600 ink-text">{phoneError}</p>
+                  <p className="mt-1 text-xs text-red-600 ink-text">
+                    {phoneError}
+                  </p>
                 )}
               </div>
 
@@ -284,7 +298,9 @@ export default function SetupForm({
                   <span className="text-sm font-semibold ink-text tracking-wide uppercase">
                     Thana
                   </span>
-                  <span className="text-[#7a6a5c] text-xs font-normal">(optional)</span>
+                  <span className="text-[#7a6a5c] text-xs font-normal">
+                    (optional)
+                  </span>
                 </div>
 
                 {geoSource === "unavailable" && (
@@ -298,9 +314,7 @@ export default function SetupForm({
                 )}
 
                 <div>
-                  <label className={labelClass}>
-                    Select thana
-                  </label>
+                  <label className={labelClass}>Select thana</label>
                   <ThanaCombobox
                     name="thana_id"
                     options={thanas}

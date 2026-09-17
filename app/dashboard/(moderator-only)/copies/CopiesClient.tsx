@@ -3,6 +3,7 @@
 import StatusBadge from "@/app/components/StatusBadge";
 import { InventoryNav } from "@/app/dashboard/components/StaffHubNav";
 import ConfirmModal from "@/components/ui/confirm-modal";
+import { ModalPortal } from "@/components/ui/modal-portal";
 import { useTranslation } from "@/lib/i18n/context";
 import {
   addCopyOfBook,
@@ -1085,275 +1086,284 @@ export default function CopiesClient({
 
       {/* Add copy modal */}
       {showAddModal && (
-        <div
-          className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-4 z-80"
-          onClick={(e) => e.target === e.currentTarget && closeModal()}
-        >
+        <ModalPortal>
           <div
-            className="dashboard-surface tron-border rounded-sm max-w-md w-full p-6"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-4 z-80"
+            onClick={(e) => e.target === e.currentTarget && closeModal()}
           >
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <h2 className="text-xl font-bold text-[#221910] ink-title">
-                {t.copies.modal.addTitle}
-              </h2>
-              <button
-                onClick={closeModal}
-                disabled={isPending}
-                className="p-2 text-[#655648] hover:bg-[#e7d8c3] rounded-sm transition-colors"
-                aria-label="Close copy modal"
-              >
-                <FaTimes className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleAdd();
-              }}
-              className="space-y-4 ink-text"
+            <div
+              className="dashboard-surface tron-border rounded-sm max-w-md w-full p-6"
+              onClick={(e) => e.stopPropagation()}
             >
-              {/* Copy ID */}
-              <div>
-                <label className="block text-sm font-medium text-[#4f4134] mb-1">
-                  Copy ID *
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. C001"
-                  value={formData.copy_id}
-                  onChange={(e) => {
-                    if (copyIdError) setCopyIdError(null);
-                    setFormData({
-                      ...formData,
-                      copy_id: e.target.value.toUpperCase(),
-                    });
-                  }}
-                  className={`w-full px-4 py-2.5 border rounded-sm focus:ring-2 focus:border-transparent outline-none transition-colors ${
-                    copyIdError
-                      ? "border-red-500 focus:ring-red-500 bg-[#fdf2f2] text-red-900"
-                      : "border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] focus:ring-[#6e5d4a]"
-                  }`}
-                />
-                {copyIdError && (
-                  <p className="text-xs text-red-600 mt-1 font-medium">
-                    {copyIdError}
-                  </p>
-                )}
-              </div>
-
-              {/* Book search dropdown */}
-              <div className="relative z-50">
-                <label className="block text-sm font-medium text-[#4f4134] mb-1">
-                  {t.copies.modal.labels.selectBook} *
-                </label>
-
-                {/* Native select for small screens */}
-                <select
-                  value={formData.book_id}
-                  onChange={(e) => {
-                    const selected = books.find((b) => b.id === e.target.value);
-                    if (selected) handleSelectBook(selected);
-                  }}
-                  className="sm:hidden w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
-                  required
-                >
-                  <option value="" disabled>
-                    {t.copies.modal.placeholders.searchBook}
-                  </option>
-                  {books.map((book) => (
-                    <option key={book.id} value={book.id}>
-                      {book.title} — {book.author}
-                    </option>
-                  ))}
-                </select>
-
-                {/* Custom dropdown for larger screens — rendered via portal so it escapes any overflow:hidden ancestor */}
-                <div className="hidden sm:block">
-                  <input
-                    ref={bookInputRef}
-                    type="text"
-                    value={bookSearchTerm}
-                    onFocus={() => {
-                      const rect =
-                        bookInputRef.current?.getBoundingClientRect();
-                      if (rect) setDropdownRect(rect);
-                      setShowBookDropdown(true);
-                    }}
-                    onBlur={() => {
-                      setTimeout(() => setShowBookDropdown(false), 120);
-                    }}
-                    onChange={(e) => {
-                      const rect =
-                        bookInputRef.current?.getBoundingClientRect();
-                      if (rect) setDropdownRect(rect);
-                      handleBookSearchChange(e.target.value);
-                    }}
-                    placeholder={
-                      formData.book_id
-                        ? (books.find((b) => b.id === formData.book_id)
-                            ?.title ?? t.copies.modal.placeholders.searchBook)
-                        : t.copies.modal.placeholders.searchBook
-                    }
-                    className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
-                  />
-
-                  {showBookDropdown &&
-                    dropdownRect &&
-                    typeof document !== "undefined" &&
-                    createPortal(
-                      <div
-                        style={{
-                          position: "fixed",
-                          top: dropdownRect.bottom + 4,
-                          left: dropdownRect.left,
-                          width: dropdownRect.width,
-                          zIndex: 9999,
-                        }}
-                        className="max-h-56 overflow-y-auto rounded-sm border border-[#8a7966] bg-[#f6ecdd] shadow-xl"
-                      >
-                        {filteredBookOptions.length > 0 ? (
-                          filteredBookOptions.map((book) => (
-                            <button
-                              key={book.id}
-                              type="button"
-                              onMouseDown={() => handleSelectBook(book)}
-                              className="w-full px-3 py-2 text-left text-sm text-[#2f251d] hover:bg-[#eadcc8] transition-colors"
-                            >
-                              <span className="font-medium">{book.title}</span>
-                              <span className="text-[#5a4b3f]">
-                                {" "}
-                                — {book.author}
-                              </span>
-                            </button>
-                          ))
-                        ) : (
-                          <div className="px-3 py-2 text-sm text-[#6a5a4c]">
-                            No matching book found
-                          </div>
-                        )}
-                      </div>,
-                      document.body,
-                    )}
-                </div>
-              </div>
-
-              <div className="flex gap-3 mt-6">
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <h2 className="text-xl font-bold text-[#221910] ink-title">
+                  {t.copies.modal.addTitle}
+                </h2>
                 <button
-                  type="button"
                   onClick={closeModal}
                   disabled={isPending}
-                  className="flex-1 px-4 py-2.5 border border-[#8a7966] text-[#4f4134] rounded-sm hover:bg-[#eadcc8] disabled:opacity-55 transition-colors font-medium ink-text"
+                  className="p-2 text-[#655648] hover:bg-[#e7d8c3] rounded-sm transition-colors"
+                  aria-label="Close copy modal"
                 >
-                  {t.copies.modal.cancel}
-                </button>
-                <button
-                  type="submit"
-                  disabled={
-                    isPending || !formData.book_id || !formData.copy_id.trim()
-                  }
-                  className="flex-1 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 disabled:cursor-not-allowed transition-colors font-medium ink-text"
-                >
-                  {isPending ? "..." : t.copies.modal.add}
+                  <FaTimes className="w-4 h-4" />
                 </button>
               </div>
-            </form>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleAdd();
+                }}
+                className="space-y-4 ink-text"
+              >
+                {/* Copy ID */}
+                <div>
+                  <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                    Copy ID *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. C001"
+                    value={formData.copy_id}
+                    onChange={(e) => {
+                      if (copyIdError) setCopyIdError(null);
+                      setFormData({
+                        ...formData,
+                        copy_id: e.target.value.toUpperCase(),
+                      });
+                    }}
+                    className={`w-full px-4 py-2.5 border rounded-sm focus:ring-2 focus:border-transparent outline-none transition-colors ${
+                      copyIdError
+                        ? "border-red-500 focus:ring-red-500 bg-[#fdf2f2] text-red-900"
+                        : "border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] focus:ring-[#6e5d4a]"
+                    }`}
+                  />
+                  {copyIdError && (
+                    <p className="text-xs text-red-600 mt-1 font-medium">
+                      {copyIdError}
+                    </p>
+                  )}
+                </div>
+
+                {/* Book search dropdown */}
+                <div className="relative z-50">
+                  <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                    {t.copies.modal.labels.selectBook} *
+                  </label>
+
+                  {/* Native select for small screens */}
+                  <select
+                    value={formData.book_id}
+                    onChange={(e) => {
+                      const selected = books.find(
+                        (b) => b.id === e.target.value,
+                      );
+                      if (selected) handleSelectBook(selected);
+                    }}
+                    className="sm:hidden w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
+                    required
+                  >
+                    <option value="" disabled>
+                      {t.copies.modal.placeholders.searchBook}
+                    </option>
+                    {books.map((book) => (
+                      <option key={book.id} value={book.id}>
+                        {book.title} — {book.author}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Custom dropdown for larger screens — rendered via portal so it escapes any overflow:hidden ancestor */}
+                  <div className="hidden sm:block">
+                    <input
+                      ref={bookInputRef}
+                      type="text"
+                      value={bookSearchTerm}
+                      onFocus={() => {
+                        const rect =
+                          bookInputRef.current?.getBoundingClientRect();
+                        if (rect) setDropdownRect(rect);
+                        setShowBookDropdown(true);
+                      }}
+                      onBlur={() => {
+                        setTimeout(() => setShowBookDropdown(false), 120);
+                      }}
+                      onChange={(e) => {
+                        const rect =
+                          bookInputRef.current?.getBoundingClientRect();
+                        if (rect) setDropdownRect(rect);
+                        handleBookSearchChange(e.target.value);
+                      }}
+                      placeholder={
+                        formData.book_id
+                          ? (books.find((b) => b.id === formData.book_id)
+                              ?.title ?? t.copies.modal.placeholders.searchBook)
+                          : t.copies.modal.placeholders.searchBook
+                      }
+                      className="w-full px-4 py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-sm focus:ring-2 focus:ring-[#6e5d4a] focus:border-transparent outline-none"
+                    />
+
+                    {showBookDropdown &&
+                      dropdownRect &&
+                      typeof document !== "undefined" &&
+                      createPortal(
+                        <div
+                          style={{
+                            position: "fixed",
+                            top: dropdownRect.bottom + 4,
+                            left: dropdownRect.left,
+                            width: dropdownRect.width,
+                            zIndex: 9999,
+                          }}
+                          className="max-h-56 overflow-y-auto rounded-sm border border-[#8a7966] bg-[#f6ecdd] shadow-xl"
+                        >
+                          {filteredBookOptions.length > 0 ? (
+                            filteredBookOptions.map((book) => (
+                              <button
+                                key={book.id}
+                                type="button"
+                                onMouseDown={() => handleSelectBook(book)}
+                                className="w-full px-3 py-2 text-left text-sm text-[#2f251d] hover:bg-[#eadcc8] transition-colors"
+                              >
+                                <span className="font-medium">
+                                  {book.title}
+                                </span>
+                                <span className="text-[#5a4b3f]">
+                                  {" "}
+                                  — {book.author}
+                                </span>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="px-3 py-2 text-sm text-[#6a5a4c]">
+                              No matching book found
+                            </div>
+                          )}
+                        </div>,
+                        document.body,
+                      )}
+                  </div>
+                </div>
+
+                <div className="flex gap-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    disabled={isPending}
+                    className="flex-1 px-4 py-2.5 border border-[#8a7966] text-[#4f4134] rounded-sm hover:bg-[#eadcc8] disabled:opacity-55 transition-colors font-medium ink-text"
+                  >
+                    {t.copies.modal.cancel}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={
+                      isPending || !formData.book_id || !formData.copy_id.trim()
+                    }
+                    className="flex-1 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 disabled:cursor-not-allowed transition-colors font-medium ink-text"
+                  >
+                    {isPending ? "..." : t.copies.modal.add}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
 
       {/* Edit Copy ID modal */}
       {editCopyId && (
-        <div
-          className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-4 z-80"
-          onClick={(e) => e.target === e.currentTarget && setEditCopyId(null)}
-        >
+        <ModalPortal>
           <div
-            className="dashboard-surface tron-border rounded-sm max-w-sm w-full p-6"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-4 z-80"
+            onClick={(e) => e.target === e.currentTarget && setEditCopyId(null)}
           >
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <h2 className="text-xl font-bold text-[#221910] ink-title">
-                {t.copies.editModal.title}
-              </h2>
-              <button
-                onClick={() => setEditCopyId(null)}
-                disabled={isPending}
-                className="p-2 text-[#655648] hover:bg-[#e7d8c3] rounded-sm transition-colors"
-                aria-label="Close edit copy ID modal"
-              >
-                <FaTimes className="w-4 h-4" />
-              </button>
-            </div>
-
-            <p className="text-xs text-[#6a5a4c] ink-text mb-4">
-              {t.copies.table.copyId}:{" "}
-              <span className="font-mono font-semibold text-[#3f3328]">
-                {editCopyId.copyId}
-              </span>
-            </p>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleRenameCopyId();
-              }}
-              className="space-y-4 ink-text"
+            <div
+              className="dashboard-surface tron-border rounded-sm max-w-sm w-full p-6"
+              onClick={(e) => e.stopPropagation()}
             >
-              <div>
-                <label className="block text-sm font-medium text-[#4f4134] mb-1">
-                  {t.copies.editModal.label} *
-                </label>
-                <input
-                  type="text"
-                  id="edit-copy-id-input"
-                  placeholder={t.copies.editModal.placeholder}
-                  value={editCopyId.newId}
-                  autoFocus
-                  onChange={(e) => {
-                    const val = e.target.value.toUpperCase();
-                    setEditCopyId((prev) =>
-                      prev ? { ...prev, newId: val, error: null } : null,
-                    );
-                  }}
-                  className={`w-full px-4 py-2.5 border rounded-sm focus:ring-2 focus:border-transparent outline-none transition-colors font-mono ${
-                    editCopyId.error
-                      ? "border-red-500 focus:ring-red-500 bg-[#fdf2f2] text-red-900"
-                      : "border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] focus:ring-[#6e5d4a]"
-                  }`}
-                />
-                {editCopyId.error && (
-                  <p className="text-xs text-red-600 mt-1 font-medium">
-                    {editCopyId.error}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex gap-3 mt-6">
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <h2 className="text-xl font-bold text-[#221910] ink-title">
+                  {t.copies.editModal.title}
+                </h2>
                 <button
-                  type="button"
                   onClick={() => setEditCopyId(null)}
                   disabled={isPending}
-                  className="flex-1 px-4 py-2.5 border border-[#8a7966] text-[#4f4134] rounded-sm hover:bg-[#eadcc8] disabled:opacity-55 transition-colors font-medium ink-text"
+                  className="p-2 text-[#655648] hover:bg-[#e7d8c3] rounded-sm transition-colors"
+                  aria-label="Close edit copy ID modal"
                 >
-                  {t.copies.editModal.cancel}
-                </button>
-                <button
-                  type="submit"
-                  disabled={
-                    isPending ||
-                    !editCopyId.newId.trim() ||
-                    editCopyId.newId.trim().toUpperCase() === editCopyId.copyId
-                  }
-                  className="flex-1 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 disabled:cursor-not-allowed transition-colors font-medium ink-text"
-                >
-                  {isPending ? "..." : t.copies.editModal.save}
+                  <FaTimes className="w-4 h-4" />
                 </button>
               </div>
-            </form>
+
+              <p className="text-xs text-[#6a5a4c] ink-text mb-4">
+                {t.copies.table.copyId}:{" "}
+                <span className="font-mono font-semibold text-[#3f3328]">
+                  {editCopyId.copyId}
+                </span>
+              </p>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleRenameCopyId();
+                }}
+                className="space-y-4 ink-text"
+              >
+                <div>
+                  <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                    {t.copies.editModal.label} *
+                  </label>
+                  <input
+                    type="text"
+                    id="edit-copy-id-input"
+                    placeholder={t.copies.editModal.placeholder}
+                    value={editCopyId.newId}
+                    autoFocus
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase();
+                      setEditCopyId((prev) =>
+                        prev ? { ...prev, newId: val, error: null } : null,
+                      );
+                    }}
+                    className={`w-full px-4 py-2.5 border rounded-sm focus:ring-2 focus:border-transparent outline-none transition-colors font-mono ${
+                      editCopyId.error
+                        ? "border-red-500 focus:ring-red-500 bg-[#fdf2f2] text-red-900"
+                        : "border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] focus:ring-[#6e5d4a]"
+                    }`}
+                  />
+                  {editCopyId.error && (
+                    <p className="text-xs text-red-600 mt-1 font-medium">
+                      {editCopyId.error}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex gap-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setEditCopyId(null)}
+                    disabled={isPending}
+                    className="flex-1 px-4 py-2.5 border border-[#8a7966] text-[#4f4134] rounded-sm hover:bg-[#eadcc8] disabled:opacity-55 transition-colors font-medium ink-text"
+                  >
+                    {t.copies.editModal.cancel}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={
+                      isPending ||
+                      !editCopyId.newId.trim() ||
+                      editCopyId.newId.trim().toUpperCase() ===
+                        editCopyId.copyId
+                    }
+                    className="flex-1 px-4 py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 disabled:cursor-not-allowed transition-colors font-medium ink-text"
+                  >
+                    {isPending ? "..." : t.copies.editModal.save}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
 
       {/* Confirm modal only for delete */}
@@ -1400,76 +1410,78 @@ export default function CopiesClient({
 
       {/* QR modal */}
       {qrModalCopyId && (
-        <div
-          className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-4 z-80"
-          onClick={(e) => e.target === e.currentTarget && closeQrModal()}
-        >
+        <ModalPortal>
           <div
-            className="dashboard-surface tron-border rounded-sm max-w-md w-full p-4"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-4 z-80"
+            onClick={(e) => e.target === e.currentTarget && closeQrModal()}
           >
-            <div className="flex items-start justify-between gap-3 mb-3">
-              <div>
-                <h2 className="text-xl font-bold text-[#221910] ink-title">
-                  {t.copies.qrModal.title}
-                </h2>
+            <div
+              className="dashboard-surface tron-border rounded-sm max-w-md w-full p-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div>
+                  <h2 className="text-xl font-bold text-[#221910] ink-title">
+                    {t.copies.qrModal.title}
+                  </h2>
+                </div>
+                <button
+                  onClick={closeQrModal}
+                  className="p-2 text-[#655648] hover:bg-[#e7d8c3] rounded-sm transition-colors"
+                  aria-label="Close QR modal"
+                >
+                  <FaTimes className="w-4 h-4" />
+                </button>
               </div>
-              <button
-                onClick={closeQrModal}
-                className="p-2 text-[#655648] hover:bg-[#e7d8c3] rounded-sm transition-colors"
-                aria-label="Close QR modal"
-              >
-                <FaTimes className="w-4 h-4" />
-              </button>
+
+              <div className="p-1 flex flex-col items-center gap-3">
+                {qrIsLoading && (
+                  <div className="w-full min-h-105 flex items-center justify-center text-[#5a4b3f] ink-text">
+                    {t.copies.qrModal.loading}
+                  </div>
+                )}
+
+                {!qrIsLoading && qrImageUrl && (
+                  <NextImage
+                    src={qrImageUrl}
+                    alt="Copy QR preview"
+                    width={420}
+                    height={520}
+                    unoptimized
+                    className="w-full max-w-80 rounded-sm bg-white shadow-sm"
+                  />
+                )}
+
+                {!qrIsLoading && !qrImageUrl && (
+                  <div className="w-full min-h-105 flex items-center justify-center text-[#5a4b3f] ink-text">
+                    Error
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2 mt-4">
+                <button
+                  onClick={closeQrModal}
+                  className="flex-1 px-3 py-2 border border-[#8a7966] text-[#4f4134] rounded-sm hover:bg-[#eadcc8] transition-colors font-medium text-sm ink-text"
+                >
+                  {t.copies.qrModal.close}
+                </button>
+                <button
+                  onClick={handleDownloadQr}
+                  disabled={!qrImageUrl || qrIsLoading}
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 disabled:cursor-not-allowed transition-colors font-medium text-sm ink-text"
+                >
+                  <FaDownload className="w-4 h-4" />
+                  {t.copies.qrModal.download}
+                </button>
+              </div>
+
+              <p className="text-xs text-[#6a5a4c] mt-2 text-center ink-text">
+                {qrModalCopyId}
+              </p>
             </div>
-
-            <div className="p-1 flex flex-col items-center gap-3">
-              {qrIsLoading && (
-                <div className="w-full min-h-105 flex items-center justify-center text-[#5a4b3f] ink-text">
-                  {t.copies.qrModal.loading}
-                </div>
-              )}
-
-              {!qrIsLoading && qrImageUrl && (
-                <NextImage
-                  src={qrImageUrl}
-                  alt="Copy QR preview"
-                  width={420}
-                  height={520}
-                  unoptimized
-                  className="w-full max-w-80 rounded-sm bg-white shadow-sm"
-                />
-              )}
-
-              {!qrIsLoading && !qrImageUrl && (
-                <div className="w-full min-h-105 flex items-center justify-center text-[#5a4b3f] ink-text">
-                  Error
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-2 mt-4">
-              <button
-                onClick={closeQrModal}
-                className="flex-1 px-3 py-2 border border-[#8a7966] text-[#4f4134] rounded-sm hover:bg-[#eadcc8] transition-colors font-medium text-sm ink-text"
-              >
-                {t.copies.qrModal.close}
-              </button>
-              <button
-                onClick={handleDownloadQr}
-                disabled={!qrImageUrl || qrIsLoading}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-sm hover:bg-[#4a3d31] disabled:opacity-55 disabled:cursor-not-allowed transition-colors font-medium text-sm ink-text"
-              >
-                <FaDownload className="w-4 h-4" />
-                {t.copies.qrModal.download}
-              </button>
-            </div>
-
-            <p className="text-xs text-[#6a5a4c] mt-2 text-center ink-text">
-              {qrModalCopyId}
-            </p>
           </div>
-        </div>
+        </ModalPortal>
       )}
     </div>
   );

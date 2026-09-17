@@ -1,6 +1,6 @@
 export default function DashboardLoading() {
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6 py-2 px-1 sm:px-2 page-transition">
+    <div className="w-full max-w-6xl mx-auto space-y-6 py-2 px-1 sm:px-2">
       {/* Top Banner Skeleton */}
       <div className="h-28 sm:h-32 rounded-2xl bg-[#eadcc8]/30 border border-[#8a7966]/15 flex items-center justify-between p-6 overflow-hidden relative">
         <div className="space-y-3 w-2/3 max-w-md">

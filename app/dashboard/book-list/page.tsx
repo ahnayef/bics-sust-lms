@@ -1,11 +1,12 @@
-import { redirect } from "next/navigation";
-import { getClaims } from "@/server/user";
+import PageTransition from "@/components/PageTransition";
 import {
   getBooks,
-  getUserTransactions,
-  getPdfSubmissions,
   getCategories,
+  getPdfSubmissions,
+  getUserTransactions,
 } from "@/server/library";
+import { getClaims } from "@/server/user";
+import { redirect } from "next/navigation";
 import BookListClient from "./BookListClient";
 
 export default async function BookListPage() {
@@ -29,12 +30,14 @@ export default async function BookListPage() {
     .map((tx) => tx.copy_id);
 
   return (
-    <BookListClient
-      books={books}
-      userId={claims.sub}
-      activeBorrowCopyIds={activeBorrowCopyIds}
-      pdfSubmissions={pdfSubmissions}
-      categories={categories}
-    />
+    <PageTransition>
+      <BookListClient
+        books={books}
+        userId={claims.sub}
+        activeBorrowCopyIds={activeBorrowCopyIds}
+        pdfSubmissions={pdfSubmissions}
+        categories={categories}
+      />
+    </PageTransition>
   );
 }

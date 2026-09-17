@@ -1,6 +1,7 @@
-import { getAdminLogs } from "@/server/library";
-import { getMyProfile } from "@/server/auth-utils";
+import PageTransition from "@/components/PageTransition";
 import { USER_ROLES } from "@/lib/constants";
+import { getMyProfile } from "@/server/auth-utils";
+import { getAdminLogs } from "@/server/library";
 import { redirect } from "next/navigation";
 import LogsClient from "./LogsClient";
 
@@ -22,8 +23,10 @@ export default async function AdminLogsPage({
   const logs = await getAdminLogs(filterDays);
 
   return (
-    <div className="p-2 sm:p-0 space-y-6">
-      <LogsClient initialLogs={logs} currentDays={filterDays} />
-    </div>
+    <PageTransition>
+      <div className="p-2 sm:p-0 space-y-6">
+        <LogsClient initialLogs={logs} currentDays={filterDays} />
+      </div>
+    </PageTransition>
   );
 }

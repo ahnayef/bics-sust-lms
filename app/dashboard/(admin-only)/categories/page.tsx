@@ -1,3 +1,4 @@
+import PageTransition from "@/components/PageTransition";
 import { USER_ROLES } from "@/lib/constants";
 import { getMyProfile } from "@/server/auth-utils";
 import { getCategories } from "@/server/library";
@@ -15,8 +16,10 @@ export default async function CategoriesPage() {
   const categories = await getCategories();
 
   return (
-    <div className="space-y-6">
-      <CategoriesClient initialCategories={categories} />
-    </div>
+    <PageTransition>
+      <div className="space-y-6">
+        <CategoriesClient initialCategories={categories} />
+      </div>
+    </PageTransition>
   );
 }

@@ -3,6 +3,7 @@
 import StatusBadge from "@/app/components/StatusBadge";
 import { InventoryNav } from "@/app/dashboard/components/StaffHubNav";
 import ConfirmModal from "@/components/ui/confirm-modal";
+import { ModalPortal } from "@/components/ui/modal-portal";
 import {
   addCategory,
   editCategory,
@@ -204,64 +205,66 @@ export default function CategoriesClient({ initialCategories }: Props) {
       </section>
 
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4 z-50">
-          <div className="dashboard-surface tron-border rounded-sm max-w-md w-full p-6">
-            <h2 className="text-xl font-bold text-[#221910] mb-4">
-              {editingCategory ? "Edit Category" : "Add Category"}
-            </h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-[#4f4134] mb-1">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border border-[#8a7966] bg-[#f6ecdd] rounded-sm outline-none"
-                  placeholder="e.g. Quran, Hadith"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="count_in_progress"
-                  checked={formData.count_in_progress}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      count_in_progress: e.target.checked,
-                    })
-                  }
-                  className="w-4 h-4 accent-[#3f3328]"
-                />
-                <label
-                  htmlFor="count_in_progress"
-                  className="text-sm font-medium text-[#4f4134]"
-                >
-                  Count in reading progress
-                </label>
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 text-[#5a4b3f] hover:bg-[#ece0ce] rounded-sm transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={isPending}
-                  className="px-4 py-2 bg-[#3f3328] text-[#f4e8d4] rounded-sm font-bold disabled:opacity-50"
-                >
-                  {editingCategory ? "Update" : "Add"}
-                </button>
+        <ModalPortal>
+          <div className="fixed inset-0 bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4 z-50">
+            <div className="dashboard-surface tron-border rounded-sm max-w-md w-full p-6">
+              <h2 className="text-xl font-bold text-[#221910] mb-4">
+                {editingCategory ? "Edit Category" : "Add Category"}
+              </h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    className="w-full px-4 py-2 border border-[#8a7966] bg-[#f6ecdd] rounded-sm outline-none"
+                    placeholder="e.g. Quran, Hadith"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="count_in_progress"
+                    checked={formData.count_in_progress}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        count_in_progress: e.target.checked,
+                      })
+                    }
+                    className="w-4 h-4 accent-[#3f3328]"
+                  />
+                  <label
+                    htmlFor="count_in_progress"
+                    className="text-sm font-medium text-[#4f4134]"
+                  >
+                    Count in reading progress
+                  </label>
+                </div>
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    onClick={() => setShowAddModal(false)}
+                    className="px-4 py-2 text-[#5a4b3f] hover:bg-[#ece0ce] rounded-sm transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={isPending}
+                    className="px-4 py-2 bg-[#3f3328] text-[#f4e8d4] rounded-sm font-bold disabled:opacity-50"
+                  >
+                    {editingCategory ? "Update" : "Add"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
 
       <ConfirmModal

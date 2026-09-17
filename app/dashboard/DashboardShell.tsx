@@ -27,6 +27,7 @@ import {
   FaUsers,
 } from "react-icons/fa";
 
+import { ModalPortal } from "@/components/ui/modal-portal";
 import { USER_ROLES, UserRole } from "@/lib/constants";
 import { useTranslation } from "@/lib/i18n/context";
 import { cn } from "@/lib/utils";
@@ -461,9 +462,7 @@ export default function DashboardShell({
 
         {/* Page Content Container — with safe bottom padding for bottom nav */}
         <div className="flex-1 px-2.5 py-3 sm:p-5 lg:p-8 pb-28 lg:pb-12 print:p-0 print:m-0 max-w-7xl mx-auto w-full">
-          <div key={pathname} className="page-transition">
-            {children}
-          </div>
+          {children}
         </div>
       </main>
 
@@ -650,222 +649,224 @@ export default function DashboardShell({
       {/* Mobile Staff Desk Drawer (Moderators & Admins on Mobile)             */}
       {/* ───────────────────────────────────────────────────────────────────── */}
       {isStaff && isStaffDrawerOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex flex-col justify-end">
-          <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
-            onClick={() => setIsStaffDrawerOpen(false)}
-          />
-          <div className="relative z-10 w-full max-h-[85vh] overflow-y-auto bg-[#f6ecdd] border-t-2 border-[#5e4e3e] rounded-t-2xl shadow-2xl p-5 space-y-5 animate-in slide-in-from-bottom duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-[#c9b89a]">
-              <div className="flex items-center gap-2">
-                <FaShieldAlt className="w-5 h-5 text-[#2d4a35]" />
-                <h2 className="text-base font-bold text-[#221910] ink-title">
-                  {t.dashboard.sidebar.staffDesk}
-                </h2>
+        <ModalPortal>
+          <div className="fixed inset-0 z-50 lg:hidden flex flex-col justify-end">
+            <div
+              className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
+              onClick={() => setIsStaffDrawerOpen(false)}
+            />
+            <div className="relative z-10 w-full max-h-[85vh] overflow-y-auto bg-[#f6ecdd] border-t-2 border-[#5e4e3e] rounded-t-2xl shadow-2xl p-5 space-y-5 animate-in slide-in-from-bottom duration-200">
+              <div className="flex items-center justify-between pb-3 border-b border-[#c9b89a]">
+                <div className="flex items-center gap-2">
+                  <FaShieldAlt className="w-5 h-5 text-[#2d4a35]" />
+                  <h2 className="text-base font-bold text-[#221910] ink-title">
+                    {t.dashboard.sidebar.staffDesk}
+                  </h2>
+                </div>
+                <button
+                  onClick={() => setIsStaffDrawerOpen(false)}
+                  className="p-1.5 rounded-full hover:bg-[#ebdcc8] text-[#554738] transition-colors cursor-pointer"
+                >
+                  <FaTimes className="w-4 h-4" />
+                </button>
               </div>
-              <button
-                onClick={() => setIsStaffDrawerOpen(false)}
-                className="p-1.5 rounded-full hover:bg-[#ebdcc8] text-[#554738] transition-colors cursor-pointer"
-              >
-                <FaTimes className="w-4 h-4" />
-              </button>
-            </div>
 
-            {/* Circulation Hub */}
-            <div>
-              <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#6d5c4a] mb-2 ink-title">
-                {t.dashboard.sidebar.circulation}
-              </h3>
-              <div className="grid grid-cols-2 gap-2.5">
-                <Link
-                  href="/dashboard/overview"
-                  onClick={() => setIsStaffDrawerOpen(false)}
-                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
-                >
-                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
-                    <FaChartLine className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-semibold text-[#221910] truncate">
-                    {t.dashboard.sidebar.overview}
-                  </span>
-                </Link>
-                <Link
-                  href="/dashboard/transactions"
-                  onClick={() => setIsStaffDrawerOpen(false)}
-                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
-                >
-                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
-                    <FaExchangeAlt className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-semibold text-[#221910] truncate">
-                    {t.dashboard.sidebar.transactions}
-                  </span>
-                </Link>
-              </div>
-            </div>
-
-            {/* Inventory Hub */}
-            <div>
-              <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#6d5c4a] mb-2 ink-title">
-                {t.dashboard.sidebar.inventory}
-              </h3>
-              <div className="grid grid-cols-2 gap-2.5">
-                <Link
-                  href="/dashboard/books"
-                  onClick={() => setIsStaffDrawerOpen(false)}
-                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
-                >
-                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
-                    <FaBook className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-semibold text-[#221910] truncate">
-                    {t.dashboard.sidebar.books}
-                  </span>
-                </Link>
-                <Link
-                  href="/dashboard/copies"
-                  onClick={() => setIsStaffDrawerOpen(false)}
-                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
-                >
-                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
-                    <FaGraduationCap className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-semibold text-[#221910] truncate">
-                    {t.dashboard.sidebar.copies}
-                  </span>
-                </Link>
-                <Link
-                  href="/dashboard/categories"
-                  onClick={() => setIsStaffDrawerOpen(false)}
-                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
-                >
-                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
-                    <FaClipboardList className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-semibold text-[#221910] truncate">
-                    {t.dashboard.sidebar.categories}
-                  </span>
-                </Link>
-                <Link
-                  href="/dashboard/print-qr"
-                  onClick={() => setIsStaffDrawerOpen(false)}
-                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
-                >
-                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
-                    <FaPrint className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-semibold text-[#221910] truncate">
-                    {t.dashboard.sidebar.printQr}
-                  </span>
-                </Link>
-                <Link
-                  href="/dashboard/exports"
-                  onClick={() => setIsStaffDrawerOpen(false)}
-                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs col-span-2"
-                >
-                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
-                    <FaFileExport className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-semibold text-[#221910] truncate">
-                    {t.dashboard.sidebar.exports}
-                  </span>
-                </Link>
-              </div>
-            </div>
-
-            {/* Community Hub */}
-            <div>
-              <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#6d5c4a] mb-2 ink-title">
-                {t.dashboard.sidebar.community}
-              </h3>
-              <div className="grid grid-cols-2 gap-2.5">
-                <Link
-                  href="/dashboard/users"
-                  onClick={() => setIsStaffDrawerOpen(false)}
-                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
-                >
-                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
-                    <FaUsers className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-semibold text-[#221910] truncate">
-                    {t.dashboard.sidebar.users}
-                  </span>
-                </Link>
-                <Link
-                  href="/dashboard/moderators"
-                  onClick={() => setIsStaffDrawerOpen(false)}
-                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
-                >
-                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
-                    <FaShieldAlt className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-semibold text-[#221910] truncate">
-                    {t.dashboard.sidebar.moderators}
-                  </span>
-                </Link>
-                <Link
-                  href="/dashboard/ranks"
-                  onClick={() => setIsStaffDrawerOpen(false)}
-                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
-                >
-                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
-                    <FaShieldAlt className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-semibold text-[#221910] truncate">
-                    {t.dashboard.sidebar.ranks}
-                  </span>
-                </Link>
-                <Link
-                  href="/dashboard/thanas"
-                  onClick={() => setIsStaffDrawerOpen(false)}
-                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
-                >
-                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
-                    <FaMapMarkerAlt className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-semibold text-[#221910] truncate">
-                    {t.dashboard.sidebar.thanas}
-                  </span>
-                </Link>
-              </div>
-            </div>
-
-            {/* System / Syllabus */}
-            <div>
-              <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#6d5c4a] mb-2 ink-title">
-                {t.dashboard.sidebar.system}
-              </h3>
-              <div className="grid grid-cols-2 gap-2.5 pb-6">
-                <Link
-                  href="/dashboard/checklists-manage"
-                  onClick={() => setIsStaffDrawerOpen(false)}
-                  className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
-                >
-                  <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
-                    <FaCheckSquare className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-semibold text-[#221910] truncate">
-                    {t.dashboard.sidebar.checklistsManage}
-                  </span>
-                </Link>
-                {isAdmin && (
+              {/* Circulation Hub */}
+              <div>
+                <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#6d5c4a] mb-2 ink-title">
+                  {t.dashboard.sidebar.circulation}
+                </h3>
+                <div className="grid grid-cols-2 gap-2.5">
                   <Link
-                    href="/dashboard/logs"
+                    href="/dashboard/overview"
                     onClick={() => setIsStaffDrawerOpen(false)}
                     className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
                   >
-                    <div className="w-8 h-8 rounded-full bg-[#dbe6f1] text-[#234b7d] flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
+                      <FaChartLine className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-semibold text-[#221910] truncate">
+                      {t.dashboard.sidebar.overview}
+                    </span>
+                  </Link>
+                  <Link
+                    href="/dashboard/transactions"
+                    onClick={() => setIsStaffDrawerOpen(false)}
+                    className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
+                      <FaExchangeAlt className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-semibold text-[#221910] truncate">
+                      {t.dashboard.sidebar.transactions}
+                    </span>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Inventory Hub */}
+              <div>
+                <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#6d5c4a] mb-2 ink-title">
+                  {t.dashboard.sidebar.inventory}
+                </h3>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <Link
+                    href="/dashboard/books"
+                    onClick={() => setIsStaffDrawerOpen(false)}
+                    className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
+                      <FaBook className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-semibold text-[#221910] truncate">
+                      {t.dashboard.sidebar.books}
+                    </span>
+                  </Link>
+                  <Link
+                    href="/dashboard/copies"
+                    onClick={() => setIsStaffDrawerOpen(false)}
+                    className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
+                      <FaGraduationCap className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-semibold text-[#221910] truncate">
+                      {t.dashboard.sidebar.copies}
+                    </span>
+                  </Link>
+                  <Link
+                    href="/dashboard/categories"
+                    onClick={() => setIsStaffDrawerOpen(false)}
+                    className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
                       <FaClipboardList className="w-4 h-4" />
                     </div>
                     <span className="text-xs font-semibold text-[#221910] truncate">
-                      {t.dashboard.sidebar.logs}
+                      {t.dashboard.sidebar.categories}
                     </span>
                   </Link>
-                )}
+                  <Link
+                    href="/dashboard/print-qr"
+                    onClick={() => setIsStaffDrawerOpen(false)}
+                    className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
+                      <FaPrint className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-semibold text-[#221910] truncate">
+                      {t.dashboard.sidebar.printQr}
+                    </span>
+                  </Link>
+                  <Link
+                    href="/dashboard/exports"
+                    onClick={() => setIsStaffDrawerOpen(false)}
+                    className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs col-span-2"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
+                      <FaFileExport className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-semibold text-[#221910] truncate">
+                      {t.dashboard.sidebar.exports}
+                    </span>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Community Hub */}
+              <div>
+                <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#6d5c4a] mb-2 ink-title">
+                  {t.dashboard.sidebar.community}
+                </h3>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <Link
+                    href="/dashboard/users"
+                    onClick={() => setIsStaffDrawerOpen(false)}
+                    className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
+                      <FaUsers className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-semibold text-[#221910] truncate">
+                      {t.dashboard.sidebar.users}
+                    </span>
+                  </Link>
+                  <Link
+                    href="/dashboard/moderators"
+                    onClick={() => setIsStaffDrawerOpen(false)}
+                    className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
+                      <FaShieldAlt className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-semibold text-[#221910] truncate">
+                      {t.dashboard.sidebar.moderators}
+                    </span>
+                  </Link>
+                  <Link
+                    href="/dashboard/ranks"
+                    onClick={() => setIsStaffDrawerOpen(false)}
+                    className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
+                      <FaShieldAlt className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-semibold text-[#221910] truncate">
+                      {t.dashboard.sidebar.ranks}
+                    </span>
+                  </Link>
+                  <Link
+                    href="/dashboard/thanas"
+                    onClick={() => setIsStaffDrawerOpen(false)}
+                    className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
+                      <FaMapMarkerAlt className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-semibold text-[#221910] truncate">
+                      {t.dashboard.sidebar.thanas}
+                    </span>
+                  </Link>
+                </div>
+              </div>
+
+              {/* System / Syllabus */}
+              <div>
+                <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#6d5c4a] mb-2 ink-title">
+                  {t.dashboard.sidebar.system}
+                </h3>
+                <div className="grid grid-cols-2 gap-2.5 pb-6">
+                  <Link
+                    href="/dashboard/checklists-manage"
+                    onClick={() => setIsStaffDrawerOpen(false)}
+                    className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-[#d3decb] text-[#2d4a35] flex items-center justify-center shrink-0">
+                      <FaCheckSquare className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-semibold text-[#221910] truncate">
+                      {t.dashboard.sidebar.checklistsManage}
+                    </span>
+                  </Link>
+                  {isAdmin && (
+                    <Link
+                      href="/dashboard/logs"
+                      onClick={() => setIsStaffDrawerOpen(false)}
+                      className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-[#dbe6f1] text-[#234b7d] flex items-center justify-center shrink-0">
+                        <FaClipboardList className="w-4 h-4" />
+                      </div>
+                      <span className="text-xs font-semibold text-[#221910] truncate">
+                        {t.dashboard.sidebar.logs}
+                      </span>
+                    </Link>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
     </div>
   );

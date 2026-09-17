@@ -1,8 +1,8 @@
+import PageTransition from "@/components/PageTransition";
 import { getModeratorsAndAdmin } from "@/server/geo";
-import { getClaims } from "@/server/user";
-import { getProfile } from "@/server/geo";
-import { redirect } from "next/navigation";
 import { moderatorPermissions } from "@/server/profiles";
+import { getClaims } from "@/server/user";
+import { redirect } from "next/navigation";
 import ModeratorsClient from "./ModeratorsClient";
 
 export default async function ModeratorsPage() {
@@ -14,5 +14,9 @@ export default async function ModeratorsPage() {
 
   const people = await getModeratorsAndAdmin();
 
-  return <ModeratorsClient initialModerators={people} />;
+  return (
+    <PageTransition>
+      <ModeratorsClient initialModerators={people} />
+    </PageTransition>
+  );
 }

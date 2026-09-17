@@ -1,5 +1,6 @@
 "use client";
 
+import PageTransition from "@/components/PageTransition";
 import { signInWithGoogle } from "@/server/auth";
 import "@/styles/components.css";
 import "@/styles/typography.css";
@@ -7,9 +8,7 @@ import Link from "next/link";
 
 export default function Login() {
   return (
-    <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-10 sm:py-16 flex items-center justify-center bg-[#e5d9c4] relative overflow-hidden">
-
-
+    <PageTransition className="min-h-screen px-4 sm:px-6 lg:px-8 py-10 sm:py-16 flex items-center justify-center bg-[#e5d9c4] relative overflow-hidden">
       <div className="absolute inset-0 login-paper pointer-events-none" />
 
       <div className="w-full max-w-md relative z-10">
@@ -116,6 +115,6 @@ export default function Login() {
           </div>
         </div>
       </div>
-    </div>
+    </PageTransition>
   );
 }

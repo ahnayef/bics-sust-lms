@@ -2,6 +2,7 @@
 
 import StatusBadge from "@/app/components/StatusBadge";
 import ConfirmModal from "@/components/ui/confirm-modal";
+import { ModalPortal } from "@/components/ui/modal-portal";
 import {
   addChecklistItem,
   createChecklist,
@@ -18,7 +19,7 @@ import {
   FaChevronUp,
   FaEdit,
   FaPlus,
-  FaTrash
+  FaTrash,
 } from "react-icons/fa";
 
 interface Props {
@@ -28,22 +29,34 @@ interface Props {
 export default function ChecklistsManageClient({ initialChecklists }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [flash, setFlash] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [flash, setFlash] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
   const [expandedChecklists, setExpandedChecklists] = useState<Set<string>>(
-    new Set(initialChecklists.map(c => c.id))
+    new Set(initialChecklists.map((c) => c.id)),
   );
 
   // Modal states
   const [showChecklistModal, setShowChecklistModal] = useState(false);
-  const [editingChecklist, setEditingChecklist] = useState<ChecklistWithItems | null>(null);
-  const [checklistFormData, setChecklistFormData] = useState({ name: "", visible: true });
+  const [editingChecklist, setEditingChecklist] =
+    useState<ChecklistWithItems | null>(null);
+  const [checklistFormData, setChecklistFormData] = useState({
+    name: "",
+    visible: true,
+  });
 
   const [showItemModal, setShowItemModal] = useState(false);
-  const [currentChecklistId, setCurrentChecklistId] = useState<string | null>(null);
+  const [currentChecklistId, setCurrentChecklistId] = useState<string | null>(
+    null,
+  );
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [itemFormData, setItemFormData] = useState({ name: "" });
 
-  const [deleteId, setDeleteId] = useState<{ type: "checklist" | "item"; id: string } | null>(null);
+  const [deleteId, setDeleteId] = useState<{
+    type: "checklist" | "item";
+    id: string;
+  } | null>(null);
 
   const showFlash = (type: "success" | "error", text: string) => {
     setFlash({ type, text });
@@ -76,9 +89,16 @@ export default function ChecklistsManageClient({ initialChecklists }: Props) {
       try {
         let result;
         if (editingChecklist) {
-          result = await updateChecklist(editingChecklist.id, checklistFormData.name, checklistFormData.visible);
+          result = await updateChecklist(
+            editingChecklist.id,
+            checklistFormData.name,
+            checklistFormData.visible,
+          );
         } else {
-          result = await createChecklist(checklistFormData.name, checklistFormData.visible);
+          result = await createChecklist(
+            checklistFormData.name,
+            checklistFormData.visible,
+          );
         }
 
         if (result?.error) {
@@ -86,7 +106,10 @@ export default function ChecklistsManageClient({ initialChecklists }: Props) {
           return;
         }
 
-        showFlash("success", editingChecklist ? "Checklist updated" : "Checklist added");
+        showFlash(
+          "success",
+          editingChecklist ? "Checklist updated" : "Checklist added",
+        );
         setShowChecklistModal(false);
         router.refresh();
       } catch (err: any) {
@@ -117,7 +140,10 @@ export default function ChecklistsManageClient({ initialChecklists }: Props) {
         if (editingItem) {
           result = await updateChecklistItem(editingItem.id, itemFormData.name);
         } else {
-          result = await addChecklistItem(currentChecklistId, itemFormData.name);
+          result = await addChecklistItem(
+            currentChecklistId,
+            itemFormData.name,
+          );
         }
 
         if (result?.error) {
@@ -155,7 +181,10 @@ export default function ChecklistsManageClient({ initialChecklists }: Props) {
           return;
         }
 
-        showFlash("success", deleteId.type === "checklist" ? "Checklist deleted" : "Item deleted");
+        showFlash(
+          "success",
+          deleteId.type === "checklist" ? "Checklist deleted" : "Item deleted",
+        );
         setDeleteId(null);
         router.refresh();
       } catch (err: any) {
@@ -168,10 +197,11 @@ export default function ChecklistsManageClient({ initialChecklists }: Props) {
     <div className="space-y-6">
       {flash && (
         <div
-          className={`fixed top-20 right-4 z-50 p-4 rounded-sm shadow-xl border ${flash.type === "success"
-            ? "bg-[#eef5e9] border-[#a3b994] text-[#3d5c2e]"
-            : "bg-[#fdf0ec] border-[#d0604a] text-[#8b2c1a]"
-            }`}
+          className={`fixed top-20 right-4 z-50 p-4 rounded-sm shadow-xl border ${
+            flash.type === "success"
+              ? "bg-[#eef5e9] border-[#a3b994] text-[#3d5c2e]"
+              : "bg-[#fdf0ec] border-[#d0604a] text-[#8b2c1a]"
+          }`}
         >
           <p className="text-sm font-bold">{flash.text}</p>
         </div>
@@ -211,7 +241,9 @@ export default function ChecklistsManageClient({ initialChecklists }: Props) {
                     <FaChevronDown className="w-4 h-4" />
                   )}
                 </button>
-                <h3 className="text-lg font-bold text-[#221910]">{checklist.name}</h3>
+                <h3 className="text-lg font-bold text-[#221910]">
+                  {checklist.name}
+                </h3>
                 {checklist.visible ? (
                   <StatusBadge tone="success">Visible</StatusBadge>
                 ) : (
@@ -256,7 +288,9 @@ export default function ChecklistsManageClient({ initialChecklists }: Props) {
                         <span className="flex items-center justify-center w-8 h-8 rounded-full bg-[#eadcc8] text-[#3f3328] font-bold text-sm">
                           {index + 1}
                         </span>
-                        <span className="text-[#2b2119] font-medium">{item.name}</span>
+                        <span className="text-[#2b2119] font-medium">
+                          {item.name}
+                        </span>
                       </div>
                       <div className="flex gap-2">
                         <button
@@ -284,110 +318,135 @@ export default function ChecklistsManageClient({ initialChecklists }: Props) {
       </div>
 
       {showChecklistModal && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4 z-50">
-          <div className="dashboard-surface tron-border rounded-sm max-w-md w-full p-6">
-            <h2 className="text-xl font-bold text-[#221910] mb-4">
-              {editingChecklist ? "Edit Checklist" : "Add Checklist"}
-            </h2>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSubmitChecklist();
-              }}
-              className="space-y-4"
-            >
-              <div>
-                <label className="block text-sm font-medium text-[#4f4134] mb-1">Name</label>
-                <input
-                  type="text"
-                  value={checklistFormData.name}
-                  onChange={(e) => setChecklistFormData({ ...checklistFormData, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-[#8a7966] bg-[#f6ecdd] rounded-sm outline-none"
-                  placeholder="e.g. বই নোট"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="visible"
-                  checked={checklistFormData.visible}
-                  onChange={(e) => setChecklistFormData({ ...checklistFormData, visible: e.target.checked })}
-                  className="w-4 h-4 accent-[#3f3328]"
-                />
-                <label htmlFor="visible" className="text-sm font-medium text-[#4f4134]">
-                  Visible to users
-                </label>
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowChecklistModal(false)}
-                  className="px-4 py-2 text-[#5a4b3f] hover:bg-[#ece0ce] rounded-sm transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="px-4 py-2 bg-[#3f3328] text-[#f4e8d4] rounded-sm font-bold disabled:opacity-50"
-                >
-                  {editingChecklist ? "Update" : "Add"}
-                </button>
-              </div>
-            </form>
+        <ModalPortal>
+          <div className="fixed inset-0 bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4 z-50">
+            <div className="dashboard-surface tron-border rounded-sm max-w-md w-full p-6">
+              <h2 className="text-xl font-bold text-[#221910] mb-4">
+                {editingChecklist ? "Edit Checklist" : "Add Checklist"}
+              </h2>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSubmitChecklist();
+                }}
+                className="space-y-4"
+              >
+                <div>
+                  <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    value={checklistFormData.name}
+                    onChange={(e) =>
+                      setChecklistFormData({
+                        ...checklistFormData,
+                        name: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2 border border-[#8a7966] bg-[#f6ecdd] rounded-sm outline-none"
+                    placeholder="e.g. বই নোট"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="visible"
+                    checked={checklistFormData.visible}
+                    onChange={(e) =>
+                      setChecklistFormData({
+                        ...checklistFormData,
+                        visible: e.target.checked,
+                      })
+                    }
+                    className="w-4 h-4 accent-[#3f3328]"
+                  />
+                  <label
+                    htmlFor="visible"
+                    className="text-sm font-medium text-[#4f4134]"
+                  >
+                    Visible to users
+                  </label>
+                </div>
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowChecklistModal(false)}
+                    className="px-4 py-2 text-[#5a4b3f] hover:bg-[#ece0ce] rounded-sm transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isPending}
+                    className="px-4 py-2 bg-[#3f3328] text-[#f4e8d4] rounded-sm font-bold disabled:opacity-50"
+                  >
+                    {editingChecklist ? "Update" : "Add"}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
 
       {showItemModal && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4 z-50">
-          <div className="dashboard-surface tron-border rounded-sm max-w-md w-full p-6">
-            <h2 className="text-xl font-bold text-[#221910] mb-4">
-              {editingItem ? "Edit Item" : "Add Item"}
-            </h2>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSubmitItem();
-              }}
-              className="space-y-4"
-            >
-              <div>
-                <label className="block text-sm font-medium text-[#4f4134] mb-1">Name</label>
-                <input
-                  type="text"
-                  value={itemFormData.name}
-                  onChange={(e) => setItemFormData({ ...itemFormData, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-[#8a7966] bg-[#f6ecdd] rounded-sm outline-none"
-                  placeholder="e.g. চরিত্র গঠনের মৌলিক উপাদান"
-                />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowItemModal(false)}
-                  className="px-4 py-2 text-[#5a4b3f] hover:bg-[#ece0ce] rounded-sm transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="px-4 py-2 bg-[#3f3328] text-[#f4e8d4] rounded-sm font-bold disabled:opacity-50"
-                >
-                  {editingItem ? "Update" : "Add"}
-                </button>
-              </div>
-            </form>
+        <ModalPortal>
+          <div className="fixed inset-0 bg-black/20 backdrop-blur-[1px] flex items-center justify-center p-4 z-50">
+            <div className="dashboard-surface tron-border rounded-sm max-w-md w-full p-6">
+              <h2 className="text-xl font-bold text-[#221910] mb-4">
+                {editingItem ? "Edit Item" : "Add Item"}
+              </h2>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSubmitItem();
+                }}
+                className="space-y-4"
+              >
+                <div>
+                  <label className="block text-sm font-medium text-[#4f4134] mb-1">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    value={itemFormData.name}
+                    onChange={(e) =>
+                      setItemFormData({ ...itemFormData, name: e.target.value })
+                    }
+                    className="w-full px-4 py-2 border border-[#8a7966] bg-[#f6ecdd] rounded-sm outline-none"
+                    placeholder="e.g. চরিত্র গঠনের মৌলিক উপাদান"
+                  />
+                </div>
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowItemModal(false)}
+                    className="px-4 py-2 text-[#5a4b3f] hover:bg-[#ece0ce] rounded-sm transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isPending}
+                    className="px-4 py-2 bg-[#3f3328] text-[#f4e8d4] rounded-sm font-bold disabled:opacity-50"
+                  >
+                    {editingItem ? "Update" : "Add"}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
 
       <ConfirmModal
         open={!!deleteId}
         onClose={() => setDeleteId(null)}
         onConfirm={confirmDelete}
-        title={deleteId?.type === "checklist" ? "Delete Checklist" : "Delete Item"}
+        title={
+          deleteId?.type === "checklist" ? "Delete Checklist" : "Delete Item"
+        }
         description={
           deleteId?.type === "checklist"
             ? "This will delete the checklist and all its items. This cannot be undone."

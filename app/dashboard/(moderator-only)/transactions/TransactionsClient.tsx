@@ -1,6 +1,7 @@
 "use client";
 
 import StatusBadge from "@/app/components/StatusBadge";
+import { ModalPortal } from "@/components/ui/modal-portal";
 import { getRelativeTime } from "@/lib/utils";
 import {
   allowBorrowRequest,
@@ -1611,51 +1612,53 @@ export default function TransactionsClient({
 
       {/* ── Reject Modal ── */}
       {rejectTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity">
-          <div className="dashboard-surface tron-border w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
-            <h3 className="text-xl font-bold text-[#221910] ink-title mb-1">
-              {t.transactions.actions.confirmReject}
-            </h3>
-            <p className="text-sm text-[#5a4b3f] ink-text mb-4">
-              {rejectTarget.title}
-            </p>
+        <ModalPortal>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity">
+            <div className="dashboard-surface tron-border w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
+              <h3 className="text-xl font-bold text-[#221910] ink-title mb-1">
+                {t.transactions.actions.confirmReject}
+              </h3>
+              <p className="text-sm text-[#5a4b3f] ink-text mb-4">
+                {rejectTarget.title}
+              </p>
 
-            <div className="space-y-4">
-              <div>
-                <label
-                  htmlFor="reason"
-                  className="block text-xs font-bold text-[#6a5a4c] uppercase tracking-wider mb-1.5"
-                >
-                  {t.transactions.actions.rejectionReason}
-                </label>
-                <textarea
-                  id="reason"
-                  rows={3}
-                  value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#8a7966] bg-[#f8f1e6] text-[#2f251d] rounded-sm focus:ring-1 focus:ring-[#6e5d4a] outline-none ink-text text-sm resize-none"
-                  placeholder="..."
-                  autoFocus
-                />
-              </div>
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="reason"
+                    className="block text-xs font-bold text-[#6a5a4c] uppercase tracking-wider mb-1.5"
+                  >
+                    {t.transactions.actions.rejectionReason}
+                  </label>
+                  <textarea
+                    id="reason"
+                    rows={3}
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    className="w-full px-3 py-2 border border-[#8a7966] bg-[#f8f1e6] text-[#2f251d] rounded-sm focus:ring-1 focus:ring-[#6e5d4a] outline-none ink-text text-sm resize-none"
+                    placeholder="..."
+                    autoFocus
+                  />
+                </div>
 
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={closeRejectModal}
-                  className="flex-1 px-4 py-2.5 border border-[#8a7966] text-[#4e4033] rounded-sm font-bold hover:bg-[#ece0ce] transition-colors ink-text text-sm"
-                >
-                  {t.transactions.actions.cancel}
-                </button>
-                <button
-                  onClick={handleConfirmReject}
-                  className="flex-1 px-4 py-2.5 bg-[#8b5c4a] text-[#f6ecdd] rounded-sm font-bold hover:bg-[#6b4437] transition-colors ink-text text-sm"
-                >
-                  {t.transactions.actions.reject}
-                </button>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={closeRejectModal}
+                    className="flex-1 px-4 py-2.5 border border-[#8a7966] text-[#4e4033] rounded-sm font-bold hover:bg-[#ece0ce] transition-colors ink-text text-sm"
+                  >
+                    {t.transactions.actions.cancel}
+                  </button>
+                  <button
+                    onClick={handleConfirmReject}
+                    className="flex-1 px-4 py-2.5 bg-[#8b5c4a] text-[#f6ecdd] rounded-sm font-bold hover:bg-[#6b4437] transition-colors ink-text text-sm"
+                  >
+                    {t.transactions.actions.reject}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
     </div>
   );

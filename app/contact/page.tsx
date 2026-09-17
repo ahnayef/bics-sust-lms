@@ -1,3 +1,4 @@
+import PageTransition from "@/components/PageTransition";
 import { cacheLife, cacheTag } from "next/cache";
 import { FaClock, FaEnvelope, FaQuestionCircle } from "react-icons/fa";
 import Footer from "../components/Footer";
@@ -9,7 +10,7 @@ export default async function ContactPage() {
   cacheLife("days" as any);
   const year = new Date().getFullYear();
   return (
-    <div className="min-h-screen bg-[#e8dcc8]">
+    <PageTransition className="min-h-screen bg-[#e8dcc8]">
       <Navbar />
 
       <main className="newspaper-grain pt-24 pb-16 px-4 sm:px-6 lg:px-8">
@@ -85,7 +86,8 @@ export default async function ContactPage() {
                         className="text-gray-800"
                         style={{ fontFamily: "Courier Prime, monospace" }}
                       >
-                        We typically respond within 24-48 hours during business days.
+                        We typically respond within 24-48 hours during business
+                        days.
                       </p>
                     </div>
                   </div>
@@ -105,7 +107,8 @@ export default async function ContactPage() {
                         className="text-gray-800"
                         style={{ fontFamily: "Courier Prime, monospace" }}
                       >
-                        Check the FAQ section in the footer for common questions about borrowing and returning books.
+                        Check the FAQ section in the footer for common questions
+                        about borrowing and returning books.
                       </p>
                     </div>
                   </div>
@@ -115,7 +118,9 @@ export default async function ContactPage() {
               {/* Decorative Stamp */}
               <div className="absolute -bottom-4 -right-4 w-32 h-32 border-4 border-gray-900/10 rounded-full flex items-center justify-center rotate-12 pointer-events-none select-none">
                 <span className="text-gray-900/10 font-bold text-sm text-center uppercase tracking-widest leading-tight">
-                  Official<br />Correspondence
+                  Official
+                  <br />
+                  Correspondence
                 </span>
               </div>
             </div>
@@ -123,18 +128,23 @@ export default async function ContactPage() {
             {/* Additional Info */}
             <div
               className="text-center italic text-gray-700 max-w-xl mx-auto"
-              style={{ fontFamily: "Courier Prime, monospace", fontSize: "0.9rem" }}
+              style={{
+                fontFamily: "Courier Prime, monospace",
+                fontSize: "0.9rem",
+              }}
               data-aos="fade-up"
               data-aos-duration="300"
               data-aos-delay="100"
             >
-              "Books are the quietest and most constant of friends; they are the most accessible and wisest of counselors, and the most patient of teachers." — Charles W. Eliot
+              "Books are the quietest and most constant of friends; they are the
+              most accessible and wisest of counselors, and the most patient of
+              teachers." — Charles W. Eliot
             </div>
           </div>
         </div>
       </main>
 
       <Footer year={year} />
-    </div>
+    </PageTransition>
   );
 }

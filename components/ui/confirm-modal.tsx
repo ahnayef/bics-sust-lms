@@ -1,5 +1,6 @@
 "use client";
 
+import { ModalPortal } from "@/components/ui/modal-portal";
 import { type ReactNode, useEffect } from "react";
 import { FaTimes } from "react-icons/fa";
 
@@ -56,70 +57,72 @@ export default function ConfirmModal({
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 bg-[#1f170f]/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-[100] animate-in fade-in duration-200"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
+    <ModalPortal>
       <div
-        className="dashboard-surface tron-border rounded-xl shadow-xl max-w-md w-full animate-in zoom-in-95 duration-200"
-        style={{ fontFamily: "'Courier Prime', monospace" }}
+        className="fixed inset-0 bg-[#1f170f]/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-[100] animate-in fade-in duration-200"
+        onClick={(e) => e.target === e.currentTarget && onClose()}
       >
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3 px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b border-[#d9c8b0]">
-          <h2 className="text-base sm:text-lg font-bold text-[#221910] ink-title">
-            {title}
-          </h2>
-          <button
-            onClick={onClose}
-            disabled={loading}
-            className="p-1.5 text-[#655648] hover:bg-[#e7d8c3] rounded-lg transition-colors shrink-0"
-            aria-label="Close"
-          >
-            <FaTimes className="w-4 h-4" />
-          </button>
-        </div>
+        <div
+          className="dashboard-surface tron-border rounded-xl shadow-xl max-w-md w-full animate-in zoom-in-95 duration-200"
+          style={{ fontFamily: "'Courier Prime', monospace" }}
+        >
+          {/* Header */}
+          <div className="flex items-start justify-between gap-3 px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b border-[#d9c8b0]">
+            <h2 className="text-base sm:text-lg font-bold text-[#221910] ink-title">
+              {title}
+            </h2>
+            <button
+              onClick={onClose}
+              disabled={loading}
+              className="p-1.5 text-[#655648] hover:bg-[#e7d8c3] rounded-lg transition-colors shrink-0"
+              aria-label="Close"
+            >
+              <FaTimes className="w-4 h-4" />
+            </button>
+          </div>
 
-        <div className="px-4 sm:px-6 py-4 sm:py-5 space-y-3 sm:space-y-4">
-          {description && (
-            <div className="text-xs sm:text-sm text-[#5a4b3f] ink-text">
-              {description}
-            </div>
-          )}
+          <div className="px-4 sm:px-6 py-4 sm:py-5 space-y-3 sm:space-y-4">
+            {description && (
+              <div className="text-xs sm:text-sm text-[#5a4b3f] ink-text">
+                {description}
+              </div>
+            )}
 
-          {/* Preview of what will happen */}
-          {preview && (
-            <div className="rounded-lg border border-[#c9b89a] bg-[#ede0cc] px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm ink-text text-[#3f3328]">
-              {preview}
-            </div>
-          )}
-        </div>
+            {/* Preview of what will happen */}
+            {preview && (
+              <div className="rounded-lg border border-[#c9b89a] bg-[#ede0cc] px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm ink-text text-[#3f3328]">
+                {preview}
+              </div>
+            )}
+          </div>
 
-        {/* Actions */}
-        <div className="flex gap-2.5 sm:gap-3 px-4 sm:px-6 pb-4 sm:pb-5">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={loading}
-            className="flex-1 py-2 sm:py-2.5 border border-[#8a7966] text-[#4f4134] rounded-lg hover:bg-[#eadcc8] transition-colors font-semibold text-xs sm:text-sm ink-text disabled:opacity-50"
-          >
-            {cancelLabel}
-          </button>
-          {onConfirm && (
+          {/* Actions */}
+          <div className="flex gap-2.5 sm:gap-3 px-4 sm:px-6 pb-4 sm:pb-5">
             <button
               type="button"
-              onClick={onConfirm}
+              onClick={onClose}
               disabled={loading}
-              className={`flex-1 py-2 sm:py-2.5 rounded-lg font-semibold text-xs sm:text-sm ink-text transition-colors disabled:opacity-50 disabled:cursor-not-allowed border ${
-                danger
-                  ? "bg-[#8b5c4a] text-[#f6ecdd] border-[#6b4437] hover:bg-[#6b4437]"
-                  : "bg-[#3f3328] text-[#f4e8d4] border-[#4e4033] hover:bg-[#4a3d31]"
-              }`}
+              className="flex-1 py-2 sm:py-2.5 border border-[#8a7966] text-[#4f4134] rounded-lg hover:bg-[#eadcc8] transition-colors font-semibold text-xs sm:text-sm ink-text disabled:opacity-50"
             >
-              {loading ? "Working…" : confirmLabel}
+              {cancelLabel}
             </button>
-          )}
+            {onConfirm && (
+              <button
+                type="button"
+                onClick={onConfirm}
+                disabled={loading}
+                className={`flex-1 py-2 sm:py-2.5 rounded-lg font-semibold text-xs sm:text-sm ink-text transition-colors disabled:opacity-50 disabled:cursor-not-allowed border ${
+                  danger
+                    ? "bg-[#8b5c4a] text-[#f6ecdd] border-[#6b4437] hover:bg-[#6b4437]"
+                    : "bg-[#3f3328] text-[#f4e8d4] border-[#4e4033] hover:bg-[#4a3d31]"
+                }`}
+              >
+                {loading ? "Working…" : confirmLabel}
+              </button>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 }

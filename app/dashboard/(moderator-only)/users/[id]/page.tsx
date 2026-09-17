@@ -1,5 +1,6 @@
 import HistoryClient from "@/app/dashboard/history/HistoryClient";
 import Avatar from "@/components/Avatar";
+import PageTransition from "@/components/PageTransition";
 import { RankBadge } from "@/components/ui/rank-badge";
 import { getTranslation } from "@/lib/i18n/server";
 import {
@@ -52,7 +53,13 @@ export default async function UserProfilePage({
   params: Promise<{ id: string }>;
 }) {
   return (
-    <Suspense fallback={<div className="p-4 sm:p-8 flex justify-center"><div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>}>
+    <Suspense
+      fallback={
+        <div className="p-4 sm:p-8 flex justify-center">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+      }
+    >
       <UserProfileContent params={params} />
     </Suspense>
   );
@@ -110,7 +117,7 @@ async function UserProfileContent({
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 max-w-full overflow-hidden">
+    <PageTransition className="space-y-4 sm:space-y-6 max-w-full overflow-hidden">
       {/* ── Top Navigation Bar ────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
         <Link
@@ -536,6 +543,6 @@ async function UserProfileContent({
           initialFilter="all"
         />
       </div>
-    </div>
+    </PageTransition>
   );
 }

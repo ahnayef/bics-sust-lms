@@ -1,6 +1,7 @@
 "use client";
 
 import StatusBadge from "@/app/components/StatusBadge";
+import { ModalPortal } from "@/components/ui/modal-portal";
 import { useTranslation } from "@/lib/i18n/context";
 import { cn } from "@/lib/utils";
 import { submitPdfReport } from "@/server/transaction-actions";
@@ -813,94 +814,96 @@ export default function BookListClient({
 
       {/* PDF Submission Modal */}
       {showPdfModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="book-list-surface tron-border rounded-xl w-full max-w-md bg-[#f1e7d8] border border-[#5f4d42] p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-[#221910] ink-title">
-                {t.bookList.pdfModal.title}
-              </h2>
-              <button
-                onClick={closePdfModal}
-                className="p-1 text-[#6f6256] hover:text-[#3f352d] transition-colors"
-              >
-                <FaTimes className="w-5 h-5" />
-              </button>
-            </div>
-
-            {pdfSuccess ? (
-              <div className="text-center py-6">
-                <div className="flex justify-center mb-3">
-                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#e8f1e7] border border-[#8faa8f]">
-                    <FaCheckCircle className="w-6 h-6 text-[#4e4033]" />
-                  </div>
-                </div>
-                <p className="text-[#221910] font-semibold mb-1 ink-title">
-                  {t.bookList.pdfModal.submitted}
-                </p>
-                <p className="text-sm text-[#5c4f42] ink-text">
-                  {t.bookList.pdfModal.description}
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={handlePdfSubmit} className="space-y-4">
-                <div>
-                  <p className="text-sm font-semibold text-[#4e4033] mb-1 ink-text">
-                    {t.bookList.pdfModal.bookLabel}
-                  </p>
-                  <p className="text-sm text-[#221910] ink-title font-semibold">
-                    {selectedBookForPdf?.title}
-                  </p>
-                  <p className="text-xs text-[#6f6256] ink-text">
-                    {selectedBookForPdf?.author}
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-[#4e4033] mb-1 ink-text">
-                    {t.bookList.pdfModal.dateLabel}
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    max={new Date().toISOString().split("T")[0]}
-                    value={pdfReadDate}
-                    onChange={(e) => setPdfReadDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#f8f1e6] border border-[#b9a58b] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-[#4e4033] mb-1 ink-text">
-                    {t.bookList.pdfModal.noteLabel}
-                  </label>
-                  <textarea
-                    rows={3}
-                    placeholder={t.bookList.pdfModal.notePlaceholder}
-                    value={pdfNote}
-                    onChange={(e) => setPdfNote(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#f8f1e6] border border-[#b9a58b] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text resize-none"
-                  />
-                </div>
-
-                {pdfError && (
-                  <p className="text-xs text-[#9b3a25] font-semibold italic">
-                    {pdfError}
-                  </p>
-                )}
-
+        <ModalPortal>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="book-list-surface tron-border rounded-xl w-full max-w-md bg-[#f1e7d8] border border-[#5f4d42] p-6 shadow-2xl">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-[#221910] ink-title">
+                  {t.bookList.pdfModal.title}
+                </h2>
                 <button
-                  type="submit"
-                  disabled={isPending}
-                  className="w-full py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-lg text-sm font-bold hover:bg-[#4a3d31] transition-colors disabled:opacity-50 uppercase tracking-wider"
+                  onClick={closePdfModal}
+                  className="p-1 text-[#6f6256] hover:text-[#3f352d] transition-colors"
                 >
-                  {isPending
-                    ? t.bookList.pdfModal.submitting
-                    : t.bookList.pdfModal.submit}
+                  <FaTimes className="w-5 h-5" />
                 </button>
-              </form>
-            )}
+              </div>
+
+              {pdfSuccess ? (
+                <div className="text-center py-6">
+                  <div className="flex justify-center mb-3">
+                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#e8f1e7] border border-[#8faa8f]">
+                      <FaCheckCircle className="w-6 h-6 text-[#4e4033]" />
+                    </div>
+                  </div>
+                  <p className="text-[#221910] font-semibold mb-1 ink-title">
+                    {t.bookList.pdfModal.submitted}
+                  </p>
+                  <p className="text-sm text-[#5c4f42] ink-text">
+                    {t.bookList.pdfModal.description}
+                  </p>
+                </div>
+              ) : (
+                <form onSubmit={handlePdfSubmit} className="space-y-4">
+                  <div>
+                    <p className="text-sm font-semibold text-[#4e4033] mb-1 ink-text">
+                      {t.bookList.pdfModal.bookLabel}
+                    </p>
+                    <p className="text-sm text-[#221910] ink-title font-semibold">
+                      {selectedBookForPdf?.title}
+                    </p>
+                    <p className="text-xs text-[#6f6256] ink-text">
+                      {selectedBookForPdf?.author}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-[#4e4033] mb-1 ink-text">
+                      {t.bookList.pdfModal.dateLabel}
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      max={new Date().toISOString().split("T")[0]}
+                      value={pdfReadDate}
+                      onChange={(e) => setPdfReadDate(e.target.value)}
+                      className="w-full px-3 py-2 bg-[#f8f1e6] border border-[#b9a58b] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-[#4e4033] mb-1 ink-text">
+                      {t.bookList.pdfModal.noteLabel}
+                    </label>
+                    <textarea
+                      rows={3}
+                      placeholder={t.bookList.pdfModal.notePlaceholder}
+                      value={pdfNote}
+                      onChange={(e) => setPdfNote(e.target.value)}
+                      className="w-full px-3 py-2 bg-[#f8f1e6] border border-[#b9a58b] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#7d6d5a] ink-text resize-none"
+                    />
+                  </div>
+
+                  {pdfError && (
+                    <p className="text-xs text-[#9b3a25] font-semibold italic">
+                      {pdfError}
+                    </p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isPending}
+                    className="w-full py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-lg text-sm font-bold hover:bg-[#4a3d31] transition-colors disabled:opacity-50 uppercase tracking-wider"
+                  >
+                    {isPending
+                      ? t.bookList.pdfModal.submitting
+                      : t.bookList.pdfModal.submit}
+                  </button>
+                </form>
+              )}
+            </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
     </div>
   );

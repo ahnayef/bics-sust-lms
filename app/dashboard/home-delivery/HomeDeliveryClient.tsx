@@ -1,5 +1,6 @@
 "use client";
 
+import { ModalPortal } from "@/components/ui/modal-portal";
 import { useTranslation } from "@/lib/i18n/context";
 import { cn } from "@/lib/utils";
 import { submitHomeDeliveryRequest } from "@/server/delivery-actions";
@@ -222,7 +223,8 @@ export default function HomeDeliveryClient({
                   )}
                 </p>
                 <p className="text-[11px] sm:text-xs text-[#3a6828] font-mono">
-                  📍 {submittedResult.address} &middot; 📞 {submittedResult.phone}
+                  📍 {submittedResult.address} &middot; 📞{" "}
+                  {submittedResult.phone}
                 </p>
                 <p className="text-[11px] text-[#42752e] italic pt-1">
                   {t.delivery.alerts.telegramNotice}
@@ -322,7 +324,8 @@ export default function HomeDeliveryClient({
                   key={book.id}
                   className={cn(
                     "dashboard-surface tron-border rounded-xl p-4 flex flex-col justify-between transition-all hover:border-[#6a5a4c] shadow-2xs space-y-3",
-                    bookInCart && "ring-2 ring-[#2d521f] border-[#2d521f] bg-[#f4f7f1]",
+                    bookInCart &&
+                      "ring-2 ring-[#2d521f] border-[#2d521f] bg-[#f4f7f1]",
                   )}
                 >
                   <div className="space-y-1.5 min-w-0">
@@ -381,12 +384,16 @@ export default function HomeDeliveryClient({
                       {bookInCart ? (
                         <>
                           <FaCheck className="w-3 h-3 shrink-0" />
-                          <span className="truncate">{t.delivery.catalog.inCart}</span>
+                          <span className="truncate">
+                            {t.delivery.catalog.inCart}
+                          </span>
                         </>
                       ) : (
                         <>
                           <FaPlus className="w-3 h-3 shrink-0" />
-                          <span className="truncate">{t.delivery.catalog.addToCart}</span>
+                          <span className="truncate">
+                            {t.delivery.catalog.addToCart}
+                          </span>
                         </>
                       )}
                     </button>
@@ -397,7 +404,9 @@ export default function HomeDeliveryClient({
                       className="inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-bold bg-[#3f3328] text-[#f4e8d4] hover:bg-[#282019] transition-colors cursor-pointer text-center shadow-xs"
                     >
                       <FaTruck className="w-3 h-3 shrink-0" />
-                      <span className="truncate">{t.delivery.catalog.requestDirect}</span>
+                      <span className="truncate">
+                        {t.delivery.catalog.requestDirect}
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -442,208 +451,213 @@ export default function HomeDeliveryClient({
 
       {/* ── Checkout / Delivery Info Modal ───────────────────────────────── */}
       {isCheckoutOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/65 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-[#f6ecdd] border border-[#8a7966] rounded-xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl ink-text">
-            {/* Modal Header */}
-            <div className="p-3.5 sm:p-4 border-b border-[#cfbba1] flex items-center justify-between bg-[#eadcc8]">
-              <div className="flex items-center gap-2">
-                <FaTruck className="w-4 h-4 text-[#5c4a3b] shrink-0" />
-                <h2 className="font-bold text-sm sm:text-base text-[#221910] ink-title">
-                  {t.delivery.form.title}
-                </h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsCheckoutOpen(false)}
-                className="p-1.5 rounded-md text-[#7a6755] hover:text-[#221910] cursor-pointer transition-colors"
-              >
-                <FaTimes className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-3.5 sm:p-4 space-y-4">
-              {/* Validation Error Banner */}
-              {formError && (
-                <div className="p-3 rounded-lg border border-[#e5a89b] bg-[#fdf0ec] text-[#8b2c1a] text-xs font-semibold flex items-center gap-2 animate-in fade-in">
-                  <FaExclamationTriangle className="w-3.5 h-3.5 shrink-0" />
-                  <span>{formError}</span>
+        <ModalPortal>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/65 backdrop-blur-xs animate-in fade-in duration-150">
+            <div className="bg-[#f6ecdd] border border-[#8a7966] rounded-xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl ink-text">
+              {/* Modal Header */}
+              <div className="p-3.5 sm:p-4 border-b border-[#cfbba1] flex items-center justify-between bg-[#eadcc8]">
+                <div className="flex items-center gap-2">
+                  <FaTruck className="w-4 h-4 text-[#5c4a3b] shrink-0" />
+                  <h2 className="font-bold text-sm sm:text-base text-[#221910] ink-title">
+                    {t.delivery.form.title}
+                  </h2>
                 </div>
-              )}
-
-              {/* Selected Books List in Cart */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <label className="font-bold uppercase tracking-wider text-[#6a5a4c]">
-                    {t.delivery.cart.title} ({cart.length}/{MAX_CART_ITEMS})
-                  </label>
-                  {cart.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setCart([])}
-                      className="text-[11px] text-[#8b2c1a] hover:underline font-semibold cursor-pointer"
-                    >
-                      {t.delivery.cart.clear}
-                    </button>
-                  )}
-                </div>
-
-                {cart.length === 0 ? (
-                  <div className="p-4 rounded-lg border border-dashed border-[#c5b59d] text-center text-xs text-[#7a6a5c] italic bg-[#fffaf2]">
-                    {t.delivery.cart.empty}
-                  </div>
-                ) : (
-                  <div className="divide-y divide-[#e4d4bf] border border-[#d2bfa5] rounded-lg bg-[#fffaf2] max-h-36 overflow-y-auto">
-                    {cart.map((book) => (
-                      <div
-                        key={book.id}
-                        className="p-2.5 flex items-center justify-between gap-2 text-xs"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className="font-bold text-[#221910] truncate">
-                            {book.title}
-                          </p>
-                          <p className="text-[11px] text-[#5c4f42] truncate">
-                            {book.author}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeFromCart(book.id)}
-                          className="p-1 text-[#8b2c1a] hover:bg-[#f8e5e1] rounded-md transition-colors cursor-pointer"
-                          title="Remove from cart"
-                        >
-                          <FaTrashAlt className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Recipient Details */}
-              <div className="space-y-3 pt-2 border-t border-[#dfcfb9]">
-                {/* Recipient Full Name */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] flex items-center gap-1.5">
-                    <FaUser className="w-3 h-3 text-[#7a6a5c]" />
-                    <span>{t.delivery.form.recipientName}</span>
-                  </label>
-                  <input
-                    type="text"
-                    readOnly
-                    value={profile?.full_name || ""}
-                    className="w-full px-3 py-2 border border-[#c5b59d] bg-[#ede4d5] text-[#3f3328] rounded-lg text-xs sm:text-sm font-semibold cursor-not-allowed outline-none"
-                  />
-                </div>
-
-                {/* Contact Phone */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] flex items-center gap-1.5">
-                    <FaPhone className="w-3 h-3 text-[#7a6a5c]" />
-                    <span>{t.delivery.form.phone} *</span>
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    placeholder={t.delivery.form.phonePlaceholder}
-                    value={recipientPhone}
-                    onChange={(e) => setRecipientPhone(e.target.value)}
-                    className="w-full px-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#221910] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none"
-                  />
-                  <p className="text-[10px] text-[#7a6a5c]">
-                    {t.delivery.form.phoneHelp}
-                  </p>
-                </div>
-
-                {/* Delivery Address */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] flex items-center gap-1.5">
-                    <FaMapMarkerAlt className="w-3 h-3 text-[#7a6a5c]" />
-                    <span>{t.delivery.form.address} *</span>
-                  </label>
-                  <textarea
-                    required
-                    rows={2}
-                    placeholder={t.delivery.form.addressPlaceholder}
-                    value={deliveryAddress}
-                    onChange={(e) => setDeliveryAddress(e.target.value)}
-                    className="w-full px-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#221910] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none resize-none"
-                  />
-                </div>
-
-                {/* Thana Selection */}
-                {thanas.length > 0 && (
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] block">
-                      {t.delivery.form.thana}
-                    </label>
-                    <select
-                      value={selectedThanaId}
-                      onChange={(e) => setSelectedThanaId(e.target.value)}
-                      className="w-full px-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#221910] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none cursor-pointer"
-                    >
-                      {thanas.map((th) => (
-                        <option key={th.id} value={th.id}>
-                          {th.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {/* Delivery Notes */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] block">
-                    {t.delivery.form.notes}
-                  </label>
-                  <input
-                    type="text"
-                    placeholder={t.delivery.form.notesPlaceholder}
-                    value={deliveryNotes}
-                    onChange={(e) => setDeliveryNotes(e.target.value)}
-                    className="w-full px-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#221910] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Informational Banner */}
-              <div className="p-3 bg-[#ede4d5]/70 border border-[#d2bfa5] rounded-lg flex items-start gap-2.5 text-xs text-[#5a4b3f]">
-                <FaInfoCircle className="w-3.5 h-3.5 text-[#7a6a5c] mt-0.5 shrink-0" />
-                <p className="leading-snug">
-                  {language === "bn"
-                    ? "অনুরোধ পাঠানোর সাথে সাথে এটি লাইব্রেরির টেলিগ্রাম চ্যানেলে নোটিফিকেশন হিসেবে পৌঁছে যাবে। ডেলিভারি টিম আপনার সাথে ফোনে যোগাযোগ করবে।"
-                    : "Submitting this request instantly notifies library volunteers via the Telegram dispatch channel. They will call you to confirm dispatch."}
-                </p>
-              </div>
-
-              {/* Modal Footer */}
-              <div className="p-3 sm:p-4 -mx-3.5 sm:-mx-4 -mb-3.5 sm:-mb-4 border-t border-[#cfbba1] grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2 sm:gap-2.5 bg-[#eadcc8]">
                 <button
                   type="button"
                   onClick={() => setIsCheckoutOpen(false)}
-                  className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold border border-[#8a7966] bg-[#f6ecdd] text-[#4e4033] hover:bg-[#ece0ce] transition-colors cursor-pointer text-center"
+                  className="p-1.5 rounded-md text-[#7a6755] hover:text-[#221910] cursor-pointer transition-colors"
                 >
-                  {t.delivery.form.cancel}
-                </button>
-                <button
-                  type="submit"
-                  disabled={cart.length === 0 || isPending}
-                  className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-bold bg-[#2d521f] text-[#f4e8d4] hover:bg-[#203a16] transition-all shadow-xs disabled:opacity-50 cursor-pointer text-center inline-flex items-center justify-center gap-1.5"
-                >
-                  {isPending ? (
-                    <>
-                      <FaSpinner className="w-3.5 h-3.5 animate-spin" />
-                      <span>{t.delivery.form.submitting}</span>
-                    </>
-                  ) : (
-                    <span>{t.delivery.form.submit}</span>
-                  )}
+                  <FaTimes className="w-4 h-4" />
                 </button>
               </div>
-            </form>
+
+              {/* Modal Body */}
+              <form
+                onSubmit={handleSubmit}
+                className="flex-1 overflow-y-auto p-3.5 sm:p-4 space-y-4"
+              >
+                {/* Validation Error Banner */}
+                {formError && (
+                  <div className="p-3 rounded-lg border border-[#e5a89b] bg-[#fdf0ec] text-[#8b2c1a] text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+                    <FaExclamationTriangle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{formError}</span>
+                  </div>
+                )}
+
+                {/* Selected Books List in Cart */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <label className="font-bold uppercase tracking-wider text-[#6a5a4c]">
+                      {t.delivery.cart.title} ({cart.length}/{MAX_CART_ITEMS})
+                    </label>
+                    {cart.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setCart([])}
+                        className="text-[11px] text-[#8b2c1a] hover:underline font-semibold cursor-pointer"
+                      >
+                        {t.delivery.cart.clear}
+                      </button>
+                    )}
+                  </div>
+
+                  {cart.length === 0 ? (
+                    <div className="p-4 rounded-lg border border-dashed border-[#c5b59d] text-center text-xs text-[#7a6a5c] italic bg-[#fffaf2]">
+                      {t.delivery.cart.empty}
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-[#e4d4bf] border border-[#d2bfa5] rounded-lg bg-[#fffaf2] max-h-36 overflow-y-auto">
+                      {cart.map((book) => (
+                        <div
+                          key={book.id}
+                          className="p-2.5 flex items-center justify-between gap-2 text-xs"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-[#221910] truncate">
+                              {book.title}
+                            </p>
+                            <p className="text-[11px] text-[#5c4f42] truncate">
+                              {book.author}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeFromCart(book.id)}
+                            className="p-1 text-[#8b2c1a] hover:bg-[#f8e5e1] rounded-md transition-colors cursor-pointer"
+                            title="Remove from cart"
+                          >
+                            <FaTrashAlt className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Recipient Details */}
+                <div className="space-y-3 pt-2 border-t border-[#dfcfb9]">
+                  {/* Recipient Full Name */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] flex items-center gap-1.5">
+                      <FaUser className="w-3 h-3 text-[#7a6a5c]" />
+                      <span>{t.delivery.form.recipientName}</span>
+                    </label>
+                    <input
+                      type="text"
+                      readOnly
+                      value={profile?.full_name || ""}
+                      className="w-full px-3 py-2 border border-[#c5b59d] bg-[#ede4d5] text-[#3f3328] rounded-lg text-xs sm:text-sm font-semibold cursor-not-allowed outline-none"
+                    />
+                  </div>
+
+                  {/* Contact Phone */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] flex items-center gap-1.5">
+                      <FaPhone className="w-3 h-3 text-[#7a6a5c]" />
+                      <span>{t.delivery.form.phone} *</span>
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder={t.delivery.form.phonePlaceholder}
+                      value={recipientPhone}
+                      onChange={(e) => setRecipientPhone(e.target.value)}
+                      className="w-full px-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#221910] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none"
+                    />
+                    <p className="text-[10px] text-[#7a6a5c]">
+                      {t.delivery.form.phoneHelp}
+                    </p>
+                  </div>
+
+                  {/* Delivery Address */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] flex items-center gap-1.5">
+                      <FaMapMarkerAlt className="w-3 h-3 text-[#7a6a5c]" />
+                      <span>{t.delivery.form.address} *</span>
+                    </label>
+                    <textarea
+                      required
+                      rows={2}
+                      placeholder={t.delivery.form.addressPlaceholder}
+                      value={deliveryAddress}
+                      onChange={(e) => setDeliveryAddress(e.target.value)}
+                      className="w-full px-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#221910] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none resize-none"
+                    />
+                  </div>
+
+                  {/* Thana Selection */}
+                  {thanas.length > 0 && (
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] block">
+                        {t.delivery.form.thana}
+                      </label>
+                      <select
+                        value={selectedThanaId}
+                        onChange={(e) => setSelectedThanaId(e.target.value)}
+                        className="w-full px-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#221910] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none cursor-pointer"
+                      >
+                        {thanas.map((th) => (
+                          <option key={th.id} value={th.id}>
+                            {th.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Delivery Notes */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] block">
+                      {t.delivery.form.notes}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={t.delivery.form.notesPlaceholder}
+                      value={deliveryNotes}
+                      onChange={(e) => setDeliveryNotes(e.target.value)}
+                      className="w-full px-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#221910] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Informational Banner */}
+                <div className="p-3 bg-[#ede4d5]/70 border border-[#d2bfa5] rounded-lg flex items-start gap-2.5 text-xs text-[#5a4b3f]">
+                  <FaInfoCircle className="w-3.5 h-3.5 text-[#7a6a5c] mt-0.5 shrink-0" />
+                  <p className="leading-snug">
+                    {language === "bn"
+                      ? "অনুরোধ পাঠানোর সাথে সাথে এটি লাইব্রেরির টেলিগ্রাম চ্যানেলে নোটিফিকেশন হিসেবে পৌঁছে যাবে। ডেলিভারি টিম আপনার সাথে ফোনে যোগাযোগ করবে।"
+                      : "Submitting this request instantly notifies library volunteers via the Telegram dispatch channel. They will call you to confirm dispatch."}
+                  </p>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="p-3 sm:p-4 -mx-3.5 sm:-mx-4 -mb-3.5 sm:-mb-4 border-t border-[#cfbba1] grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2 sm:gap-2.5 bg-[#eadcc8]">
+                  <button
+                    type="button"
+                    onClick={() => setIsCheckoutOpen(false)}
+                    className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold border border-[#8a7966] bg-[#f6ecdd] text-[#4e4033] hover:bg-[#ece0ce] transition-colors cursor-pointer text-center"
+                  >
+                    {t.delivery.form.cancel}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={cart.length === 0 || isPending}
+                    className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-bold bg-[#2d521f] text-[#f4e8d4] hover:bg-[#203a16] transition-all shadow-xs disabled:opacity-50 cursor-pointer text-center inline-flex items-center justify-center gap-1.5"
+                  >
+                    {isPending ? (
+                      <>
+                        <FaSpinner className="w-3.5 h-3.5 animate-spin" />
+                        <span>{t.delivery.form.submitting}</span>
+                      </>
+                    ) : (
+                      <span>{t.delivery.form.submit}</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
     </div>
   );

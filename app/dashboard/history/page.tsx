@@ -1,5 +1,6 @@
+import PageTransition from "@/components/PageTransition";
+import { getPdfSubmissions, getUserTransactions } from "@/server/library";
 import { getClaims } from "@/server/user";
-import { getUserTransactions, getPdfSubmissions } from "@/server/library";
 import { redirect } from "next/navigation";
 import HistoryClient from "./HistoryClient";
 
@@ -17,14 +18,23 @@ export default async function HistoryPage({
   ]);
 
   const { filter } = await searchParams;
-  const validFilters = ["all", "active", "completed", "overdue", "pending", "rejected"];
+  const validFilters = [
+    "all",
+    "active",
+    "completed",
+    "overdue",
+    "pending",
+    "rejected",
+  ];
   const initialFilter = validFilters.includes(filter ?? "") ? filter : "all";
 
   return (
-    <HistoryClient
-      transactions={transactions}
-      pdfSubmissions={pdfSubmissions}
-      initialFilter={initialFilter as any}
-    />
+    <PageTransition>
+      <HistoryClient
+        transactions={transactions}
+        pdfSubmissions={pdfSubmissions}
+        initialFilter={initialFilter as any}
+      />
+    </PageTransition>
   );
 }

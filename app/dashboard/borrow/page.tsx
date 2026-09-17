@@ -1,3 +1,4 @@
+import PageTransition from "@/components/PageTransition";
 import { getBookByQR, getUserTransactions } from "@/server/library";
 import { getClaims, getCurrentProfile } from "@/server/user";
 import { redirect } from "next/navigation";
@@ -17,7 +18,7 @@ export default async function BorrowPage({
   const [allTxns, initialCopy, profile] = await Promise.all([
     getUserTransactions(claims.sub),
     copyId ? getBookByQR(copyId) : Promise.resolve(null),
-    getCurrentProfile()
+    getCurrentProfile(),
   ]);
 
   // Copy IDs the user currently has in active / pending borrow status
@@ -39,12 +40,14 @@ export default async function BorrowPage({
     }));
 
   return (
-    <BorrowClient
-      initialCopyId={copyId}
-      initialCopy={initialCopy}
-      activeBorrowCopyIds={activeBorrowCopyIds}
-      completedBooks={completedBooks}
-      isVerified={profile?.is_verified ?? false}
-    />
+    <PageTransition>
+      <BorrowClient
+        initialCopyId={copyId}
+        initialCopy={initialCopy}
+        activeBorrowCopyIds={activeBorrowCopyIds}
+        completedBooks={completedBooks}
+        isVerified={profile?.is_verified ?? false}
+      />
+    </PageTransition>
   );
 }

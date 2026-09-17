@@ -1,5 +1,6 @@
 "use client";
 
+import { ModalPortal } from "@/components/ui/modal-portal";
 import { updateUserProfileByStaff } from "@/server/profiles";
 import {
   directBorrowByStaff,
@@ -385,464 +386,478 @@ export default function UserOperations({
           1. DIRECT BORROW / ASSIGN BOOK MODAL
       ══════════════════════════════════════════════════════════════════════ */}
       {showBorrowModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-[#f6ecdd] border border-[#8a7966] rounded-xl max-w-lg w-full max-h-[85vh] sm:max-h-[80vh] flex flex-col shadow-2xl ink-text">
-            {/* Modal Header */}
-            <div className="p-3.5 sm:p-4 border-b border-[#cfbba1] flex items-center justify-between bg-[#eadcc8]">
-              <div className="flex items-center gap-2">
-                <FaBook className="w-4 h-4 text-[#5c4a3b] shrink-0" />
-                <h3 className="font-bold text-sm sm:text-base text-[#221910] ink-title truncate">
-                  {language === "bn"
-                    ? `${userName}-কে বই বরাদ্দ করুন`
-                    : `Assign Book to ${userName}`}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowBorrowModal(false);
-                  setSelectedBookId(null);
-                  setSelectedCopyId(null);
-                }}
-                className="p-1 rounded-md text-[#7a6755] hover:text-[#221910] cursor-pointer transition-colors"
-              >
-                <FaTimes className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-3.5 sm:p-4 overflow-y-auto space-y-4 flex-1">
-              {/* Step 1: Select Book */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] block">
-                  {language === "bn" ? "১. বই নির্বাচন করুন" : "1. Select Book"}
-                </label>
-                <div className="relative">
-                  <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a7966] w-3 h-3" />
-                  <input
-                    type="text"
-                    placeholder={
-                      language === "bn"
-                        ? "বইয়ের নাম বা লেখক খুঁজুন..."
-                        : "Search available books by title or author..."
-                    }
-                    value={borrowSearch}
-                    onChange={(e) => setBorrowSearch(e.target.value)}
-                    className="w-full pl-8 pr-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#2f251d] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none"
-                  />
+        <ModalPortal>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+            <div className="bg-[#f6ecdd] border border-[#8a7966] rounded-xl max-w-lg w-full max-h-[85vh] sm:max-h-[80vh] flex flex-col shadow-2xl ink-text">
+              {/* Modal Header */}
+              <div className="p-3.5 sm:p-4 border-b border-[#cfbba1] flex items-center justify-between bg-[#eadcc8]">
+                <div className="flex items-center gap-2">
+                  <FaBook className="w-4 h-4 text-[#5c4a3b] shrink-0" />
+                  <h3 className="font-bold text-sm sm:text-base text-[#221910] ink-title truncate">
+                    {language === "bn"
+                      ? `${userName}-কে বই বরাদ্দ করুন`
+                      : `Assign Book to ${userName}`}
+                  </h3>
                 </div>
-
-                {/* Available Books List */}
-                <div className="max-h-44 overflow-y-auto border border-[#d2bfa5] rounded-lg divide-y divide-[#e4d4bf] bg-[#fffaf2]">
-                  {availableBooks.length === 0 ? (
-                    <div className="p-4 text-center text-xs text-[#7a6a5c] italic">
-                      {language === "bn"
-                        ? "কোনো বরাদ্দযোগ্য বই পাওয়া যায়নি"
-                        : "No available books with ready copies found"}
-                    </div>
-                  ) : (
-                    availableBooks.map((book) => {
-                      const isSelected = selectedBookId === book.id;
-                      return (
-                        <button
-                          key={book.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedBookId(book.id);
-                            // Auto-select first available copy
-                            if (book.availableCopies.length > 0) {
-                              setSelectedCopyId(book.availableCopies[0].id);
-                            } else {
-                              setSelectedCopyId(null);
-                            }
-                          }}
-                          className={`w-full text-left p-2.5 text-xs transition-colors flex items-center justify-between gap-2 cursor-pointer ${
-                            isSelected
-                              ? "bg-[#3f3328] text-[#f4e8d4] font-bold"
-                              : "hover:bg-[#f2e5d3] text-[#2b2119]"
-                          }`}
-                        >
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate font-semibold text-xs sm:text-sm">
-                              {book.title}
-                            </p>
-                            <p
-                              className={`truncate text-[11px] ${
-                                isSelected ? "text-[#d2bfa5]" : "text-[#7a6a5c]"
-                              }`}
-                            >
-                              {book.author}
-                            </p>
-                          </div>
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
-                              isSelected
-                                ? "bg-[#5a4d40] text-[#fdf6ec]"
-                                : "bg-[#e5d6c2] text-[#4a3e33]"
-                            }`}
-                          >
-                            {book.availableCopies.length}{" "}
-                            {language === "bn" ? "কপি" : "available"}
-                          </span>
-                        </button>
-                      );
-                    })
-                  )}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowBorrowModal(false);
+                    setSelectedBookId(null);
+                    setSelectedCopyId(null);
+                  }}
+                  className="p-1 rounded-md text-[#7a6755] hover:text-[#221910] cursor-pointer transition-colors"
+                >
+                  <FaTimes className="w-4 h-4" />
+                </button>
               </div>
 
-              {/* Step 2: Select Specific Copy */}
-              {selectedBook && (
-                <div className="space-y-1.5 pt-2 border-t border-[#d2bfa5]">
+              {/* Modal Body */}
+              <div className="p-3.5 sm:p-4 overflow-y-auto space-y-4 flex-1">
+                {/* Step 1: Select Book */}
+                <div className="space-y-1.5">
                   <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] block">
                     {language === "bn"
-                      ? "২. নির্দিষ্ট কপি নির্বাচন করুন"
-                      : "2. Select Copy"}
+                      ? "১. বই নির্বাচন করুন"
+                      : "1. Select Book"}
                   </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {bookAvailableCopies.map((c) => {
-                      const isCopySelected = selectedCopyId === c.id;
-                      return (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() => setSelectedCopyId(c.id)}
-                          className={`p-2 rounded-lg border text-xs font-medium text-center transition-all cursor-pointer ${
-                            isCopySelected
-                              ? "bg-[#3f3328] text-[#f4e8d4] border-[#3f3328] shadow-xs font-bold"
-                              : "bg-[#fffaf2] text-[#4e4033] border-[#b9a58b] hover:bg-[#ede0cc]"
-                          }`}
-                        >
-                          <div>Copy #{c.copy_number}</div>
-                          <div className="font-mono text-[10px] opacity-75">
-                            {c.id}
-                          </div>
-                        </button>
-                      );
-                    })}
+                  <div className="relative">
+                    <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a7966] w-3 h-3" />
+                    <input
+                      type="text"
+                      placeholder={
+                        language === "bn"
+                          ? "বইয়ের নাম বা লেখক খুঁজুন..."
+                          : "Search available books by title or author..."
+                      }
+                      value={borrowSearch}
+                      onChange={(e) => setBorrowSearch(e.target.value)}
+                      className="w-full pl-8 pr-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#2f251d] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none"
+                    />
+                  </div>
+
+                  {/* Available Books List */}
+                  <div className="max-h-44 overflow-y-auto border border-[#d2bfa5] rounded-lg divide-y divide-[#e4d4bf] bg-[#fffaf2]">
+                    {availableBooks.length === 0 ? (
+                      <div className="p-4 text-center text-xs text-[#7a6a5c] italic">
+                        {language === "bn"
+                          ? "কোনো বরাদ্দযোগ্য বই পাওয়া যায়নি"
+                          : "No available books with ready copies found"}
+                      </div>
+                    ) : (
+                      availableBooks.map((book) => {
+                        const isSelected = selectedBookId === book.id;
+                        return (
+                          <button
+                            key={book.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedBookId(book.id);
+                              // Auto-select first available copy
+                              if (book.availableCopies.length > 0) {
+                                setSelectedCopyId(book.availableCopies[0].id);
+                              } else {
+                                setSelectedCopyId(null);
+                              }
+                            }}
+                            className={`w-full text-left p-2.5 text-xs transition-colors flex items-center justify-between gap-2 cursor-pointer ${
+                              isSelected
+                                ? "bg-[#3f3328] text-[#f4e8d4] font-bold"
+                                : "hover:bg-[#f2e5d3] text-[#2b2119]"
+                            }`}
+                          >
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate font-semibold text-xs sm:text-sm">
+                                {book.title}
+                              </p>
+                              <p
+                                className={`truncate text-[11px] ${
+                                  isSelected
+                                    ? "text-[#d2bfa5]"
+                                    : "text-[#7a6a5c]"
+                                }`}
+                              >
+                                {book.author}
+                              </p>
+                            </div>
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                                isSelected
+                                  ? "bg-[#5a4d40] text-[#fdf6ec]"
+                                  : "bg-[#e5d6c2] text-[#4a3e33]"
+                              }`}
+                            >
+                              {book.availableCopies.length}{" "}
+                              {language === "bn" ? "কপি" : "available"}
+                            </span>
+                          </button>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
-              )}
 
-              {/* Step 3: Due Date */}
-              <div className="space-y-1.5 pt-2 border-t border-[#d2bfa5]">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] flex items-center gap-1.5">
-                  <FaCalendarAlt className="w-3 h-3 text-[#7a6a5c]" />
-                  <span>
-                    {language === "bn"
-                      ? "৩. ফেরত দেওয়ার তারিখ (Due Date)"
-                      : "3. Due Date"}
-                  </span>
-                </label>
-                <input
-                  type="date"
-                  value={borrowDueDate}
-                  onChange={(e) => setBorrowDueDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#2f251d] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none cursor-pointer"
-                />
+                {/* Step 2: Select Specific Copy */}
+                {selectedBook && (
+                  <div className="space-y-1.5 pt-2 border-t border-[#d2bfa5]">
+                    <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] block">
+                      {language === "bn"
+                        ? "২. নির্দিষ্ট কপি নির্বাচন করুন"
+                        : "2. Select Copy"}
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {bookAvailableCopies.map((c) => {
+                        const isCopySelected = selectedCopyId === c.id;
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => setSelectedCopyId(c.id)}
+                            className={`p-2 rounded-lg border text-xs font-medium text-center transition-all cursor-pointer ${
+                              isCopySelected
+                                ? "bg-[#3f3328] text-[#f4e8d4] border-[#3f3328] shadow-xs font-bold"
+                                : "bg-[#fffaf2] text-[#4e4033] border-[#b9a58b] hover:bg-[#ede0cc]"
+                            }`}
+                          >
+                            <div>Copy #{c.copy_number}</div>
+                            <div className="font-mono text-[10px] opacity-75">
+                              {c.id}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 3: Due Date */}
+                <div className="space-y-1.5 pt-2 border-t border-[#d2bfa5]">
+                  <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] flex items-center gap-1.5">
+                    <FaCalendarAlt className="w-3 h-3 text-[#7a6a5c]" />
+                    <span>
+                      {language === "bn"
+                        ? "৩. ফেরত দেওয়ার তারিখ (Due Date)"
+                        : "3. Due Date"}
+                    </span>
+                  </label>
+                  <input
+                    type="date"
+                    value={borrowDueDate}
+                    onChange={(e) => setBorrowDueDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#2f251d] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-3 sm:p-4 border-t border-[#cfbba1] grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2 sm:gap-2.5 bg-[#eadcc8]">
+                <button
+                  type="button"
+                  onClick={() => setShowBorrowModal(false)}
+                  className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold border border-[#8a7966] bg-[#f6ecdd] text-[#4e4033] hover:bg-[#ece0ce] transition-colors cursor-pointer text-center"
+                >
+                  {language === "bn" ? "বাতিল" : "Cancel"}
+                </button>
+                <button
+                  type="button"
+                  disabled={!selectedCopyId || isPending}
+                  onClick={handleConfirmBorrow}
+                  className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-bold bg-[#3f3328] text-[#f4e8d4] hover:bg-[#282019] transition-all shadow-xs disabled:opacity-50 cursor-pointer text-center"
+                >
+                  {isPending
+                    ? language === "bn"
+                      ? "বরাদ্দ হচ্ছে..."
+                      : "Assigning..."
+                    : language === "bn"
+                      ? "বরাদ্দ নিশ্চিত করুন"
+                      : "Confirm Assignment"}
+                </button>
               </div>
             </div>
-
-            {/* Modal Footer */}
-            <div className="p-3 sm:p-4 border-t border-[#cfbba1] grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2 sm:gap-2.5 bg-[#eadcc8]">
-              <button
-                type="button"
-                onClick={() => setShowBorrowModal(false)}
-                className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold border border-[#8a7966] bg-[#f6ecdd] text-[#4e4033] hover:bg-[#ece0ce] transition-colors cursor-pointer text-center"
-              >
-                {language === "bn" ? "বাতিল" : "Cancel"}
-              </button>
-              <button
-                type="button"
-                disabled={!selectedCopyId || isPending}
-                onClick={handleConfirmBorrow}
-                className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-bold bg-[#3f3328] text-[#f4e8d4] hover:bg-[#282019] transition-all shadow-xs disabled:opacity-50 cursor-pointer text-center"
-              >
-                {isPending
-                  ? language === "bn"
-                    ? "বরাদ্দ হচ্ছে..."
-                    : "Assigning..."
-                  : language === "bn"
-                    ? "বরাদ্দ নিশ্চিত করুন"
-                    : "Confirm Assignment"}
-              </button>
-            </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
 
       {/* ══════════════════════════════════════════════════════════════════════
           2. MARK BOOK AS READ / COMPLETED MODAL
       ══════════════════════════════════════════════════════════════════════ */}
       {showMarkReadModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-[#f6ecdd] border border-[#8a7966] rounded-xl max-w-lg w-full max-h-[85vh] sm:max-h-[80vh] flex flex-col shadow-2xl ink-text">
-            {/* Modal Header */}
-            <div className="p-3.5 sm:p-4 border-b border-[#cfbba1] flex items-center justify-between bg-[#eadcc8]">
-              <div className="flex items-center gap-2">
-                <FaBookOpen className="w-4 h-4 text-[#2d521f] shrink-0" />
-                <h3 className="font-bold text-sm sm:text-base text-[#221910] ink-title truncate">
-                  {language === "bn"
-                    ? `${userName}-এর পড়া বই সম্পন্ন করুন`
-                    : `Mark Book Read for ${userName}`}
-                </h3>
+        <ModalPortal>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+            <div className="bg-[#f6ecdd] border border-[#8a7966] rounded-xl max-w-lg w-full max-h-[85vh] sm:max-h-[80vh] flex flex-col shadow-2xl ink-text">
+              {/* Modal Header */}
+              <div className="p-3.5 sm:p-4 border-b border-[#cfbba1] flex items-center justify-between bg-[#eadcc8]">
+                <div className="flex items-center gap-2">
+                  <FaBookOpen className="w-4 h-4 text-[#2d521f] shrink-0" />
+                  <h3 className="font-bold text-sm sm:text-base text-[#221910] ink-title truncate">
+                    {language === "bn"
+                      ? `${userName}-এর পড়া বই সম্পন্ন করুন`
+                      : `Mark Book Read for ${userName}`}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMarkReadModal(false);
+                    setSelectedReadBookId(null);
+                  }}
+                  className="p-1 rounded-md text-[#7a6755] hover:text-[#221910] cursor-pointer transition-colors"
+                >
+                  <FaTimes className="w-4 h-4" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowMarkReadModal(false);
-                  setSelectedReadBookId(null);
-                }}
-                className="p-1 rounded-md text-[#7a6755] hover:text-[#221910] cursor-pointer transition-colors"
-              >
-                <FaTimes className="w-4 h-4" />
-              </button>
-            </div>
 
-            {/* Modal Body */}
-            <div className="p-3.5 sm:p-4 overflow-y-auto space-y-4 flex-1">
-              {/* Step 1: Search and Select Book */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] block">
-                  {language === "bn" ? "১. বই নির্বাচন করুন" : "1. Select Book"}
-                </label>
-                <div className="relative">
-                  <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a7966] w-3 h-3" />
+              {/* Modal Body */}
+              <div className="p-3.5 sm:p-4 overflow-y-auto space-y-4 flex-1">
+                {/* Step 1: Search and Select Book */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] block">
+                    {language === "bn"
+                      ? "১. বই নির্বাচন করুন"
+                      : "1. Select Book"}
+                  </label>
+                  <div className="relative">
+                    <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a7966] w-3 h-3" />
+                    <input
+                      type="text"
+                      placeholder={
+                        language === "bn"
+                          ? "বইয়ের নাম বা লেখক খুঁজুন..."
+                          : "Search books from library..."
+                      }
+                      value={readSearch}
+                      onChange={(e) => setReadSearch(e.target.value)}
+                      className="w-full pl-8 pr-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#2f251d] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none"
+                    />
+                  </div>
+
+                  <div className="max-h-48 overflow-y-auto border border-[#d2bfa5] rounded-lg divide-y divide-[#e4d4bf] bg-[#fffaf2]">
+                    {searchableBooks.length === 0 ? (
+                      <div className="p-4 text-center text-xs text-[#7a6a5c] italic">
+                        {language === "bn"
+                          ? "কোনো বই পাওয়া যায়নি"
+                          : "No books found"}
+                      </div>
+                    ) : (
+                      searchableBooks.map((book) => {
+                        const isSelected = selectedReadBookId === book.id;
+                        return (
+                          <button
+                            key={book.id}
+                            type="button"
+                            onClick={() => setSelectedReadBookId(book.id)}
+                            className={`w-full text-left p-2.5 text-xs transition-colors flex items-center justify-between gap-2 cursor-pointer ${
+                              isSelected
+                                ? "bg-[#2d521f] text-[#f4e8d4] font-bold"
+                                : "hover:bg-[#f2e5d3] text-[#2b2119]"
+                            }`}
+                          >
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate font-semibold text-xs sm:text-sm">
+                                {book.title}
+                              </p>
+                              <p
+                                className={`truncate text-[11px] ${
+                                  isSelected
+                                    ? "text-[#c2e0b5]"
+                                    : "text-[#7a6a5c]"
+                                }`}
+                              >
+                                {book.author}
+                              </p>
+                            </div>
+                            {book.is_syllabus && (
+                              <span
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold shrink-0 ${
+                                  isSelected
+                                    ? "bg-[#203a16] text-[#c2e0b5]"
+                                    : "bg-[#e5d6c2] text-[#4a3e33]"
+                                }`}
+                              >
+                                {language === "bn" ? "সিলেবাস" : "Syllabus"}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                {/* Step 2: Completion Date */}
+                <div className="space-y-1.5 pt-2 border-t border-[#d2bfa5]">
+                  <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] flex items-center gap-1.5">
+                    <FaCalendarAlt className="w-3 h-3 text-[#7a6a5c]" />
+                    <span>
+                      {language === "bn"
+                        ? "২. সমাপ্তির তারিখ"
+                        : "2. Completion Date"}
+                    </span>
+                  </label>
+                  <input
+                    type="date"
+                    value={readDate}
+                    onChange={(e) => setReadDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#2f251d] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none cursor-pointer"
+                  />
+                </div>
+
+                {/* Step 3: Staff Note */}
+                <div className="space-y-1.5 pt-2 border-t border-[#d2bfa5]">
+                  <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] block">
+                    {language === "bn"
+                      ? "৩. মন্তব্য (ঐচ্ছিক)"
+                      : "3. Note / Comments (Optional)"}
+                  </label>
                   <input
                     type="text"
                     placeholder={
                       language === "bn"
-                        ? "বইয়ের নাম বা লেখক খুঁজুন..."
-                        : "Search books from library..."
+                        ? "যেমন: পাঠচক্রে পাঠ সমাপ্ত"
+                        : "e.g., Completed reading review or group reading"
                     }
-                    value={readSearch}
-                    onChange={(e) => setReadSearch(e.target.value)}
-                    className="w-full pl-8 pr-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#2f251d] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none"
+                    value={readNote}
+                    onChange={(e) => setReadNote(e.target.value)}
+                    className="w-full px-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#2f251d] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none"
                   />
                 </div>
-
-                <div className="max-h-48 overflow-y-auto border border-[#d2bfa5] rounded-lg divide-y divide-[#e4d4bf] bg-[#fffaf2]">
-                  {searchableBooks.length === 0 ? (
-                    <div className="p-4 text-center text-xs text-[#7a6a5c] italic">
-                      {language === "bn"
-                        ? "কোনো বই পাওয়া যায়নি"
-                        : "No books found"}
-                    </div>
-                  ) : (
-                    searchableBooks.map((book) => {
-                      const isSelected = selectedReadBookId === book.id;
-                      return (
-                        <button
-                          key={book.id}
-                          type="button"
-                          onClick={() => setSelectedReadBookId(book.id)}
-                          className={`w-full text-left p-2.5 text-xs transition-colors flex items-center justify-between gap-2 cursor-pointer ${
-                            isSelected
-                              ? "bg-[#2d521f] text-[#f4e8d4] font-bold"
-                              : "hover:bg-[#f2e5d3] text-[#2b2119]"
-                          }`}
-                        >
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate font-semibold text-xs sm:text-sm">
-                              {book.title}
-                            </p>
-                            <p
-                              className={`truncate text-[11px] ${
-                                isSelected ? "text-[#c2e0b5]" : "text-[#7a6a5c]"
-                              }`}
-                            >
-                              {book.author}
-                            </p>
-                          </div>
-                          {book.is_syllabus && (
-                            <span
-                              className={`px-2 py-0.5 rounded-md text-[10px] font-bold shrink-0 ${
-                                isSelected
-                                  ? "bg-[#203a16] text-[#c2e0b5]"
-                                  : "bg-[#e5d6c2] text-[#4a3e33]"
-                              }`}
-                            >
-                              {language === "bn" ? "সিলেবাস" : "Syllabus"}
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })
-                  )}
-                </div>
               </div>
 
-              {/* Step 2: Completion Date */}
-              <div className="space-y-1.5 pt-2 border-t border-[#d2bfa5]">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] flex items-center gap-1.5">
-                  <FaCalendarAlt className="w-3 h-3 text-[#7a6a5c]" />
-                  <span>
-                    {language === "bn"
-                      ? "২. সমাপ্তির তারিখ"
-                      : "2. Completion Date"}
-                  </span>
-                </label>
-                <input
-                  type="date"
-                  value={readDate}
-                  onChange={(e) => setReadDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#2f251d] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none cursor-pointer"
-                />
+              {/* Modal Footer */}
+              <div className="p-3 sm:p-4 border-t border-[#cfbba1] grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2 sm:gap-2.5 bg-[#eadcc8]">
+                <button
+                  type="button"
+                  onClick={() => setShowMarkReadModal(false)}
+                  className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold border border-[#8a7966] bg-[#f6ecdd] text-[#4e4033] hover:bg-[#ece0ce] transition-colors cursor-pointer text-center"
+                >
+                  {language === "bn" ? "বাতিল" : "Cancel"}
+                </button>
+                <button
+                  type="button"
+                  disabled={!selectedReadBookId || isPending}
+                  onClick={handleConfirmMarkRead}
+                  className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-bold bg-[#2d521f] text-[#f4e8d4] hover:bg-[#203a16] transition-all shadow-xs disabled:opacity-50 cursor-pointer text-center"
+                >
+                  {isPending
+                    ? language === "bn"
+                      ? "সংরক্ষণ হচ্ছে..."
+                      : "Saving..."
+                    : language === "bn"
+                      ? "পড়া সম্পন্ন নিশ্চিত করুন"
+                      : "Confirm Mark Read"}
+                </button>
               </div>
-
-              {/* Step 3: Staff Note */}
-              <div className="space-y-1.5 pt-2 border-t border-[#d2bfa5]">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] block">
-                  {language === "bn"
-                    ? "৩. মন্তব্য (ঐচ্ছিক)"
-                    : "3. Note / Comments (Optional)"}
-                </label>
-                <input
-                  type="text"
-                  placeholder={
-                    language === "bn"
-                      ? "যেমন: পাঠচক্রে পাঠ সমাপ্ত"
-                      : "e.g., Completed reading review or group reading"
-                  }
-                  value={readNote}
-                  onChange={(e) => setReadNote(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#2f251d] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none"
-                />
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-3 sm:p-4 border-t border-[#cfbba1] grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2 sm:gap-2.5 bg-[#eadcc8]">
-              <button
-                type="button"
-                onClick={() => setShowMarkReadModal(false)}
-                className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold border border-[#8a7966] bg-[#f6ecdd] text-[#4e4033] hover:bg-[#ece0ce] transition-colors cursor-pointer text-center"
-              >
-                {language === "bn" ? "বাতিল" : "Cancel"}
-              </button>
-              <button
-                type="button"
-                disabled={!selectedReadBookId || isPending}
-                onClick={handleConfirmMarkRead}
-                className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-bold bg-[#2d521f] text-[#f4e8d4] hover:bg-[#203a16] transition-all shadow-xs disabled:opacity-50 cursor-pointer text-center"
-              >
-                {isPending
-                  ? language === "bn"
-                    ? "সংরক্ষণ হচ্ছে..."
-                    : "Saving..."
-                  : language === "bn"
-                    ? "পড়া সম্পন্ন নিশ্চিত করুন"
-                    : "Confirm Mark Read"}
-              </button>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
 
       {/* ══════════════════════════════════════════════════════════════════════
           3. EDIT PROFILE MODAL
       ══════════════════════════════════════════════════════════════════════ */}
       {showEditProfileModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-[#f6ecdd] border border-[#8a7966] rounded-xl max-w-md w-full max-h-[85vh] sm:max-h-[80vh] shadow-2xl ink-text flex flex-col">
-            <div className="p-3.5 sm:p-4 border-b border-[#cfbba1] flex items-center justify-between bg-[#eadcc8]">
-              <div className="flex items-center gap-2">
-                <FaEdit className="w-4 h-4 text-[#5c4a3b] shrink-0" />
-                <h3 className="font-bold text-sm sm:text-base text-[#221910] ink-title truncate">
-                  {language === "bn"
-                    ? `${userName}-এর তথ্য সম্পাদনা`
-                    : `Edit Member: ${userName}`}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowEditProfileModal(false)}
-                className="p-1 rounded-md text-[#7a6755] hover:text-[#221910] cursor-pointer transition-colors"
-              >
-                <FaTimes className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="p-3.5 sm:p-4 space-y-3.5 flex-1 overflow-y-auto">
-              <div className="space-y-1">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] block">
-                  {language === "bn" ? "পুরো নাম" : "Full Name"}
-                </label>
-                <input
-                  type="text"
-                  value={editFullName}
-                  onChange={(e) => setEditFullName(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#2f251d] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none"
-                />
+        <ModalPortal>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+            <div className="bg-[#f6ecdd] border border-[#8a7966] rounded-xl max-w-md w-full max-h-[85vh] sm:max-h-[80vh] shadow-2xl ink-text flex flex-col">
+              <div className="p-3.5 sm:p-4 border-b border-[#cfbba1] flex items-center justify-between bg-[#eadcc8]">
+                <div className="flex items-center gap-2">
+                  <FaEdit className="w-4 h-4 text-[#5c4a3b] shrink-0" />
+                  <h3 className="font-bold text-sm sm:text-base text-[#221910] ink-title truncate">
+                    {language === "bn"
+                      ? `${userName}-এর তথ্য সম্পাদনা`
+                      : `Edit Member: ${userName}`}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowEditProfileModal(false)}
+                  className="p-1 rounded-md text-[#7a6755] hover:text-[#221910] cursor-pointer transition-colors"
+                >
+                  <FaTimes className="w-4 h-4" />
+                </button>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] block">
-                  {language === "bn" ? "ফোন নম্বর" : "Phone Number"}
-                </label>
-                <input
-                  type="tel"
-                  value={editPhone}
-                  onChange={(e) => setEditPhone(e.target.value)}
-                  placeholder="01XXXXXXXXX"
-                  className="w-full px-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#2f251d] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none"
-                />
-              </div>
-
-              {thanas && thanas.length > 0 && (
+              <div className="p-3.5 sm:p-4 space-y-3.5 flex-1 overflow-y-auto">
                 <div className="space-y-1">
                   <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] block">
-                    {language === "bn" ? "থানা / এলাকা" : "Thana / Location"}
+                    {language === "bn" ? "পুরো নাম" : "Full Name"}
                   </label>
-                  <select
-                    value={editThanaId ?? "none"}
-                    onChange={(e) =>
-                      setEditThanaId(
-                        e.target.value === "none" ? null : e.target.value,
-                      )
-                    }
-                    className="w-full px-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#2f251d] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none cursor-pointer"
-                  >
-                    <option value="none">
-                      {language === "bn"
-                        ? "-- কোনো থানা নেই --"
-                        : "-- None / Unassigned --"}
-                    </option>
-                    {thanas.map((th) => (
-                      <option key={th.id} value={th.id}>
-                        {th.name}
-                      </option>
-                    ))}
-                  </select>
+                  <input
+                    type="text"
+                    value={editFullName}
+                    onChange={(e) => setEditFullName(e.target.value)}
+                    className="w-full px-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#2f251d] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none"
+                  />
                 </div>
-              )}
-            </div>
 
-            <div className="p-3 sm:p-4 border-t border-[#cfbba1] grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2 sm:gap-2.5 bg-[#eadcc8]">
-              <button
-                type="button"
-                onClick={() => setShowEditProfileModal(false)}
-                className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold border border-[#8a7966] bg-[#f6ecdd] text-[#4e4033] hover:bg-[#ece0ce] transition-colors cursor-pointer text-center"
-              >
-                {language === "bn" ? "বাতিল" : "Cancel"}
-              </button>
-              <button
-                type="button"
-                disabled={!editFullName.trim() || isPending}
-                onClick={handleConfirmEditProfile}
-                className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-bold bg-[#3f3328] text-[#f4e8d4] hover:bg-[#282019] transition-all shadow-xs disabled:opacity-50 cursor-pointer text-center"
-              >
-                {isPending
-                  ? language === "bn"
-                    ? "সংরক্ষণ হচ্ছে..."
-                    : "Saving..."
-                  : language === "bn"
-                    ? "আপডেট করুন"
-                    : "Update Details"}
-              </button>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] block">
+                    {language === "bn" ? "ফোন নম্বর" : "Phone Number"}
+                  </label>
+                  <input
+                    type="tel"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    placeholder="01XXXXXXXXX"
+                    className="w-full px-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#2f251d] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none"
+                  />
+                </div>
+
+                {thanas && thanas.length > 0 && (
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold uppercase tracking-wider text-[#6a5a4c] block">
+                      {language === "bn" ? "থানা / এলাকা" : "Thana / Location"}
+                    </label>
+                    <select
+                      value={editThanaId ?? "none"}
+                      onChange={(e) =>
+                        setEditThanaId(
+                          e.target.value === "none" ? null : e.target.value,
+                        )
+                      }
+                      className="w-full px-3 py-2 border border-[#8a7966] bg-[#fffaf2] text-[#2f251d] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-[#6e5d4a] outline-none cursor-pointer"
+                    >
+                      <option value="none">
+                        {language === "bn"
+                          ? "-- কোনো থানা নেই --"
+                          : "-- None / Unassigned --"}
+                      </option>
+                      {thanas.map((th) => (
+                        <option key={th.id} value={th.id}>
+                          {th.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-3 sm:p-4 border-t border-[#cfbba1] grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2 sm:gap-2.5 bg-[#eadcc8]">
+                <button
+                  type="button"
+                  onClick={() => setShowEditProfileModal(false)}
+                  className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold border border-[#8a7966] bg-[#f6ecdd] text-[#4e4033] hover:bg-[#ece0ce] transition-colors cursor-pointer text-center"
+                >
+                  {language === "bn" ? "বাতিল" : "Cancel"}
+                </button>
+                <button
+                  type="button"
+                  disabled={!editFullName.trim() || isPending}
+                  onClick={handleConfirmEditProfile}
+                  className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-bold bg-[#3f3328] text-[#f4e8d4] hover:bg-[#282019] transition-all shadow-xs disabled:opacity-50 cursor-pointer text-center"
+                >
+                  {isPending
+                    ? language === "bn"
+                      ? "সংরক্ষণ হচ্ছে..."
+                      : "Saving..."
+                    : language === "bn"
+                      ? "আপডেট করুন"
+                      : "Update Details"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { CommunityNav } from "@/app/dashboard/components/StaffHubNav";
 import ConfirmModal from "@/components/ui/confirm-modal";
+import { ModalPortal } from "@/components/ui/modal-portal";
 import { useTranslation } from "@/lib/i18n/context";
 import { demoteModerator, promoteToModerator } from "@/server/profiles";
 import type { Profile } from "@/types/profile";
@@ -318,71 +319,74 @@ export default function ModeratorsClient({ initialModerators }: Props) {
 
       {/* Add Moderator Modal */}
       {showModal && (
-        <div
-          className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-3 sm:p-4 z-80"
-          onClick={(e) =>
-            e.target === e.currentTarget && (setShowModal(false), setEmail(""))
-          }
-        >
+        <ModalPortal>
           <div
-            className="dashboard-surface tron-border rounded-xl shadow-xl max-w-md w-full p-4 sm:p-6"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 bg-[#1f170f]/42 backdrop-blur-[1px] flex items-center justify-center p-3 sm:p-4 z-80"
+            onClick={(e) =>
+              e.target === e.currentTarget &&
+              (setShowModal(false), setEmail(""))
+            }
           >
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <h2 className="text-lg sm:text-xl font-bold text-[#221910] ink-title">
-                {t.moderators.modal.title}
-              </h2>
-              <button
-                onClick={() => {
-                  setShowModal(false);
-                  setEmail("");
-                }}
-                className="p-1.5 text-[#655648] hover:bg-[#e7d8c3] rounded-lg transition-colors"
-              >
-                <FaTimes className="w-4 h-4" />
-              </button>
-            </div>
-            <p className="text-xs sm:text-sm text-[#5a4b3f] ink-text mb-4">
-              {t.moderators.modal.subtitle}
-            </p>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#4f4134] mb-1 ink-text">
-                  {t.moderators.modal.label}{" "}
-                  <span className="text-[#7a4c37]">*</span>
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && openPromoteConfirm()}
-                  placeholder={t.moderators.modal.placeholder}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6e5d4a] ink-text text-xs sm:text-sm"
-                />
-              </div>
-              <div className="flex gap-2.5 sm:gap-3 pt-1">
+            <div
+              className="dashboard-surface tron-border rounded-xl shadow-xl max-w-md w-full p-4 sm:p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <h2 className="text-lg sm:text-xl font-bold text-[#221910] ink-title">
+                  {t.moderators.modal.title}
+                </h2>
                 <button
-                  type="button"
                   onClick={() => {
                     setShowModal(false);
                     setEmail("");
                   }}
-                  className="flex-1 py-2 sm:py-2.5 border border-[#8a7966] text-[#4f4134] rounded-lg hover:bg-[#eadcc8] transition-colors font-semibold text-xs sm:text-sm ink-text"
+                  className="p-1.5 text-[#655648] hover:bg-[#e7d8c3] rounded-lg transition-colors"
                 >
-                  {t.moderators.modal.cancel}
+                  <FaTimes className="w-4 h-4" />
                 </button>
-                <button
-                  type="button"
-                  onClick={openPromoteConfirm}
-                  disabled={isPending || !email.trim()}
-                  className="flex-1 py-2 sm:py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-lg hover:bg-[#4a3d31] transition-colors font-semibold text-xs sm:text-sm ink-text disabled:opacity-50"
-                >
-                  {isPending ? "..." : t.moderators.modal.promote}
-                </button>
+              </div>
+              <p className="text-xs sm:text-sm text-[#5a4b3f] ink-text mb-4">
+                {t.moderators.modal.subtitle}
+              </p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-[#4f4134] mb-1 ink-text">
+                    {t.moderators.modal.label}{" "}
+                    <span className="text-[#7a4c37]">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && openPromoteConfirm()}
+                    placeholder={t.moderators.modal.placeholder}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 border border-[#8a7966] bg-[#f6ecdd] text-[#2f251d] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6e5d4a] ink-text text-xs sm:text-sm"
+                  />
+                </div>
+                <div className="flex gap-2.5 sm:gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowModal(false);
+                      setEmail("");
+                    }}
+                    className="flex-1 py-2 sm:py-2.5 border border-[#8a7966] text-[#4f4134] rounded-lg hover:bg-[#eadcc8] transition-colors font-semibold text-xs sm:text-sm ink-text"
+                  >
+                    {t.moderators.modal.cancel}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={openPromoteConfirm}
+                    disabled={isPending || !email.trim()}
+                    className="flex-1 py-2 sm:py-2.5 bg-[#3f3328] text-[#f4e8d4] border border-[#4e4033] rounded-lg hover:bg-[#4a3d31] transition-colors font-semibold text-xs sm:text-sm ink-text disabled:opacity-50"
+                  >
+                    {isPending ? "..." : t.moderators.modal.promote}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
 
       {/* Promote confirm modal */}
