@@ -19,6 +19,7 @@ export default async function ExportsPage() {
 
   if (
     profile.role !== USER_ROLES.ADMIN &&
+    profile.role !== USER_ROLES.SUPERADMIN &&
     profile.role !== USER_ROLES.MODERATOR
   ) {
     redirect("/dashboard");

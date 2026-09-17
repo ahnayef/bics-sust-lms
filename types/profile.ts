@@ -1,4 +1,4 @@
-export type UserRole = "member" | "moderator" | "admin";
+export type UserRole = "member" | "admin" | "superadmin" | "moderator";
 
 export interface Thana {
   id: string;

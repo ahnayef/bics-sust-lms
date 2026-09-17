@@ -57,9 +57,12 @@ export default function DashboardShell({
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { t, language } = useTranslation();
 
-  const isStaff =
-    userRole === USER_ROLES.ADMIN || userRole === USER_ROLES.MODERATOR;
-  const isAdmin = userRole === USER_ROLES.ADMIN;
+  const isSuperAdmin = userRole === USER_ROLES.SUPERADMIN;
+  const isAdmin =
+    userRole === USER_ROLES.ADMIN ||
+    isSuperAdmin ||
+    userRole === USER_ROLES.MODERATOR;
+  const isStaff = isAdmin;
 
   const isActive = (href: string) => {
     if (href === "/dashboard") {
@@ -157,8 +160,9 @@ export default function DashboardShell({
       icon: FaUsers,
     },
     {
-      label: t.dashboard.sidebar.moderators,
-      href: "/dashboard/moderators",
+      label:
+        (t.dashboard.sidebar as any).admins ?? t.dashboard.sidebar.moderators,
+      href: "/dashboard/admins",
       icon: FaShieldAlt,
     },
     {
@@ -331,7 +335,7 @@ export default function DashboardShell({
                     {t.dashboard.sidebar.checklistsManage}
                   </span>
                 </Link>
-                {isAdmin && (
+                {isSuperAdmin && (
                   <Link
                     href="/dashboard/logs"
                     className={cn(
@@ -792,7 +796,7 @@ export default function DashboardShell({
                     </span>
                   </Link>
                   <Link
-                    href="/dashboard/moderators"
+                    href="/dashboard/admins"
                     onClick={() => setIsStaffDrawerOpen(false)}
                     className="p-3 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] hover:bg-[#f0e3d0] active:scale-98 transition-all flex items-center gap-2.5 shadow-xs"
                   >
@@ -800,7 +804,8 @@ export default function DashboardShell({
                       <FaShieldAlt className="w-4 h-4" />
                     </div>
                     <span className="text-xs font-semibold text-[#221910] truncate">
-                      {t.dashboard.sidebar.moderators}
+                      {(t.dashboard.sidebar as any).admins ??
+                        t.dashboard.sidebar.moderators}
                     </span>
                   </Link>
                   <Link
@@ -848,7 +853,7 @@ export default function DashboardShell({
                       {t.dashboard.sidebar.checklistsManage}
                     </span>
                   </Link>
-                  {isAdmin && (
+                  {isSuperAdmin && (
                     <Link
                       href="/dashboard/logs"
                       onClick={() => setIsStaffDrawerOpen(false)}

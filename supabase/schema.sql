@@ -37,7 +37,7 @@ create table if not exists public.profiles (
   rank_id           uuid references public.ranks(id) on delete set null,
   thana_id          uuid references public.thanas(id) on delete set null,
   role              text not null default 'member'
-                      check (role in ('member','moderator','admin')),
+                      check (role in ('member','admin','superadmin','moderator')),
   is_verified          boolean not null default false,
   profile_completed     boolean not null default false,
   hide_sensitive_info   boolean not null default false,

@@ -7,6 +7,7 @@ export const profile = {
     report: "Profile Report",
   },
   roles: {
+    superadmin: "Super Admin",
     admin: "Admin",
     moderator: "Moderator",
     member: "Member",
@@ -34,7 +35,8 @@ export const profile = {
   },
   editForm: {
     title: "Edit Profile",
-    subtitle: "Update your details below. Username and avatar cannot be changed here.",
+    subtitle:
+      "Update your details below. Username and avatar cannot be changed here.",
     backToProfile: "Back to My Profile",
     fullName: "Full Name",
     username: "Username",
@@ -44,7 +46,8 @@ export const profile = {
     thanaNotSet: "— Not set —",
     avatarNote: "Avatar & username are managed via your OAuth provider",
     rank: "Rank / Position",
-    rankNote: "Your rank is changing — you will be un-verified and need re-verification.",
+    rankNote:
+      "Your rank is changing — you will be un-verified and need re-verification.",
     save: "Save Changes",
     saving: "Saving...",
     cancel: "Cancel",
@@ -52,10 +55,12 @@ export const profile = {
     confirmMessage: "Are you sure you want to save these changes?",
     privacy: {
       title: "Hide contact info from public profile",
-      description: "When enabled, your email, phone, and thana won't be visible on your public profile page.",
+      description:
+        "When enabled, your email, phone, and thana won't be visible on your public profile page.",
     },
     thanaSelect: "Select thana",
-    thanaEmpty: "No thanas are configured. You can leave the thana unset until an admin adds thanas.",
+    thanaEmpty:
+      "No thanas are configured. You can leave the thana unset until an admin adds thanas.",
     thanaPlaceholder: "Select thana...",
     thanaSearchPlaceholder: "Search thana...",
     thanaDisabledHint: "No thanas available yet",
@@ -75,7 +80,8 @@ export const profile = {
     back: "Back to Profile",
     readingProgress: "Reading Progress",
     contactLocation: "Contact & Thana",
-    privateInfo: "This member has chosen to keep their contact information private.",
+    privateInfo:
+      "This member has chosen to keep their contact information private.",
     unverified: "Unverified",
     verified: "Verified",
     syllabusBooks: "syllabus books",

@@ -86,12 +86,14 @@ async function DashboardUserProfileContent({
     ]);
 
   const roleLabels: Record<string, string> = {
+    superadmin: (t.profile.roles as any).superadmin ?? "Super Admin",
     admin: t.profile.roles.admin,
     moderator: t.profile.roles.moderator,
     member: t.profile.roles.member,
   };
 
   const roleColors: Record<string, string> = {
+    superadmin: "bg-purple-100 text-purple-800 border-purple-400",
     admin: "bg-amber-100 text-amber-800 border-amber-400",
     moderator: "bg-teal-100 text-teal-800 border-teal-400",
     member: "bg-stone-100 text-stone-700 border-stone-400",

@@ -533,7 +533,9 @@ export default function ExportsClient({
             (statusFilter === "verified" && u.is_verified) ||
             (statusFilter === "unverified" && !u.is_verified) ||
             (statusFilter === "staff" &&
-              (u.role === "admin" || u.role === "moderator"));
+              (u.role === "admin" ||
+                u.role === "superadmin" ||
+                u.role === "moderator"));
           const matchDateFilter = matchesDate(u.created_at);
           return matchQuery && matchStatus && matchDateFilter;
         });

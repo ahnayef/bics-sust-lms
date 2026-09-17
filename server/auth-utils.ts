@@ -36,14 +36,20 @@ export async function requireRole(roles: UserRole[]) {
   return profile;
 }
 
+export async function isSuperAdmin() {
+  const profile = await getMyProfile();
+  return profile?.role === USER_ROLES.SUPERADMIN;
+}
+
 export async function isAdmin() {
   const profile = await getMyProfile();
-  return profile?.role === USER_ROLES.ADMIN;
+  return (
+    profile?.role === USER_ROLES.ADMIN ||
+    profile?.role === USER_ROLES.SUPERADMIN ||
+    profile?.role === "moderator"
+  );
 }
 
 export async function isModerator() {
-  const profile = await getMyProfile();
-  return (
-    profile?.role === USER_ROLES.MODERATOR || profile?.role === USER_ROLES.ADMIN
-  );
+  return isAdmin();
 }

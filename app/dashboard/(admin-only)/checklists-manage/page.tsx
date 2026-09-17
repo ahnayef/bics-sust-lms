@@ -9,7 +9,11 @@ export default async function ChecklistsManagePage() {
   const profile = await getMyProfile();
   if (!profile) redirect("/login");
 
-  if (profile.role !== USER_ROLES.ADMIN) {
+  if (
+    profile.role !== USER_ROLES.ADMIN &&
+    profile.role !== USER_ROLES.SUPERADMIN &&
+    profile.role !== "moderator"
+  ) {
     redirect("/dashboard");
   }
 

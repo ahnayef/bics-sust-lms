@@ -214,6 +214,7 @@ export default async function Overview() {
 
   if (
     profile.role !== USER_ROLES.ADMIN &&
+    profile.role !== USER_ROLES.SUPERADMIN &&
     profile.role !== USER_ROLES.MODERATOR
   ) {
     redirect("/dashboard");

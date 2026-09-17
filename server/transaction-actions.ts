@@ -52,7 +52,11 @@ async function getCaller() {
 async function requireModOrAdmin() {
   const caller = await getCaller();
   if (!caller) return { error: "Not authenticated" as string };
-  if (![USER_ROLES.ADMIN, USER_ROLES.MODERATOR].includes(caller.role as any)) {
+  if (
+    ![USER_ROLES.ADMIN, USER_ROLES.SUPERADMIN, USER_ROLES.MODERATOR].includes(
+      caller.role as any,
+    )
+  ) {
     return { error: "Insufficient permissions" as string };
   }
   return caller;

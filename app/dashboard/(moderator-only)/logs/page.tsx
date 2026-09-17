@@ -13,7 +13,7 @@ export default async function AdminLogsPage({
   const profile = await getMyProfile();
   if (!profile) redirect("/login");
 
-  if (profile.role !== USER_ROLES.ADMIN) {
+  if (profile.role !== USER_ROLES.SUPERADMIN) {
     redirect("/dashboard");
   }
 

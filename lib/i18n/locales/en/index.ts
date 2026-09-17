@@ -1,3 +1,4 @@
+import { admins } from "./admins";
 import { bookList } from "./bookList";
 import { books } from "./books";
 import { borrow } from "./borrow";
@@ -32,6 +33,7 @@ export const en = {
   books,
   copies,
   users,
+  admins,
   moderators,
   thanas,
   logs,

@@ -2,6 +2,7 @@ import HistoryClient from "@/app/dashboard/history/HistoryClient";
 import Avatar from "@/components/Avatar";
 import PageTransition from "@/components/PageTransition";
 import { RankBadge } from "@/components/ui/rank-badge";
+import { USER_ROLES } from "@/lib/constants";
 import { getTranslation } from "@/lib/i18n/server";
 import {
   getChecklists,
@@ -111,6 +112,7 @@ async function UserProfileContent({
   );
 
   const roleColors: Record<string, string> = {
+    superadmin: "bg-purple-100 text-purple-900 border-purple-300",
     admin: "bg-amber-100 text-amber-900 border-amber-300",
     moderator: "bg-teal-100 text-teal-900 border-teal-300",
     member: "bg-[#f1e7d8] text-[#4a3b2c] border-[#bda68c]",
@@ -309,8 +311,8 @@ async function UserProfileContent({
             isVerified={profile.is_verified}
             userName={profile.full_name}
             userRole={profile.role}
-            isAdmin={perms.role === "admin"}
-            canManageModerators={perms.canManageModerators}
+            isAdmin={perms.canManageAdmins}
+            isCallerSuperAdmin={perms.role === USER_ROLES.SUPERADMIN}
             currentRankId={profile.rank_id}
             availableRanks={ranksResponse.data}
           />

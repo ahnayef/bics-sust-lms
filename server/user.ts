@@ -124,8 +124,10 @@ export function shellHintsFromClaims(claims: unknown): {
     (c as { user_role?: unknown }).user_role;
 
   let role: UserRole | null = null;
-  if (rawRole === "admin" || rawRole === "moderator" || rawRole === "member") {
+  if (rawRole === "superadmin" || rawRole === "admin" || rawRole === "member") {
     role = rawRole;
+  } else if (rawRole === "moderator") {
+    role = "admin";
   }
 
   return { displayName, avatarUrl, role };

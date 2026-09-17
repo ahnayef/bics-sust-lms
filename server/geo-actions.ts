@@ -23,8 +23,11 @@ async function requireModOrAdmin(): Promise<
     .eq("id", sub)
     .single();
 
-  if (!profile || !["admin", "moderator"].includes(profile.role)) {
-    return { error: "Only moderators and admins can manage thanas" };
+  if (
+    !profile ||
+    !["admin", "superadmin", "moderator"].includes(profile.role)
+  ) {
+    return { error: "Only admins can manage thanas" };
   }
   return { sub };
 }
@@ -52,9 +55,7 @@ export async function addThana(
   return {};
 }
 
-export async function getThanaRefCount(
-  thanaId: string,
-): Promise<number> {
+export async function getThanaRefCount(thanaId: string): Promise<number> {
   const supabase = await createClient();
   const { count } = await supabase
     .from("profiles")

@@ -8,8 +8,12 @@ function transformProfile(profile: any) {
     rank: profile.rank ?? undefined,
     thana: profile.thana ?? undefined,
     category: profile.category ?? undefined,
-    created_at: profile.created_at ? new Date(profile.created_at).toISOString() : null,
-    updated_at: profile.updated_at ? new Date(profile.updated_at).toISOString() : null,
+    created_at: profile.created_at
+      ? new Date(profile.created_at).toISOString()
+      : null,
+    updated_at: profile.updated_at
+      ? new Date(profile.updated_at).toISOString()
+      : null,
   };
 }
 
@@ -65,14 +69,21 @@ export async function getModeratorsAndAdmin() {
   });
 
   const transformed = data.map(transformProfile);
-  return transformed.sort((a, b) => {
-    if (a.role === "admin" && b.role !== "admin") return -1;
-    if (a.role !== "admin" && b.role === "admin") return 1;
-    return 0;
-  });
+  // Strictly hide superadmin from the staff directory list
+  return transformed
+    .filter((p) => p.role !== "superadmin")
+    .sort((a, b) => {
+      if (a.role === "admin" && b.role !== "admin") return -1;
+      if (a.role !== "admin" && b.role === "admin") return 1;
+      return 0;
+    });
 }
 
-export async function checkUsernameAvailable(username: string): Promise<boolean> {
+export const getAdminsList = getModeratorsAndAdmin;
+
+export async function checkUsernameAvailable(
+  username: string,
+): Promise<boolean> {
   const data = await db.query.profiles.findFirst({
     where: eq(schema.profiles.username, username),
     columns: { id: true },
@@ -83,13 +94,10 @@ export async function checkUsernameAvailable(username: string): Promise<boolean>
 export async function upsertProfile(
   profile: typeof schema.profiles.$inferInsert,
 ) {
-  return db
-    .insert(schema.profiles)
-    .values(profile)
-    .onConflictDoUpdate({
-      target: schema.profiles.id,
-      set: profile,
-    });
+  return db.insert(schema.profiles).values(profile).onConflictDoUpdate({
+    target: schema.profiles.id,
+    set: profile,
+  });
 }
 
 export async function updateProfile(
@@ -101,4 +109,3 @@ export async function updateProfile(
     .set({ ...updates, updated_at: new Date() })
     .where(eq(schema.profiles.id, id));
 }
-

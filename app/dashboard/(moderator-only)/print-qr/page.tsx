@@ -12,7 +12,11 @@ export default async function PrintQrPage() {
   }
 
   const profile = await getProfile(claims.sub);
-  if (profile?.role !== "admin" && profile?.role !== "moderator") {
+  if (
+    profile?.role !== "admin" &&
+    profile?.role !== "superadmin" &&
+    profile?.role !== "moderator"
+  ) {
     redirect("/dashboard");
   }
 

@@ -129,8 +129,9 @@ export function CommunityNav() {
       icon: FaUsers,
     },
     {
-      label: t.dashboard.sidebar.moderators,
-      href: "/dashboard/moderators",
+      label:
+        (t.dashboard.sidebar as any).admins ?? t.dashboard.sidebar.moderators,
+      href: "/dashboard/admins",
       icon: FaShieldAlt,
     },
     {

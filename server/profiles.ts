@@ -225,11 +225,11 @@ export async function verifyUser(
   try {
     const user = await requireAuth();
     const callerProfile = await getProfileById(user.id);
-    if (
-      callerProfile?.role !== USER_ROLES.ADMIN &&
-      callerProfile?.role !== USER_ROLES.MODERATOR
-    )
-      return { error: "Only admins and moderators can verify users" };
+    const isCallerAdmin =
+      callerProfile?.role === USER_ROLES.ADMIN ||
+      callerProfile?.role === USER_ROLES.SUPERADMIN ||
+      callerProfile?.role === "moderator";
+    if (!isCallerAdmin) return { error: "Only admins can verify users" };
 
     await updateProfile(userId, { is_verified: true });
     await insertActionLog("user_verified", userId, user.id);
@@ -250,11 +250,19 @@ export async function unverifyUser(
   try {
     const user = await requireAuth();
     const callerProfile = await getProfileById(user.id);
+    const isCallerAdmin =
+      callerProfile?.role === USER_ROLES.ADMIN ||
+      callerProfile?.role === USER_ROLES.SUPERADMIN ||
+      callerProfile?.role === "moderator";
+    if (!isCallerAdmin) return { error: "Only admins can unverify users" };
+
+    const targetProfile = await getProfileById(userId);
     if (
-      callerProfile?.role !== USER_ROLES.ADMIN &&
-      callerProfile?.role !== USER_ROLES.MODERATOR
-    )
-      return { error: "Only admins and moderators can unverify users" };
+      targetProfile?.role === USER_ROLES.SUPERADMIN &&
+      callerProfile?.role !== USER_ROLES.SUPERADMIN
+    ) {
+      return { error: "Cannot unverify a superadmin" };
+    }
 
     await updateProfile(userId, { is_verified: false });
     await insertActionLog("user_unverified", userId, user.id);
@@ -275,15 +283,24 @@ export async function updateUserProfileByStaff(
   try {
     const user = await requireAuth();
     const callerProfile = await getProfileById(user.id);
-    if (
-      callerProfile?.role !== USER_ROLES.ADMIN &&
-      callerProfile?.role !== USER_ROLES.MODERATOR
-    ) {
-      return { error: "Only admins and moderators can update member profiles" };
+    const isCallerAdmin =
+      callerProfile?.role === USER_ROLES.ADMIN ||
+      callerProfile?.role === USER_ROLES.SUPERADMIN ||
+      callerProfile?.role === "moderator";
+    if (!isCallerAdmin) {
+      return { error: "Only admins can update member profiles" };
     }
 
     const userId = (formData.get("user_id") as string)?.trim();
     if (!userId) return { error: "User ID is required" };
+
+    const targetProfile = await getProfileById(userId);
+    if (
+      targetProfile?.role === USER_ROLES.SUPERADMIN &&
+      callerProfile?.role !== USER_ROLES.SUPERADMIN
+    ) {
+      return { error: "Cannot edit superadmin profile" };
+    }
 
     const fullName = (formData.get("full_name") as string)?.trim();
     if (!fullName) return { error: "Full name is required" };
@@ -314,7 +331,9 @@ export async function moderatorPermissions(): Promise<{
   canVerifyUsers: boolean;
   canManageUsers: boolean;
   canManageModerators: boolean;
+  canManageAdmins: boolean;
   canManageThanas: boolean;
+  canViewLogs: boolean;
   role: string;
 }> {
   try {
@@ -322,17 +341,20 @@ export async function moderatorPermissions(): Promise<{
     const profile = await getProfileById(user.id);
 
     const role = profile?.role ?? USER_ROLES.MEMBER;
-    const isMod = role === USER_ROLES.MODERATOR || role === USER_ROLES.ADMIN;
-    const isAdminRole = role === USER_ROLES.ADMIN;
+    const isSuperAdmin = role === USER_ROLES.SUPERADMIN;
+    const isAdmin =
+      role === USER_ROLES.ADMIN || isSuperAdmin || role === "moderator";
 
     return {
-      canManageBooks: isMod,
-      canManageCopies: isMod,
-      canApproveTransactions: isMod,
-      canVerifyUsers: isMod,
-      canManageUsers: isMod,
-      canManageModerators: isMod, // TODO: To revoke this, change back to isAdminRole
-      canManageThanas: isMod,
+      canManageBooks: isAdmin,
+      canManageCopies: isAdmin,
+      canApproveTransactions: isAdmin,
+      canVerifyUsers: isAdmin,
+      canManageUsers: isAdmin,
+      canManageModerators: isAdmin,
+      canManageAdmins: isAdmin,
+      canManageThanas: isAdmin,
+      canViewLogs: isSuperAdmin,
       role,
     };
   } catch {
@@ -343,23 +365,26 @@ export async function moderatorPermissions(): Promise<{
       canVerifyUsers: false,
       canManageUsers: false,
       canManageModerators: false,
+      canManageAdmins: false,
       canManageThanas: false,
+      canViewLogs: false,
       role: USER_ROLES.MEMBER,
     };
   }
 }
 
-export async function promoteToModerator(
+export async function promoteToAdminByEmail(
   formData: FormData,
 ): Promise<{ error?: string; success?: string }> {
   try {
     const user = await requireAuth();
     const callerProfile = await getProfileById(user.id);
-    if (
-      callerProfile?.role !== USER_ROLES.ADMIN &&
-      callerProfile?.role !== USER_ROLES.MODERATOR
-    )
-      return { error: "Only admins and moderators can promote moderators" }; // TODO: To revoke, change back to only ADMIN
+    const isCallerAdmin =
+      callerProfile?.role === USER_ROLES.ADMIN ||
+      callerProfile?.role === USER_ROLES.SUPERADMIN ||
+      callerProfile?.role === "moderator";
+    if (!isCallerAdmin)
+      return { error: "Only admins can promote members to admin" };
 
     const email = (formData.get("email") as string)?.trim().toLowerCase();
     if (!email) return { error: "Email is required" };
@@ -368,81 +393,29 @@ export async function promoteToModerator(
 
     if (!targetProfile) return { error: "No user found with that email" };
     if (targetProfile.role === USER_ROLES.ADMIN)
-      return { error: "Cannot change role of an admin" };
-    if (targetProfile.role === USER_ROLES.MODERATOR)
-      return { error: "User is already a moderator" };
+      return { error: "User is already an admin" };
+    if (targetProfile.role === USER_ROLES.SUPERADMIN)
+      return { error: "User is already a superadmin" };
 
-    await updateProfile(targetProfile.id, { role: USER_ROLES.MODERATOR });
+    await updateProfile(targetProfile.id, { role: USER_ROLES.ADMIN });
     await insertActionLog(
       "role_changed",
       targetProfile.id,
       user.id,
-      "Promoted to moderator",
+      "Promoted to admin",
     );
 
     invalidateUsersAndOverview();
-    return { success: `${targetProfile.full_name} is now a moderator` };
+    return { success: `${targetProfile.full_name} is now an admin` };
   } catch (error: any) {
     return { error: error.message };
   }
 }
 
-export async function makeModerator(
+export async function promoteToModerator(
   formData: FormData,
 ): Promise<{ error?: string; success?: string }> {
-  try {
-    const user = await requireAuth();
-    const callerProfile = await getProfileById(user.id);
-    if (
-      callerProfile?.role !== USER_ROLES.ADMIN &&
-      callerProfile?.role !== USER_ROLES.MODERATOR
-    )
-      return { error: "Only admins and moderators can promote moderators" }; // TODO: To revoke, change back to only ADMIN
-
-    const userId = formData.get("userId") as string;
-    if (!userId) return { error: "User ID is required" };
-
-    const targetProfile = await getProfileById(userId);
-    if (!targetProfile) return { error: "User not found" };
-    if (targetProfile.role === USER_ROLES.ADMIN)
-      return { error: "Cannot change role of an admin" };
-    if (targetProfile.role === USER_ROLES.MODERATOR)
-      return { error: "User is already a moderator" };
-
-    await updateProfile(userId, { role: USER_ROLES.MODERATOR });
-    await insertActionLog(
-      "role_changed",
-      userId,
-      user.id,
-      "Promoted to moderator",
-    );
-
-    invalidateUsersAndOverview();
-    return { success: `${targetProfile.full_name} is now a moderator` };
-  } catch (error: any) {
-    return { error: error.message };
-  }
-}
-
-export async function changeUserRank(
-  userId: string,
-  rankId: string | null,
-): Promise<{ error?: string; success?: string }> {
-  try {
-    const user = await requireAuth();
-    const callerProfile = await getProfileById(user.id);
-
-    if (callerProfile?.role !== USER_ROLES.ADMIN) {
-      return { error: "Only admins can change user ranks" };
-    }
-
-    await updateProfile(userId, { rank_id: rankId });
-
-    invalidateUsersAndOverview();
-    return { success: "Rank updated successfully" };
-  } catch (error: any) {
-    return { error: error.message };
-  }
+  return promoteToAdminByEmail(formData);
 }
 
 export async function makeAdmin(
@@ -451,7 +424,11 @@ export async function makeAdmin(
   try {
     const user = await requireAuth();
     const callerProfile = await getProfileById(user.id);
-    if (callerProfile?.role !== USER_ROLES.ADMIN)
+    const isCallerAdmin =
+      callerProfile?.role === USER_ROLES.ADMIN ||
+      callerProfile?.role === USER_ROLES.SUPERADMIN ||
+      callerProfile?.role === "moderator";
+    if (!isCallerAdmin)
       return { error: "Only admins can promote users to admin" };
 
     const userId = formData.get("userId") as string;
@@ -461,6 +438,8 @@ export async function makeAdmin(
     if (!targetProfile) return { error: "User not found" };
     if (targetProfile.role === USER_ROLES.ADMIN)
       return { error: "User is already an admin" };
+    if (targetProfile.role === USER_ROLES.SUPERADMIN)
+      return { error: "Cannot change role of a superadmin" };
 
     await updateProfile(userId, { role: USER_ROLES.ADMIN });
     await insertActionLog("role_changed", userId, user.id, "Promoted to admin");
@@ -472,34 +451,40 @@ export async function makeAdmin(
   }
 }
 
-export async function demoteModerator(
+export async function makeModerator(
   formData: FormData,
+): Promise<{ error?: string; success?: string }> {
+  return makeAdmin(formData);
+}
+
+export async function changeUserRank(
+  userId: string,
+  rankId: string | null,
 ): Promise<{ error?: string; success?: string }> {
   try {
     const user = await requireAuth();
     const callerProfile = await getProfileById(user.id);
-    if (
-      callerProfile?.role !== USER_ROLES.ADMIN &&
-      callerProfile?.role !== USER_ROLES.MODERATOR
-    )
-      return { error: "Only admins and moderators can demote moderators" }; // TODO: To revoke, change back to only ADMIN
+    const isCallerAdmin =
+      callerProfile?.role === USER_ROLES.ADMIN ||
+      callerProfile?.role === USER_ROLES.SUPERADMIN ||
+      callerProfile?.role === "moderator";
 
-    const userId = formData.get("userId") as string;
-    if (!userId) return { error: "User ID is required" };
+    if (!isCallerAdmin) {
+      return { error: "Only admins can change user ranks" };
+    }
 
     const targetProfile = await getProfileById(userId);
+    if (
+      targetProfile?.role === USER_ROLES.SUPERADMIN &&
+      callerProfile?.role !== USER_ROLES.SUPERADMIN
+    ) {
+      return { error: "Cannot change rank of a superadmin" };
+    }
 
-    if (!targetProfile) return { error: "User not found" };
-    if (targetProfile.role !== USER_ROLES.MODERATOR)
-      return { error: "User is not a moderator" };
-
-    await updateProfile(userId, { role: USER_ROLES.MEMBER });
-    await insertActionLog("role_changed", userId, user.id, "Demoted to member");
+    await updateProfile(userId, { rank_id: rankId });
 
     invalidateUsersAndOverview();
-    return {
-      success: `${targetProfile.full_name} has been removed as moderator`,
-    };
+    return { success: "Rank updated successfully" };
   } catch (error: any) {
     return { error: error.message };
   }
@@ -511,8 +496,11 @@ export async function demoteFromAdminAction(
   try {
     const user = await requireAuth();
     const callerProfile = await getProfileById(user.id);
-    if (callerProfile?.role !== USER_ROLES.ADMIN)
-      return { error: "Only admins can demote admins" };
+    const isCallerAdmin =
+      callerProfile?.role === USER_ROLES.ADMIN ||
+      callerProfile?.role === USER_ROLES.SUPERADMIN ||
+      callerProfile?.role === "moderator";
+    if (!isCallerAdmin) return { error: "Only admins can demote admins" };
 
     const userId = formData.get("userId") as string;
     if (!userId) return { error: "User ID is required" };
@@ -521,6 +509,8 @@ export async function demoteFromAdminAction(
 
     const targetProfile = await getProfileById(userId);
     if (!targetProfile) return { error: "User not found" };
+    if (targetProfile.role === USER_ROLES.SUPERADMIN)
+      return { error: "Cannot demote a superadmin" };
 
     await updateProfile(userId, { role: USER_ROLES.MEMBER });
     await insertActionLog("role_changed", userId, user.id, "Demoted to member");
@@ -530,6 +520,12 @@ export async function demoteFromAdminAction(
   } catch (error: any) {
     return { error: error.message };
   }
+}
+
+export async function demoteModerator(
+  formData: FormData,
+): Promise<{ error?: string; success?: string }> {
+  return demoteFromAdminAction(formData);
 }
 
 export async function checkUsernameAvailability(

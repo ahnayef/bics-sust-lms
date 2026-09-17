@@ -13,6 +13,7 @@ export default async function ThanasPage() {
 
   if (
     profile.role !== USER_ROLES.ADMIN &&
+    profile.role !== USER_ROLES.SUPERADMIN &&
     profile.role !== USER_ROLES.MODERATOR
   ) {
     redirect("/dashboard");

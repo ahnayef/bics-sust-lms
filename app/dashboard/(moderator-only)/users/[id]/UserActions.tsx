@@ -5,9 +5,7 @@ import { RankBadge } from "@/components/ui/rank-badge";
 import {
   changeUserRank,
   demoteFromAdminAction,
-  demoteModerator,
   makeAdmin,
-  makeModerator,
   unverifyUser,
   verifyUser,
 } from "@/server/profiles";
@@ -22,7 +20,7 @@ interface Props {
   userName: string;
   userRole: string;
   isAdmin: boolean;
-  canManageModerators: boolean;
+  isCallerSuperAdmin?: boolean;
   currentRankId: string | null;
   availableRanks: Rank[];
 }
@@ -33,7 +31,7 @@ export default function UserActions({
   userName,
   userRole,
   isAdmin,
-  canManageModerators,
+  isCallerSuperAdmin = false,
   currentRankId,
   availableRanks,
 }: Props) {
@@ -48,9 +46,9 @@ export default function UserActions({
   const [actionError, setActionError] = useState<string | null>(null);
   const [showMakeAdminModal1, setShowMakeAdminModal1] = useState(false);
   const [showMakeAdminModal2, setShowMakeAdminModal2] = useState(false);
-  const [showMakeModeratorModal, setShowMakeModeratorModal] = useState(false);
-  const [showDemoteModModal, setShowDemoteModModal] = useState(false);
   const [showDemoteAdminModal, setShowDemoteAdminModal] = useState(false);
+
+  const isTargetSuperAdmin = userRole === "superadmin";
 
   const handleVerify = () => {
     setActionError(null);
@@ -105,34 +103,6 @@ export default function UserActions({
     });
   };
 
-  const handleDemoteModerator = () => {
-    setActionError(null);
-    startTransition(async () => {
-      const fd = new FormData();
-      fd.set("userId", userId);
-      const result = await demoteModerator(fd);
-      if (result?.error) {
-        setActionError(result.error);
-      }
-      setShowDemoteModModal(false);
-      router.refresh();
-    });
-  };
-
-  const handleMakeModerator = () => {
-    setActionError(null);
-    startTransition(async () => {
-      const fd = new FormData();
-      fd.set("userId", userId);
-      const result = await makeModerator(fd);
-      if (result?.error) {
-        setActionError(result.error);
-      }
-      setShowMakeModeratorModal(false);
-      router.refresh();
-    });
-  };
-
   const handleDemoteAdmin = () => {
     setActionError(null);
     startTransition(async () => {
@@ -156,29 +126,32 @@ export default function UserActions({
       )}
 
       <div className="flex flex-col sm:flex-row flex-wrap gap-2.5">
-        {!isVerified ? (
-          <button
-            type="button"
-            onClick={() => setShowVerifyModal(true)}
-            disabled={isPending}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2d521f] text-[#f4e8d4] border border-[#223f18] rounded-sm hover:bg-[#386527] transition-colors font-semibold text-sm ink-text shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <FaCheckCircle className="w-4 h-4" />
-            Verify Member
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setShowUnverifyModal(true)}
-            disabled={isPending}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#fdf0ec] text-[#9b3a25] border border-[#e5a89b] rounded-sm hover:bg-[#f6d7d0] transition-colors font-semibold text-sm ink-text shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <FaTimesCircle className="w-4 h-4" />
-            Revoke Verification
-          </button>
-        )}
+        {/* Verification - Hidden for superadmin targets unless caller is superadmin */}
+        {(!isTargetSuperAdmin || isCallerSuperAdmin) &&
+          (!isVerified ? (
+            <button
+              type="button"
+              onClick={() => setShowVerifyModal(true)}
+              disabled={isPending}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2d521f] text-[#f4e8d4] border border-[#223f18] rounded-sm hover:bg-[#386527] transition-colors font-semibold text-sm ink-text shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <FaCheckCircle className="w-4 h-4" />
+              Verify Member
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowUnverifyModal(true)}
+              disabled={isPending}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#fdf0ec] text-[#9b3a25] border border-[#e5a89b] rounded-sm hover:bg-[#f6d7d0] transition-colors font-semibold text-sm ink-text shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <FaTimesCircle className="w-4 h-4" />
+              Revoke Verification
+            </button>
+          ))}
 
-        {isAdmin && (
+        {/* Change Rank - Hidden for superadmin targets unless caller is superadmin */}
+        {isAdmin && (!isTargetSuperAdmin || isCallerSuperAdmin) && (
           <button
             type="button"
             onClick={() => setShowRankModal(true)}
@@ -190,20 +163,8 @@ export default function UserActions({
           </button>
         )}
 
-        {canManageModerators &&
-          userRole !== "admin" &&
-          userRole !== "moderator" && (
-            <button
-              type="button"
-              onClick={() => setShowMakeModeratorModal(true)}
-              disabled={isPending}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#5a4b3f] text-[#f4e8d4] border border-[#4a3d31] rounded-sm hover:bg-[#6a5b4f] transition-colors font-semibold text-sm ink-text shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Promote to Moderator
-            </button>
-          )}
-
-        {isAdmin && userRole !== "admin" && (
+        {/* Make Admin - Only for members */}
+        {isAdmin && userRole === "member" && (
           <button
             type="button"
             onClick={() => setShowMakeAdminModal1(true)}
@@ -214,17 +175,7 @@ export default function UserActions({
           </button>
         )}
 
-        {canManageModerators && userRole === "moderator" && (
-          <button
-            type="button"
-            onClick={() => setShowDemoteModModal(true)}
-            disabled={isPending}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#fdf0ec] text-[#9b3a25] border border-[#e5a89b] rounded-sm hover:bg-[#f6d7d0] transition-colors font-semibold text-sm ink-text shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            Demote to Member
-          </button>
-        )}
-
+        {/* Demote Admin - Only for admins (never for superadmin) */}
         {isAdmin && userRole === "admin" && (
           <button
             type="button"
@@ -307,7 +258,7 @@ export default function UserActions({
           setShowMakeAdminModal2(true);
         }}
         title="Make Admin - First Confirmation"
-        description="Are you absolutely sure you want to make this user an Admin? Admins have full access to everything."
+        description="Are you sure you want to make this user an Admin? Admins have elevated access across the system."
         preview={userName}
         danger={true}
         confirmLabel="Yes, I am sure"
@@ -319,33 +270,10 @@ export default function UserActions({
         onClose={() => setShowMakeAdminModal2(false)}
         onConfirm={handleMakeAdmin}
         title="Make Admin - Final Confirmation"
-        description="This is a destructive action. Once an Admin, they can modify other users, including moderators. Are you REALLY sure?"
+        description="This grants administrator permissions to manage library records, transactions, and users. Are you sure?"
         preview={`Target User: ${userName}`}
         danger={true}
         confirmLabel="Yes, Make Admin"
-        loading={isPending}
-      />
-
-      <ConfirmModal
-        open={showMakeModeratorModal}
-        onClose={() => setShowMakeModeratorModal(false)}
-        onConfirm={handleMakeModerator}
-        title="Promote to Moderator"
-        description="Are you sure you want to promote this user to moderator? They will have access to manage books, copies, transactions, and other users."
-        preview={userName}
-        confirmLabel="Promote to Moderator"
-        loading={isPending}
-      />
-
-      <ConfirmModal
-        open={showDemoteModModal}
-        onClose={() => setShowDemoteModModal(false)}
-        onConfirm={handleDemoteModerator}
-        title="Demote Moderator"
-        description="This will remove moderator privileges and revert them to a regular member."
-        preview={`Target User: ${userName}`}
-        danger={true}
-        confirmLabel="Demote to Member"
         loading={isPending}
       />
 
