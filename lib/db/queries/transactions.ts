@@ -8,7 +8,7 @@ export async function getTransactionById(id: string) {
     db.query.transactions.findFirst({
       where: eq(schema.transactions.id, id),
       with: { user: true, book: true, copy: true, reviewer: true },
-    })
+    }),
   );
 }
 
@@ -23,7 +23,7 @@ export async function getTransactionsByUserId(userId: string) {
         reviewer: true,
       },
       orderBy: (transactions, { desc }) => [desc(transactions.request_date)],
-    })
+    }),
   );
 }
 
@@ -37,7 +37,7 @@ export async function getAllTransactions() {
         reviewer: true,
       },
       orderBy: (transactions, { desc }) => [desc(transactions.request_date)],
-    })
+    }),
   );
 }
 
@@ -59,7 +59,14 @@ export async function getTransactionsByFilters(filters: {
       where: and(...whereConditions),
       with: {
         user: {
-          columns: { id: true, full_name: true, username: true, email: true, avatar_url: true },
+          columns: {
+            id: true,
+            full_name: true,
+            username: true,
+            email: true,
+            avatar_url: true,
+            phone: true,
+          },
         },
         copy: {
           columns: { id: true, copy_number: true, status: true, book_id: true },
@@ -72,7 +79,7 @@ export async function getTransactionsByFilters(filters: {
         },
       },
       orderBy: (transactions, { desc }) => [desc(transactions.request_date)],
-    })
+    }),
   );
 }
 
@@ -90,7 +97,7 @@ export async function getDuplicateTransaction(
         eq(schema.transactions.type, type),
         inArray(schema.transactions.status, statuses),
       ),
-    })
+    }),
   );
 }
 
@@ -102,7 +109,7 @@ export async function createTransaction(
       ...txn,
       copy_id: txn.copy_id.toUpperCase(),
       book_id: txn.book_id.toUpperCase(),
-    })
+    }),
   );
 }
 
@@ -114,7 +121,7 @@ export async function updateTransaction(
     db
       .update(schema.transactions)
       .set({ ...updates, updated_at: new Date() })
-      .where(eq(schema.transactions.id, id))
+      .where(eq(schema.transactions.id, id)),
   );
 }
 
@@ -135,7 +142,7 @@ export async function updateBorrowStatus(
           eq(schema.transactions.type, "borrow"),
           inArray(schema.transactions.status, ["active", "overdue"]),
         ),
-      )
+      ),
   );
 }
 
@@ -143,13 +150,20 @@ export async function getRecentTransactions(limit: number = 15) {
   return retry(() =>
     db.query.transactions.findMany({
       with: {
-        user: { columns: { id: true, full_name: true, username: true, avatar_url: true } },
+        user: {
+          columns: {
+            id: true,
+            full_name: true,
+            username: true,
+            avatar_url: true,
+          },
+        },
         book: { columns: { id: true, title: true, author: true } },
-        copy: { columns: { id: true, copy_number: true } }
+        copy: { columns: { id: true, copy_number: true } },
       },
       orderBy: (transactions, { desc }) => [desc(transactions.request_date)],
       limit,
-    })
+    }),
   );
 }
 
@@ -158,9 +172,9 @@ export async function getCompletedSince(date: string) {
     db.query.transactions.findMany({
       where: and(
         eq(schema.transactions.status, "completed"),
-        sql`${schema.transactions.updated_at} >= ${date}`
+        sql`${schema.transactions.updated_at} >= ${date}`,
       ),
       columns: { id: true },
-    })
+    }),
   );
 }

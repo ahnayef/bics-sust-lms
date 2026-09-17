@@ -925,7 +925,7 @@ export default function TransactionsClient({
                 <button
                   type="button"
                   onClick={() => setStatusFilter("all")}
-                  className={`px-3 py-1 text-xs font-semibold rounded-full border transition-all cursor-pointer shrink-0 ${
+                  className={`px-2 sm:px-3 py-0.5 sm:py-1 text-[11px] sm:text-xs font-semibold rounded-full border transition-all cursor-pointer shrink-0 ${
                     statusFilter === "all"
                       ? "bg-[#3f3328] text-[#f4e8d4] border-[#3f3328] shadow-xs font-bold"
                       : "bg-[#eadcc8] text-[#4a3e33] border-[#c9b89a] hover:bg-[#decbb6]"
@@ -937,7 +937,7 @@ export default function TransactionsClient({
                 <button
                   type="button"
                   onClick={() => setStatusFilter("overdue")}
-                  className={`px-3 py-1 text-xs font-semibold rounded-full border transition-all cursor-pointer shrink-0 flex items-center gap-1 ${
+                  className={`px-2 sm:px-3 py-0.5 sm:py-1 text-[11px] sm:text-xs font-semibold rounded-full border transition-all cursor-pointer shrink-0 flex items-center gap-1 ${
                     statusFilter === "overdue"
                       ? "bg-[#8b2c1a] text-[#fdf0ec] border-[#8b2c1a] shadow-xs font-bold"
                       : "bg-[#faeae6] text-[#8b2c1a] border-[#d67b6a] hover:bg-[#f3d9d3]"
@@ -951,7 +951,7 @@ export default function TransactionsClient({
                 <button
                   type="button"
                   onClick={() => setStatusFilter("active")}
-                  className={`px-3 py-1 text-xs font-semibold rounded-full border transition-all cursor-pointer shrink-0 ${
+                  className={`px-2 sm:px-3 py-0.5 sm:py-1 text-[11px] sm:text-xs font-semibold rounded-full border transition-all cursor-pointer shrink-0 ${
                     statusFilter === "active"
                       ? "bg-[#3f3328] text-[#f4e8d4] border-[#3f3328] shadow-xs font-bold"
                       : "bg-[#eadcc8] text-[#4a3e33] border-[#c9b89a] hover:bg-[#decbb6]"
@@ -1023,7 +1023,7 @@ export default function TransactionsClient({
                           {/* Profile Photo */}
                           <div className="shrink-0">
                             <Link href={`/dashboard/users/${tx.user?.id}`}>
-                              <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border border-[#cfbba1] bg-[#ece0ce] hover:border-[#8b5c4a] transition-colors">
+                              <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border border-[#cfbba1] bg-[#ece0ce] hover:border-[#8b5c4a] transition-colors">
                                 {tx.user?.avatar_url ? (
                                   <Image
                                     src={tx.user.avatar_url}
@@ -1044,7 +1044,7 @@ export default function TransactionsClient({
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-[#2b2119] truncate">
+                            <p className="text-sm sm:text-base font-semibold text-[#2b2119] truncate">
                               <Link
                                 href={`/dashboard/users/${tx.user?.id}`}
                                 className="hover:underline hover:text-[#5a4b3f] transition-colors"
@@ -1052,7 +1052,7 @@ export default function TransactionsClient({
                                 {tx.user?.full_name ?? t.common.unknown}
                               </Link>
                             </p>
-                            <p className="text-xs text-[#5a4b3f] mt-0.5 truncate">
+                            <p className="text-[11px] sm:text-xs text-[#5a4b3f] mt-0.5 truncate">
                               {tx.book?.title ?? t.common.unknown}{" "}
                               <span className="font-mono text-[10px] opacity-70">
                                 ({tx.copy?.id ?? tx.copy_id})
@@ -1071,7 +1071,7 @@ export default function TransactionsClient({
                         </StatusBadge>
                       </div>
 
-                      <div className="mt-2 text-xs text-[#5a4b3f] flex flex-wrap gap-x-4 gap-y-1 pl-[44px] sm:pl-[52px]">
+                      <div className="mt-2 text-[11px] sm:text-xs text-[#5a4b3f] flex flex-wrap gap-x-3 sm:gap-x-4 gap-y-1 pl-0 sm:pl-[52px]">
                         <p>
                           {t.transactions.table.requested}:{" "}
                           {formatDate(tx.request_date, language)}
@@ -1096,21 +1096,26 @@ export default function TransactionsClient({
                       </div>
 
                       {/* Desk Return & Contact Action Bar */}
-                      <div className="mt-3 pt-2.5 border-t border-[#d8c7b2] flex items-center justify-between gap-2 flex-wrap pl-[44px] sm:pl-[52px]">
+                      <div className="mt-3 pt-2.5 border-t border-[#d8c7b2] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pl-0 sm:pl-[52px]">
                         <div className="flex items-center gap-2">
                           {tx.user?.phone && (
                             <a
                               href={`tel:${tx.user.phone}`}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[#ece0ce] hover:bg-[#decbb5] text-[#3f3328] border border-[#c4b39c] transition-colors cursor-pointer"
+                              className="inline-flex items-center justify-center gap-1.5 flex-1 sm:flex-none px-3 py-2 sm:py-1.5 text-xs font-bold text-[#f6ecdd] bg-[#2a4a5a] hover:bg-[#1e3844] rounded-lg transition-all shadow-xs cursor-pointer"
                               title={`Call ${tx.user.phone}`}
                             >
-                              <FaPhone className="w-2.5 h-2.5 text-[#5a4b3f]" />
-                              <span>{tx.user.phone}</span>
+                              <FaPhone className="w-3 h-3" />
+                              <span className="hidden sm:inline">
+                                {tx.user.phone}
+                              </span>
+                              <span className="sm:hidden">
+                                {language === "bn" ? "কল করুন" : "Call"}
+                              </span>
                             </a>
                           )}
                           <Link
                             href={`/dashboard/users/${tx.user?.id}`}
-                            className="text-xs text-[#6a5a4c] hover:text-[#221910] hover:underline"
+                            className="inline-flex items-center justify-center gap-1.5 flex-1 sm:flex-none px-3 py-2 sm:py-1.5 text-xs font-bold text-[#3f3328] bg-[#ece0ce] hover:bg-[#decbb5] border border-[#c4b39c] rounded-lg transition-all shadow-xs"
                           >
                             {language === "bn" ? "প্রোফাইল →" : "Profile →"}
                           </Link>
@@ -1120,7 +1125,7 @@ export default function TransactionsClient({
                           type="button"
                           onClick={() => handleDirectReturn(tx)}
                           disabled={working}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#f6ecdd] bg-[#2d5a3c] hover:bg-[#22442d] rounded-lg transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                          className="inline-flex items-center justify-center gap-1.5 w-full sm:w-auto px-3 py-2 sm:py-1.5 text-xs font-bold text-[#f6ecdd] bg-[#2d5a3c] hover:bg-[#22442d] rounded-lg transition-all shadow-xs disabled:opacity-50 cursor-pointer"
                         >
                           <FaCheck className="w-3 h-3" />
                           <span>
