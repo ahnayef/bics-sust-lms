@@ -3,6 +3,7 @@ import { getTranslation } from "@/lib/i18n/server";
 import { getProfile } from "@/server/geo";
 import { getClaims } from "@/server/user";
 import { cacheLife, cacheTag } from "next/cache";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import {
   FaBell,
@@ -37,18 +38,16 @@ async function HomeContent() {
   const profile = claims ? await getProfile(claims.sub as string) : null;
   const isLoggedIn = !!claims;
   const isProfileComplete = profile?.profile_completed ?? false;
+
+  if (isLoggedIn) {
+    const destination = isProfileComplete ? "/dashboard" : "/setup";
+    redirect(destination);
+  }
+
   const { t } = await getTranslation();
 
-  const ctaHref = !isLoggedIn
-    ? "/login"
-    : isProfileComplete
-      ? "/dashboard"
-      : "/setup";
-  const ctaLabel = !isLoggedIn
-    ? t.home.hero.getStarted
-    : isProfileComplete
-      ? t.home.hero.dashboard
-      : t.home.hero.setup;
+  const ctaHref = "/login";
+  const ctaLabel = t.home.hero.getStarted;
 
   return (
     <PageTransition className="min-h-screen flex flex-col">
