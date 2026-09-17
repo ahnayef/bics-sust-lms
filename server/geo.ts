@@ -6,14 +6,21 @@
  * Server Actions (POST-only), breaking direct calls from Server Components.
  */
 
-import { db } from "@/lib/db";
-import * as schema from "@/lib/db/schema";
+import {
+  getRanks as getRanksQuery,
+  getThanas as getThanasQuery,
+} from "@/lib/db/queries/geo";
+import {
+  checkUsernameAvailable as checkUsernameAvailableQuery,
+  getModeratorsAndAdmin as getModeratorsAndAdminQuery,
+  getProfileById,
+  getProfileByUsername as getProfileByUsernameQuery,
+} from "@/lib/db/queries/profiles";
 import { logActionError } from "@/server/error-log";
 import { getClaims } from "@/server/user";
 import type { Profile, Rank, Thana } from "@/types/profile";
-import { asc, eq, ilike, inArray } from "drizzle-orm";
-import { getProfileById, getProfileByUsername as getProfileByUsernameQuery, getModeratorsAndAdmin as getModeratorsAndAdminQuery, checkUsernameAvailable as checkUsernameAvailableQuery } from "@/lib/db/queries/profiles";
-import { getThanas as getThanasQuery, getRanks as getRanksQuery } from "@/lib/db/queries/geo";
+
+import { cache } from "react";
 
 export type GeoSource = "supabase" | "unavailable";
 
@@ -26,37 +33,41 @@ export interface GeoResult<T> {
 // Profile reads
 // ---------------------------------------------------------------------------
 
-export async function getProfile(userId?: string): Promise<Profile | null> {
-  let resolvedId = userId;
-  if (!resolvedId) {
-    const claims = await getClaims();
-    resolvedId = claims?.sub ?? undefined;
-  }
+export const getProfile = cache(
+  async (userId?: string): Promise<Profile | null> => {
+    let resolvedId = userId;
+    if (!resolvedId) {
+      const claims = await getClaims();
+      resolvedId = claims?.sub ?? undefined;
+    }
 
-  if (!resolvedId) return null;
+    if (!resolvedId) return null;
 
-  try {
-    const data = await getProfileById(resolvedId);
-    if (!data) return null;
-    return data as unknown as Profile;
-  } catch (error: any) {
-    logActionError("getProfile", error.message, resolvedId, { userId: resolvedId });
-    return null;
-  }
-}
+    try {
+      const data = await getProfileById(resolvedId);
+      if (!data) return null;
+      return data as unknown as Profile;
+    } catch (error: any) {
+      logActionError("getProfile", error.message, resolvedId, {
+        userId: resolvedId,
+      });
+      return null;
+    }
+  },
+);
 
-export async function getProfileByUsername(
-  username: string,
-): Promise<Profile | null> {
-  try {
-    const data = await getProfileByUsernameQuery(username);
-    if (!data) return null;
-    return data as unknown as Profile;
-  } catch (error: any) {
-    logActionError("getProfileByUsername", error.message, null, { username });
-    return null;
-  }
-}
+export const getProfileByUsername = cache(
+  async (username: string): Promise<Profile | null> => {
+    try {
+      const data = await getProfileByUsernameQuery(username);
+      if (!data) return null;
+      return data as unknown as Profile;
+    } catch (error: any) {
+      logActionError("getProfileByUsername", error.message, null, { username });
+      return null;
+    }
+  },
+);
 
 export async function getModeratorsAndAdmin(): Promise<Profile[]> {
   try {

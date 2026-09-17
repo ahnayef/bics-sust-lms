@@ -1,15 +1,20 @@
-import { db } from "@/lib/db";
-import * as schema from "@/lib/db/schema";
-import { createClient } from "@/lib/supabase/server";
-import { eq } from "drizzle-orm";
 import { USER_ROLES, UserRole } from "@/lib/constants";
 
-export async function getAuthUser() {
-  const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) return null;
-  return user;
-}
+import { getProfile } from "@/server/geo";
+import { getClaims } from "@/server/user";
+import { cache } from "react";
+
+export const getAuthUser = cache(async () => {
+  const claims = await getClaims();
+  if (!claims?.sub) return null;
+  return {
+    id: claims.sub as string,
+    email: (claims.email as string) ?? null,
+    user_metadata: (claims.user_metadata as Record<string, unknown>) ?? {},
+    app_metadata: (claims.app_metadata as Record<string, unknown>) ?? {},
+    role: (claims.role as string) ?? null,
+  };
+});
 
 export async function requireAuth() {
   const user = await getAuthUser();
@@ -17,14 +22,11 @@ export async function requireAuth() {
   return user;
 }
 
-export async function getMyProfile() {
+export const getMyProfile = cache(async () => {
   const user = await getAuthUser();
   if (!user) return null;
-
-  return db.query.profiles.findFirst({
-    where: eq(schema.profiles.id, user.id),
-  });
-}
+  return getProfile(user.id);
+});
 
 export async function requireRole(roles: UserRole[]) {
   const profile = await getMyProfile();
@@ -41,5 +43,7 @@ export async function isAdmin() {
 
 export async function isModerator() {
   const profile = await getMyProfile();
-  return profile?.role === USER_ROLES.MODERATOR || profile?.role === USER_ROLES.ADMIN;
+  return (
+    profile?.role === USER_ROLES.MODERATOR || profile?.role === USER_ROLES.ADMIN
+  );
 }

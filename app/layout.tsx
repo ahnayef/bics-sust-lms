@@ -2,7 +2,6 @@ import { PWARegister } from "@/components/PWARegister";
 import { AOSInit } from "@/lib/AOSInit";
 import { I18nProvider } from "@/lib/i18n/context";
 import { cn } from "@/lib/utils";
-import type { Metadata } from "next";
 import { Geist, Noto_Sans_Bengali } from "next/font/google";
 import "./globals.css";
 
@@ -15,77 +14,6 @@ const notoSansBengali = Noto_Sans_Bengali({
 
 export const viewport = {
   themeColor: "#2d4a35",
-};
-
-export const metadata: Metadata = {
-  title: "SUST LMS",
-  description: "BICS SUST Library Management System",
-  authors: [{ name: "AHNayef", url: "https://github.com/ahnayef" }],
-  keywords: [
-    "education",
-    "school",
-    "college",
-    "university",
-    "scheduling",
-    "management",
-  ],
-  metadataBase: new URL("https://pathagar-sust.vercel.app"),
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "LMS",
-    startupImage: [
-      {
-        url: "/icons/512.png",
-        media:
-          "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)",
-      },
-    ],
-  },
-  formatDetection: {
-    telephone: false,
-  },
-  openGraph: {
-    url: "https://pathagar-sust.vercel.app",
-    siteName: "LMS",
-    images: [
-      {
-        url: "meta.png",
-        width: 177,
-        height: 112,
-        alt: "Meta Image",
-      },
-    ],
-    locale: "en_US",
-    type: "website",
-  },
-  icons: {
-    icon: [
-      {
-        url: "/icons/192.png",
-        sizes: "192x192",
-        type: "image/png",
-      },
-      {
-        url: "/icons/512.png",
-        sizes: "512x512",
-        type: "image/png",
-      },
-    ],
-    apple: [
-      {
-        url: "/icons/192.png",
-        sizes: "192x192",
-        type: "image/png",
-      },
-      {
-        url: "/icons/128.png",
-        sizes: "128x128",
-        type: "image/png",
-      },
-    ],
-  },
 };
 
 export default function RootLayout({
@@ -104,6 +32,22 @@ export default function RootLayout({
         geist.variable,
       )}
     >
+      <head>
+        <title>SUST LMS</title>
+        <meta
+          name="description"
+          content="BICS SUST Library Management System"
+        />
+        <meta name="theme-color" content="#2d4a35" />
+        <link rel="manifest" href="/manifest.json" />
+        <link
+          rel="icon"
+          href="/icons/192.png"
+          sizes="192x192"
+          type="image/png"
+        />
+        <link rel="apple-touch-icon" href="/icons/192.png" />
+      </head>
       <body className="min-h-full flex flex-col">
         {/* shows up as a box in mobile screen */}
         {/*<GrainOverlay />*/}

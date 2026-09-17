@@ -1,10 +1,6 @@
 import { applyCacheLife } from "@/lib/cache";
 import { db } from "@/lib/db";
-import {
-  getAllBooks,
-  getBookById,
-  getBooksByIds,
-} from "@/lib/db/queries/books";
+import { getAllBooks, getBookById } from "@/lib/db/queries/books";
 import {
   getAllCopies,
   getCopyById,
@@ -13,7 +9,11 @@ import {
 import { getCategoriesForProgress } from "@/lib/db/queries/geo";
 import { getPdfSubmissionsByFilters } from "@/lib/db/queries/pdfSubmissions";
 import { getAllProfiles } from "@/lib/db/queries/profiles";
-import { getCompletedSince, getRecentTransactions, getTransactionsByFilters } from "@/lib/db/queries/transactions";
+import {
+  getCompletedSince,
+  getRecentTransactions,
+  getTransactionsByFilters,
+} from "@/lib/db/queries/transactions";
 import { retry } from "@/lib/db/retry";
 import * as schema from "@/lib/db/schema";
 import type {
@@ -49,10 +49,17 @@ export async function getBooks(): Promise<Book[]> {
   return loadBooksCached();
 }
 
-export async function getCategories(): Promise<Category[]> {
+async function loadCategoriesCached(): Promise<Category[]> {
+  "use cache";
+  cacheTag("categories");
+  applyCacheLife("max");
   const { getCategories } = await import("@/lib/db/queries/geo");
   const data = await getCategories();
   return data as unknown as Category[];
+}
+
+export async function getCategories(): Promise<Category[]> {
+  return loadCategoriesCached();
 }
 
 export async function getBook(id: string): Promise<Book | null> {
@@ -86,9 +93,7 @@ async function loadCopiesCached(): Promise<Copy[]> {
   return data.map((row: any) => {
     const { transactions, ...copy } = row;
     const borrower =
-      transactions && transactions.length > 0
-        ? transactions[0].user
-        : null;
+      transactions && transactions.length > 0 ? transactions[0].user : null;
     return { ...copy, borrower };
   }) as unknown as Copy[];
 }
@@ -194,25 +199,25 @@ async function loadUserStatsCached(userId: string): Promise<UserStats> {
     where: and(
       eq(schema.transactions.user_id, userId),
       eq(schema.transactions.type, "borrow"),
-      eq(schema.transactions.status, "completed")
+      eq(schema.transactions.status, "completed"),
     ),
     with: {
       book: {
-        columns: { category_id: true }
-      }
-    }
+        columns: { category_id: true },
+      },
+    },
   });
 
   const approvedPdfs = await db.query.pdfSubmissions.findMany({
     where: and(
       eq(schema.pdfSubmissions.user_id, userId),
-      eq(schema.pdfSubmissions.status, "approved")
+      eq(schema.pdfSubmissions.status, "approved"),
     ),
     with: {
       book: {
-        columns: { category_id: true }
-      }
-    }
+        columns: { category_id: true },
+      },
+    },
   });
 
   // Map to track unique completed books per category
@@ -254,25 +259,25 @@ async function loadUserStatsCached(userId: string): Promise<UserStats> {
     where: and(
       eq(schema.transactions.user_id, userId),
       eq(schema.transactions.type, "borrow"),
-      inArray(schema.transactions.status, ["active", "overdue"])
+      inArray(schema.transactions.status, ["active", "overdue"]),
     ),
     with: {
       book: {
-        columns: { id: true, title: true, author: true, is_syllabus: true }
+        columns: { id: true, title: true, author: true, is_syllabus: true },
       },
       copy: {
-        columns: { id: true, copy_number: true }
-      }
-    }
+        columns: { id: true, copy_number: true },
+      },
+    },
   });
 
   // Pending requests (not yet approved)
   const pendingRequests = await db.query.transactions.findMany({
     where: and(
       eq(schema.transactions.user_id, userId),
-      eq(schema.transactions.status, "pending")
+      eq(schema.transactions.status, "pending"),
     ),
-    columns: { id: true }
+    columns: { id: true },
   });
 
   const now = new Date();
@@ -283,8 +288,7 @@ async function loadUserStatsCached(userId: string): Promise<UserStats> {
     activeBorrows: activeBorrows.length,
     overdueBorrows: activeBorrows.filter((tx) => {
       return (
-        tx.status === "overdue" ||
-        (tx.due_date && new Date(tx.due_date) < now)
+        tx.status === "overdue" || (tx.due_date && new Date(tx.due_date) < now)
       );
     }).length,
     pendingRequests: pendingRequests.length,
@@ -336,7 +340,7 @@ async function loadUsersCached(): Promise<UserWithStats[]> {
     where: and(
       inArray(schema.transactions.user_id, ids),
       eq(schema.transactions.type, "borrow"),
-      inArray(schema.transactions.status, ["active", "overdue"])
+      inArray(schema.transactions.status, ["active", "overdue"]),
     ),
     columns: { user_id: true, status: true, due_date: true },
   });
@@ -345,7 +349,7 @@ async function loadUsersCached(): Promise<UserWithStats[]> {
   const pendingTxns = await db.query.transactions.findMany({
     where: and(
       inArray(schema.transactions.user_id, ids),
-      eq(schema.transactions.status, "pending")
+      eq(schema.transactions.status, "pending"),
     ),
     columns: { user_id: true },
   });
@@ -355,33 +359,31 @@ async function loadUsersCached(): Promise<UserWithStats[]> {
     where: and(
       inArray(schema.transactions.user_id, ids),
       eq(schema.transactions.type, "borrow"),
-      eq(schema.transactions.status, "completed")
+      eq(schema.transactions.status, "completed"),
     ),
     with: {
       book: {
-        columns: { category_id: true }
-      }
-    }
+        columns: { category_id: true },
+      },
+    },
   });
 
   // Batch: approved PDF submissions with category info
   const approvedPdfs = await db.query.pdfSubmissions.findMany({
     where: and(
       inArray(schema.pdfSubmissions.user_id, ids),
-      eq(schema.pdfSubmissions.status, "approved")
+      eq(schema.pdfSubmissions.status, "approved"),
     ),
     with: {
       book: {
-        columns: { category_id: true }
-      }
-    }
+        columns: { category_id: true },
+      },
+    },
   });
 
   const now = new Date();
   return profilesData.map((profile): UserWithStats => {
-    const userActiveTxns = activeTxns.filter(
-      (t) => t.user_id === profile.id,
-    );
+    const userActiveTxns = activeTxns.filter((t) => t.user_id === profile.id);
     const activeBorrowsCount = userActiveTxns.length;
     const overdueBorrowsCount = userActiveTxns.filter(
       (t) =>
@@ -467,43 +469,77 @@ async function loadOverviewDataCached(): Promise<OverviewData> {
       completedThisMonthData,
     ] = await retry(async () =>
       Promise.all([
-        db.query.books.findMany({ 
+        db.query.books.findMany({
           columns: { id: true, is_syllabus: true },
-          with: { category: { columns: { name: true } } }
+          with: { category: { columns: { name: true } } },
         }),
         db.query.copies.findMany({ columns: { id: true, status: true } }),
         db.query.profiles.findMany({
           where: eq(schema.profiles.role, "member"),
-          columns: { id: true, is_verified: true }
+          columns: { id: true, is_verified: true },
         }),
         db.query.transactions.findMany({
-          where: inArray(schema.transactions.status, ["active", "overdue", "pending"]),
+          where: inArray(schema.transactions.status, [
+            "active",
+            "overdue",
+            "pending",
+          ]),
           with: {
-            user: { columns: { id: true, full_name: true, username: true, avatar_url: true } },
-            book: { columns: { id: true, title: true, author: true, is_syllabus: true } },
-            copy: { columns: { id: true, copy_number: true } }
+            user: {
+              columns: {
+                id: true,
+                full_name: true,
+                username: true,
+                avatar_url: true,
+              },
+            },
+            book: {
+              columns: {
+                id: true,
+                title: true,
+                author: true,
+                is_syllabus: true,
+              },
+            },
+            copy: { columns: { id: true, copy_number: true } },
           },
-          orderBy: [asc(schema.transactions.due_date)]
+          orderBy: [asc(schema.transactions.due_date)],
         }),
         getRecentTransactions(15),
         db.query.transactions.findMany({
           where: and(
             eq(schema.transactions.type, "borrow"),
-            inArray(schema.transactions.status, ["active", "completed", "overdue"])
+            inArray(schema.transactions.status, [
+              "active",
+              "completed",
+              "overdue",
+            ]),
           ),
           with: {
-            user: { columns: { id: true, full_name: true, username: true, avatar_url: true } },
-            book: { 
-              columns: { id: true, title: true, author: true, is_syllabus: true },
-              with: { category: { columns: { name: true } } }
-            }
+            user: {
+              columns: {
+                id: true,
+                full_name: true,
+                username: true,
+                avatar_url: true,
+              },
+            },
+            book: {
+              columns: {
+                id: true,
+                title: true,
+                author: true,
+                is_syllabus: true,
+              },
+              with: { category: { columns: { name: true } } },
+            },
           },
           orderBy: [desc(schema.transactions.request_date)],
-          limit: 300
+          limit: 300,
         }),
         getPdfSubmissionsByFilters({ status: "pending" }),
         getCompletedSince(firstOfMonth),
-      ])
+      ]),
     );
 
     const now = new Date();
@@ -534,7 +570,10 @@ async function loadOverviewDataCached(): Promise<OverviewData> {
     for (const tx of borrowHistoryData) {
       const user = tx.user;
       if (!user) continue;
-      const entry = memberMap.get(tx.user_id) ?? { meta: user as any, count: 0 };
+      const entry = memberMap.get(tx.user_id) ?? {
+        meta: user as any,
+        count: 0,
+      };
       entry.count++;
       memberMap.set(tx.user_id, entry);
     }
@@ -589,8 +628,10 @@ async function loadOverviewDataCached(): Promise<OverviewData> {
         generalBooks: booksData.filter((b) => !b.is_syllabus).length,
         booksByCategory,
         totalCopies: copiesData.length,
-        availableCopies: copiesData.filter((c) => c.status === "available").length,
-        borrowedCopies: copiesData.filter((c) => c.status === "borrowed").length,
+        availableCopies: copiesData.filter((c) => c.status === "available")
+          .length,
+        borrowedCopies: copiesData.filter((c) => c.status === "borrowed")
+          .length,
         damagedCopies: copiesData.filter((c) => c.status === "damaged").length,
         totalMembers: membersData.length,
         verifiedMembers: membersData.filter((m) => m.is_verified).length,
@@ -631,7 +672,7 @@ async function loadOverviewDataCached(): Promise<OverviewData> {
         pendingBorrowRequests: 0,
         pendingReturnRequests: 0,
         pendingPdfSubmissions: 0,
-        completedThisMonth: 0
+        completedThisMonth: 0,
       },
       overdueItems: [],
       pendingBorrows: [],
@@ -639,7 +680,7 @@ async function loadOverviewDataCached(): Promise<OverviewData> {
       recentActivity: [],
       topMembers: [],
       popularBooks: [],
-      pendingPdfs: []
+      pendingPdfs: [],
     };
   }
 }
@@ -655,7 +696,9 @@ export async function getOverviewData(): Promise<OverviewData> {
 import { getActionLogsForTarget } from "@/lib/db/queries/actionLogs";
 import type { ActionLog, NotificationItem } from "@/types/library";
 
-async function loadUserNotificationsCached(userId: string): Promise<NotificationItem[]> {
+async function loadUserNotificationsCached(
+  userId: string,
+): Promise<NotificationItem[]> {
   "use cache";
   cacheTag("users", "transactions", "pdf-submissions", "actionLogs");
   applyCacheLife("minutes");
@@ -664,16 +707,21 @@ async function loadUserNotificationsCached(userId: string): Promise<Notification
     db.query.transactions.findMany({
       where: and(
         eq(schema.transactions.user_id, userId),
-        inArray(schema.transactions.status, ["active", "completed", "rejected", "overdue"])
+        inArray(schema.transactions.status, [
+          "active",
+          "completed",
+          "rejected",
+          "overdue",
+        ]),
       ),
-      with: { book: { columns: { title: true } } }
+      with: { book: { columns: { title: true } } },
     }),
     db.query.pdfSubmissions.findMany({
       where: and(
         eq(schema.pdfSubmissions.user_id, userId),
-        inArray(schema.pdfSubmissions.status, ["approved", "rejected"])
+        inArray(schema.pdfSubmissions.status, ["approved", "rejected"]),
       ),
-      with: { book: { columns: { title: true } } }
+      with: { book: { columns: { title: true } } },
     }),
     getActionLogsForTarget(userId),
   ]);
@@ -707,7 +755,9 @@ async function loadUserNotificationsCached(userId: string): Promise<Notification
     if (type) {
       items.push({
         id: tx.id,
-        date: (tx.updated_at ?? tx.request_date)?.toISOString() ?? new Date().toISOString(),
+        date:
+          (tx.updated_at ?? tx.request_date)?.toISOString() ??
+          new Date().toISOString(),
         type,
         title,
         message,
@@ -721,9 +771,14 @@ async function loadUserNotificationsCached(userId: string): Promise<Notification
     const bookTitle = (pdf as any).book?.title ?? "a book";
     items.push({
       id: pdf.id,
-      date: (pdf.reviewed_at ?? pdf.submitted_at)?.toISOString() ?? new Date().toISOString(),
+      date:
+        (pdf.reviewed_at ?? pdf.submitted_at)?.toISOString() ??
+        new Date().toISOString(),
       type: pdf.status === "approved" ? "pdf_approved" : "pdf_rejected",
-      title: pdf.status === "approved" ? "PDF Reading Approved" : "PDF Reading Rejected",
+      title:
+        pdf.status === "approved"
+          ? "PDF Reading Approved"
+          : "PDF Reading Rejected",
       message: `Your reading submission for "${bookTitle}" was ${pdf.status}.`,
       reason: pdf.rejection_reason,
       link: "/dashboard/transactions?tab=pdf",
@@ -749,7 +804,9 @@ async function loadUserNotificationsCached(userId: string): Promise<Notification
     } else if (log.action_type === "thana_deleted") {
       type = "thana_deleted";
       title = "Thana Removed";
-      message = log.details ?? "Your thana has been removed. Please update your profile.";
+      message =
+        log.details ??
+        "Your thana has been removed. Please update your profile.";
     }
 
     if (log.action_type !== "user_joined") {
@@ -764,10 +821,14 @@ async function loadUserNotificationsCached(userId: string): Promise<Notification
     }
   }
 
-  return items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  return items.sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+  );
 }
 
-export async function getUserNotifications(userId: string): Promise<NotificationItem[]> {
+export async function getUserNotifications(
+  userId: string,
+): Promise<NotificationItem[]> {
   return loadUserNotificationsCached(userId);
 }
 

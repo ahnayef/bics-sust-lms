@@ -31,29 +31,68 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // Do not run code between createServerClient and
-  // supabase.auth.getClaims(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-
-  // IMPORTANT: If you remove getClaims() and you use server-side rendering
-  // with the Supabase client, your users may be randomly logged out.
-  
-  // Try to get claims with timeout, gracefully fail instead of crashing
-  let user = null;
+  // Fast local JWT decode from cookie without blocking on remote HTTPS calls
+  let user: { sub?: string } | null = null;
   try {
-    // Timeout after 3 seconds to prevent hanging
-    const timeout = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("Claims fetch timeout")), 3000)
-    );
-    const { data } = await Promise.race([
-      supabase.auth.getClaims(),
-      timeout,
-    ]);
-    user = data?.claims;
+    const allCookies = request.cookies.getAll();
+    const authCookies = allCookies
+      .filter((c) => c.name.includes("-auth-token"))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    let rawTokenString = "";
+    if (authCookies.length === 1) {
+      rawTokenString = authCookies[0].value;
+    } else if (authCookies.length > 1) {
+      rawTokenString = authCookies.map((c) => c.value).join("");
+    }
+
+    if (rawTokenString) {
+      let accessToken = "";
+      try {
+        const parsed = JSON.parse(rawTokenString);
+        accessToken = parsed.access_token || parsed[0] || "";
+      } catch {
+        if (rawTokenString.startsWith("base64-")) {
+          const decoded = Buffer.from(
+            rawTokenString.slice(7),
+            "base64",
+          ).toString("utf-8");
+          const parsed = JSON.parse(decoded);
+          accessToken = parsed.access_token || "";
+        }
+      }
+
+      if (accessToken && accessToken.includes(".")) {
+        const payloadBase64 = accessToken.split(".")[1];
+        const payloadStr = Buffer.from(payloadBase64, "base64").toString(
+          "utf-8",
+        );
+        const payload = JSON.parse(payloadStr);
+        if (
+          payload &&
+          payload.sub &&
+          (!payload.exp || payload.exp * 1000 > Date.now())
+        ) {
+          user = { sub: payload.sub };
+        }
+      }
+    }
   } catch {
-    // If claims fetch fails or times out, just proceed without crashing
-    // The client-side auth will handle session management
+    // If local decode fails, fallback below
   }
+
+  // Fast fallback to getSession if local parsing wasn't matched
+  if (!user) {
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (data?.session?.user?.id) {
+        user = { sub: data.session.user.id };
+      }
+    } catch {
+      // Ignore
+    }
+  }
+
   const path = request.nextUrl.pathname;
 
   // If user is already logged in, /login should redirect to /dashboard

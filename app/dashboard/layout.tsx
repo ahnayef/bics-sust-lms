@@ -1,9 +1,9 @@
-import { getClaims, shellHintsFromClaims } from "@/server/user";
 import { getProfile } from "@/server/geo";
 import { getUserNotifications } from "@/server/library";
-import DashboardShell from "./DashboardShell";
-import { Suspense } from "react";
+import { getClaims, shellHintsFromClaims } from "@/server/user";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import DashboardShell from "./DashboardShell";
 
 function DashboardRootFallback() {
   return (
@@ -49,7 +49,12 @@ async function DashboardLayoutAsync({
   const claims = await getClaims();
   if (!claims) redirect("/login");
 
-  const profile = await getProfile(claims.sub as string);
+  const [profile, notifications] = await Promise.all([
+    getProfile(claims.sub as string),
+    claims?.sub
+      ? getUserNotifications(claims.sub as string)
+      : Promise.resolve([]),
+  ]);
 
   // If user hasn't completed setup, force them to the setup page
   if (!profile?.profile_completed) {
@@ -61,7 +66,6 @@ async function DashboardLayoutAsync({
   const userRole = profile?.role ?? hints.role ?? "member";
   const userName = profile?.full_name ?? hints.displayName ?? "User";
   const userAvatar = profile?.avatar_url ?? hints.avatarUrl ?? null;
-  const notifications = claims?.sub ? await getUserNotifications(claims.sub) : [];
 
   return (
     <DashboardShell
