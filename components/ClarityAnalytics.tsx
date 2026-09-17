@@ -1,8 +1,9 @@
 import Script from "next/script";
 
 export function ClarityAnalytics() {
-  const clarityId =
-    process.env.NEXT_PUBLIC_CLARITY_ID || process.env.CLARITY_ID;
+  const clarityId = (
+    process.env.NEXT_PUBLIC_CLARITY_ID || process.env.CLARITY_ID
+  )?.trim();
 
   if (!clarityId) return null;
 

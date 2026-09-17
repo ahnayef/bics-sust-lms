@@ -1,3 +1,4 @@
+import { ClarityAnalytics } from "@/components/ClarityAnalytics";
 import { PWARegister } from "@/components/PWARegister";
 import { AOSInit } from "@/lib/AOSInit";
 import { I18nProvider } from "@/lib/i18n/context";
@@ -56,6 +57,7 @@ export default function RootLayout({
           <AOSInit />
           {children}
         </I18nProvider>
+        <ClarityAnalytics />
       </body>
     </html>
   );
