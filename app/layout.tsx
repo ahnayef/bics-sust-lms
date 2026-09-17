@@ -1,4 +1,4 @@
-import { ClarityAnalytics } from "@/components/ClarityAnalytics";
+import Clarity from "@/components/Clarity";
 import { PWARegister } from "@/components/PWARegister";
 import { AOSInit } from "@/lib/AOSInit";
 import { I18nProvider } from "@/lib/i18n/context";
@@ -22,6 +22,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const clarityProjectId = (
+    process.env.CLARITY_PROJECT_ID ||
+    process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID ||
+    process.env.NEXT_PUBLIC_CLARITY_ID
+  )?.trim();
   return (
     <html
       lang="en"
@@ -57,7 +62,7 @@ export default function RootLayout({
           <AOSInit />
           {children}
         </I18nProvider>
-        <ClarityAnalytics />
+        {clarityProjectId && <Clarity projectId={clarityProjectId} />}
       </body>
     </html>
   );
