@@ -4,7 +4,11 @@ import { RankBadge } from "@/components/ui/rank-badge";
 import { getTranslation } from "@/lib/i18n/server";
 import { getUserChecklistProgress } from "@/server/checklists";
 import { getProfileByUsername } from "@/server/geo";
-import { getPdfSubmissions, getUserStats, getUserTransactions } from "@/server/library";
+import {
+  getPdfSubmissions,
+  getUserStats,
+  getUserTransactions,
+} from "@/server/library";
 import { getClaims, getCurrentProfile } from "@/server/user";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -18,6 +22,8 @@ import {
   FaPhone,
   FaShieldAlt,
 } from "react-icons/fa";
+
+// export const dynamic = "force-dynamic";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -36,7 +42,13 @@ export default async function DashboardUserProfilePage({
   params: Promise<{ username: string }>;
 }) {
   return (
-    <Suspense fallback={<div className="p-4 sm:p-8 flex justify-center"><div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>}>
+    <Suspense
+      fallback={
+        <div className="p-4 sm:p-8 flex justify-center">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+      }
+    >
       <DashboardUserProfileContent params={params} />
     </Suspense>
   );
@@ -61,14 +73,16 @@ async function DashboardUserProfileContent({
   if (!profile) notFound();
 
   const isAdminOrMod =
-    currentUserProfile?.role === "admin" || currentUserProfile?.role === "moderator";
+    currentUserProfile?.role === "admin" ||
+    currentUserProfile?.role === "moderator";
 
-  const [stats, transactions, pdfSubmissions, checklistProgress] = await Promise.all([
-    getUserStats(profile.id),
-    isAdminOrMod ? getUserTransactions(profile.id) : [],
-    isAdminOrMod ? getPdfSubmissions({ userId: profile.id }) : [],
-    getUserChecklistProgress(profile.id),
-  ]);
+  const [stats, transactions, pdfSubmissions, checklistProgress] =
+    await Promise.all([
+      getUserStats(profile.id),
+      isAdminOrMod ? getUserTransactions(profile.id) : [],
+      isAdminOrMod ? getPdfSubmissions({ userId: profile.id }) : [],
+      getUserChecklistProgress(profile.id),
+    ]);
 
   const roleLabels: Record<string, string> = {
     admin: t.profile.roles.admin,
@@ -140,11 +154,13 @@ async function DashboardUserProfileContent({
               <RankBadge name={profile.rank?.name} />
               {profile.is_verified ? (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-sm text-xs font-semibold border bg-[#eef5e9] text-[#3d5c2e] border-[#a3b994] ink-text">
-                  <FaCheckCircle className="w-3 h-3" /> {t.profile.publicProfile.verified}
+                  <FaCheckCircle className="w-3 h-3" />{" "}
+                  {t.profile.publicProfile.verified}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-sm text-xs font-semibold border bg-[#fdf5e4] text-[#7a5e2a] border-[#c9b48a] ink-text">
-                  <FaClock className="w-3 h-3" /> {t.profile.publicProfile.unverified}
+                  <FaClock className="w-3 h-3" />{" "}
+                  {t.profile.publicProfile.unverified}
                 </span>
               )}
             </div>
