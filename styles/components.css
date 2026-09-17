@@ -3,8 +3,8 @@
     linear-gradient(180deg, #eee4d3 0%, #e5d8c1 52%, #dcccb2 100%),
     linear-gradient(92deg, rgba(88, 66, 46, 0.05), transparent 24%),
     linear-gradient(268deg, rgba(88, 66, 46, 0.04), transparent 18%),
-    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.008) 2px, rgba(0,0,0,.008) 4px),
-    repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,.008) 2px, rgba(0,0,0,.008) 4px),
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, .008) 2px, rgba(0, 0, 0, .008) 4px),
+    repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0, 0, 0, .008) 2px, rgba(0, 0, 0, .008) 4px),
     url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220"><filter id="p"><feTurbulence type="fractalNoise" baseFrequency="0.78" numOctaves="4" seed="13"/></filter><rect width="220" height="220" fill="%23e5d9c4"/><rect width="220" height="220" filter="url(%23p)" opacity="0.028"/></svg>');
 }
 
@@ -16,9 +16,9 @@
   box-shadow: inset 0 0 0 1px rgba(244, 235, 219, 0.55), 0 0 0 1px rgba(69, 55, 43, 0.2);
 }
 
-.tron-border { 
-  position: relative; 
-  overflow: hidden; 
+.tron-border {
+  position: relative;
+  overflow: hidden;
 }
 
 .tron-border::after {
@@ -35,12 +35,17 @@
 }
 
 @media print {
-  .tron-border::after { display: none !important; }
+  .tron-border::after {
+    display: none !important;
+  }
 }
 
 
 @media print {
-  @page { size: A4; margin: 10mm; }
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
 }
 
 
@@ -49,8 +54,8 @@
     linear-gradient(180deg, #eee4d3 0%, #e5d8c1 52%, #dcccb2 100%),
     linear-gradient(92deg, rgba(88, 66, 46, 0.05), transparent 24%),
     linear-gradient(268deg, rgba(88, 66, 46, 0.04), transparent 18%),
-    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.008) 2px, rgba(0,0,0,.008) 4px),
-    repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,.008) 2px, rgba(0,0,0,.008) 4px),
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, .008) 2px, rgba(0, 0, 0, .008) 4px),
+    repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0, 0, 0, .008) 2px, rgba(0, 0, 0, .008) 4px),
     url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220"><filter id="p"><feTurbulence type="fractalNoise" baseFrequency="0.78" numOctaves="4" seed="6"/></filter><rect width="220" height="220" fill="%23e5d9c4"/><rect width="220" height="220" filter="url(%23p)" opacity="0.028"/></svg>');
 }
 
@@ -69,7 +74,7 @@
   background-image:
     linear-gradient(180deg, rgba(58, 44, 32, 0.07), transparent 18%),
     linear-gradient(0deg, rgba(58, 44, 32, 0.05), transparent 14%),
-    repeating-linear-gradient(152deg, transparent, transparent 18px, rgba(0,0,0,.008) 18px, rgba(0,0,0,.008) 19px);
+    repeating-linear-gradient(152deg, transparent, transparent 18px, rgba(0, 0, 0, .008) 18px, rgba(0, 0, 0, .008) 19px);
   pointer-events: none;
 }
 
@@ -90,7 +95,70 @@
 
 
 @keyframes qrScannerMove {
-  0%, 100% { transform: translateX(-50%) translateY(-100px); }
-  50% { transform: translateX(-50%) translateY(100px); }
+
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(-100px);
+  }
+
+  50% {
+    transform: translateX(-50%) translateY(100px);
+  }
 }
 
+/* ───────────────────────────────────────────────────────────────────────────── */
+/* Smooth Page Entry & Skeleton Shimmer Animations                              */
+/* ───────────────────────────────────────────────────────────────────────────── */
+
+@keyframes pageFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-transition {
+  animation: pageFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity, transform;
+}
+
+@keyframes shimmerWave {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer-skeleton {
+  background: linear-gradient(90deg,
+      rgba(234, 220, 200, 0.35) 0%,
+      rgba(247, 241, 232, 0.75) 50%,
+      rgba(234, 220, 200, 0.35) 100%);
+  background-size: 200% 100%;
+  animation: shimmerWave 1.8s ease-in-out infinite;
+}
+
+/* Smooth Interactive Micro-Interactions */
+.smooth-card {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease;
+}
+
+.smooth-card:hover {
+  transform: translateY(-1.5px);
+}
+
+.smooth-btn {
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.smooth-btn:active {
+  transform: scale(0.97);
+}

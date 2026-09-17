@@ -461,7 +461,9 @@ export default function DashboardShell({
 
         {/* Page Content Container — with safe bottom padding for bottom nav */}
         <div className="flex-1 px-2.5 py-3 sm:p-5 lg:p-8 pb-28 lg:pb-12 print:p-0 print:m-0 max-w-7xl mx-auto w-full">
-          {children}
+          <div key={pathname} className="page-transition">
+            {children}
+          </div>
         </div>
       </main>
 

@@ -57,11 +57,11 @@ export default function ConfirmModal({
 
   return (
     <div
-      className="fixed inset-0 bg-[#1f170f]/50 backdrop-blur-[1px] flex items-center justify-center p-3 sm:p-4 z-[100]"
+      className="fixed inset-0 bg-[#1f170f]/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-[100] animate-in fade-in duration-200"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
-        className="dashboard-surface tron-border rounded-xl shadow-xl max-w-md w-full"
+        className="dashboard-surface tron-border rounded-xl shadow-xl max-w-md w-full animate-in zoom-in-95 duration-200"
         style={{ fontFamily: "'Courier Prime', monospace" }}
       >
         {/* Header */}

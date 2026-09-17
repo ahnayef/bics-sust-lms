@@ -5,7 +5,18 @@ import { getRelativeTime } from "@/lib/utils";
 import type { NotificationItem } from "@/types/library";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { FaBell, FaCheckCircle, FaExclamationTriangle, FaInfoCircle, FaMapMarkerAlt, FaShieldAlt, FaTimesCircle, FaUserCheck, FaUserPlus, FaUserTimes } from "react-icons/fa";
+import {
+  FaBell,
+  FaCheckCircle,
+  FaExclamationTriangle,
+  FaInfoCircle,
+  FaMapMarkerAlt,
+  FaShieldAlt,
+  FaTimesCircle,
+  FaUserCheck,
+  FaUserPlus,
+  FaUserTimes,
+} from "react-icons/fa";
 import { useNotificationStore } from "./useNotificationStore";
 
 interface Props {
@@ -15,13 +26,19 @@ interface Props {
 
 export default function NotificationBell({ userId, notifications }: Props) {
   const { t, language } = useTranslation();
-  const { readIds, markAsRead, markAllAsRead, isLoaded } = useNotificationStore(userId, notifications);
+  const { readIds, markAsRead, markAllAsRead, isLoaded } = useNotificationStore(
+    userId,
+    notifications,
+  );
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -32,7 +49,9 @@ export default function NotificationBell({ userId, notifications }: Props) {
     };
   }, []);
 
-  const unreadCount = notifications.filter((n) => !readIds.includes(n.id)).length;
+  const unreadCount = notifications.filter(
+    (n) => !readIds.includes(n.id),
+  ).length;
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -44,7 +63,9 @@ export default function NotificationBell({ userId, notifications }: Props) {
       case "pdf_rejected":
         return <FaTimesCircle className="text-red-600 w-4 h-4 mt-0.5" />;
       case "transaction_overdue":
-        return <FaExclamationTriangle className="text-orange-600 w-4 h-4 mt-0.5" />;
+        return (
+          <FaExclamationTriangle className="text-orange-600 w-4 h-4 mt-0.5" />
+        );
       case "user_verified":
         return <FaUserCheck className="text-blue-600 w-4 h-4 mt-0.5" />;
       case "user_unverified":
@@ -60,7 +81,9 @@ export default function NotificationBell({ userId, notifications }: Props) {
     }
   };
 
-  const sortedNotifications = [...notifications].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const sortedNotifications = [...notifications].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+  );
   const recentNotifications = sortedNotifications.slice(0, 3);
 
   return (
@@ -79,9 +102,11 @@ export default function NotificationBell({ userId, notifications }: Props) {
       </button>
 
       {isOpen && (
-        <div className="fixed left-[calc(50%+1.75rem)] -translate-x-1/2 sm:absolute sm:left-auto sm:translate-x-0 sm:right-0 sm:mt-2 w-[80vw] sm:w-80 max-h-[75vh] sm:max-h-96 bg-[#f4ebdf] border border-[#bfa687] rounded-sm shadow-lg z-50 overflow-hidden flex flex-col sm:origin-top-right">
+        <div className="fixed left-[calc(50%+1.75rem)] -translate-x-1/2 sm:absolute sm:left-auto sm:translate-x-0 sm:right-0 sm:mt-2 w-[80vw] sm:w-80 max-h-[75vh] sm:max-h-96 bg-[#f4ebdf] border border-[#bfa687] rounded-sm shadow-lg z-50 overflow-hidden flex flex-col sm:origin-top-right animate-in fade-in zoom-in-95 duration-150">
           <div className="p-3 sm:p-4 border-b border-[#e8d9c4] flex items-center justify-between">
-            <h3 className="text-xs sm:text-sm font-bold ink-title text-[#221910]">{t.notifications.title}</h3>
+            <h3 className="text-xs sm:text-sm font-bold ink-title text-[#221910]">
+              {t.notifications.title}
+            </h3>
             {unreadCount > 0 && (
               <button
                 onClick={(e) => {
@@ -98,7 +123,9 @@ export default function NotificationBell({ userId, notifications }: Props) {
           <div className="overflow-y-auto flex-1">
             {recentNotifications.length === 0 ? (
               <div className="p-6 text-center">
-                <p className="text-sm text-[#7a6a5c] ink-text">{t.notifications.empty}</p>
+                <p className="text-sm text-[#7a6a5c] ink-text">
+                  {t.notifications.empty}
+                </p>
               </div>
             ) : (
               <ul className="">
@@ -107,10 +134,11 @@ export default function NotificationBell({ userId, notifications }: Props) {
                   return (
                     <li
                       key={notif.id}
-                      className={`p-3 sm:p-4 border-b transition-colors cursor-pointer relative ${isUnread
-                        ? "bg-[#efe9dc] border-[#d3c1a9] shadow-sm"
-                        : "bg-[#efdec2]/50 border-[#e4d4bf] opacity-80"
-                        }`}
+                      className={`p-3 sm:p-4 border-b transition-colors cursor-pointer relative ${
+                        isUnread
+                          ? "bg-[#efe9dc] border-[#d3c1a9] shadow-sm"
+                          : "bg-[#efdec2]/50 border-[#e4d4bf] opacity-80"
+                      }`}
                       onClick={() => {
                         if (isUnread) markAsRead(notif.id);
                         if (notif.link) {
@@ -126,16 +154,22 @@ export default function NotificationBell({ userId, notifications }: Props) {
                         <div className="shrink-0">{getIcon(notif.type)}</div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-1 sm:gap-2 mb-1">
-                            <p className={`text-xs sm:text-sm font-semibold ink-title ${isUnread ? "text-[#221910]" : "text-[#3f3328]"
-                              }`}>
+                            <p
+                              className={`text-xs sm:text-sm font-semibold ink-title ${
+                                isUnread ? "text-[#221910]" : "text-[#3f3328]"
+                              }`}
+                            >
                               {notif.title}
                             </p>
                             <span className="text-[9px] sm:text-[10px] text-[#8a7a6c] ink-text whitespace-nowrap shrink-0">
                               {getRelativeTime(notif.date)}
                             </span>
                           </div>
-                          <p className={`text-[11px] sm:text-xs ink-text mb-1 ${isUnread ? "text-[#4a3e33]" : "text-[#5a4b3f]"
-                            }`}>
+                          <p
+                            className={`text-[11px] sm:text-xs ink-text mb-1 ${
+                              isUnread ? "text-[#4a3e33]" : "text-[#5a4b3f]"
+                            }`}
+                          >
                             {notif.message}
                           </p>
                           {notif.reason && (
