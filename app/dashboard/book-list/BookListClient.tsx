@@ -470,62 +470,79 @@ export default function BookListClient({
                   </div>
 
                   {/* 1-Tap Mobile Action Bar */}
-                  <div className="flex items-center gap-2 pt-2 border-t border-[#e4d4bf] flex-wrap">
-                    {firstAvailableCopy ? (
-                      <Link
-                        href={`/dashboard/borrow?copyId=${encodeURIComponent(firstAvailableCopy.id)}`}
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[#3f3328] text-[#f4e8d4] text-xs font-bold hover:bg-[#4a3d31] active:scale-95 transition-all shadow-xs"
+                  <div className="space-y-1.5 pt-2 border-t border-[#e4d4bf]">
+                    {/* ── Primary actions row ── */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {firstAvailableCopy ? (
+                        <Link
+                          href={`/dashboard/borrow?copyId=${encodeURIComponent(firstAvailableCopy.id)}`}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[#3f3328] text-[#f4e8d4] text-xs font-bold hover:bg-[#4a3d31] active:scale-95 transition-all shadow-xs"
+                        >
+                          <FaQrcode className="w-3 h-3" />
+                          <span>Borrow Copy</span>
+                        </Link>
+                      ) : (
+                        <button
+                          disabled
+                          className="flex-1 inline-flex items-center justify-center px-3 py-2 rounded-lg bg-[#e4d4bf] text-[#8a7966] text-xs font-bold cursor-not-allowed"
+                        >
+                          All Borrowed
+                        </button>
+                      )}
+
+                      {book.pdf_link && (
+                        <a
+                          href={book.pdf_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] text-[#3f3328] text-xs font-bold hover:bg-[#ece0ce] transition-colors shadow-xs"
+                        >
+                          <FaDownload className="w-3 h-3" />
+                          <span>PDF</span>
+                        </a>
+                      )}
+
+                      {/* Toggle Copies Accordion */}
+                      <button
+                        onClick={() =>
+                          setExpandedBookId(isExpanded ? null : book.id)
+                        }
+                        className="px-2.5 py-2 rounded-lg border border-[#8a7966]/40 bg-[#f8f1e6] text-[#4a3e33] text-xs font-semibold hover:bg-[#ecdcc8] transition-colors cursor-pointer"
                       >
-                        <FaQrcode className="w-3 h-3" />
-                        <span>Borrow Copy</span>
-                      </Link>
+                        {isExpanded ? "Hide" : `${book.copies.length} Copies`}
+                      </button>
+                    </div>
+
+                    {/* ── Mark as Read ── */}
+                    {pdfStatus === "approved" ? (
+                      <div className="flex items-center justify-center gap-1.5 w-full px-2.5 py-1.5 rounded-lg bg-[#eef5e9] border border-[#8aa06f] text-[#3d5c2e] text-[11px] font-bold">
+                        <FaCheckCircle className="w-3 h-3" />
+                        <span>
+                          {language === "bn" ? "পড়া সম্পন্ন ✓" : "Read ✓"}
+                        </span>
+                      </div>
+                    ) : pdfStatus === "pending" ? (
+                      <div className="flex items-center justify-center gap-1.5 w-full px-2.5 py-1.5 rounded-lg bg-[#f4ecd8] border border-[#b49d6f] text-[#6b5428] text-[11px] font-bold">
+                        <FaClock className="w-3 h-3" />
+                        <span>
+                          {language === "bn"
+                            ? "পর্যালোচনায় আছে"
+                            : "Review Pending"}
+                        </span>
+                      </div>
                     ) : (
                       <button
-                        disabled
-                        className="flex-1 inline-flex items-center justify-center px-3 py-2 rounded-lg bg-[#e4d4bf] text-[#8a7966] text-xs font-bold cursor-not-allowed"
-                      >
-                        All Borrowed
-                      </button>
-                    )}
-
-                    {book.pdf_link && (
-                      <a
-                        href={book.pdf_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg border border-[#7d6d5a] bg-[#fbf5ed] text-[#3f3328] text-xs font-bold hover:bg-[#ece0ce] transition-colors shadow-xs"
-                      >
-                        <FaDownload className="w-3 h-3" />
-                        <span>PDF</span>
-                      </a>
-                    )}
-
-                    {/* Submit PDF Report */}
-                    {book.pdf_link && (
-                      <button
                         onClick={() => openPdfModal(book)}
-                        className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg border border-[#4a7c59] bg-[#d3decb] text-[#2d4a35] text-xs font-bold hover:bg-[#c4d3bc] transition-colors shadow-xs cursor-pointer"
+                        className="flex items-center justify-center gap-1.5 w-full px-2.5 py-1.5 rounded-lg bg-[#2d5a3c] hover:bg-[#22442d] active:scale-[0.98] text-[#f4e8d4] text-[11px] font-bold transition-all shadow-xs cursor-pointer"
                       >
                         <FaFileAlt className="w-3 h-3" />
                         <span>
-                          {pdfStatus === "approved"
-                            ? "Read ✓"
-                            : pdfStatus === "pending"
-                              ? "Pending"
-                              : "Report"}
+                          {language === "bn"
+                            ? "পড়া সম্পন্ন রিপোর্ট"
+                            : "Mark as Read"}
                         </span>
                       </button>
                     )}
-
-                    {/* Toggle Copies Accordion */}
-                    <button
-                      onClick={() =>
-                        setExpandedBookId(isExpanded ? null : book.id)
-                      }
-                      className="px-2.5 py-2 rounded-lg border border-[#8a7966]/40 bg-[#f8f1e6] text-[#4a3e33] text-xs font-semibold hover:bg-[#ecdcc8] transition-colors cursor-pointer"
-                    >
-                      {isExpanded ? "Hide" : `${book.copies.length} Copies`}
-                    </button>
                   </div>
 
                   {/* Collapsible Copies List */}
@@ -582,6 +599,7 @@ export default function BookListClient({
                       t.bookList.table.type,
                       t.bookList.table.copies,
                       t.bookList.table.available,
+                      language === "bn" ? "পড়া" : "Read",
                       t.bookList.table.pdf,
                     ].map((h) => (
                       <th
@@ -669,6 +687,33 @@ export default function BookListClient({
                             </span>
                           </td>
                           <td className="px-4 py-2.5 text-sm">
+                            {pdfStatus === "approved" ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-sm border border-[#8aa06f] bg-[#eef5e9] text-[#3d5c2e] text-[10px] font-bold whitespace-nowrap">
+                                <FaCheckCircle className="w-3 h-3" />
+                                {language === "bn" ? "সম্পন্ন" : "Done"}
+                              </span>
+                            ) : pdfStatus === "pending" ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-sm border border-[#b49d6f] bg-[#f4ecd8] text-[#6b5428] text-[10px] font-bold whitespace-nowrap">
+                                <FaClock className="w-3 h-3" />
+                                {language === "bn" ? "পর্যালোচনায়" : "Pending"}
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openPdfModal(book);
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-sm border border-[#2d5a3c] bg-[#2d5a3c] text-[#f4e8d4] hover:bg-[#22442d] transition-colors text-[10px] font-bold whitespace-nowrap cursor-pointer"
+                              >
+                                <FaFileAlt className="w-3 h-3" />
+                                {language === "bn"
+                                  ? "পড়া রিপোর্ট"
+                                  : "Mark Read"}
+                              </button>
+                            )}
+                          </td>
+                          <td className="px-4 py-2.5 text-sm">
                             <div className="flex items-center gap-1.5">
                               {book.pdf_link ? (
                                 <a
@@ -693,7 +738,7 @@ export default function BookListClient({
                         {/* Expanded copies */}
                         {isExpanded && (
                           <tr className="bg-[#f8f1e5] border-b border-[#d2bfa5]">
-                            <td colSpan={7} className="px-4 py-3">
+                            <td colSpan={8} className="px-4 py-3">
                               <div className="w-full">
                                 <table className="w-full text-xs">
                                   <thead>
@@ -758,38 +803,6 @@ export default function BookListClient({
                                                     : t.bookList.copyStatus
                                                         .borrowed}
                                                 </span>
-                                              )}
-
-                                              {/* PDF report button */}
-                                              {pdfStatus === "pending" ? (
-                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm border border-[#b49d6f] bg-[#f4ecd8] text-[#6b5428] font-medium text-[10px] whitespace-nowrap">
-                                                  {
-                                                    t.bookList.bookCard
-                                                      .pdfStatus.pending
-                                                  }
-                                                </span>
-                                              ) : pdfStatus === "approved" ? (
-                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm border border-[#8aa06f] bg-[#eef5e9] text-[#3d5c2e] font-medium text-[10px] whitespace-nowrap">
-                                                  {
-                                                    t.bookList.bookCard
-                                                      .pdfStatus.approved
-                                                  }
-                                                </span>
-                                              ) : (
-                                                <button
-                                                  type="button"
-                                                  onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    openPdfModal(book);
-                                                  }}
-                                                  className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-sm border border-[#6b5d4f] bg-[#5a4d40] text-[#f4e8d4] hover:bg-[#4a3d31] transition-colors font-medium text-[10px] whitespace-nowrap"
-                                                >
-                                                  <FaFileAlt className="w-3 h-3" />
-                                                  {
-                                                    t.bookList.bookCard
-                                                      .pdfReport
-                                                  }
-                                                </button>
                                               )}
                                             </div>
                                           </td>
