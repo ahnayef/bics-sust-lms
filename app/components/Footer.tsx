@@ -26,7 +26,7 @@ export default function Footer({ year }: { year?: number }) {
                 className="font-bold text-2xl mb-4 hover:text-[#2f2924] transition-colors"
                 style={{ fontFamily: "Playfair Display, serif" }}
               >
-                SUST LMS
+                SUST Pathagar
               </h3>
             </Link>
             <p
@@ -127,7 +127,7 @@ export default function Footer({ year }: { year?: number }) {
               className="space-y-2 text-sm text-[#5a4d40]"
               style={{ fontFamily: "Courier Prime, monospace" }}
             >
-              <li>Email: info@sustlms.com</li>
+              <li>Email: info@sustpathagar.com</li>
               <li>Phone: +1 (555) 000-0000</li>
               <li>
                 <Link
@@ -149,7 +149,9 @@ export default function Footer({ year }: { year?: number }) {
           className="mt-8 flex flex-col md:flex-row justify-between items-center text-sm text-[#5a4d40] gap-3"
           style={{ fontFamily: "Courier Prime, monospace" }}
         >
-          <p>&copy; {currentYear} SUST LMS. {t.footer.rights}</p>
+          <p>
+            &copy; {currentYear} SUST Pathagar. {t.footer.rights}
+          </p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <Link
               href="#"

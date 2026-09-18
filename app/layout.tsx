@@ -39,11 +39,8 @@ export default function RootLayout({
       )}
     >
       <head>
-        <title>SUST LMS</title>
-        <meta
-          name="description"
-          content="BICS SUST Library Management System"
-        />
+        <title>SUST Pathagar</title>
+        <meta name="description" content="SUST Pathagar" />
         <meta name="theme-color" content="#2d4a35" />
         <link rel="manifest" href="/manifest.json" />
         <link

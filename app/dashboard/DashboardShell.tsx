@@ -193,7 +193,7 @@ export default function DashboardShell({
               <FaBook className="w-4 h-4" />
             </div>
             <div className="flex flex-col">
-              <span className="leading-none text-base">SUST LMS</span>
+              <span className="leading-none text-base">SUST Pathagar</span>
               <span className="text-[10px] text-[#7a6a5c] font-normal mt-0.5 tracking-wider uppercase">
                 {isStaff ? (isAdmin ? "Admin Desk" : "Staff Desk") : "Library"}
               </span>
@@ -371,7 +371,7 @@ export default function DashboardShell({
                 <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md bg-[#3f3328] text-[#f4e8d4] flex items-center justify-center shadow-xs shrink-0">
                   <FaBook className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 </div>
-                <span className="tracking-tight">SUST LMS</span>
+                <span className="tracking-tight">SUST Pathagar</span>
               </Link>
               <h1 className="hidden lg:block text-lg font-bold text-[#221910] ink-title truncate">
                 {pathname === "/dashboard"

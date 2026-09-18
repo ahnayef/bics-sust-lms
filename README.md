@@ -1,4 +1,4 @@
-# BICS SUST LMS
+# SUST Pathagar
 
 A modern, mobile-first Library Management System tailored for SUST, built with **Next.js**, **Supabase**, and styled with **Tailwind CSS**. Designed for an aggressively responsive, "native app-like" experience across all devices.
 

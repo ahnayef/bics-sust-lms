@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bics-lms-cache-v1';
+const CACHE_NAME = 'sust-pathagar-cache-v1';
 
 // Add whichever assets you want to cache
 const PRECACHE_ASSETS = [

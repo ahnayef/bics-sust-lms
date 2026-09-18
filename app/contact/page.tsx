@@ -62,11 +62,11 @@ export default async function ContactPage() {
                         For general inquiries, account issues, or book requests.
                       </p>
                       <a
-                        href="mailto:sust-lms@gmail.com"
+                        href="mailto:sustpathagar@gmail.com"
                         className="text-xl font-bold text-[#5a4d40] hover:underline transition-all"
                         style={{ fontFamily: "Courier Prime, monospace" }}
                       >
-                        sust-lms@gmail.com
+                        sustpathagar@gmail.com
                       </a>
                     </div>
                   </div>

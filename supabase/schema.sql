@@ -1,5 +1,5 @@
 -- ============================================================
--- SUST LMS — Complete Database Schema
+-- SUST Pathagar — Complete Database Schema
 -- Run this file once on a fresh Supabase project.
 -- For existing databases, use the migration commands at the bottom.
 -- ============================================================

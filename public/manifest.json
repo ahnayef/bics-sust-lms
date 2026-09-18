@@ -1,7 +1,7 @@
 {
-  "name": "BICS SUST Library Management System",
-  "short_name": "BICS LMS",
-  "description": "Library Management System for BICS SUST. View book lists, track copies, and manage borrowing.",
+  "name": "SUST Pathagar",
+  "short_name": "SUST Pathagar",
+  "description": "SUST Pathagar. View book lists, track copies, and manage borrowing.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#eadcc8",

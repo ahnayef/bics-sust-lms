@@ -15,7 +15,7 @@ export const report = {
   type: "Type",
   date: "Date",
   noRecentActivity: "No recent activity recorded",
-  footerText: "BICS SUST LMS - Official Member Report",
+  footerText: "SUST Pathagar - Official Member Report",
   itemsCompleted: "Items Completed",
   reportGeneratedOn: "Report Generated on",
 } as const;

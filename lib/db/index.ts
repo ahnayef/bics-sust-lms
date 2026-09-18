@@ -37,7 +37,7 @@ const client =
     onnotice: () => {}, // Supabase sends a lot of notices, ignore them
     fetch_types: false, // Disable type fetching for faster connection
     connection: {
-      application_name: "bics-sust-lms",
+      application_name: "sust-pathagar",
     },
   });
 

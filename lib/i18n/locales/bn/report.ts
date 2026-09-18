@@ -15,7 +15,7 @@ export const report = {
   type: "ধরন",
   date: "তারিখ",
   noRecentActivity: "কোনো সাম্প্রতিক কার্যক্রম নেই",
-  footerText: "বিআইসিএস সাস্ট এলএমএস - অফিসিয়াল সদস্য রিপোর্ট",
+  footerText: "সাস্ট পাঠাগার - অফিসিয়াল সদস্য রিপোর্ট",
   itemsCompleted: "আইটেম সম্পন্ন",
   reportGeneratedOn: "রিপোর্ট তৈরি হয়েছে",
 } as const;

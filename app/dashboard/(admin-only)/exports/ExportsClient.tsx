@@ -584,7 +584,7 @@ export default function ExportsClient({
 
   // CSV Generator
   const handleExportCsv = () => {
-    const filename = `bics-${selectedDataset}-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    const filename = `sust-pathagar-${selectedDataset}-export-${new Date().toISOString().slice(0, 10)}.csv`;
     const headers = activeCols.map((col) =>
       language === "bn" ? col.labelBn : col.label,
     );
@@ -1162,7 +1162,7 @@ export default function ExportsClient({
         <div className="border-b-2 border-black pb-3 mb-4 flex items-start justify-between">
           <div>
             <h1 className="text-xl font-bold uppercase tracking-wider font-sans">
-              BICS SUST Library Management System
+              SUST Pathagar
             </h1>
             <h2 className="text-base font-bold text-gray-800 mt-0.5">
               {datasetTitles[selectedDataset].en} /{" "}
@@ -1239,7 +1239,7 @@ export default function ExportsClient({
 
         {/* Footer */}
         <div className="mt-6 pt-3 border-t border-gray-400 flex justify-between items-center text-[10px] text-gray-600">
-          <span>Official Report — BICS SUST LMS</span>
+          <span>Official Report — SUST Pathagar</span>
           <span>Printed on A4 Document</span>
         </div>
       </div>

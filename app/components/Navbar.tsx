@@ -40,7 +40,7 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
               className="text-2xl font-bold tracking-tight text-[#1f1a17]"
               style={{ fontFamily: "Playfair Display, serif" }}
             >
-              SUST LMS
+              SUST Pathagar
             </span>
             <span
               className="text-xs tracking-[0.14em] text-[#4a4038]"

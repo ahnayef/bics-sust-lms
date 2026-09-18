@@ -91,7 +91,7 @@ export default function SetupForm({
                 className="text-3xl sm:text-[2.05rem] font-bold text-[#221910]"
                 style={{ fontFamily: "Playfair Display, serif" }}
               >
-                SUST-LMS
+                SUST Pathagar
               </span>
             </Link>
             <p

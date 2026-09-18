@@ -340,7 +340,7 @@ async function HomeContent() {
                 letterSpacing: "1px",
               }}
             >
-              Launch your library workflow with one connected LMS
+              Launch your library workflow with SUST Pathagar
             </p>
           </div>
           <a
